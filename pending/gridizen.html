@@ -1,0 +1,698 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import { create } from 'zustand';
+
+// --- 1. CONSTANTS & TYPES ---
+const GRID_SIZE = 64;
+const TICK_RATE_MS = 1000;
+
+type TerrainType = 'GRASS' | 'WATER' | 'SAND' | 'FOREST';
+type BuildingType = 'NONE' | 'ROAD' | 'RESIDENTIAL' | 'COMMERCIAL' | 'INDUSTRIAL' | 'POWER' | 'WATER_PUMP' | 'PARK';
+type WarningType = 'NONE' | 'NO_ROAD' | 'NO_POWER' | 'NO_WATER';
+type ToolType = BuildingType | 'BULLDOZE' | 'INSPECT';
+
+interface Tile {
+  id: number;
+  x: number;
+  z: number;
+  terrain: TerrainType;
+  building: BuildingType;
+  level: number; // 0-5
+  powered: boolean;
+  watered: boolean;
+  roadAccess: boolean;
+  happiness: number;
+  warning: WarningType;
+}
+
+const MILESTONES = [
+  { tier: 1, name: 'Camp', popRequired: 0, unlocks: ['ROAD', 'RESIDENTIAL', 'POWER', 'WATER_PUMP', 'PARK'] },
+  { tier: 2, name: 'Village', popRequired: 50, unlocks: ['COMMERCIAL'] },
+  { tier: 3, name: 'Town', popRequired: 200, unlocks: ['INDUSTRIAL'] },
+  { tier: 4, name: 'City', popRequired: 1000, unlocks: [] },
+];
+
+const BUILDINGS: Record<BuildingType, { cost: number; color: string; type: 'infra' | 'zone' | 'util' | 'serv'; name: string }> = {
+  NONE: { cost: 0, color: '#000', type: 'infra', name: 'None' },
+  ROAD: { cost: 10, color: '#555555', type: 'infra', name: 'Road' },
+  RESIDENTIAL: { cost: 50, color: '#2ecc71', type: 'zone', name: 'Residential' },
+  COMMERCIAL: { cost: 100, color: '#3498db', type: 'zone', name: 'Commercial' },
+  INDUSTRIAL: { cost: 150, color: '#f1c40f', type: 'zone', name: 'Industrial' },
+  POWER: { cost: 500, color: '#e74c3c', type: 'util', name: 'Power Plant' },
+  WATER_PUMP: { cost: 300, color: '#85c1e9', type: 'util', name: 'Water Pump' },
+  PARK: { cost: 200, color: '#27ae60', type: 'serv', name: 'Park' },
+};
+
+const PALETTE = {
+  GRASS: '#4ade80',
+  WATER: '#3b82f6',
+  SAND: '#fcd34d',
+  FOREST: '#166534',
+};
+
+// --- 2. FAST NOISE GENERATOR ---
+const SimpleNoise = {
+  p: new Uint8Array(512),
+  init(seed = 1234) {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const r = Math.floor((seed * (i + 1) * 1234.5678) % (i + 1));
+      [p[i], p[r]] = [p[r], p[i]];
+    }
+    for (let i = 0; i < 512; i++) this.p[i] = p[i & 255];
+  },
+  fade: (t: number) => t * t * t * (t * (t * 6 - 15) + 10),
+  lerp: (t: number, a: number, b: number) => a + t * (b - a),
+  grad(hash: number, x: number, y: number) {
+    const h = hash & 15;
+    const u = h < 8 ? x : y, v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+    return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+  },
+  get(x: number, y: number) {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    x -= Math.floor(x); y -= Math.floor(y);
+    const u = this.fade(x), v = this.fade(y);
+    const A = this.p[X] + Y, B = this.p[X + 1] + Y;
+    return this.lerp(
+      v,
+      this.lerp(u, this.grad(this.p[A], x, y), this.grad(this.p[B], x - 1, y)),
+      this.lerp(u, this.grad(this.p[A + 1], x, y - 1), this.grad(this.p[B + 1], x - 1, y - 1))
+    );
+  }
+};
+
+const generateMap = (): Tile[] => {
+  SimpleNoise.init(Math.random());
+  const grid: Tile[] = [];
+  for (let z = 0; z < GRID_SIZE; z++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      const height = SimpleNoise.get(x * 0.05, z * 0.05);
+      const moisture = SimpleNoise.get(x * 0.1 + 100, z * 0.1 + 100);
+      let terrain: TerrainType = 'GRASS';
+      if (height < -0.2) terrain = 'WATER';
+      else if (height < -0.1) terrain = 'SAND';
+      else if (moisture > 0.3) terrain = 'FOREST';
+
+      grid.push({
+        id: z * GRID_SIZE + x,
+        x, z,
+        terrain,
+        building: 'NONE',
+        level: 0,
+        powered: false, watered: false, roadAccess: false,
+        happiness: 100,
+        warning: 'NONE'
+      });
+    }
+  }
+  return grid;
+};
+
+// --- 3. ZUSTAND STORE & SIMULATION ---
+interface GameState {
+  grid: Tile[];
+  time: number; // 0-23
+  funds: number;
+  population: number;
+  jobs: number;
+  happiness: number;
+  powerUse: number; powerMax: number;
+  waterUse: number; waterMax: number;
+  milestone: number;
+  selectedTool: ToolType;
+  inspectedTileIdx: number | null;
+  heatmap: boolean;
+  initMap: () => void;
+  setTool: (t: ToolType) => void;
+  setInspectedTile: (idx: number | null) => void;
+  toggleHeatmap: () => void;
+  handleInteraction: (x: number, z: number) => void;
+  tick: () => void;
+}
+
+const useGameStore = create<GameState>((set, get) => ({
+  grid: [],
+  time: 8,
+  funds: 25000,
+  population: 0, jobs: 0, happiness: 100,
+  powerUse: 0, powerMax: 0, waterUse: 0, waterMax: 0,
+  milestone: 1,
+  selectedTool: 'INSPECT',
+  inspectedTileIdx: null,
+  heatmap: false,
+
+  initMap: () => set({ grid: generateMap() }),
+  setTool: (t) => set({ selectedTool: t, inspectedTileIdx: t !== 'INSPECT' ? null : get().inspectedTileIdx }),
+  setInspectedTile: (idx) => set({ inspectedTileIdx: idx }),
+  toggleHeatmap: () => set(s => ({ heatmap: !s.heatmap })),
+
+  handleInteraction: (x, z) => {
+    const { grid, funds, selectedTool } = get();
+    if (x < 0 || x >= GRID_SIZE || z < 0 || z >= GRID_SIZE) return;
+    const idx = z * GRID_SIZE + x;
+    const tile = grid[idx];
+
+    if (selectedTool === 'INSPECT') {
+      set({ inspectedTileIdx: idx });
+      return;
+    }
+
+    if (selectedTool === 'NONE') return;
+
+    if (selectedTool === 'BULLDOZE') {
+      if (tile.building !== 'NONE') {
+        const newGrid = [...grid];
+        newGrid[idx] = { ...tile, building: 'NONE', level: 0, warning: 'NONE' };
+        set({ grid: newGrid, funds: funds - 5, inspectedTileIdx: null });
+      } else if (tile.terrain === 'FOREST') {
+        const newGrid = [...grid];
+        newGrid[idx] = { ...tile, terrain: 'GRASS' };
+        set({ grid: newGrid, funds: funds - 20, inspectedTileIdx: null });
+      }
+      return;
+    }
+
+    // Building Validation
+    if (tile.terrain === 'WATER' && selectedTool !== 'WATER_PUMP' && selectedTool !== 'ROAD') return;
+    if (tile.terrain === 'FOREST') return;
+    if (tile.building !== 'NONE') return;
+    
+    const cost = BUILDINGS[selectedTool as BuildingType].cost;
+    if (funds < cost) return;
+
+    const newGrid = [...grid];
+    newGrid[idx] = { ...tile, building: selectedTool as BuildingType, level: 0 };
+    set({ grid: newGrid, funds: funds - cost, inspectedTileIdx: null });
+  },
+
+  tick: () => {
+    const state = get();
+    if (!state.grid.length) return;
+
+    const newGrid = [...state.grid];
+    let time = state.time + 1;
+    if (time >= 24) time = 0;
+
+    let pMax = 0, pUse = 0, wMax = 0, wUse = 0;
+    let pop = 0, jobs = 0, upkeep = 0;
+
+    const powerSources: number[] = [];
+    const waterSources: number[] = [];
+
+    for (let i = 0; i < newGrid.length; i++) {
+      const t = newGrid[i];
+      if (t.building === 'POWER') { pMax += 200; powerSources.push(i); }
+      if (t.building === 'WATER_PUMP') { wMax += 200; waterSources.push(i); }
+      if (t.building === 'RESIDENTIAL' && t.level > 0) pop += t.level * 4;
+      if ((t.building === 'COMMERCIAL' || t.building === 'INDUSTRIAL') && t.level > 0) jobs += t.level * 4;
+      if (t.building !== 'NONE' && t.building !== 'ROAD') upkeep += 2;
+    }
+
+    const poweredSet = new Set<number>();
+    const wateredSet = new Set<number>();
+    const roadSet = new Set<number>();
+
+    for (let i = 0; i < newGrid.length; i++) {
+      if (newGrid[i].building === 'ROAD') roadSet.add(i);
+    }
+
+    const runBFS = (sources: number[], resultSet: Set<number>) => {
+      const queue = [...sources];
+      const visited = new Set<number>(sources);
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        resultSet.add(curr);
+        const x = curr % GRID_SIZE;
+        const z = Math.floor(curr / GRID_SIZE);
+        const neighbors = [[x + 1, z], [x - 1, z], [x, z + 1], [x, z - 1]];
+        for (const [nx, nz] of neighbors) {
+          if (nx >= 0 && nx < GRID_SIZE && nz >= 0 && nz < GRID_SIZE) {
+            const nIdx = nz * GRID_SIZE + nx;
+            if (!visited.has(nIdx) && (roadSet.has(nIdx) || newGrid[nIdx].building !== 'NONE')) {
+              visited.add(nIdx);
+              if (roadSet.has(nIdx)) queue.push(nIdx);
+              resultSet.add(nIdx);
+            }
+          }
+        }
+      }
+    };
+
+    if (pMax > 0) runBFS(powerSources, poweredSet);
+    if (wMax > 0) runBFS(waterSources, wateredSet);
+
+    let globalHap = 100;
+    if (pUse > pMax) globalHap -= 20;
+    if (wUse > wMax) globalHap -= 20;
+
+    for (let i = 0; i < newGrid.length; i++) {
+      const t = newGrid[i];
+      
+      // Compute local happiness via nature
+      let localHap = 50;
+      const x = t.x, z = t.z;
+      const neighbors = [[x + 1, z], [x - 1, z], [x, z + 1], [x, z - 1], [x+1, z+1], [x-1, z-1]];
+      let hasRoad = false;
+
+      for (const [nx, nz] of neighbors) {
+        if (nx >= 0 && nx < GRID_SIZE && nz >= 0 && nz < GRID_SIZE) {
+          const nTile = newGrid[nz * GRID_SIZE + nx];
+          if (nTile.building === 'ROAD') hasRoad = true;
+          if (nTile.terrain === 'FOREST' || nTile.terrain === 'WATER') localHap += 5;
+          if (nTile.building === 'PARK') localHap += 15;
+          if (nTile.building === 'INDUSTRIAL') localHap -= 20;
+        }
+      }
+      t.happiness = Math.max(0, Math.min(100, localHap));
+
+      if (t.building === 'NONE' || t.building === 'ROAD') continue;
+
+      t.roadAccess = hasRoad;
+      t.powered = poweredSet.has(i) && pMax > pUse;
+      t.watered = wateredSet.has(i) && wMax > wUse;
+
+      pUse += (t.level || 1) * 2;
+      wUse += (t.level || 1) * 2;
+
+      t.warning = 'NONE';
+      if (!t.roadAccess) t.warning = 'NO_ROAD';
+      else if (!t.powered && t.building !== 'PARK') t.warning = 'NO_POWER';
+      else if (!t.watered && t.building !== 'PARK') t.warning = 'NO_WATER';
+
+      if (t.building === 'RESIDENTIAL' || t.building === 'COMMERCIAL' || t.building === 'INDUSTRIAL') {
+        if (t.roadAccess && t.powered && t.watered && t.happiness > 40) {
+           if (Math.random() < 0.1 && t.level < 5) t.level++;
+        } else if (Math.random() < 0.05 && t.level > 0) {
+           t.level--;
+        }
+      }
+    }
+
+    let newMilestone = state.milestone;
+    for (let i = MILESTONES.length - 1; i >= 0; i--) {
+      if (pop >= MILESTONES[i].popRequired) {
+        newMilestone = MILESTONES[i].tier;
+        break;
+      }
+    }
+
+    let funds = state.funds;
+    if (time === 0) {
+      const taxes = pop * 5 + jobs * 8;
+      funds += taxes - upkeep;
+    }
+
+    set({
+      grid: newGrid, time, funds, population: pop, jobs,
+      powerMax: pMax, powerUse: pUse, waterMax: wMax, waterUse: wUse,
+      milestone: newMilestone, happiness: Math.max(0, globalHap)
+    });
+  }
+}));
+
+// --- 4. R3F SCENE & MESHES ---
+
+const Lighting = () => {
+  const time = useGameStore(s => s.time);
+  const hourAngle = ((time - 6) / 24) * Math.PI * 2;
+  const sunX = Math.cos(hourAngle) * 50;
+  const sunY = Math.sin(hourAngle) * 50;
+  const isNight = sunY < 0;
+  const ambientColor = isNight ? '#1e293b' : '#ffffff';
+  const ambientInt = isNight ? 0.4 : 1.2;
+
+  return (
+    <group>
+      <ambientLight color={ambientColor} intensity={ambientInt} />
+      {!isNight && (
+        <directionalLight 
+          position={[sunX, Math.max(sunY, 5), 20]} 
+          intensity={1.5} 
+          castShadow 
+        />
+      )}
+    </group>
+  );
+};
+
+const WarningMesh = ({ t }: { t: Tile }) => {
+  const meshRef = useRef<THREE.Mesh>(null!);
+  useFrame(({ clock }) => {
+    if (meshRef.current) {
+      meshRef.current.position.y = (t.level * 0.5) + 1.5 + Math.sin(clock.elapsedTime * 4 + t.id) * 0.2;
+      meshRef.current.rotation.y = clock.elapsedTime * 2;
+    }
+  });
+  const color = t.warning === 'NO_ROAD' ? '#9ca3af' : t.warning === 'NO_POWER' ? '#facc15' : '#60a5fa';
+  return (
+    <mesh ref={meshRef} position={[t.x, 0, t.z]}>
+      <octahedronGeometry args={[0.3]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} />
+    </mesh>
+  );
+};
+
+const InspectedHighlight = () => {
+  const inspectedTileIdx = useGameStore(s => s.inspectedTileIdx);
+  const grid = useGameStore(s => s.grid);
+  const ref = useRef<THREE.Mesh>(null!);
+
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.position.y = 0.5 + Math.sin(clock.elapsedTime * 5) * 0.05;
+    }
+  });
+
+  if (inspectedTileIdx === null || !grid[inspectedTileIdx]) return null;
+  const tile = grid[inspectedTileIdx];
+
+  return (
+    <mesh ref={ref} position={[tile.x, 0.5, tile.z]}>
+      <boxGeometry args={[1.05, 1.05, 1.05]} />
+      <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.6} />
+    </mesh>
+  );
+};
+
+const WorldMeshes = () => {
+  const grid = useGameStore(s => s.grid);
+  const heatmap = useGameStore(s => s.heatmap);
+  const time = useGameStore(s => s.time);
+  const isNight = time >= 18 || time <= 6;
+
+  const terrainGeo = useMemo(() => new THREE.BoxGeometry(1, 0.5, 1), []);
+  const terrainMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.8 }), []);
+  const roadGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const roadMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.9 }), []);
+  const buildingGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const buildingMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.4 }), []);
+  const emissiveGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const emissiveMat = useMemo(() => new THREE.MeshBasicMaterial({ color: 0xf1c40f, wireframe: true, transparent: true, opacity: 0.8 }), []);
+
+  const terrainRef = useRef<THREE.InstancedMesh>(null!);
+  const roadRef = useRef<THREE.InstancedMesh>(null!);
+  const buildingRef = useRef<THREE.InstancedMesh>(null!);
+  const emissiveRef = useRef<THREE.InstancedMesh>(null!);
+
+  useEffect(() => {
+    if (grid.length === 0) return;
+
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color();
+    let bCount = 0;
+    let rCount = 0;
+    let eCount = 0;
+
+    grid.forEach((tile, i) => {
+      // 1. Terrain
+      dummy.position.set(tile.x, tile.terrain === 'WATER' ? -0.2 : 0, tile.z);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      terrainRef.current?.setMatrixAt(i, dummy.matrix);
+      
+      let hex = PALETTE[tile.terrain];
+      if (heatmap) {
+         const val = tile.happiness / 100;
+         color.setHSL((1 - val) * 0.3, 1, 0.5); 
+      } else {
+         color.set(hex);
+      }
+      terrainRef.current?.setColorAt(i, color);
+
+      // 2. Roads
+      if (tile.building === 'ROAD') {
+        dummy.position.set(tile.x, 0.1, tile.z);
+        dummy.scale.set(1, 0.1, 1);
+        dummy.updateMatrix();
+        roadRef.current?.setMatrixAt(rCount, dummy.matrix);
+        color.set(BUILDINGS.ROAD.color);
+        roadRef.current?.setColorAt(rCount, color);
+        rCount++;
+      }
+
+      // 3. Buildings
+      if (tile.building !== 'NONE' && tile.building !== 'ROAD') {
+        const b = BUILDINGS[tile.building];
+        const height = tile.level > 0 ? tile.level * 0.5 + 0.5 : 0.5;
+        
+        dummy.position.set(tile.x, height / 2, tile.z);
+        dummy.scale.set(0.8, height, 0.8);
+        dummy.updateMatrix();
+        buildingRef.current?.setMatrixAt(bCount, dummy.matrix);
+        color.set(b.color);
+        if (!tile.powered && tile.building !== 'PARK') color.multiplyScalar(0.5);
+        buildingRef.current?.setColorAt(bCount, color);
+        bCount++;
+
+        if (isNight && tile.level >= 1 && tile.powered) {
+          dummy.position.set(tile.x, height / 2, tile.z);
+          dummy.scale.set(0.82, height * 0.8, 0.82);
+          dummy.updateMatrix();
+          emissiveRef.current?.setMatrixAt(eCount, dummy.matrix);
+          color.set('#f1c40f');
+          emissiveRef.current?.setColorAt(eCount, color);
+          eCount++;
+        }
+      }
+    });
+
+    if (terrainRef.current) { terrainRef.current.instanceMatrix.needsUpdate = true; if (terrainRef.current.instanceColor) terrainRef.current.instanceColor.needsUpdate = true; }
+    if (roadRef.current) { roadRef.current.count = rCount; roadRef.current.instanceMatrix.needsUpdate = true; if (roadRef.current.instanceColor) roadRef.current.instanceColor.needsUpdate = true; }
+    if (buildingRef.current) { buildingRef.current.count = bCount; buildingRef.current.instanceMatrix.needsUpdate = true; if (buildingRef.current.instanceColor) buildingRef.current.instanceColor.needsUpdate = true; }
+    if (emissiveRef.current) { emissiveRef.current.count = eCount; emissiveRef.current.instanceMatrix.needsUpdate = true; if (emissiveRef.current.instanceColor) emissiveRef.current.instanceColor.needsUpdate = true; }
+  }, [grid, heatmap, isNight]);
+
+  if (grid.length === 0) return null;
+
+  return (
+    <group>
+      <instancedMesh ref={terrainRef} args={[terrainGeo, terrainMat, GRID_SIZE * GRID_SIZE]} receiveShadow />
+      <instancedMesh ref={roadRef} args={[roadGeo, roadMat, GRID_SIZE * GRID_SIZE]} receiveShadow />
+      <instancedMesh ref={buildingRef} args={[buildingGeo, buildingMat, GRID_SIZE * GRID_SIZE]} castShadow receiveShadow />
+      <instancedMesh ref={emissiveRef} args={[emissiveGeo, emissiveMat, GRID_SIZE * GRID_SIZE]} />
+      {grid.filter(t => t.warning !== 'NONE').slice(0, 30).map(t => <WarningMesh key={`warn-${t.id}`} t={t} />)}
+      <InspectedHighlight />
+    </group>
+  );
+};
+
+const InteractionPlane = () => {
+  const handleInteraction = useGameStore(s => s.handleInteraction);
+  return (
+    <mesh 
+      rotation={[-Math.PI / 2, 0, 0]} 
+      position={[GRID_SIZE/2, 0.5, GRID_SIZE/2]} 
+      // Changed from onPointerUp to onClick to correctly prevent triggering during camera pans
+      onClick={(e) => {
+        e.stopPropagation();
+        const x = Math.round(e.point.x);
+        const z = Math.round(e.point.z);
+        handleInteraction(x, z);
+      }}
+    >
+      <planeGeometry args={[GRID_SIZE * 2, GRID_SIZE * 2]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// --- 5. UI COMPONENTS (TAILWIND) ---
+
+const GlobalStyles = () => (
+  <style>
+    {`
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .p-safe { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    `}
+  </style>
+);
+
+const TileInspectorPanel = () => {
+  const idx = useGameStore(s => s.inspectedTileIdx);
+  const grid = useGameStore(s => s.grid);
+  
+  if (idx === null || !grid[idx]) return null;
+  const tile = grid[idx];
+  const bData = BUILDINGS[tile.building];
+
+  return (
+    <div className="bg-slate-900/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl pointer-events-auto text-white w-64 absolute left-4 top-24 animate-in fade-in slide-in-from-left-4">
+      <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+        <h3 className="font-bold text-lg">{bData.name !== 'None' ? bData.name : tile.terrain}</h3>
+        <span className="text-xs text-slate-400">[{tile.x}, {tile.z}]</span>
+      </div>
+      
+      <div className="space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-slate-300">Base Terrain:</span>
+          <span className="font-medium">{tile.terrain}</span>
+        </div>
+        {tile.building !== 'NONE' && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-slate-300">Level:</span>
+              <span className="font-medium text-emerald-400">{tile.level}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-300">Road Access:</span>
+              <span>{tile.roadAccess ? '✅' : '❌'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-300">Power:</span>
+              <span>{tile.powered ? '✅' : '❌'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-300">Water:</span>
+              <span>{tile.watered ? '✅' : '❌'}</span>
+            </div>
+          </>
+        )}
+        <div className="flex justify-between mt-2 pt-2 border-t border-white/10">
+          <span className="text-slate-300">Land Value/Hap:</span>
+          <span className={`font-bold ${tile.happiness > 60 ? 'text-emerald-400' : tile.happiness < 40 ? 'text-red-400' : 'text-yellow-400'}`}>
+            {tile.happiness}/100
+          </span>
+        </div>
+        {tile.warning !== 'NONE' && (
+          <div className="mt-2 p-2 bg-red-500/20 border border-red-500/50 rounded text-red-200 text-xs font-bold text-center">
+            ⚠️ {tile.warning.replace('_', ' ')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const HUD = () => {
+  const { funds, population, happiness, time, powerUse, powerMax, milestone, selectedTool, setTool, toggleHeatmap, heatmap } = useGameStore();
+  
+  const currentTier = MILESTONES.find(m => m.tier === milestone);
+  const nextTier = MILESTONES.find(m => m.tier === milestone + 1);
+
+  const formatTime = (h: number) => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 === 0 ? 12 : h % 12;
+    return `${hour}:00 ${ampm}`;
+  };
+
+  const allowedTools = MILESTONES.filter(m => m.tier <= milestone).flatMap(m => m.unlocks);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between overflow-hidden text-slate-800 font-sans">
+      
+      {/* Top Bar Area */}
+      <div className="p-safe pt-4 px-4 flex justify-between items-start">
+        
+        {/* Objectives */}
+        <div className="bg-slate-900/70 backdrop-blur-md p-3 rounded-2xl text-white shadow-xl pointer-events-auto border border-white/10 max-w-[200px]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400">Tier {milestone}: {currentTier?.name}</h2>
+          {nextTier ? (
+            <p className="text-xs mt-1 leading-tight text-slate-300">Goal: Reach {nextTier.popRequired} Pop to unlock {nextTier.unlocks[0]}</p>
+          ) : (
+            <p className="text-xs mt-1 text-slate-300">Maximum Tier Reached!</p>
+          )}
+        </div>
+
+        {/* Stats Pills */}
+        <div className="flex flex-col gap-2 items-end">
+          <div className="bg-slate-900/70 backdrop-blur-md px-4 py-2 rounded-full text-white shadow-xl flex gap-4 text-sm font-semibold pointer-events-auto border border-white/10">
+            <span className="flex items-center gap-1">⏱️ {formatTime(time)}</span>
+            <span className="flex items-center gap-1 text-emerald-400">💵 ${funds.toLocaleString()}</span>
+            <span className="flex items-center gap-1 text-blue-300">👥 {population}</span>
+            <span className="flex items-center gap-1">😊 {happiness}%</span>
+          </div>
+          
+          <div className="bg-slate-900/70 backdrop-blur-md px-4 py-1.5 rounded-full text-white/80 shadow-xl flex gap-3 text-xs pointer-events-auto border border-white/10">
+            <span className={powerUse > powerMax ? 'text-red-400 font-bold' : ''}>⚡ {powerUse}/{powerMax}</span>
+            <button 
+              onClick={toggleHeatmap}
+              className={`ml-2 px-2 rounded bg-white/20 hover:bg-white/30 transition ${heatmap ? 'bg-emerald-500/50' : ''}`}
+            >
+              👁️ Data Lens
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <TileInspectorPanel />
+
+      {/* Bottom Build Menu */}
+      <div className="bg-slate-900/80 backdrop-blur-xl p-safe pb-6 pt-4 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] pointer-events-auto border-t border-white/10 relative">
+        <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x hide-scrollbar">
+          
+          {/* Inspect Tool */}
+          <button 
+            onClick={() => setTool('INSPECT')}
+            className={`snap-center flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl transition-all border-2 ${selectedTool === 'INSPECT' ? 'bg-blue-500/30 border-blue-400 text-blue-200 scale-110 shadow-lg shadow-blue-500/20' : 'bg-white/5 border-transparent text-white hover:bg-white/10'}`}
+          >
+            <span className="text-xl">🔍</span>
+            <span className="text-[10px] mt-1 font-bold">Inspect</span>
+          </button>
+
+          {/* Bulldoze Tool */}
+          <button 
+            onClick={() => setTool('BULLDOZE')}
+            className={`snap-center flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl transition-all border-2 ${selectedTool === 'BULLDOZE' ? 'bg-red-500/30 border-red-500 text-red-200 scale-110 shadow-lg shadow-red-500/20' : 'bg-white/5 border-transparent text-white hover:bg-white/10'}`}
+          >
+            <span className="text-xl">🚜</span>
+            <span className="text-[10px] mt-1 font-bold">Clear</span>
+          </button>
+
+          <div className="w-px h-12 bg-white/10 my-auto mx-1 flex-shrink-0" />
+
+          {Object.entries(BUILDINGS).filter(([key]) => allowedTools.includes(key)).map(([key, data]) => {
+            const isSelected = selectedTool === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTool(key as BuildingType)}
+                className={`snap-center flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-2xl transition-all border-2 ${isSelected ? 'border-emerald-400 bg-white/20 scale-105 shadow-lg shadow-emerald-500/20' : 'border-transparent bg-white/5 hover:bg-white/10 text-white/80'}`}
+              >
+                <div className="w-6 h-6 rounded-md mb-1 shadow-inner" style={{ backgroundColor: data.color }} />
+                <span className="text-[10px] font-bold text-white text-center leading-tight px-1">{data.name}</span>
+                <span className="text-[9px] text-white/50 mt-0.5">${data.cost}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      
+    </div>
+  );
+};
+
+// --- 6. MAIN APP EXPORT ---
+export default function App() {
+  const initMap = useGameStore(s => s.initMap);
+  const tick = useGameStore(s => s.tick);
+  
+  useEffect(() => {
+    initMap();
+    const interval = setInterval(tick, TICK_RATE_MS);
+    return () => clearInterval(interval);
+  }, [initMap, tick]);
+
+  return (
+    <div className="w-full h-screen bg-[#1e293b] overflow-hidden select-none touch-none">
+      <GlobalStyles />
+      <Canvas shadows camera={{ position: [GRID_SIZE/2, 40, GRID_SIZE/2 + 30], fov: 40 }}>
+        <Lighting />
+        <WorldMeshes />
+        <InteractionPlane />
+        <OrbitControls 
+          target={[GRID_SIZE/2, 0, GRID_SIZE/2]} 
+          maxPolarAngle={Math.PI / 2.5} 
+          minDistance={10} 
+          maxDistance={80} 
+          makeDefault 
+          dampingFactor={0.1}
+        />
+      </Canvas>
+      <HUD />
+    </div>
+  );
+}

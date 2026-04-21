@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Otterly Chaotic: The Salad Sprint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mobile optimization: Prevent pull-to-refresh and selection */
+        body { 
+            margin: 0; overflow: hidden; background-color: #1a202c; 
+            touch-action: none; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-user-select: none; user-select: none;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+        
+        /* Custom UI Elements */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        
+        .munch-meter-bg { background: #ef4444; width: 100px; height: 8px; border-radius: 4px; overflow: hidden; }
+        .munch-meter-fill { background: #22c55e; height: 100%; transition: width 0.1s linear; }
+        
+        #game-over-screen, #win-screen, #start-screen, #fade-screen { transition: opacity 0.5s ease; }
+        .hidden-screen { opacity: 0; pointer-events: none; }
+
+        /* Action Button */
+        #bark-btn {
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #bark-btn:active { transform: scale(0.9); }
+
+        /* Virtual Joystick */
+        #joystick-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 10; }
+        #joystick-base {
+            position: absolute; width: 120px; height: 120px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 20;
+        }
+        #joystick-knob {
+            position: absolute; width: 50px; height: 50px; border-radius: 50%;
+            background: rgba(59, 130, 246, 0.8); box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transform: translate(-50%, -50%); pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas for rendering the game -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Virtual Joystick DOM Elements -->
+    <div id="joystick-zone" class="hidden"></div>
+    <div id="joystick-base"><div id="joystick-knob"></div></div>
+
+    <!-- Fade Screen for transitions -->
+    <div id="fade-screen" class="ui-layer bg-gray-900 z-40 hidden-screen"></div>
+
+    <!-- UI Layer -->
+    <div id="ui-layer" class="ui-layer flex flex-col justify-between p-4 md:p-6 z-30">
+        
+        <!-- Top HUD -->
+        <div id="hud" class="hidden flex flex-col md:flex-row justify-between items-start md:items-center w-full max-w-5xl mx-auto gap-3">
+            <div class="glass-panel rounded-xl p-3 md:p-4 flex flex-col gap-1 md:gap-2 w-full md:w-auto">
+                <h2 class="text-white font-bold text-lg md:text-xl tracking-wide uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">The Salad Sprint</h2>
+                <div class="text-gray-300 text-xs md:text-sm font-medium" id="objective-text">Objective: Find the Kudzu Ball</div>
+            </div>
+            
+            <div class="flex flex-row md:flex-col items-center md:items-end gap-3 self-end md:self-auto">
+                <button id="skip-tut-btn" class="interactive hidden glass-panel hover:bg-gray-700 text-gray-300 text-xs font-bold py-2 px-4 rounded-lg border-gray-500">
+                    Skip Tutorial ⏭
+                </button>
+                <div id="chronometer-container" class="glass-panel rounded-xl px-4 py-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 md:w-5 md:h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="chronometer" class="text-white font-mono text-xl md:text-2xl font-bold tracking-wider">00:00.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Entity UI -->
+        <div id="floating-ui" class="absolute top-0 left-0 w-full h-full pointer-events-none hidden">
+            <div id="ball-health-container" class="absolute transform -translate-x-1/2 -translate-y-full pb-4 hidden">
+                <div class="text-xs text-white text-center font-bold mb-1 shadow-black drop-shadow-md">Kudzu Mass</div>
+                <div class="munch-meter-bg border border-gray-800">
+                    <div id="ball-health-fill" class="munch-meter-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile/Pointer Action Button -->
+        <button id="bark-btn" class="absolute bottom-6 right-6 md:bottom-10 md:right-10 w-20 h-20 md:w-24 md:h-24 bg-blue-500/80 rounded-full border-4 border-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.5)] text-white font-bold transition-transform flex flex-col items-center justify-center hidden">
+            <span class="text-2xl md:text-3xl">🔊</span>
+            <span class="text-[10px] md:text-xs uppercase mt-1 tracking-wider">Bark</span>
+        </button>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="ui-layer interactive flex items-center justify-center bg-gray-900 bg-opacity-90 z-50">
+        <div class="glass-panel rounded-2xl p-6 md:p-10 max-w-lg w-[90%] md:w-full text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-teal-300 to-emerald-500 mb-2 drop-shadow-lg">Otterly</h1>
+            <h1 class="text-5xl md:text-6xl font-extrabold text-white mb-8 drop-shadow-lg">Chaotic</h1>
+            
+            <div class="flex flex-col gap-4 mt-8">
+                <button id="btn-tutorial" class="w-full py-4 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-400 hover:to-emerald-400 text-white font-bold rounded-xl text-xl shadow-[0_0_20px_rgba(59,130,246,0.4)] transform transition active:scale-95">
+                    Play Tutorial
+                </button>
+                <button id="btn-skip" class="w-full py-3 bg-gray-700 hover:bg-gray-600 border border-gray-500 text-gray-200 font-bold rounded-xl text-lg transition active:scale-95">
+                    Skip to Main Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="ui-layer interactive flex items-center justify-center bg-red-900 bg-opacity-90 z-50 hidden hidden-screen">
+        <div class="glass-panel rounded-2xl p-8 max-w-md w-[90%] md:w-full text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-red-400 mb-4">MUNCHED!</h1>
+            <p class="text-gray-200 mb-8 text-base md:text-lg">The goats ate the entire Kudzu ball. Elder Bleat is disappointed.</p>
+            <button onclick="startMainGame()" class="w-full md:w-auto px-8 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95">
+                Try Again
+            </button>
+        </div>
+    </div>
+
+    <!-- Win Screen -->
+    <div id="win-screen" class="ui-layer interactive flex items-center justify-center bg-blue-900 bg-opacity-90 z-50 hidden hidden-screen">
+        <div class="glass-panel border-emerald-500/30 rounded-2xl p-8 max-w-md w-[90%] md:w-full text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-emerald-400 mb-2">TRIBUTE PAID</h1>
+            <p class="text-gray-200 mb-6 text-base md:text-lg">You delivered the salad!</p>
+            <div class="bg-black bg-opacity-50 rounded-lg p-4 mb-8">
+                <div class="text-sm text-gray-400">Final Time</div>
+                <div id="final-time" class="text-3xl font-mono font-bold text-white">00:00.00</div>
+                <div class="text-sm text-gray-400 mt-2">Salad Remaining</div>
+                <div id="final-health" class="text-xl font-bold text-emerald-400">100%</div>
+            </div>
+            <button onclick="startMainGame()" class="w-full md:w-auto px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+<script>
+/**
+ * OTTERLY CHAOTIC: Smooth Controls Edition
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI Elements
+const uiHUD = document.getElementById('hud');
+const uiFloating = document.getElementById('floating-ui');
+const uiBallHealthContainer = document.getElementById('ball-health-container');
+const uiBallHealthFill = document.getElementById('ball-health-fill');
+const uiChronometer = document.getElementById('chronometer');
+const uiChronoContainer = document.getElementById('chronometer-container');
+const uiObjective = document.getElementById('objective-text');
+const btnBark = document.getElementById('bark-btn');
+const btnSkipTut = document.getElementById('skip-tut-btn');
+const fadeScreen = document.getElementById('fade-screen');
+
+// Joystick UI
+const joystickZone = document.getElementById('joystick-zone');
+const joyBase = document.getElementById('joystick-base');
+const joyKnob = document.getElementById('joystick-knob');
+
+// Screens
+const startScreen = document.getElementById('start-screen');
+const gameOverScreen = document.getElementById('game-over-screen');
+const winScreen = document.getElementById('win-screen');
+
+// Game State
+let gameState = 'START'; 
+let currentMode = 'MAIN';
+let tutPhase = 'MOVE'; 
+let tutTimer = 0;
+
+let lastTime = 0;
+let timeElapsed = 0;
+let camera = { x: 0, y: 0, zoom: 1 };
+let cameraShake = 0;
+let winDelayTimer = 0;
+
+// Input State
+const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, " ": false };
+let barkTriggered = false;
+
+// Virtual Joystick State
+let joy = { active: false, originX: 0, originY: 0, currX: 0, currY: 0, dx: 0, dy: 0, maxR: 60 };
+
+// --- INPUT LISTENERS ---
+window.addEventListener('keydown', (e) => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    if (e.key === " " && (gameState === 'PLAYING' || gameState === 'TUTORIAL')) { barkTriggered = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+// Joystick Listeners
+function handleJoyStart(x, y) {
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
+    joy.active = true;
+    joy.originX = x; joy.originY = y; joy.currX = x; joy.currY = y; joy.dx = 0; joy.dy = 0;
+    
+    joyBase.style.display = 'block';
+    joyBase.style.left = `${x}px`; joyBase.style.top = `${y}px`;
+    joyKnob.style.left = `50%`; joyKnob.style.top = `50%`;
+}
+
+function handleJoyMove(x, y) {
+    if (!joy.active) return;
+    let dx = x - joy.originX;
+    let dy = y - joy.originY;
+    let dist = Math.hypot(dx, dy);
+    
+    // Cap visual knob
+    if (dist > joy.maxR) { dx = (dx / dist) * joy.maxR; dy = (dy / dist) * joy.maxR; }
+    
+    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    
+    // Output normalized (-1 to 1) values for physics
+    joy.dx = dx / joy.maxR;
+    joy.dy = dy / joy.maxR;
+}
+
+function handleJoyEnd() {
+    joy.active = false; joy.dx = 0; joy.dy = 0;
+    joyBase.style.display = 'none';
+}
+
+joystickZone.addEventListener('mousedown', (e) => handleJoyStart(e.clientX, e.clientY));
+window.addEventListener('mousemove', (e) => handleJoyMove(e.clientX, e.clientY));
+window.addEventListener('mouseup', handleJoyEnd);
+
+joystickZone.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if(e.touches.length > 0) handleJoyStart(e.touches[0].clientX, e.touches[0].clientY);
+}, {passive: false});
+window.addEventListener('touchmove', (e) => {
+    if(joy.active && e.touches.length > 0) { e.preventDefault(); handleJoyMove(e.touches[0].clientX, e.touches[0].clientY); }
+}, {passive: false});
+window.addEventListener('touchend', handleJoyEnd);
+window.addEventListener('touchcancel', handleJoyEnd);
+
+
+btnBark.addEventListener('mousedown', (e) => { if(gameState === 'PLAYING' || gameState === 'TUTORIAL') barkTriggered = true; e.stopPropagation(); });
+btnBark.addEventListener('touchstart', (e) => { e.preventDefault(); if(gameState === 'PLAYING' || gameState === 'TUTORIAL') barkTriggered = true; e.stopPropagation(); }, {passive: false});
+
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas();
+
+// ==========================================
+// GAME ENTITIES & WORLD GENERATION
+// ==========================================
+
+let WORLD_WIDTH = 2500; 
+let WORLD_HEIGHT = 1800;
+
+let otter, ball, goats, waterZones, targetZone, particles, rocks, decorations;
+
+function initEntities(mode) {
+    currentMode = mode;
+    
+    // REFINED PHYSICS: Tighter friction, faster acceleration for snappy controls
+    otter = {
+        vx: 0, vy: 0, radius: 30, 
+        baseAccel: 1.8, // Snappier start (was 0.8)
+        friction: 0.75, // Tighter stop on land (was 0.88)
+        maxSpeed: 9.5,
+        barkCooldown: 0, barkMaxCooldown: 1500, barkRadius: 350, isBarking: false, barkTimer: 0, trail: []
+    };
+
+    ball = {
+        vx: 0, vy: 0, baseRadius: 65, radius: 65, friction: 0.92, maxHealth: 100, health: 100, mass: 1 
+    };
+
+    waterZones = []; rocks = []; decorations = []; particles = []; goats = [];
+
+    if (mode === 'TUTORIAL') {
+        WORLD_WIDTH = 1200; WORLD_HEIGHT = 1000;
+        otter.x = 200; otter.y = 800;
+        targetZone = { x: 800, y: 300, radius: 150 };
+        ball.radius = 0; ball.x = 500; ball.y = 600;
+        
+        goats.push({ 
+            id: 'elder', x: 800, y: 100, vx: 0, vy: 0, radius: 45, speed: 2.5, 
+            state: 'WAITING', faintTimer: 0, color: '#cbd5e1', hornSize: 25, beard: true,
+            dialogue: "Use WASD or drag the screen to walk over here."
+        });
+
+        rocks.push({ x: targetZone.x - 150, y: targetZone.y + 100, radius: 60, offsets: Array(8).fill(1).map(()=>Math.random()*0.2 + 0.9) });
+        rocks.push({ x: targetZone.x - 20, y: targetZone.y + 180, radius: 60, offsets: Array(8).fill(1).map(()=>Math.random()*0.2 + 0.9) });
+        for (let i = 0; i < 50; i++) decorations.push({ x: Math.random() * WORLD_WIDTH, y: Math.random() * WORLD_HEIGHT, type: 'grass', size: 1 });
+
+    } else {
+        // MAIN GAME GENERATION
+        WORLD_WIDTH = 2500; WORLD_HEIGHT = 1800;
+        otter.x = 300; otter.y = WORLD_HEIGHT - 300;
+        ball.x = 600; ball.y = WORLD_HEIGHT - 600;
+        targetZone = { x: WORLD_WIDTH - 400, y: 400, radius: 250 };
+
+        goats = [
+            { id: 'billy', x: 1000, y: WORLD_HEIGHT - 700, vx: 0, vy: 0, radius: 35, speed: 3.5, state: 'CHASING', faintTimer: 0, color: '#e2e8f0', hornSize: 15, dialogue: null },
+            { id: 'elder', x: WORLD_WIDTH - 400, y: 400, vx: 0, vy: 0, radius: 45, speed: 2.5, state: 'WAITING', faintTimer: 0, color: '#cbd5e1', hornSize: 25, beard: true, dialogue: null }
+        ];
+
+        rocks.push({ x: targetZone.x - 250, y: targetZone.y + 100, radius: 90, offsets: Array(8).fill(1).map(()=>Math.random()*0.2 + 0.9) });
+        rocks.push({ x: targetZone.x - 50, y: targetZone.y + 250, radius: 90, offsets: Array(8).fill(1).map(()=>Math.random()*0.2 + 0.9) });
+
+        for (let i = 0; i < 20; i++) waterZones.push({ x: 300 + Math.random() * (WORLD_WIDTH - 600), y: 300 + Math.random() * (WORLD_HEIGHT - 600), r: 80 + Math.random() * 140 });
+
+        for (let i = 0; i < 40; i++) {
+            let rx = Math.random() * WORLD_WIDTH; let ry = Math.random() * WORLD_HEIGHT;
+            if (Math.hypot(rx - otter.x, ry - otter.y) > 250 && Math.hypot(rx - ball.x, ry - ball.y) > 250 && Math.hypot(rx - targetZone.x, ry - targetZone.y) > 350) {
+                rocks.push({ x: rx, y: ry, radius: 30 + Math.random() * 50, offsets: Array(8).fill(1).map(()=>Math.random()*0.4 + 0.8) });
+            }
+        }
+        for (let i = 0; i < 200; i++) decorations.push({ x: Math.random() * WORLD_WIDTH, y: Math.random() * WORLD_HEIGHT, type: Math.random() > 0.8 ? 'flower' : 'grass', size: 0.5 + Math.random() * 1.5 });
+    }
+}
+
+// ==========================================
+// PHYSICS, LOGIC & TUTORIAL DIRECTOR
+// ==========================================
+
+function update(deltaTime) {
+    if (gameState === 'WIN_ANIMATION') {
+        updateParticles(deltaTime);
+        if (cameraShake > 0) cameraShake *= 0.9;
+        winDelayTimer -= deltaTime;
+        if (winDelayTimer <= 0) endGame('WIN');
+        return;
+    }
+    
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
+    if (gameState === 'PLAYING') timeElapsed += deltaTime; 
+
+    // --- DIEGETIC TUTORIAL LOGIC ---
+    let elder = goats.find(g => g.id === 'elder');
+    if (gameState === 'TUTORIAL') {
+        tutTimer += deltaTime;
+        let distToElder = Math.hypot(otter.x - elder.x, otter.y - elder.y);
+        
+        if (tutPhase === 'MOVE' && distToElder < 400) {
+            tutPhase = 'PUSH';
+            elder.dialogue = "Good! Now push this practice Salad Ball into my gravity crater.";
+            ball.radius = ball.baseRadius; 
+            createParticles(ball.x, ball.y, '#22c55e', 20);
+            cameraShake = 5;
+            uiBallHealthContainer.classList.remove('hidden');
+        } 
+        else if (tutPhase === 'PUSH' && Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y) < targetZone.radius * 0.5) {
+            tutPhase = 'STUN';
+            elder.dialogue = "Uh oh! My hungry nephew Billy is here! Tap BARK or RAM him to stun him!";
+            goats.push({ id: 'billy', x: 200, y: 200, vx: 0, vy: 0, radius: 35, speed: 3.0, state: 'CHASING', faintTimer: 0, color: '#e2e8f0', hornSize: 15 });
+            createParticles(200, 200, '#e2e8f0', 20);
+        }
+        else if (tutPhase === 'STUN') {
+            let billy = goats.find(g => g.id === 'billy');
+            if (billy && billy.state === 'FAINTED') {
+                tutPhase = 'DONE'; tutTimer = 0;
+                elder.dialogue = "Excellent work! Now, prepare for the real Chaos Sprint!";
+            }
+        }
+        else if (tutPhase === 'DONE' && tutTimer > 3000) {
+            startMainGame();
+        }
+    }
+
+    // --- OTTER MOVEMENT ---
+    let inWater = false;
+    for (let w of waterZones) { if (Math.hypot(otter.x - w.x, otter.y - w.y) < w.r) { inWater = true; break; } }
+
+    let moveX = 0; let moveY = 0;
+    
+    // Keyboard Input
+    if (keys.w || keys.ArrowUp) moveY -= 1; 
+    if (keys.s || keys.ArrowDown) moveY += 1;
+    if (keys.a || keys.ArrowLeft) moveX -= 1; 
+    if (keys.d || keys.ArrowRight) moveX += 1;
+    if (moveX !== 0 || moveY !== 0) {
+        let len = Math.hypot(moveX, moveY); moveX /= len; moveY /= len;
+    }
+
+    // Joystick Override (already normalized)
+    if (joy.active) {
+        moveX = joy.dx; moveY = joy.dy;
+    }
+
+    // Apply Physics
+    let currentAccel = inWater ? 2.5 : otter.baseAccel;
+    let currentFriction = inWater ? 0.90 : otter.friction; // Less punishing water physics
+    let maxS = inWater ? 13 : otter.maxSpeed;
+
+    otter.vx += moveX * currentAccel;
+    otter.vy += moveY * currentAccel;
+    otter.vx *= currentFriction; 
+    otter.vy *= currentFriction;
+    
+    let speed = Math.hypot(otter.vx, otter.vy);
+    if (speed > maxS) { otter.vx = (otter.vx / speed) * maxS; otter.vy = (otter.vy / speed) * maxS; }
+
+    otter.x += otter.vx; otter.y += otter.vy;
+    otter.x = Math.max(otter.radius, Math.min(WORLD_WIDTH - otter.radius, otter.x));
+    otter.y = Math.max(otter.radius, Math.min(WORLD_HEIGHT - otter.radius, otter.y));
+
+    if (speed > 1.5) { otter.trail.unshift({x: otter.x, y: otter.y, life: 1.0, water: inWater}); if (otter.trail.length > 20) otter.trail.pop(); }
+    for (let i = 0; i < otter.trail.length; i++) otter.trail[i].life -= deltaTime * 0.004;
+    otter.trail = otter.trail.filter(t => t.life > 0);
+
+    // --- ABILITIES (BARK) ---
+    if (otter.barkCooldown > 0) otter.barkCooldown -= deltaTime;
+    if (barkTriggered && otter.barkCooldown <= 0) {
+        otter.barkCooldown = otter.barkMaxCooldown; otter.isBarking = true; otter.barkTimer = 300; cameraShake = 5;
+        createParticles(otter.x, otter.y, '#3b82f6', 15);
+        goats.forEach(g => {
+            if (Math.hypot(g.x - otter.x, g.y - otter.y) < otter.barkRadius) {
+                g.state = 'FAINTED'; g.faintTimer = 4000; g.vx = (g.x - otter.x) * 0.15; g.vy = (g.y - otter.y) * 0.15;
+                createParticles(g.x, g.y, '#fbbf24', 10);
+            }
+        });
+    }
+    barkTriggered = false; if (otter.barkTimer > 0) otter.barkTimer -= deltaTime;
+
+    // --- BALL PHYSICS ---
+    if (ball.radius > 0) {
+        ball.mass = 0.3 + (0.7 * (ball.health / ball.maxHealth)); 
+        ball.radius = Math.max(25, ball.baseRadius * (ball.health / ball.maxHealth));
+        ball.vx *= ball.friction; ball.vy *= ball.friction;
+        
+        let distToGoal = Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y);
+        if (distToGoal < targetZone.radius) {
+            let pull = 1 - (distToGoal / targetZone.radius); 
+            ball.vx += ((targetZone.x - ball.x) / distToGoal) * (0.6 + pull * 0.8); 
+            ball.vy += ((targetZone.y - ball.y) / distToGoal) * (0.6 + pull * 0.8);
+        }
+
+        ball.x += ball.vx; ball.y += ball.vy;
+        if (ball.x - ball.radius < 0) { ball.x = ball.radius; ball.vx *= -0.8; }
+        if (ball.x + ball.radius > WORLD_WIDTH) { ball.x = WORLD_WIDTH - ball.radius; ball.vx *= -0.8; }
+        if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.vy *= -0.8; }
+        if (ball.y + ball.radius > WORLD_HEIGHT) { ball.y = WORLD_HEIGHT - ball.radius; ball.vy *= -0.8; }
+
+        let distOB = Math.hypot(ball.x - otter.x, ball.y - otter.y);
+        if (distOB < otter.radius + ball.radius) {
+            let nx = (ball.x - otter.x) / distOB; let ny = (ball.y - otter.y) / distOB;
+            // Move ball out of collision
+            ball.x += nx * ((otter.radius + ball.radius) - distOB); ball.y += ny * ((otter.radius + ball.radius) - distOB);
+            // Transfer momentum naturally without killing otter speed abruptly
+            let pushForce = (speed * 0.8) / ball.mass; 
+            ball.vx += nx * pushForce; ball.vy += ny * pushForce;
+            otter.vx *= 0.95; otter.vy *= 0.95; // Smoother push feel
+        }
+    }
+
+    // --- COLLISIONS (ROCKS) ---
+    rocks.forEach(rock => {
+        let distOR = Math.hypot(otter.x - rock.x, otter.y - rock.y);
+        if (distOR < otter.radius + rock.radius * 0.8) { 
+            otter.x += (otter.x - rock.x) / distOR * ((otter.radius + rock.radius * 0.8) - distOR);
+            otter.y += (otter.y - rock.y) / distOR * ((otter.radius + rock.radius * 0.8) - distOR);
+            otter.vx *= 0.5; otter.vy *= 0.5;
+        }
+
+        if (ball.radius > 0) {
+            let distBR = Math.hypot(ball.x - rock.x, ball.y - rock.y);
+            if (distBR < ball.radius + rock.radius * 0.9) {
+                let nx = (ball.x - rock.x) / distBR; let ny = (ball.y - rock.y) / distBR;
+                ball.x += nx * ((ball.radius + rock.radius * 0.9) - distBR); ball.y += ny * ((ball.radius + rock.radius * 0.9) - distBR);
+                let dot = (ball.vx * nx + ball.vy * ny);
+                ball.vx -= 2 * dot * nx * 0.8; ball.vy -= 2 * dot * ny * 0.8;
+                if (Math.random() < 0.2) createParticles(ball.x, ball.y, '#94a3b8', 3);
+            }
+        }
+    });
+
+    // --- HUD UPDATES ---
+    if (gameState === 'TUTORIAL') {
+        uiObjective.innerText = "Tutorial: Follow Elder Bleat's instructions.";
+        uiObjective.className = "text-white font-bold text-sm";
+    } else if (Math.hypot(ball.x - otter.x, ball.y - otter.y) > 400) {
+        uiObjective.innerText = "Objective: Follow Green Arrow to Kudzu Ball";
+        uiObjective.className = "text-green-400 font-bold text-sm";
+    } else {
+        uiObjective.innerText = "Objective: Push Ball to Yellow Goal!";
+        uiObjective.className = "text-yellow-400 font-bold text-sm animate-pulse";
+    }
+
+    // --- GOAT AI ---
+    let anyoneEating = false;
+    goats.forEach(goat => {
+        if (goat.state === 'FAINTED') {
+            goat.faintTimer -= deltaTime;
+            goat.vx *= 0.9; goat.vy *= 0.9; goat.x += goat.vx; goat.y += goat.vy;
+            if (goat.faintTimer <= 0) {
+                goat.state = goat.id === 'elder' && Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y) > 500 ? 'WAITING' : 'CHASING';
+            }
+            return; 
+        }
+
+        if (goat.id === 'elder' && goat.state === 'WAITING' && Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y) < 600 && gameState === 'PLAYING') {
+            goat.state = 'CHASING'; goat.dialogue = "I CAN'T WAIT! GIMME SALAD!";
+            uiObjective.innerText = "Elder Bleat is attacking the ball! Hurry!"; uiObjective.className = "text-red-400 font-bold text-sm animate-pulse";
+        }
+
+        if ((goat.state === 'CHASING' || goat.state === 'EATING') && ball.radius > 0) {
+            let distToBall = Math.hypot(ball.x - goat.x, ball.y - goat.y);
+            if (distToBall < goat.radius + ball.radius + 10) {
+                goat.state = 'EATING'; goat.vx = 0; goat.vy = 0;
+                ball.health -= (goat.id === 'elder' ? 15 : 10) * (deltaTime / 1000); 
+                anyoneEating = true;
+                if (Math.random() < 0.1) createParticles(ball.x, ball.y, '#22c55e', 2);
+            } else {
+                goat.state = 'CHASING';
+                let nx = (ball.x - goat.x) / distToBall; let ny = (ball.y - goat.y) / distToBall;
+                nx += (Math.random() - 0.5) * 0.5; ny += (Math.random() - 0.5) * 0.5;
+                let len = Math.hypot(nx, ny); nx /= len; ny /= len;
+                goat.vx = nx * goat.speed; goat.vy = ny * goat.speed;
+                goat.x += goat.vx; goat.y += goat.vy;
+            }
+        }
+        
+        goat.x = Math.max(goat.radius, Math.min(WORLD_WIDTH - goat.radius, goat.x)); goat.y = Math.max(goat.radius, Math.min(WORLD_HEIGHT - goat.radius, goat.y));
+
+        rocks.forEach(rock => {
+            let distGR = Math.hypot(goat.x - rock.x, goat.y - rock.y);
+            if (distGR < goat.radius + rock.radius * 0.8) {
+                goat.x += (goat.x - rock.x) / distGR * ((goat.radius + rock.radius * 0.8) - distGR); 
+                goat.y += (goat.y - rock.y) / distGR * ((goat.radius + rock.radius * 0.8) - distGR);
+            }
+        });
+
+        // Combat vs Goats
+        let distOG = Math.hypot(goat.x - otter.x, goat.y - otter.y);
+        if (distOG < otter.radius + goat.radius) {
+            let nx = (otter.x - goat.x) / distOG; let ny = (otter.y - goat.y) / distOG;
+            if (speed > 5) { 
+                goat.state = 'FAINTED'; goat.faintTimer = 2500; goat.vx = -nx * speed * 0.8; goat.vy = -ny * speed * 0.8;
+                createParticles(goat.x, goat.y, '#ef4444', 10); cameraShake = 8; otter.vx *= 0.5; otter.vy *= 0.5;
+            } else { otter.vx += nx * 3; otter.vy += ny * 3; }
+        }
+    });
+
+    updateParticles(deltaTime);
+
+    // WIN/LOSS Logic (Only applies to Main Game)
+    if (gameState === 'PLAYING') {
+        if (ball.health <= 0) endGame('GAMEOVER');
+        else if (Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y) < targetZone.radius * 0.2) triggerWinAnimation();
+    }
+
+    // Camera Logic
+    camera.x += (otter.x - canvas.width / 2 - camera.x) * 0.15; camera.y += (otter.y - canvas.height / 2 - camera.y) * 0.15;
+    camera.x = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, camera.x)); camera.y = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, camera.y));
+    
+    if (cameraShake > 0) {
+        camera.x += (Math.random() - 0.5) * cameraShake; camera.y += (Math.random() - 0.5) * cameraShake;
+        cameraShake *= 0.9; if (cameraShake < 0.5) cameraShake = 0;
+    }
+
+    updateUI(anyoneEating);
+}
+
+function updateParticles(deltaTime) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= deltaTime;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function triggerWinAnimation() {
+    gameState = 'WIN_ANIMATION'; winDelayTimer = 2000; cameraShake = 25; 
+    uiHUD.classList.add('hidden'); uiFloating.classList.add('hidden'); btnBark.classList.add('hidden'); joystickZone.classList.add('hidden');
+    for (let i = 0; i < 150; i++) {
+        let isLeaf = Math.random() > 0.5;
+        particles.push({
+            x: ball.x, y: ball.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30,
+            life: 1000 + Math.random() * 1500, size: isLeaf ? 6 + Math.random() * 8 : 4 + Math.random() * 6, color: isLeaf ? '#22c55e' : '#fbbf24'
+        });
+    }
+    ball.radius = 0; 
+}
+
+// ==========================================
+// RENDERING
+// ==========================================
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (gameState === 'START') return;
+
+    ctx.save(); ctx.translate(-camera.x, -camera.y);
+
+    // Environment
+    ctx.fillStyle = currentMode === 'TUTORIAL' ? '#0f172a' : '#1e293b'; 
+    ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    ctx.lineWidth = 2; ctx.strokeStyle = currentMode === 'TUTORIAL' ? '#1e293b' : '#334155';
+    for (let i = 0; i <= WORLD_WIDTH; i+=100) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, WORLD_HEIGHT); ctx.stroke(); }
+    for (let i = 0; i <= WORLD_HEIGHT; i+=100) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(WORLD_WIDTH, i); ctx.stroke(); }
+
+    decorations.forEach(d => {
+        ctx.save(); ctx.translate(d.x, d.y); ctx.scale(d.size, d.size);
+        if (d.type === 'grass') {
+            ctx.strokeStyle = '#166534'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(-5, -5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(0, -8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(5, -4); ctx.stroke();
+        } else {
+            ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; [0, Math.PI/2, Math.PI, Math.PI*1.5].forEach(angle => { ctx.beginPath(); ctx.arc(Math.cos(angle)*4, Math.sin(angle)*4, 2, 0, Math.PI*2); ctx.fill(); });
+        }
+        ctx.restore();
+    });
+
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'; ctx.lineWidth = 4;
+    waterZones.forEach(w => {
+        ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        if (w.r > 100) { ctx.fillStyle = 'rgba(56, 189, 248, 0.3)'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FAST WATER', w.x, w.y); }
+    });
+
+    // Gravity Crater
+    for (let i = 5; i > 0; i--) { ctx.beginPath(); ctx.arc(targetZone.x, targetZone.y, targetZone.radius * (i/5), 0, Math.PI * 2); ctx.fillStyle = `rgba(251, 191, 36, ${0.03 + (5-i)*0.03})`; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(targetZone.x, targetZone.y, targetZone.radius, 0, Math.PI * 2); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6; ctx.setLineDash([15, 15]); ctx.lineDashOffset = -timeElapsed * 0.05; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('DELIVER SALAD', targetZone.x, targetZone.y - 15); ctx.fillText('HERE', targetZone.x, targetZone.y + 15);
+
+    rocks.forEach(rock => {
+        ctx.save(); ctx.translate(rock.x, rock.y); ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            let angle = (i / 8) * Math.PI * 2; let r = rock.radius * rock.offsets[i];
+            if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r); else ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath(); ctx.fillStyle = '#475569'; ctx.fill(); ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(-rock.radius*0.3, -rock.radius*0.3, rock.radius*0.2, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+
+    drawPointers();
+
+    if (ball.radius > 0) {
+        ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(timeElapsed * 0.002 * (ball.vx + ball.vy)); ctx.beginPath();
+        for (let i = 0; i < 12; i++) {
+            let angle = (i / 12) * Math.PI * 2; let r = ball.radius + (i % 2 === 0 ? 5 : -5);
+            if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r); else ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath(); ctx.fillStyle = '#22c55e'; ctx.fill(); ctx.strokeStyle = '#166534'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.restore();
+    }
+
+    goats.forEach(goat => {
+        ctx.save(); ctx.translate(goat.x, goat.y);
+        ctx.rotate(goat.state === 'FAINTED' ? -Math.PI / 2 : (goat.vx !== 0 || goat.vy !== 0 ? Math.atan2(goat.vy, goat.vx) : 0));
+
+        ctx.beginPath(); ctx.arc(0, 0, goat.radius, 0, Math.PI * 2); ctx.fillStyle = goat.color; ctx.fill(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(goat.radius*0.4, -goat.radius*0.2); ctx.lineTo(goat.radius*0.4 + goat.hornSize, -goat.radius*0.6); ctx.lineTo(goat.radius*0.2, -goat.radius*0.6); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(goat.radius*0.4, goat.radius*0.2); ctx.lineTo(goat.radius*0.4 + goat.hornSize, goat.radius*0.6); ctx.lineTo(goat.radius*0.2, goat.radius*0.6); ctx.fill();
+
+        if (goat.state === 'FAINTED') {
+            ctx.fillStyle = '#000'; ctx.font = `${Math.floor(goat.radius*0.6)}px Arial`; ctx.fillText('X', goat.radius*0.2, -goat.radius*0.2); ctx.fillText('X', goat.radius*0.2, goat.radius*0.4);
+        } else {
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(goat.radius*0.4, -goat.radius*0.3, goat.radius*0.25, 0, Math.PI*2); ctx.arc(goat.radius*0.4, goat.radius*0.3, goat.radius*0.25, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.fillRect(goat.radius*0.4, -goat.radius*0.4, goat.radius*0.1, goat.radius*0.2); ctx.fillRect(goat.radius*0.4, goat.radius*0.2, goat.radius*0.1, goat.radius*0.2);
+        }
+
+        if (goat.beard) { ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.moveTo(goat.radius, -goat.radius*0.2); ctx.lineTo(goat.radius + goat.radius*0.6, 0); ctx.lineTo(goat.radius, goat.radius*0.2); ctx.fill(); }
+
+        ctx.rotate(goat.state === 'FAINTED' ? Math.PI / 2 : (goat.vx !== 0 || goat.vy !== 0 ? -Math.atan2(goat.vy, goat.vx) : 0));
+
+        // Draw Diegetic Dialogue Bubble
+        if (goat.dialogue) {
+            ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let textWidth = ctx.measureText(goat.dialogue).width;
+            let bubbleW = Math.min(350, textWidth + 30); let bubbleH = 40;
+            let bubbleY = -goat.radius - 40 + Math.sin(timeElapsed * 0.005) * 5;
+            
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(-bubbleW/2, bubbleY - bubbleH/2, bubbleW, bubbleH, 10); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, bubbleY + bubbleH/2); ctx.lineTo(-10, bubbleY + bubbleH/2 + 10); ctx.lineTo(10, bubbleY + bubbleH/2); ctx.fill();
+            ctx.fillStyle = '#0f172a'; ctx.fillText(goat.dialogue, 0, bubbleY);
+        } else if (goat.state === 'CHASING' && gameState === 'PLAYING') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.beginPath(); ctx.arc(0, -goat.radius - 20, 14, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(-10, -goat.radius - 10, 5, 0, Math.PI*2); ctx.fill(); ctx.font = '16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🌿', 0, -goat.radius - 20);
+        }
+        
+        if (goat.state === 'EATING') {
+            ctx.fillStyle = '#ef4444'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.fillText('CHOMP!', 0, -goat.radius - 15 + Math.sin(timeElapsed * 0.01) * 5);
+        }
+        ctx.restore();
+    });
+
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (otter.trail.length > 1) {
+        ctx.beginPath();
+        for (let i = 0; i < otter.trail.length; i++) {
+            let t = otter.trail[i]; ctx.lineWidth = otter.radius * 1.5 * t.life;
+            ctx.strokeStyle = t.water ? `rgba(14, 165, 233, ${t.life * 0.5})` : `rgba(120, 113, 108, ${t.life * 0.3})`;
+            if (i === 0) ctx.moveTo(t.x, t.y); else ctx.lineTo(t.x, t.y);
+        }
+        ctx.stroke();
+    }
+
+    ctx.translate(otter.x, otter.y);
+    let speed = Math.hypot(otter.vx, otter.vy);
+    if (speed > 0.1) ctx.rotate(Math.atan2(otter.vy, otter.vx));
+
+    ctx.fillStyle = '#57534e'; ctx.beginPath(); ctx.ellipse(-otter.radius*0.75 - (speed*0.5), 0, otter.radius*0.75, otter.radius*0.3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#78716c'; ctx.beginPath(); ctx.ellipse(0, 0, otter.radius + (speed*0.2), otter.radius - (speed*0.1), 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#a8a29e'; ctx.beginPath(); ctx.arc(otter.radius*0.6, 0, otter.radius*0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(otter.radius*0.75, -otter.radius*0.2, otter.radius*0.1, 0, Math.PI*2); ctx.arc(otter.radius*0.75, otter.radius*0.2, otter.radius*0.1, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    if (otter.isBarking) {
+        let radius = otter.barkRadius * (1 - (otter.barkTimer / 300));
+        ctx.beginPath(); ctx.arc(otter.x, otter.y, radius, 0, Math.PI * 2); ctx.strokeStyle = `rgba(59, 130, 246, ${otter.barkTimer / 300})`; ctx.lineWidth = 10; ctx.stroke();
+    }
+
+    if (otter.barkCooldown > 0) {
+        ctx.beginPath(); ctx.arc(otter.x, otter.y, otter.radius + 15, -Math.PI/2, -Math.PI/2 + (Math.PI * 2 * (1 - otter.barkCooldown / otter.barkMaxCooldown)));
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.stroke();
+    } else {
+        let pulse = 1 + Math.sin(timeElapsed * 0.01) * 0.1;
+        ctx.beginPath(); ctx.arc(otter.x, otter.y, (otter.radius + 15) * pulse, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)'; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    particles.forEach(p => {
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 1500; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1.0;
+    });
+
+    ctx.restore();
+}
+
+function drawPointers() {
+    let targetX, targetY, color, label;
+    let distToBall = Math.hypot(ball.x - otter.x, ball.y - otter.y);
+    if (distToBall > 400 && ball.radius > 0) { targetX = ball.x; targetY = ball.y; color = '#22c55e'; label = "BALL"; } 
+    else if (ball.radius > 0) { targetX = targetZone.x; targetY = targetZone.y; color = '#fbbf24'; label = "GOAL"; } 
+    else { return; }
+
+    let angle = Math.atan2(targetY - otter.y, targetX - otter.x);
+    ctx.save(); ctx.translate(otter.x, otter.y); ctx.rotate(angle);
+    ctx.translate(otter.radius + 50, 0);
+    ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, -12); ctx.lineTo(-5, 0); ctx.lineTo(-10, 12); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#000'; ctx.stroke();
+    ctx.rotate(-angle);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.beginPath(); ctx.roundRect(-20, -25, 40, 16, 4); ctx.fill();
+    ctx.fillStyle = color; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, -17);
+    ctx.restore();
+}
+
+function createParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 500 + Math.random() * 500, size: 2 + Math.random() * 4, color: color });
+}
+
+function updateUI(isEating) {
+    if (gameState === 'PLAYING') {
+        let ms = Math.floor((timeElapsed % 1000) / 10); let s = Math.floor((timeElapsed / 1000) % 60); let m = Math.floor(timeElapsed / 60000);
+        uiChronometer.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    }
+
+    if (ball && ball.radius > 0 && (gameState === 'PLAYING' || tutPhase !== 'MOVE')) {
+        uiBallHealthContainer.classList.remove('hidden');
+        uiBallHealthContainer.style.left = `${ball.x - camera.x}px`; uiBallHealthContainer.style.top = `${ball.y - camera.y - ball.radius - 15}px`;
+        let pct = (ball.health / ball.maxHealth) * 100; uiBallHealthFill.style.width = `${Math.max(0, pct)}%`;
+        if (isEating) { uiBallHealthFill.style.backgroundColor = (Math.floor(timeElapsed / 100) % 2 === 0) ? '#ffffff' : '#ef4444'; cameraShake = Math.max(cameraShake, 2); } 
+        else { uiBallHealthFill.style.backgroundColor = pct > 50 ? '#22c55e' : (pct > 25 ? '#eab308' : '#ef4444'); }
+    } else {
+        uiBallHealthContainer.classList.add('hidden');
+    }
+}
+
+// ==========================================
+// GAME FLOW MANAGEMENT
+// ==========================================
+
+function loop(timestamp) {
+    let deltaTime = timestamp - lastTime; lastTime = timestamp;
+    if (deltaTime > 100) deltaTime = 16; 
+    update(deltaTime); draw(); requestAnimationFrame(loop);
+}
+
+function startTutorial() {
+    startScreen.classList.add('hidden-screen');
+    fadeScreen.classList.remove('hidden-screen');
+    
+    setTimeout(() => {
+        initEntities('TUTORIAL');
+        gameState = 'TUTORIAL'; tutPhase = 'MOVE'; tutTimer = 0;
+        camera = { x: 0, y: 0, zoom: 1 }; joy.active = false;
+        
+        uiHUD.classList.remove('hidden'); uiFloating.classList.remove('hidden'); btnBark.classList.remove('hidden');
+        joystickZone.classList.remove('hidden');
+        btnSkipTut.classList.remove('hidden'); uiChronoContainer.classList.add('hidden');
+        
+        fadeScreen.classList.add('hidden-screen');
+        lastTime = performance.now();
+    }, 500);
+}
+
+function startMainGame() {
+    startScreen.classList.add('hidden-screen'); winScreen.classList.add('hidden-screen'); gameOverScreen.classList.add('hidden-screen');
+    fadeScreen.classList.remove('hidden-screen');
+    
+    setTimeout(() => {
+        initEntities('MAIN');
+        gameState = 'PLAYING'; timeElapsed = 0; cameraShake = 0;
+        camera = { x: 0, y: 0, zoom: 1 }; joy.active = false; barkTriggered = false;
+        
+        uiHUD.classList.remove('hidden'); uiFloating.classList.remove('hidden'); btnBark.classList.remove('hidden');
+        joystickZone.classList.remove('hidden');
+        btnSkipTut.classList.add('hidden'); uiChronoContainer.classList.remove('hidden');
+        uiChronometer.innerText = "00:00.00";
+        
+        fadeScreen.classList.add('hidden-screen');
+        lastTime = performance.now();
+    }, 500);
+}
+
+function endGame(result) {
+    if (gameState !== 'WIN_ANIMATION' && gameState !== 'GAMEOVER') {
+        gameState = result;
+        uiHUD.classList.add('hidden'); uiFloating.classList.add('hidden'); btnBark.classList.add('hidden'); joystickZone.classList.add('hidden');
+    }
+    if (result === 'GAMEOVER') {
+        gameState = 'GAMEOVER'; gameOverScreen.classList.remove('hidden-screen');
+    } else if (result === 'WIN') {
+        gameState = 'WIN';
+        document.getElementById('final-time').innerText = uiChronometer.innerText;
+        document.getElementById('final-health').innerText = `${Math.round((ball.health/ball.maxHealth)*100)}%`;
+        winScreen.classList.remove('hidden-screen');
+    }
+}
+
+document.getElementById('btn-tutorial').addEventListener('click', startTutorial);
+document.getElementById('btn-skip').addEventListener('click', startMainGame);
+btnSkipTut.addEventListener('click', startMainGame);
+
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
