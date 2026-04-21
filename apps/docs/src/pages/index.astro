@@ -1,0 +1,16 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../components/Hero";
+import GamesGrid from "../components/GamesGrid";
+import TechStack from "../components/TechStack";
+import Footer from "../components/Footer";
+---
+
+<BaseLayout title="ARCADE CABINET — Where Games Come Alive">
+  <main>
+    <Hero client:load />
+    <GamesGrid client:visible />
+    <TechStack client:visible />
+    <Footer client:visible />
+  </main>
+</BaseLayout>

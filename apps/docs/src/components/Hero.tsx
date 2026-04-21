@@ -1,0 +1,420 @@
+import { useEffect, useRef, useState } from "react";
+
+const TAGLINE_LINES = [
+  "Where every frame",
+  "is a universe.",
+];
+
+const BADGES = ["React Three Fiber", "WebGL", "TypeScript", "Astro"];
+
+export default function Hero() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [tick, setTick] = useState(0);
+
+  // Animate gradient angle tick for subtle rainbow border shimmer
+  useEffect(() => {
+    let frame: number;
+    let t = 0;
+    const animate = () => {
+      t += 0.5;
+      setTick(Math.floor(t) % 360);
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Draw animated neon grid on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let t = 0;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const cols = 20;
+      const rows = 10;
+      const cellW = w / cols;
+      const cellH = h / rows;
+
+      ctx.lineWidth = 0.5;
+
+      // Draw vertical lines
+      for (let i = 0; i <= cols; i++) {
+        const x = i * cellW;
+        const hue = ((i / cols) * 360 + t * 0.3) % 360;
+        ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.15)`;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+
+      // Draw horizontal lines
+      for (let j = 0; j <= rows; j++) {
+        const y = j * cellH;
+        const hue = ((j / rows) * 360 + t * 0.3 + 180) % 360;
+        ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.12)`;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // Draw floating dots at intersections
+      for (let i = 0; i <= cols; i++) {
+        for (let j = 0; j <= rows; j++) {
+          const hue = ((i + j) * 18 + t * 0.5) % 360;
+          const pulse = 0.3 + 0.7 * Math.abs(Math.sin((t * 0.02 + i * 0.3 + j * 0.5)));
+          ctx.fillStyle = `hsla(${hue}, 100%, 75%, ${0.2 * pulse})`;
+          ctx.beginPath();
+          ctx.arc(i * cellW, j * cellH, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      t += 0.8;
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <section
+      style={{
+        position: "relative",
+        minHeight: "100svh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem",
+        overflow: "hidden",
+        background: "radial-gradient(ellipse 120% 80% at 50% 0%, #1a0a2e 0%, #0a0a0b 60%)",
+      }}
+    >
+      {/* Animated grid canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Glow orbs */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: "10%",
+          left: "15%",
+          width: "400px",
+          height: "400px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
+          filter: "blur(40px)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          bottom: "15%",
+          right: "10%",
+          width: "500px",
+          height: "500px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(14,165,233,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: "40%",
+          right: "25%",
+          width: "300px",
+          height: "300px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)",
+          filter: "blur(50px)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Content */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          textAlign: "center",
+          maxWidth: "900px",
+          width: "100%",
+        }}
+      >
+        {/* Logo / wordmark */}
+        <div
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.75rem",
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.75rem",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              width: "32px",
+              height: "2px",
+              background: "var(--gradient-rainbow)",
+              backgroundSize: "200% 200%",
+            }}
+          />
+          <span>jbcom / arcade-cabinet</span>
+          <span
+            style={{
+              display: "inline-block",
+              width: "32px",
+              height: "2px",
+              background: "var(--gradient-rainbow)",
+              backgroundSize: "200% 200%",
+            }}
+          />
+        </div>
+
+        {/* Main headline */}
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 800,
+            fontSize: "clamp(3rem, 10vw, 8rem)",
+            lineHeight: 1.0,
+            letterSpacing: "-0.03em",
+            marginBottom: "0.5rem",
+            background: `linear-gradient(135deg, #ef4444 0%, #f97316 12%, #eab308 25%, #84cc16 37%, #06b6d4 50%, #0ea5e9 62%, #8b5cf6 75%, #ec4899 87%, #ef4444 100%)`,
+            backgroundSize: "200% 200%",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            animation: "gradientShift 8s ease infinite",
+          }}
+        >
+          ARCADE
+        </h1>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 800,
+            fontSize: "clamp(3rem, 10vw, 8rem)",
+            lineHeight: 1.0,
+            letterSpacing: "-0.03em",
+            marginBottom: "2rem",
+            color: "var(--color-text)",
+          }}
+        >
+          CABINET
+        </h1>
+
+        {/* Tagline */}
+        <p
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
+            fontWeight: 400,
+            color: "var(--color-text-muted)",
+            marginBottom: "3rem",
+            lineHeight: 1.5,
+          }}
+        >
+          {TAGLINE_LINES.join(" ")}
+          <br />
+          <span style={{ color: "var(--color-text)", fontStyle: "italic" }}>
+            A monorepo of browser games
+          </span>{" "}
+          built with React Three Fiber.
+        </p>
+
+        {/* Tech badges */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            justifyContent: "center",
+            marginBottom: "3rem",
+          }}
+        >
+          {BADGES.map((badge, i) => {
+            const colors = [
+              { bg: "rgba(14,165,233,0.15)", border: "rgba(14,165,233,0.4)", text: "#0ea5e9" },
+              { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.4)", text: "#8b5cf6" },
+              { bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.4)", text: "#ec4899" },
+              { bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.4)", text: "#06b6d4" },
+            ];
+            const c = colors[i % colors.length]!;
+            return (
+              <span
+                key={badge}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.05em",
+                  padding: "0.4rem 1rem",
+                  borderRadius: "999px",
+                  background: c.bg,
+                  border: `1px solid ${c.border}`,
+                  color: c.text,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {badge}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* CTAs */}
+        <div
+          style={{
+            display: "flex",
+            gap: "1rem",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <a
+            href="#games"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: "1rem",
+              padding: "0.875rem 2.5rem",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, #8b5cf6, #0ea5e9)",
+              color: "#fff",
+              letterSpacing: "0.02em",
+              transition: "opacity 0.2s, transform 0.2s",
+              display: "inline-block",
+              boxShadow: "0 0 30px rgba(139,92,246,0.4)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.opacity = "0.9";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+            }}
+          >
+            Explore Games
+          </a>
+          <a
+            href="https://github.com/jbcom/arcade-cabinet"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: "1rem",
+              padding: "0.875rem 2.5rem",
+              borderRadius: "8px",
+              background: "transparent",
+              color: "var(--color-text)",
+              letterSpacing: "0.02em",
+              border: "1px solid var(--color-border)",
+              transition: "border-color 0.2s, transform 0.2s",
+              display: "inline-block",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(139,92,246,0.6)";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--color-border)";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+            }}
+          >
+            View on GitHub
+          </a>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "2rem",
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.5rem",
+          color: "var(--color-text-muted)",
+          animation: "bounce 2s ease infinite",
+        }}
+        aria-hidden="true"
+      >
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", letterSpacing: "0.2em" }}>
+          SCROLL
+        </span>
+        <svg width="16" height="24" viewBox="0 0 16 24" fill="none">
+          <rect x="1" y="1" width="14" height="22" rx="7" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="8" cy="8" r="2.5" fill="currentColor" style={{ animation: "scrollDot 2s ease infinite" }} />
+        </svg>
+      </div>
+
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(6px); }
+        }
+        @keyframes scrollDot {
+          0% { cy: 8; opacity: 1; }
+          100% { cy: 16; opacity: 0; }
+        }
+      `}</style>
+    </section>
+  );
+}
