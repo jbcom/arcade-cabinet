@@ -6,7 +6,15 @@ const LINKS = [
   { label: "Discussions", href: "https://github.com/jbcom/arcade-cabinet/discussions" },
 ];
 
-const RAINBOW_COLORS = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#06b6d4", "#8b5cf6", "#ec4899"];
+const RAINBOW_COLORS = [
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#84cc16",
+  "#06b6d4",
+  "#8b5cf6",
+  "#ec4899",
+];
 
 export default function Footer() {
   return (
@@ -27,9 +35,9 @@ export default function Footer() {
         }}
         aria-hidden="true"
       >
-        {RAINBOW_COLORS.map((color, i) => (
+        {RAINBOW_COLORS.map((color) => (
           <div
-            key={i}
+            key={color}
             style={{
               width: "32px",
               height: "3px",

@@ -1,30 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-const TAGLINE_LINES = [
-  "Where every frame",
-  "is a universe.",
-];
+const TAGLINE_LINES = ["Where every frame", "is a universe."];
 
 const BADGES = ["React Three Fiber", "WebGL", "TypeScript", "Astro"];
 
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [tick, setTick] = useState(0);
-
-  // Animate gradient angle tick for subtle rainbow border shimmer
-  useEffect(() => {
-    let frame: number;
-    let t = 0;
-    const animate = () => {
-      t += 0.5;
-      setTick(Math.floor(t) % 360);
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  // Draw animated neon grid on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -81,7 +62,7 @@ export default function Hero() {
       for (let i = 0; i <= cols; i++) {
         for (let j = 0; j <= rows; j++) {
           const hue = ((i + j) * 18 + t * 0.5) % 360;
-          const pulse = 0.3 + 0.7 * Math.abs(Math.sin((t * 0.02 + i * 0.3 + j * 0.5)));
+          const pulse = 0.3 + 0.7 * Math.abs(Math.sin(t * 0.02 + i * 0.3 + j * 0.5));
           ctx.fillStyle = `hsla(${hue}, 100%, 75%, ${0.2 * pulse})`;
           ctx.beginPath();
           ctx.arc(i * cellW, j * cellH, 2, 0, Math.PI * 2);
@@ -125,7 +106,6 @@ export default function Hero() {
           height: "100%",
           pointerEvents: "none",
         }}
-        aria-hidden="true"
       />
 
       {/* Glow orbs */}
@@ -227,7 +207,8 @@ export default function Hero() {
             lineHeight: 1.0,
             letterSpacing: "-0.03em",
             marginBottom: "0.5rem",
-            background: `linear-gradient(135deg, #ef4444 0%, #f97316 12%, #eab308 25%, #84cc16 37%, #06b6d4 50%, #0ea5e9 62%, #8b5cf6 75%, #ec4899 87%, #ef4444 100%)`,
+            background:
+              "linear-gradient(135deg, #ef4444 0%, #f97316 12%, #eab308 25%, #84cc16 37%, #06b6d4 50%, #0ea5e9 62%, #8b5cf6 75%, #ec4899 87%, #ef4444 100%)",
             backgroundSize: "200% 200%",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -286,8 +267,8 @@ export default function Hero() {
               { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.4)", text: "#8b5cf6" },
               { bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.4)", text: "#ec4899" },
               { bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.4)", text: "#06b6d4" },
-            ];
-            const c = colors[i % colors.length]!;
+            ] as const;
+            const c = colors[i % colors.length] ?? colors[0];
             return (
               <span
                 key={badge}
@@ -391,12 +372,20 @@ export default function Hero() {
         }}
         aria-hidden="true"
       >
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", letterSpacing: "0.2em" }}>
+        <span
+          style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", letterSpacing: "0.2em" }}
+        >
           SCROLL
         </span>
-        <svg width="16" height="24" viewBox="0 0 16 24" fill="none">
+        <svg width="16" height="24" viewBox="0 0 16 24" fill="none" aria-hidden="true">
           <rect x="1" y="1" width="14" height="22" rx="7" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="8" cy="8" r="2.5" fill="currentColor" style={{ animation: "scrollDot 2s ease infinite" }} />
+          <circle
+            cx="8"
+            cy="8"
+            r="2.5"
+            fill="currentColor"
+            style={{ animation: "scrollDot 2s ease infinite" }}
+          />
         </svg>
       </div>
 

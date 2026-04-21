@@ -7,12 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".astro",
-      "*.tsbuildinfo"
-    ]
+    "ignore": ["node_modules", "dist", ".astro", "*.tsbuildinfo"]
   },
   "formatter": {
     "enabled": true,

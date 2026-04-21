@@ -143,6 +143,24 @@ vite.config.ts.timestamp-*
 
 # pnpm
 .pnpm-store/
+.pnpm-debug.log*
+
+# Build outputs
+apps/*/dist/
+packages/*/dist/
+
+# Vitest
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Astro
+.astro/
+
+# pnpm
+.pnpm-store/
 .pnpm-debug.log
 
 # Build outputs

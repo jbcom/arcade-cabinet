@@ -83,7 +83,8 @@ export default function GamesGrid() {
             margin: "0 auto",
           }}
         >
-          Each game is an independent React Three Fiber experience, playable directly in your browser.
+          Each game is an independent React Three Fiber experience, playable directly in your
+          browser.
         </p>
       </div>
 
@@ -149,6 +150,7 @@ function GameCard({
           height="100%"
           style={{ position: "absolute", inset: 0, opacity: 0.3 }}
           preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
         >
           <defs>
             <pattern id={`grid-${game.id}`} width="20" height="20" patternUnits="userSpaceOnUse">

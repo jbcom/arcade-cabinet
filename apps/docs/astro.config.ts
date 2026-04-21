@@ -5,9 +5,6 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://jbcom.github.io",
   base: "/arcade-cabinet",
-  integrations: [
-    react(),
-    sitemap(),
-  ],
+  integrations: [react(), sitemap()],
   output: "static",
 });
