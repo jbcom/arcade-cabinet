@@ -9,13 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@koota/core": "^0.2.4",
+    "@koota/react": "^0.2.4",
     "@react-three/fiber": "^9.0.0",
     "@react-three/drei": "^10.0.0",
     "@react-three/postprocessing": "^3.0.0",
     "postprocessing": "^6.36.3",
     "react": "^19.0.0",
-    "three": "^0.176.0",
-    "zustand": "^5.0.0"
+    "three": "^0.176.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

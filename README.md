@@ -22,7 +22,7 @@
 
 ## Structure
 
-```
+```text
 arcade-cabinet/
 ├── apps/
 │   └── docs/          # Astro landing page (GitHub Pages)
@@ -44,7 +44,7 @@ arcade-cabinet/
 
 The landing page hero supports a custom image. Place your image at:
 
-```
+```text
 apps/docs/public/hero.png
 ```
 
@@ -71,7 +71,7 @@ pnpm typecheck
 
 ## GitHub Actions Setup
 
-Add a `CI_GITHUB_TOKEN` secret (Personal Access Token with `repo` and `workflow` scopes) to the repository for Release Please to open release PRs.
+Add a `CI_GITHUB_TOKEN` secret to the repository for Release Please to open release PRs. The recommended approach is to use a **fine-grained Personal Access Token** with only `contents: write` and `pull-requests: write` permissions (not a classic PAT with broad `repo`/`workflow` scopes). See the [Release Please credentials docs](https://github.com/googleapis/release-please-action#credentials) for details. This token is referenced as `CI_GITHUB_TOKEN` in `.github/workflows/cd.yml`.
 
 GitHub Pages must be enabled with **Source: GitHub Actions** in repository Settings → Pages.
 

@@ -1,10 +1,10 @@
 /* eslint-disable */
 // @ts-nocheck
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { create } from 'zustand';
+import { createWorld, trait, useWorld } from '@koota/react';
 
 // --- 1. CONSTANTS & TYPES ---
 const GRID_SIZE = 64;
@@ -84,132 +84,178 @@ const generateMap = () => {
   return grid;
 };
 
-// --- 3. ZUSTAND STORE & SIMULATION ---
-const useGameStore = create((set, get) => ({
-  grid: [],
-  time: 8,
-  funds: 25000,
-  population: 0, jobs: 0, happiness: 100,
-  powerUse: 0, powerMax: 0, waterUse: 0, waterMax: 0,
-  milestone: 1,
-  selectedTool: 'INSPECT',
-  inspectedTileIdx: null,
-  heatmap: false,
+// --- 3. KOOTA ECS WORLD & TRAITS ---
 
-  initMap: () => set({ grid: generateMap() }),
-  setTool: (t) => set({ selectedTool: t, inspectedTileIdx: t !== 'INSPECT' ? null : get().inspectedTileIdx }),
-  setInspectedTile: (idx) => set({ inspectedTileIdx: idx }),
-  toggleHeatmap: () => set(s => ({ heatmap: !s.heatmap })),
+// Traits represent slices of game state stored on a singleton "game" entity.
+const GridTrait = trait(() => ({ grid: [] }));
+const TimeTrait = trait(() => ({ time: 8 }));
+const EconomyTrait = trait(() => ({ funds: 25000, population: 0, jobs: 0, happiness: 100 }));
+const UtilityTrait = trait(() => ({ powerUse: 0, powerMax: 0, waterUse: 0, waterMax: 0 }));
+const MilestoneTrait = trait(() => ({ milestone: 1 }));
+const UiTrait = trait(() => ({ selectedTool: 'INSPECT', inspectedTileIdx: null, heatmap: false }));
 
-  handleInteraction: (x, z) => {
-    const { grid, funds, selectedTool } = get();
-    if (x < 0 || x >= GRID_SIZE || z < 0 || z >= GRID_SIZE) return;
-    const idx = z * GRID_SIZE + x;
-    const tile = grid[idx];
-    if (selectedTool === 'INSPECT') { set({ inspectedTileIdx: idx }); return; }
-    if (selectedTool === 'NONE') return;
-    if (selectedTool === 'BULLDOZE') {
-      if (tile.building !== 'NONE') {
-        const newGrid = [...grid]; newGrid[idx] = { ...tile, building: 'NONE', level: 0, warning: 'NONE' };
-        set({ grid: newGrid, funds: funds - 5, inspectedTileIdx: null });
-      } else if (tile.terrain === 'FOREST') {
-        const newGrid = [...grid]; newGrid[idx] = { ...tile, terrain: 'GRASS' };
-        set({ grid: newGrid, funds: funds - 20, inspectedTileIdx: null });
-      }
-      return;
+// The world is created once and provided via React context.
+const GameWorld = createWorld();
+
+// Helper: get the singleton game entity per world instance (WeakMap avoids stale refs on HMR).
+const _entityMap = new WeakMap();
+const getGameEntity = (world) => {
+  if (!_entityMap.has(world)) {
+    _entityMap.set(world, world.create(GridTrait, TimeTrait, EconomyTrait, UtilityTrait, MilestoneTrait, UiTrait));
+  }
+  return _entityMap.get(world);
+};
+
+// Action helpers that mutate traits directly on the world.
+const initMap = (world) => {
+  const e = getGameEntity(world);
+  world.set(e, GridTrait, { grid: generateMap() });
+};
+
+const setTool = (world, tool) => {
+  const e = getGameEntity(world);
+  const ui = world.get(e, UiTrait);
+  world.set(e, UiTrait, { ...ui, selectedTool: tool, inspectedTileIdx: tool !== 'INSPECT' ? null : ui.inspectedTileIdx });
+};
+
+const setInspectedTile = (world, idx) => {
+  const e = getGameEntity(world);
+  const ui = world.get(e, UiTrait);
+  world.set(e, UiTrait, { ...ui, inspectedTileIdx: idx });
+};
+
+const toggleHeatmap = (world) => {
+  const e = getGameEntity(world);
+  const ui = world.get(e, UiTrait);
+  world.set(e, UiTrait, { ...ui, heatmap: !ui.heatmap });
+};
+
+const handleInteraction = (world, x, z) => {
+  const e = getGameEntity(world);
+  const { grid } = world.get(e, GridTrait);
+  const { funds } = world.get(e, EconomyTrait);
+  const { selectedTool } = world.get(e, UiTrait);
+  if (x < 0 || x >= GRID_SIZE || z < 0 || z >= GRID_SIZE) return;
+  const idx = z * GRID_SIZE + x;
+  const tile = grid[idx];
+  if (selectedTool === 'INSPECT') { setInspectedTile(world, idx); return; }
+  if (selectedTool === 'NONE') return;
+  if (selectedTool === 'BULLDOZE') {
+    if (tile.building !== 'NONE') {
+      const newGrid = [...grid]; newGrid[idx] = { ...tile, building: 'NONE', level: 0, warning: 'NONE' };
+      world.set(e, GridTrait, { grid: newGrid });
+      world.set(e, EconomyTrait, { ...world.get(e, EconomyTrait), funds: funds - 5 });
+      setInspectedTile(world, null);
+    } else if (tile.terrain === 'FOREST') {
+      const newGrid = [...grid]; newGrid[idx] = { ...tile, terrain: 'GRASS' };
+      world.set(e, GridTrait, { grid: newGrid });
+      world.set(e, EconomyTrait, { ...world.get(e, EconomyTrait), funds: funds - 20 });
+      setInspectedTile(world, null);
     }
-    if (tile.terrain === 'WATER' && selectedTool !== 'WATER_PUMP' && selectedTool !== 'ROAD') return;
-    if (tile.terrain === 'FOREST') return;
-    if (tile.building !== 'NONE') return;
-    const cost = BUILDINGS[selectedTool].cost;
-    if (funds < cost) return;
-    const newGrid = [...grid]; newGrid[idx] = { ...tile, building: selectedTool, level: 0 };
-    set({ grid: newGrid, funds: funds - cost, inspectedTileIdx: null });
-  },
+    return;
+  }
+  if (tile.terrain === 'WATER' && selectedTool !== 'WATER_PUMP' && selectedTool !== 'ROAD') return;
+  if (tile.terrain === 'FOREST') return;
+  if (tile.building !== 'NONE') return;
+  const cost = BUILDINGS[selectedTool].cost;
+  if (funds < cost) return;
+  const newGrid = [...grid]; newGrid[idx] = { ...tile, building: selectedTool, level: 0 };
+  world.set(e, GridTrait, { grid: newGrid });
+  world.set(e, EconomyTrait, { ...world.get(e, EconomyTrait), funds: funds - cost });
+  setInspectedTile(world, null);
+};
 
-  tick: () => {
-    const state = get();
-    if (!state.grid.length) return;
-    const newGrid = [...state.grid];
-    let time = state.time + 1;
-    if (time >= 24) time = 0;
-    let pMax = 0, pUse = 0, wMax = 0, wUse = 0;
-    let pop = 0, jobs = 0, upkeep = 0;
-    const powerSources = []; const waterSources = [];
-    for (let i = 0; i < newGrid.length; i++) {
-      const t = newGrid[i];
-      if (t.building === 'POWER') { pMax += 200; powerSources.push(i); }
-      if (t.building === 'WATER_PUMP') { wMax += 200; waterSources.push(i); }
-      if (t.building === 'RESIDENTIAL' && t.level > 0) pop += t.level * 4;
-      if ((t.building === 'COMMERCIAL' || t.building === 'INDUSTRIAL') && t.level > 0) jobs += t.level * 4;
-      if (t.building !== 'NONE' && t.building !== 'ROAD') upkeep += 2;
-    }
-    const poweredSet = new Set(); const wateredSet = new Set(); const roadSet = new Set();
-    for (let i = 0; i < newGrid.length; i++) { if (newGrid[i].building === 'ROAD') roadSet.add(i); }
-    const runBFS = (sources, resultSet) => {
-      const queue = [...sources]; const visited = new Set(sources);
-      while (queue.length > 0) {
-        const curr = queue.shift(); resultSet.add(curr);
-        const x = curr % GRID_SIZE; const z = Math.floor(curr / GRID_SIZE);
-        const neighbors = [[x+1,z],[x-1,z],[x,z+1],[x,z-1]];
-        for (const [nx,nz] of neighbors) {
-          if (nx>=0&&nx<GRID_SIZE&&nz>=0&&nz<GRID_SIZE) {
-            const nIdx = nz*GRID_SIZE+nx;
-            if (!visited.has(nIdx)&&(roadSet.has(nIdx)||newGrid[nIdx].building!=='NONE')) {
-              visited.add(nIdx);
-              if (roadSet.has(nIdx)) queue.push(nIdx);
-              resultSet.add(nIdx);
-            }
+const tick = (world) => {
+  const e = getGameEntity(world);
+  const { grid } = world.get(e, GridTrait);
+  const economy = world.get(e, EconomyTrait);
+  const { milestone } = world.get(e, MilestoneTrait);
+  let { time } = world.get(e, TimeTrait);
+  if (!grid.length) return;
+  const newGrid = [...grid];
+  time = (time + 1) % 24;
+  let pMax = 0, pUse = 0, wMax = 0, wUse = 0;
+  let pop = 0, jobs = 0, upkeep = 0;
+  const powerSources = []; const waterSources = [];
+  for (let i = 0; i < newGrid.length; i++) {
+    const t = newGrid[i];
+    if (t.building === 'POWER') { pMax += 200; powerSources.push(i); }
+    if (t.building === 'WATER_PUMP') { wMax += 200; waterSources.push(i); }
+    if (t.building === 'RESIDENTIAL' && t.level > 0) pop += t.level * 4;
+    if ((t.building === 'COMMERCIAL' || t.building === 'INDUSTRIAL') && t.level > 0) jobs += t.level * 4;
+    if (t.building !== 'NONE' && t.building !== 'ROAD') upkeep += 2;
+  }
+  const poweredSet = new Set(); const wateredSet = new Set(); const roadSet = new Set();
+  for (let i = 0; i < newGrid.length; i++) { if (newGrid[i].building === 'ROAD') roadSet.add(i); }
+  const runBFS = (sources, resultSet) => {
+    const queue = [...sources]; const visited = new Set(sources);
+    while (queue.length > 0) {
+      const curr = queue.shift(); resultSet.add(curr);
+      const x = curr % GRID_SIZE; const z = Math.floor(curr / GRID_SIZE);
+      const neighbors = [[x+1,z],[x-1,z],[x,z+1],[x,z-1]];
+      for (const [nx,nz] of neighbors) {
+        if (nx>=0&&nx<GRID_SIZE&&nz>=0&&nz<GRID_SIZE) {
+          const nIdx = nz*GRID_SIZE+nx;
+          if (!visited.has(nIdx)&&(roadSet.has(nIdx)||newGrid[nIdx].building!=='NONE')) {
+            visited.add(nIdx);
+            if (roadSet.has(nIdx)) queue.push(nIdx);
+            resultSet.add(nIdx);
           }
         }
       }
-    };
-    if (pMax > 0) runBFS(powerSources, poweredSet);
-    if (wMax > 0) runBFS(waterSources, wateredSet);
-    let globalHap = 100;
-    if (pUse > pMax) globalHap -= 20;
-    if (wUse > wMax) globalHap -= 20;
-    for (let i = 0; i < newGrid.length; i++) {
-      const t = newGrid[i];
-      let localHap = 50;
-      const x = t.x, z = t.z;
-      const neighbors = [[x+1,z],[x-1,z],[x,z+1],[x,z-1],[x+1,z+1],[x-1,z-1]];
-      let hasRoad = false;
-      for (const [nx,nz] of neighbors) {
-        if (nx>=0&&nx<GRID_SIZE&&nz>=0&&nz<GRID_SIZE) {
-          const nTile = newGrid[nz*GRID_SIZE+nx];
-          if (nTile.building==='ROAD') hasRoad = true;
-          if (nTile.terrain==='FOREST'||nTile.terrain==='WATER') localHap += 5;
-          if (nTile.building==='PARK') localHap += 15;
-          if (nTile.building==='INDUSTRIAL') localHap -= 20;
-        }
-      }
-      t.happiness = Math.max(0, Math.min(100, localHap));
-      if (t.building==='NONE'||t.building==='ROAD') continue;
-      t.roadAccess = hasRoad;
-      t.powered = poweredSet.has(i) && pMax > pUse;
-      t.watered = wateredSet.has(i) && wMax > wUse;
-      pUse += (t.level||1)*2; wUse += (t.level||1)*2;
-      t.warning = 'NONE';
-      if (!t.roadAccess) t.warning = 'NO_ROAD';
-      else if (!t.powered && t.building!=='PARK') t.warning = 'NO_POWER';
-      else if (!t.watered && t.building!=='PARK') t.warning = 'NO_WATER';
-      if (t.building==='RESIDENTIAL'||t.building==='COMMERCIAL'||t.building==='INDUSTRIAL') {
-        if (t.roadAccess&&t.powered&&t.watered&&t.happiness>40) { if (Math.random()<0.1&&t.level<5) t.level++; }
-        else if (Math.random()<0.05&&t.level>0) { t.level--; }
+    }
+  };
+  if (pMax > 0) runBFS(powerSources, poweredSet);
+  if (wMax > 0) runBFS(waterSources, wateredSet);
+  let globalHap = 100;
+  if (pUse > pMax) globalHap -= 20;
+  if (wUse > wMax) globalHap -= 20;
+  for (let i = 0; i < newGrid.length; i++) {
+    const t = newGrid[i];
+    let localHap = 50;
+    const x = t.x, z = t.z;
+    const neighbors = [[x+1,z],[x-1,z],[x,z+1],[x,z-1],[x+1,z+1],[x-1,z-1]];
+    let hasRoad = false;
+    for (const [nx,nz] of neighbors) {
+      if (nx>=0&&nx<GRID_SIZE&&nz>=0&&nz<GRID_SIZE) {
+        const nTile = newGrid[nz*GRID_SIZE+nx];
+        if (nTile.building==='ROAD') hasRoad = true;
+        if (nTile.terrain==='FOREST'||nTile.terrain==='WATER') localHap += 5;
+        if (nTile.building==='PARK') localHap += 15;
+        if (nTile.building==='INDUSTRIAL') localHap -= 20;
       }
     }
-    let newMilestone = state.milestone;
-    for (let i = MILESTONES.length-1; i>=0; i--) { if (pop>=MILESTONES[i].popRequired) { newMilestone=MILESTONES[i].tier; break; } }
-    let funds = state.funds;
-    if (time===0) { const taxes = pop*5+jobs*8; funds += taxes-upkeep; }
-    set({ grid: newGrid, time, funds, population: pop, jobs, powerMax: pMax, powerUse: pUse, waterMax: wMax, waterUse: wUse, milestone: newMilestone, happiness: Math.max(0, globalHap) });
+    t.happiness = Math.max(0, Math.min(100, localHap));
+    if (t.building==='NONE'||t.building==='ROAD') continue;
+    t.roadAccess = hasRoad;
+    t.powered = poweredSet.has(i) && pMax > pUse;
+    t.watered = wateredSet.has(i) && wMax > wUse;
+    pUse += (t.level||1)*2; wUse += (t.level||1)*2;
+    t.warning = 'NONE';
+    if (!t.roadAccess) t.warning = 'NO_ROAD';
+    else if (!t.powered && t.building!=='PARK') t.warning = 'NO_POWER';
+    else if (!t.watered && t.building!=='PARK') t.warning = 'NO_WATER';
+    if (t.building==='RESIDENTIAL'||t.building==='COMMERCIAL'||t.building==='INDUSTRIAL') {
+      if (t.roadAccess&&t.powered&&t.watered&&t.happiness>40) { if (Math.random()<0.1&&t.level<5) t.level++; }
+      else if (Math.random()<0.05&&t.level>0) { t.level--; }
+    }
   }
-}));
+  let newMilestone = milestone;
+  for (let i = MILESTONES.length-1; i>=0; i--) { if (pop>=MILESTONES[i].popRequired) { newMilestone=MILESTONES[i].tier; break; } }
+  let funds = economy.funds;
+  if (time===0) { const taxes = pop*5+jobs*8; funds += taxes-upkeep; }
+  world.set(e, GridTrait, { grid: newGrid });
+  world.set(e, TimeTrait, { time });
+  world.set(e, EconomyTrait, { funds, population: pop, jobs, happiness: Math.max(0, globalHap) });
+  world.set(e, UtilityTrait, { powerMax: pMax, powerUse: pUse, waterMax: wMax, waterUse: wUse });
+  world.set(e, MilestoneTrait, { milestone: newMilestone });
+};
 
 // --- 4. R3F SCENE & MESHES ---
 const Lighting = () => {
-  const time = useGameStore(s => s.time);
+  const world = useWorld(GameWorld);
+  const e = getGameEntity(world);
+  const { time } = world.get(e, TimeTrait);
   const hourAngle = ((time - 6) / 24) * Math.PI * 2;
   const sunX = Math.cos(hourAngle) * 50;
   const sunY = Math.sin(hourAngle) * 50;
@@ -242,8 +288,10 @@ const WarningMesh = ({ t }) => {
 };
 
 const InspectedHighlight = () => {
-  const inspectedTileIdx = useGameStore(s => s.inspectedTileIdx);
-  const grid = useGameStore(s => s.grid);
+  const world = useWorld(GameWorld);
+  const e = getGameEntity(world);
+  const { inspectedTileIdx } = world.get(e, UiTrait);
+  const { grid } = world.get(e, GridTrait);
   const ref = useRef(null);
   useFrame(({ clock }) => { if (ref.current) ref.current.position.y = 0.5 + Math.sin(clock.elapsedTime * 5) * 0.05; });
   if (inspectedTileIdx === null || !grid[inspectedTileIdx]) return null;
@@ -257,9 +305,11 @@ const InspectedHighlight = () => {
 };
 
 const WorldMeshes = () => {
-  const grid = useGameStore(s => s.grid);
-  const heatmap = useGameStore(s => s.heatmap);
-  const time = useGameStore(s => s.time);
+  const world = useWorld(GameWorld);
+  const e = getGameEntity(world);
+  const { grid } = world.get(e, GridTrait);
+  const { heatmap } = world.get(e, UiTrait);
+  const { time } = world.get(e, TimeTrait);
   const isNight = time >= 18 || time <= 6;
   const terrainGeo = useMemo(() => new THREE.BoxGeometry(1, 0.5, 1), []);
   const terrainMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.8 }), []);
@@ -325,10 +375,10 @@ const WorldMeshes = () => {
 };
 
 const InteractionPlane = () => {
-  const handleInteraction = useGameStore(s => s.handleInteraction);
+  const world = useWorld(GameWorld);
   return (
     <mesh rotation={[-Math.PI/2, 0, 0]} position={[GRID_SIZE/2, 0.5, GRID_SIZE/2]}
-      onClick={(e) => { e.stopPropagation(); const x = Math.round(e.point.x); const z = Math.round(e.point.z); handleInteraction(x, z); }}>
+      onClick={(e) => { e.stopPropagation(); const x = Math.round(e.point.x); const z = Math.round(e.point.z); handleInteraction(world, x, z); }}>
       <planeGeometry args={[GRID_SIZE * 2, GRID_SIZE * 2]} />
       <meshBasicMaterial transparent opacity={0} depthWrite={false} />
     </mesh>
@@ -337,10 +387,12 @@ const InteractionPlane = () => {
 
 // --- 5. UI COMPONENTS ---
 const TileInspectorPanel = () => {
-  const idx = useGameStore(s => s.inspectedTileIdx);
-  const grid = useGameStore(s => s.grid);
-  if (idx === null || !grid[idx]) return null;
-  const tile = grid[idx];
+  const world = useWorld(GameWorld);
+  const e = getGameEntity(world);
+  const { inspectedTileIdx } = world.get(e, UiTrait);
+  const { grid } = world.get(e, GridTrait);
+  if (inspectedTileIdx === null || !grid[inspectedTileIdx]) return null;
+  const tile = grid[inspectedTileIdx];
   const bData = BUILDINGS[tile.building];
   const hapColor = tile.happiness > 60 ? '#4ade80' : tile.happiness < 40 ? '#f87171' : '#facc15';
   return (
@@ -375,7 +427,13 @@ const TileInspectorPanel = () => {
 };
 
 const HUD = () => {
-  const { funds, population, happiness, time, powerUse, powerMax, milestone, selectedTool, setTool, toggleHeatmap, heatmap } = useGameStore();
+  const world = useWorld(GameWorld);
+  const e = getGameEntity(world);
+  const { funds, population, happiness } = world.get(e, EconomyTrait);
+  const { time } = world.get(e, TimeTrait);
+  const { powerUse, powerMax } = world.get(e, UtilityTrait);
+  const { milestone } = world.get(e, MilestoneTrait);
+  const { selectedTool, heatmap } = world.get(e, UiTrait);
   const currentTier = MILESTONES.find(m => m.tier === milestone);
   const nextTier = MILESTONES.find(m => m.tier === milestone + 1);
   const formatTime = (h) => { const ampm = h >= 12 ? 'PM' : 'AM'; const hour = h % 12 === 0 ? 12 : h % 12; return `${hour}:00 ${ampm}`; };
@@ -402,7 +460,7 @@ const HUD = () => {
           </div>
           <div style={{ ...panelStyle, paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', borderRadius: '9999px', display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>
             <span style={{ color: powerUse > powerMax ? '#f87171' : 'inherit', fontWeight: powerUse > powerMax ? 'bold' : 'normal' }}>⚡ {powerUse}/{powerMax}</span>
-            <button onClick={toggleHeatmap} style={{ marginLeft: '0.5rem', padding: '0 0.5rem', borderRadius: '0.25rem', background: heatmap ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.2)', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto' }}>
+            <button onClick={() => toggleHeatmap(world)} style={{ marginLeft: '0.5rem', padding: '0 0.5rem', borderRadius: '0.25rem', background: heatmap ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.2)', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto' }}>
               👁️ Data Lens
             </button>
           </div>
@@ -413,11 +471,11 @@ const HUD = () => {
 
       <div style={{ background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(24px)', paddingBottom: '1.5rem', paddingTop: '1rem', borderRadius: '1.5rem 1.5rem 0 0', boxShadow: '0 -10px 40px rgba(0,0,0,0.3)', pointerEvents: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
         <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingLeft: '1rem', paddingRight: '1rem', paddingBottom: '0.5rem' }}>
-          <button onClick={() => setTool('INSPECT')} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '4rem', height: '4rem', borderRadius: '1rem', border: selectedTool === 'INSPECT' ? '2px solid #60a5fa' : '2px solid transparent', background: selectedTool === 'INSPECT' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', color: selectedTool === 'INSPECT' ? '#bfdbfe' : 'white', cursor: 'pointer' }}>
+          <button onClick={() => setTool(world, 'INSPECT')} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '4rem', height: '4rem', borderRadius: '1rem', border: selectedTool === 'INSPECT' ? '2px solid #60a5fa' : '2px solid transparent', background: selectedTool === 'INSPECT' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', color: selectedTool === 'INSPECT' ? '#bfdbfe' : 'white', cursor: 'pointer' }}>
             <span style={{ fontSize: '1.25rem' }}>🔍</span>
             <span style={{ fontSize: '10px', marginTop: '0.25rem', fontWeight: 'bold' }}>Inspect</span>
           </button>
-          <button onClick={() => setTool('BULLDOZE')} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '4rem', height: '4rem', borderRadius: '1rem', border: selectedTool === 'BULLDOZE' ? '2px solid #ef4444' : '2px solid transparent', background: selectedTool === 'BULLDOZE' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.05)', color: selectedTool === 'BULLDOZE' ? '#fca5a5' : 'white', cursor: 'pointer' }}>
+          <button onClick={() => setTool(world, 'BULLDOZE')} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '4rem', height: '4rem', borderRadius: '1rem', border: selectedTool === 'BULLDOZE' ? '2px solid #ef4444' : '2px solid transparent', background: selectedTool === 'BULLDOZE' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.05)', color: selectedTool === 'BULLDOZE' ? '#fca5a5' : 'white', cursor: 'pointer' }}>
             <span style={{ fontSize: '1.25rem' }}>🚜</span>
             <span style={{ fontSize: '10px', marginTop: '0.25rem', fontWeight: 'bold' }}>Clear</span>
           </button>
@@ -425,7 +483,7 @@ const HUD = () => {
           {Object.entries(BUILDINGS).filter(([key]) => allowedTools.includes(key)).map(([key, data]) => {
             const isSelected = selectedTool === key;
             return (
-              <button key={key} onClick={() => setTool(key)} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '5rem', height: '5rem', borderRadius: '1rem', border: isSelected ? '2px solid #4ade80' : '2px solid transparent', background: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)', color: isSelected ? 'white' : 'rgba(255,255,255,0.8)', cursor: 'pointer' }}>
+              <button key={key} onClick={() => setTool(world, key)} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '5rem', height: '5rem', borderRadius: '1rem', border: isSelected ? '2px solid #4ade80' : '2px solid transparent', background: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)', color: isSelected ? 'white' : 'rgba(255,255,255,0.8)', cursor: 'pointer' }}>
                 <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '0.375rem', marginBottom: '0.25rem', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)', backgroundColor: data.color }} />
                 <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'white', textAlign: 'center', lineHeight: '1.2', paddingLeft: '0.25rem', paddingRight: '0.25rem' }}>{data.name}</span>
                 <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', marginTop: '0.125rem' }}>${data.cost}</span>
@@ -440,13 +498,20 @@ const HUD = () => {
 
 // --- 6. MAIN EXPORT ---
 export default function Game() {
-  const initMap = useGameStore(s => s.initMap);
-  const tick = useGameStore(s => s.tick);
+  return (
+    <GameWorld.Provider>
+      <GameInner />
+    </GameWorld.Provider>
+  );
+}
+
+function GameInner() {
+  const world = useWorld(GameWorld);
   useEffect(() => {
-    initMap();
-    const interval = setInterval(tick, TICK_RATE_MS);
+    initMap(world);
+    const interval = setInterval(() => tick(world), TICK_RATE_MS);
     return () => clearInterval(interval);
-  }, [initMap, tick]);
+  }, [world]);
   return (
     <div style={{ width: '100%', height: '100vh', background: '#1e293b', overflow: 'hidden', userSelect: 'none', touchAction: 'none' }}>
       <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
@@ -460,3 +525,4 @@ export default function Game() {
     </div>
   );
 }
+

@@ -18,7 +18,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm --filter @arcade-cabinet/docs dev",
+    command: "pnpm --filter @arcade-cabinet/docs build && pnpm --filter @arcade-cabinet/docs preview",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
   },

@@ -153,12 +153,11 @@ export default function Hero() {
 
       {/* Two-column layout */}
       <div
-        className="hero-grid"
+        className={`hero-grid${showImage ? " hero-grid--with-image" : ""}`}
         style={{
           position: "relative",
           zIndex: 1,
           display: "grid",
-          gridTemplateColumns: showImage ? "1fr 1fr" : "1fr",
           gap: "4rem",
           maxWidth: "1200px",
           width: "100%",
@@ -443,6 +442,12 @@ export default function Hero() {
         @keyframes scrollDot {
           0% { cy: 8; opacity: 1; }
           100% { cy: 16; opacity: 0; }
+        }
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+        .hero-grid--with-image {
+          grid-template-columns: 1fr 1fr;
         }
         @media (max-width: 768px) {
           .hero-grid {

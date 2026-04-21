@@ -20,6 +20,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "tsBuildInfoFile": "node_modules/.cache/.tsbuildinfo"
   }
 }
