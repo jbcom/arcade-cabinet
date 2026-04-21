@@ -23,10 +23,14 @@ export default function Hero() {
     let animId: number;
     let t = 0;
 
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = window.devicePixelRatio;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     };
 
     resize();
@@ -78,7 +82,9 @@ export default function Hero() {
       animId = requestAnimationFrame(draw);
     };
 
-    draw();
+    if (!prefersReducedMotion) {
+      draw();
+    }
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
@@ -147,6 +153,7 @@ export default function Hero() {
 
       {/* Two-column layout */}
       <div
+        className="hero-grid"
         style={{
           position: "relative",
           zIndex: 1,
@@ -441,6 +448,9 @@ export default function Hero() {
           .hero-grid {
             grid-template-columns: 1fr !important;
           }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
       `}</style>
     </section>

@@ -11,8 +11,8 @@
   "scripts": {
     "build": "pnpm -r run build",
     "dev": "pnpm -r --parallel run dev",
-    "test": "pnpm -r run test",
-    "test:e2e": "pnpm -r run test:e2e",
+    "test": "vitest",
+    "test:e2e": "playwright test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
