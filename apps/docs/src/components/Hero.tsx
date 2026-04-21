@@ -1,11 +1,19 @@
-import { useEffect, useRef } from "react";
-
-const TAGLINE_LINES = ["Where every frame", "is a universe."];
+import { useEffect, useRef, useState } from "react";
 
 const BADGES = ["React Three Fiber", "WebGL", "TypeScript", "Astro"];
 
+const BADGE_COLORS = [
+  { bg: "rgba(14,165,233,0.15)", border: "rgba(14,165,233,0.4)", text: "#0ea5e9" },
+  { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.4)", text: "#8b5cf6" },
+  { bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.4)", text: "#ec4899" },
+  { bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.4)", text: "#06b6d4" },
+] as const;
+
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [imgError, setImgError] = useState(false);
+
+  // Animated neon grid canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -33,10 +41,8 @@ export default function Hero() {
       const rows = 10;
       const cellW = w / cols;
       const cellH = h / rows;
-
       ctx.lineWidth = 0.5;
 
-      // Draw vertical lines
       for (let i = 0; i <= cols; i++) {
         const x = i * cellW;
         const hue = ((i / cols) * 360 + t * 0.3) % 360;
@@ -47,7 +53,6 @@ export default function Hero() {
         ctx.stroke();
       }
 
-      // Draw horizontal lines
       for (let j = 0; j <= rows; j++) {
         const y = j * cellH;
         const hue = ((j / rows) * 360 + t * 0.3 + 180) % 360;
@@ -58,7 +63,6 @@ export default function Hero() {
         ctx.stroke();
       }
 
-      // Draw floating dots at intersections
       for (let i = 0; i <= cols; i++) {
         for (let j = 0; j <= rows; j++) {
           const hue = ((i + j) * 18 + t * 0.5) % 360;
@@ -75,12 +79,15 @@ export default function Hero() {
     };
 
     draw();
-
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
   }, []);
+
+  const base = import.meta.env.BASE_URL;
+  const heroImgSrc = `${base}hero.png`.replace(/\/\//g, "/");
+  const showImage = !imgError;
 
   return (
     <section
@@ -114,9 +121,9 @@ export default function Hero() {
         style={{
           position: "absolute",
           top: "10%",
-          left: "15%",
-          width: "400px",
-          height: "400px",
+          left: "5%",
+          width: "500px",
+          height: "500px",
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
           filter: "blur(40px)",
@@ -127,8 +134,8 @@ export default function Hero() {
         aria-hidden="true"
         style={{
           position: "absolute",
-          bottom: "15%",
-          right: "10%",
+          bottom: "10%",
+          right: "5%",
           width: "500px",
           height: "500px",
           borderRadius: "50%",
@@ -137,223 +144,250 @@ export default function Hero() {
           pointerEvents: "none",
         }}
       />
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: "40%",
-          right: "25%",
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)",
-          filter: "blur(50px)",
-          pointerEvents: "none",
-        }}
-      />
 
-      {/* Content */}
+      {/* Two-column layout */}
       <div
         style={{
           position: "relative",
           zIndex: 1,
-          textAlign: "center",
-          maxWidth: "900px",
+          display: "grid",
+          gridTemplateColumns: showImage ? "1fr 1fr" : "1fr",
+          gap: "4rem",
+          maxWidth: "1200px",
           width: "100%",
+          alignItems: "center",
         }}
       >
-        {/* Logo / wordmark */}
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.75rem",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color: "var(--color-text-muted)",
-            marginBottom: "1.5rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-          }}
-        >
-          <span
+        {/* Left: Text content */}
+        <div style={{ textAlign: showImage ? "left" : "center" }}>
+          {/* Breadcrumb wordmark */}
+          <div
             style={{
-              display: "inline-block",
-              width: "32px",
-              height: "2px",
-              background: "var(--gradient-rainbow)",
-              backgroundSize: "200% 200%",
-            }}
-          />
-          <span>jbcom / arcade-cabinet</span>
-          <span
-            style={{
-              display: "inline-block",
-              width: "32px",
-              height: "2px",
-              background: "var(--gradient-rainbow)",
-              backgroundSize: "200% 200%",
-            }}
-          />
-        </div>
-
-        {/* Main headline */}
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 800,
-            fontSize: "clamp(3rem, 10vw, 8rem)",
-            lineHeight: 1.0,
-            letterSpacing: "-0.03em",
-            marginBottom: "0.5rem",
-            background:
-              "linear-gradient(135deg, #ef4444 0%, #f97316 12%, #eab308 25%, #84cc16 37%, #06b6d4 50%, #0ea5e9 62%, #8b5cf6 75%, #ec4899 87%, #ef4444 100%)",
-            backgroundSize: "200% 200%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            animation: "gradientShift 8s ease infinite",
-          }}
-        >
-          ARCADE
-        </h1>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 800,
-            fontSize: "clamp(3rem, 10vw, 8rem)",
-            lineHeight: 1.0,
-            letterSpacing: "-0.03em",
-            marginBottom: "2rem",
-            color: "var(--color-text)",
-          }}
-        >
-          CABINET
-        </h1>
-
-        {/* Tagline */}
-        <p
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
-            fontWeight: 400,
-            color: "var(--color-text-muted)",
-            marginBottom: "3rem",
-            lineHeight: 1.5,
-          }}
-        >
-          {TAGLINE_LINES.join(" ")}
-          <br />
-          <span style={{ color: "var(--color-text)", fontStyle: "italic" }}>
-            A monorepo of browser games
-          </span>{" "}
-          built with React Three Fiber.
-        </p>
-
-        {/* Tech badges */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.75rem",
-            justifyContent: "center",
-            marginBottom: "3rem",
-          }}
-        >
-          {BADGES.map((badge, i) => {
-            const colors = [
-              { bg: "rgba(14,165,233,0.15)", border: "rgba(14,165,233,0.4)", text: "#0ea5e9" },
-              { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.4)", text: "#8b5cf6" },
-              { bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.4)", text: "#ec4899" },
-              { bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.4)", text: "#06b6d4" },
-            ] as const;
-            const c = colors[i % colors.length] ?? colors[0];
-            return (
-              <span
-                key={badge}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.75rem",
-                  letterSpacing: "0.05em",
-                  padding: "0.4rem 1rem",
-                  borderRadius: "999px",
-                  background: c.bg,
-                  border: `1px solid ${c.border}`,
-                  color: c.text,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {badge}
-              </span>
-            );
-          })}
-        </div>
-
-        {/* CTAs */}
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <a
-            href="#games"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 600,
-              fontSize: "1rem",
-              padding: "0.875rem 2.5rem",
-              borderRadius: "8px",
-              background: "linear-gradient(135deg, #8b5cf6, #0ea5e9)",
-              color: "#fff",
-              letterSpacing: "0.02em",
-              transition: "opacity 0.2s, transform 0.2s",
-              display: "inline-block",
-              boxShadow: "0 0 30px rgba(139,92,246,0.4)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "0.9";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.7rem",
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+              marginBottom: "1.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              justifyContent: showImage ? "flex-start" : "center",
             }}
           >
-            Explore Games
-          </a>
-          <a
-            href="https://github.com/jbcom/arcade-cabinet"
-            target="_blank"
-            rel="noopener noreferrer"
+            <span
+              style={{
+                display: "inline-block",
+                width: "28px",
+                height: "2px",
+                background: "var(--gradient-rainbow)",
+              }}
+            />
+            <span>jbcom / arcade-cabinet</span>
+            <span
+              style={{
+                display: "inline-block",
+                width: "28px",
+                height: "2px",
+                background: "var(--gradient-rainbow)",
+              }}
+            />
+          </div>
+
+          {/* Headline */}
+          <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontWeight: 600,
-              fontSize: "1rem",
-              padding: "0.875rem 2.5rem",
-              borderRadius: "8px",
-              background: "transparent",
+              fontWeight: 800,
+              fontSize: "clamp(3.5rem, 9vw, 7.5rem)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.03em",
+              marginBottom: "0.2rem",
+              background:
+                "linear-gradient(135deg, #ef4444 0%, #f97316 12%, #eab308 25%, #84cc16 37%, #06b6d4 50%, #0ea5e9 62%, #8b5cf6 75%, #ec4899 87%, #ef4444 100%)",
+              backgroundSize: "200% 200%",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              animation: "gradientShift 8s ease infinite",
+            }}
+          >
+            ARCADE
+          </h1>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: "clamp(3.5rem, 9vw, 7.5rem)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.03em",
+              marginBottom: "1.5rem",
               color: "var(--color-text)",
-              letterSpacing: "0.02em",
-              border: "1px solid var(--color-border)",
-              transition: "border-color 0.2s, transform 0.2s",
-              display: "inline-block",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(139,92,246,0.6)";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--color-border)";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
             }}
           >
-            View on GitHub
-          </a>
+            CABINET
+          </h1>
+
+          {/* Tagline */}
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(1rem, 2vw, 1.35rem)",
+              fontWeight: 400,
+              color: "var(--color-text-muted)",
+              marginBottom: "2.5rem",
+              lineHeight: 1.6,
+              maxWidth: "480px",
+            }}
+          >
+            Where every frame is a universe.{" "}
+            <span style={{ color: "var(--color-text)", fontStyle: "italic" }}>
+              A monorepo of browser games
+            </span>{" "}
+            built with React Three Fiber.
+          </p>
+
+          {/* Tech badges */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.6rem",
+              marginBottom: "2.5rem",
+              justifyContent: showImage ? "flex-start" : "center",
+            }}
+          >
+            {BADGES.map((badge, i) => {
+              const c = BADGE_COLORS[i % BADGE_COLORS.length] ?? BADGE_COLORS[0];
+              return (
+                <span
+                  key={badge}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.72rem",
+                    letterSpacing: "0.05em",
+                    padding: "0.35rem 0.9rem",
+                    borderRadius: "999px",
+                    background: c.bg,
+                    border: `1px solid ${c.border}`,
+                    color: c.text,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {badge}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* CTAs */}
+          <div
+            style={{
+              display: "flex",
+              gap: "1rem",
+              flexWrap: "wrap",
+              justifyContent: showImage ? "flex-start" : "center",
+            }}
+          >
+            <a
+              href="#games"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                padding: "0.8rem 2rem",
+                borderRadius: "8px",
+                background: "linear-gradient(135deg, #8b5cf6, #0ea5e9)",
+                color: "#fff",
+                letterSpacing: "0.02em",
+                transition: "opacity 0.2s, transform 0.2s",
+                display: "inline-block",
+                boxShadow: "0 0 30px rgba(139,92,246,0.35)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.opacity = "0.9";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+              }}
+            >
+              Explore Games
+            </a>
+            <a
+              href="https://github.com/jbcom/arcade-cabinet"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                padding: "0.8rem 2rem",
+                borderRadius: "8px",
+                background: "transparent",
+                color: "var(--color-text)",
+                letterSpacing: "0.02em",
+                border: "1px solid var(--color-border)",
+                transition: "border-color 0.2s, transform 0.2s",
+                display: "inline-block",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(139,92,246,0.6)";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--color-border)";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+              }}
+            >
+              View on GitHub
+            </a>
+          </div>
         </div>
+
+        {/* Right: Hero image */}
+        {showImage && (
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Rainbow ring glow behind image */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: "-8px",
+                borderRadius: "24px",
+                background:
+                  "linear-gradient(135deg, #ef4444, #f97316, #eab308, #84cc16, #06b6d4, #8b5cf6, #ec4899)",
+                backgroundSize: "300% 300%",
+                animation: "gradientShift 6s ease infinite",
+                filter: "blur(16px)",
+                opacity: 0.5,
+              }}
+            />
+            <img
+              src={heroImgSrc}
+              alt="Arcade Cabinet — browser games built in React Three Fiber"
+              onError={() => setImgError(true)}
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "520px",
+                height: "auto",
+                borderRadius: "20px",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 0 0 1px rgba(139,92,246,0.3), 0 40px 80px rgba(0,0,0,0.6)",
+                display: "block",
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Scroll indicator */}
@@ -373,7 +407,7 @@ export default function Hero() {
         aria-hidden="true"
       >
         <span
-          style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", letterSpacing: "0.2em" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: "0.6rem", letterSpacing: "0.2em" }}
         >
           SCROLL
         </span>
@@ -402,6 +436,11 @@ export default function Hero() {
         @keyframes scrollDot {
           0% { cy: 8; opacity: 1; }
           100% { cy: 16; opacity: 0; }
+        }
+        @media (max-width: 768px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </section>
