@@ -7,6 +7,7 @@ import {
 } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { createInitialVoxelState } from "./engine/voxelSimulation";
 import { World } from "./r3f/World";
 import { VoxelTrait } from "./store/traits";
 import { voxelEntity, voxelWorld } from "./store/world";
@@ -16,19 +17,19 @@ function VoxelApp() {
   const state = useTrait(voxelEntity, VoxelTrait);
 
   const handleStart = () => {
-    voxelEntity.set(VoxelTrait, { phase: "playing", hp: 20, maxHp: 20, score: 0, inventory: [] });
+    voxelEntity.set(VoxelTrait, createInitialVoxelState("playing"));
   };
 
   return (
-    <GameViewport background="#7dd3fc">
-      <Canvas shadows camera={{ fov: 75 }} gl={browserTestCanvasGlOptions}>
+    <GameViewport background="#9fd7e8">
+      <Canvas shadows camera={{ fov: 72, position: [0, 4.6, 0] }} gl={browserTestCanvasGlOptions}>
         {state.phase === "playing" && <World />}
       </Canvas>
 
       {state.phase === "menu" && (
         <StartScreen
           title="Voxel Realms"
-          subtitle="Explore the infinite procedural world."
+          subtitle="Step out from a surveyed shoreline camp, read the beacon chain, and map the living terrain before nightfall."
           primaryAction={<OverlayButton onClick={handleStart}>Enter Realm</OverlayButton>}
         />
       )}
@@ -36,20 +37,36 @@ function VoxelApp() {
       {state.phase === "playing" && (
         <>
           <HUD />
-          {/* Simple Crosshair */}
           <div
             style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              color: "white",
+              width: 28,
+              height: 28,
+              border: "2px solid rgba(255, 255, 255, 0.82)",
+              borderRadius: "50%",
               pointerEvents: "none",
-              textShadow: "0 0 2px black",
+              boxShadow:
+                "0 0 12px rgba(14, 165, 233, 0.55), inset 0 0 8px rgba(14, 165, 233, 0.35)",
+              zIndex: 20,
             }}
-          >
-            +
-          </div>
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: "#ffffff",
+              pointerEvents: "none",
+              zIndex: 21,
+            }}
+          />
         </>
       )}
 

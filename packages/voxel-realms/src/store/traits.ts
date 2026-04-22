@@ -1,9 +1,4 @@
 import { trait } from "koota";
+import { createInitialVoxelState } from "../engine/voxelSimulation";
 
-export const VoxelTrait = trait(() => ({
-  phase: "menu",
-  score: 0,
-  hp: 20,
-  maxHp: 20,
-  inventory: [],
-}));
+export const VoxelTrait = trait(() => createInitialVoxelState());

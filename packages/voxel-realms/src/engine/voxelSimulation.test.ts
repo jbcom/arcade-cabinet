@@ -1,0 +1,101 @@
+import { describe, expect, test } from "vitest";
+import { CONFIG } from "./types";
+import {
+  advanceVoxelState,
+  calculateJumpVelocity,
+  calculateMovementVelocity,
+  classifyBiome,
+  createInitialVoxelState,
+  createSpawnCampLayout,
+  findNearestLandmarkDistance,
+  generateChunkData,
+  getProceduralHeight,
+} from "./voxelSimulation";
+
+describe("voxel simulation", () => {
+  test("creates a complete boot state for menu and play", () => {
+    const state = createInitialVoxelState("playing");
+
+    expect(state.phase).toBe("playing");
+    expect(state.hp).toBe(state.maxHp);
+    expect(state.coordinates).toEqual(CONFIG.PLAYER_START);
+    expect(state.objective).toContain("Survey");
+  });
+
+  test("keeps spawn camp layout deterministic and readable", () => {
+    const layout = createSpawnCampLayout();
+    const again = createSpawnCampLayout();
+
+    expect(layout).toEqual(again);
+    expect(layout.blocks).toHaveLength(86);
+    expect(layout.resources.map((resource) => resource.id)).toEqual([
+      "copper-outcrop",
+      "sapwood-cache",
+      "freshwater-marker",
+    ]);
+    expect(layout.landmarks.map((landmark) => landmark.id)).toEqual(["north-beacon", "ridge-gate"]);
+  });
+
+  test("generates deterministic terrain chunks with biomes and resources", () => {
+    const chunk = generateChunkData(2, -1, CONFIG);
+    const again = generateChunkData(2, -1, CONFIG);
+    const distant = generateChunkData(3, -2, CONFIG);
+
+    expect(chunk).toEqual(again);
+    expect(chunk.blocks.length).toBeGreaterThan(CONFIG.CHUNK_SIZE * CONFIG.CHUNK_SIZE * 3);
+    expect(new Set(chunk.blocks.map((block) => block.type)).size).toBeGreaterThan(2);
+    expect(distant).not.toEqual(chunk);
+    expect(getProceduralHeight(0, 0)).toBe(-1);
+    expect(getProceduralHeight(10, 0)).toBe(-1);
+    expect(classifyBiome(getProceduralHeight(0, 0))).toBeTruthy();
+  });
+
+  test("calculates camera-relative movement and grounded jump velocity", () => {
+    const move = calculateMovementVelocity(
+      { forward: true, right: true },
+      { x: 0, y: 0, z: -1 },
+      -2
+    );
+
+    expect(move.x).toBeCloseTo(3.8891);
+    expect(move.z).toBeCloseTo(-3.8891);
+    expect(move.y).toBe(-2);
+    expect(calculateJumpVelocity(move, true).y).toBe(CONFIG.JUMP_SPEED);
+    expect(calculateJumpVelocity(move, false).y).toBe(-2);
+  });
+
+  test("advances survival telemetry and objective progress without mutating input", () => {
+    const state = createInitialVoxelState("playing");
+    const next = advanceVoxelState(state, 1_500, {
+      position: { x: 36, y: 8, z: -48 },
+      velocity: { x: 1, y: 0, z: -2 },
+      grounded: true,
+      biome: "greenwood",
+      nearestLandmarkDistance: 4,
+    });
+
+    expect(next).not.toBe(state);
+    expect(next.score).toBe(60);
+    expect(next.objectiveProgress).toBeGreaterThan(40);
+    expect(next.objective).toContain("Landmark");
+    expect(next.coordinates).toEqual({ x: 36, y: 8, z: -48 });
+    expect(next.timeSurvived).toBe(1_500);
+    expect(state.score).toBe(0);
+  });
+
+  test("finds nearest authored landmark and applies fall damage", () => {
+    const distance = findNearestLandmarkDistance({ x: 0, y: 0, z: -9 });
+    const state = createInitialVoxelState("playing");
+    const fallen = advanceVoxelState(state, 100, {
+      position: { x: 0, y: -22, z: 0 },
+      velocity: { x: 0, y: -18, z: 0 },
+      grounded: false,
+      biome: "void shelf",
+      nearestLandmarkDistance: 20,
+    });
+
+    expect(distance).toBeLessThan(2);
+    expect(fallen.hp).toBe(16);
+    expect(fallen.phase).toBe("playing");
+  });
+});

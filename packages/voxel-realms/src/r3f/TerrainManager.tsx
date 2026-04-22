@@ -14,6 +14,7 @@ const COLORS: Record<string, string> = {
   snow: "#ffffff",
   wood: "#5d4037",
   leaves: "#2e7d32",
+  ore: "#b45309",
 };
 
 const isVitest =
