@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Game from '@arcade-cabinet/otterly-chaotic';
+---
+
+<BaseLayout title="Otterly Chaotic">
+  <main style="padding: 2rem; min-height: 100vh; background: #082f49;">
+    <div style="height: 80vh;"><Game client:visible /></div>
+  </main>
+</BaseLayout>

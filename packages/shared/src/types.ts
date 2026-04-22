@@ -4,3 +4,8 @@ export interface GameScore {
   value: number;
   label: string;
 }
+
+export interface ContainerSize {
+  width: number;
+  height: number;
+}

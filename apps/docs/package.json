@@ -11,6 +11,9 @@
     "clean": "rm -rf dist .astro"
   },
   "dependencies": {
+    "@arcade-cabinet/gridizen": "workspace:*",
+    "@arcade-cabinet/otterly-chaotic": "workspace:*",
+    "@arcade-cabinet/sim-soviet": "workspace:*",
     "@astrojs/react": "^4.2.0",
     "@astrojs/sitemap": "^3.3.0",
     "astro": "^5.7.7",

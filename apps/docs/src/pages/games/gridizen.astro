@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Game from '@arcade-cabinet/gridizen';
+---
+
+<BaseLayout title="Gridizen">
+  <main style="padding: 2rem; min-height: 100vh; background: #0f172a;">
+    <div style="height: 80vh;"><Game client:visible /></div>
+  </main>
+</BaseLayout>
