@@ -38,14 +38,16 @@ const config = {
 };
 const manifest = {};
 
+const readPackageVersion = (pkg) =>
+  JSON.parse(fs.readFileSync(`${pkg}/package.json`, "utf8")).version;
+
 for (const pkg of pkgs) {
   config.packages[pkg] = {
     "release-type": "node",
     "changelog-path": "CHANGELOG.md",
   };
-  manifest[pkg] = "0.1.0";
+  manifest[pkg] = readPackageVersion(pkg);
 }
-manifest["."] = "0.1.0"; // root
 
 fs.writeFileSync("release-please-config.json", `${JSON.stringify(config, null, 2)}\n`);
 fs.writeFileSync(".release-please-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);

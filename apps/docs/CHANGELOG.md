@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/docs-v0.1.0...docs-v0.2.0) (2026-04-22)
+## 0.1.0 (2026-04-22)
 
 
 ### Features
