@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { analyzeRuneGesture } from "../../engine/forestSimulation";
 import { forestAudio, type ToneType } from "../../lib/forestAudio";
 import { RUNE_PATTERNS, type RunePattern } from "../../lib/runePatterns";
 
@@ -110,48 +111,10 @@ export function ToneDrawer({
     []
   );
 
-  const analyzeGesture = useCallback((): ToneType | null => {
-    const points = pointsRef.current;
-    if (points.length < 20) return null;
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const normalizedPoints = points.map((p) => ({ x: p.x / canvas.width, y: p.y / canvas.height }));
-    const minX = Math.min(...normalizedPoints.map((p) => p.x));
-    const maxX = Math.max(...normalizedPoints.map((p) => p.x));
-    const minY = Math.min(...normalizedPoints.map((p) => p.y));
-    const maxY = Math.max(...normalizedPoints.map((p) => p.y));
-    const width = maxX - minX;
-    const height = maxY - minY;
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-    const distances = normalizedPoints.map((p) =>
-      Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2)
-    );
-    const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
-    const distanceVariance =
-      distances.reduce((sum, d) => sum + (d - avgDistance) ** 2, 0) / distances.length;
-    const isCircular = distanceVariance < 0.01 && width > 0.15 && height > 0.15;
-    const startY = normalizedPoints.slice(0, 5).reduce((sum, p) => sum + p.y, 0) / 5;
-    const endY = normalizedPoints.slice(-5).reduce((sum, p) => sum + p.y, 0) / 5;
-    const isUpward = startY - endY > 0.2 && height > 0.25;
-    let directionChanges = 0;
-    let lastDir = 0;
-    for (let i = 10; i < normalizedPoints.length; i += 5) {
-      const dx = normalizedPoints[i].x - normalizedPoints[i - 10].x;
-      const currentDir = dx > 0.02 ? 1 : dx < -0.02 ? -1 : 0;
-      if (currentDir !== 0 && currentDir !== lastDir && lastDir !== 0) directionChanges++;
-      if (currentDir !== 0) lastDir = currentDir;
-    }
-    const isZigzag = directionChanges >= 2 && width > 0.2;
-    if (isCircular) return "shield";
-    if (isUpward) return "heal";
-    if (isZigzag) return "purify";
-    return null;
-  }, []);
-
   const startDrawing = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (disabled) return;
+      e.preventDefault();
       isDrawingRef.current = true;
       onDrawingChange(true);
       const pos = getEventPosition(e);
@@ -169,6 +132,7 @@ export function ToneDrawer({
   const draw = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (!isDrawingRef.current || disabled) return;
+      e.preventDefault();
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx) return;
@@ -190,11 +154,17 @@ export function ToneDrawer({
   );
 
   const stopDrawing = useCallback(
-    (_e: MouseEvent | TouchEvent) => {
+    (e: MouseEvent | TouchEvent) => {
       if (!isDrawingRef.current) return;
+      e.preventDefault();
       isDrawingRef.current = false;
       onDrawingChange(false);
-      const spellType = analyzeGesture();
+      const canvas = canvasRef.current;
+      const spellType = canvas
+        ? analyzeRuneGesture(
+            pointsRef.current.map((p) => ({ x: p.x / canvas.width, y: p.y / canvas.height }))
+          )
+        : null;
       if (spellType) {
         const spell = RUNE_PATTERNS.find((r) => r.type === spellType);
         if (spell) {
@@ -214,7 +184,7 @@ export function ToneDrawer({
       pointsRef.current = [];
       setVisualNotes([]);
     },
-    [analyzeGesture, getNormalizedPosition, onSpellCast, onDrawingChange]
+    [getNormalizedPosition, onSpellCast, onDrawingChange]
   );
 
   useEffect(() => {
@@ -247,6 +217,7 @@ export function ToneDrawer({
     <>
       <canvas
         ref={canvasRef}
+        data-capture-exclude="true"
         className="absolute inset-0 z-30 touch-none"
         style={{ cursor: disabled ? "not-allowed" : "crosshair" }}
       />

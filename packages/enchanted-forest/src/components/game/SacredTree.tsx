@@ -15,7 +15,7 @@ interface SacredTreeProps {
   health: number;
   maxHealth: number;
   isShielded: boolean;
-  position: { x: number; y: number };
+  position: { x: number; y: number; canopyScale?: number };
   isTargeted?: boolean;
   isHealing?: boolean;
 }
@@ -61,11 +61,12 @@ export function SacredTree({
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
-        transform: "translate(-50%, -100%)",
+        transform: `translate(-50%, -100%) scale(${position.canopyScale ?? 1})`,
+        zIndex: 12,
       }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", duration: 0.8, delay: id * 0.2 }}
+      transition={{ type: "spring", duration: 0.55, delay: id * 0.04 }}
     >
       {showDamage && (
         <motion.div

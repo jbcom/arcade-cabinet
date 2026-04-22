@@ -87,13 +87,19 @@ export async function captureBrowserGameScreenshot(
 
   assertViewportFill(host, rootElement, viewport);
 
-  const canvasScreenshot = await waitForVisibleCanvasScreenshot();
-  if (canvasScreenshot) {
-    await commands.writeFile(path, canvasScreenshot.base64, "base64");
-    expect(canvasScreenshot.base64.length).toBeGreaterThan(5_000);
-    expect(canvasScreenshot.visiblePixelRatio).toBeGreaterThan(0.001);
-    expect(canvasScreenshot.colorBuckets).toBeGreaterThan(1);
-    return path;
+  const screenshotMode = rootElement.getAttribute("data-browser-screenshot-mode");
+
+  if (screenshotMode !== "page") {
+    const canvasScreenshot = await waitForVisibleCanvasScreenshot();
+    if (canvasScreenshot) {
+      await commands.writeFile(path, canvasScreenshot.base64, "base64");
+      expect(canvasScreenshot.base64.length).toBeGreaterThan(5_000);
+      expect(canvasScreenshot.visiblePixelRatio).toBeGreaterThan(0.001);
+      expect(canvasScreenshot.colorBuckets).toBeGreaterThan(1);
+      return path;
+    }
+  } else {
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
   }
 
   const screenshot = await page.screenshot({
@@ -137,7 +143,9 @@ function assertViewportFill(host: Element, rootElement: Element, viewport: Brows
 }
 
 async function captureLargestCanvas() {
-  const canvases = Array.from(document.querySelectorAll("canvas"));
+  const canvases = Array.from(
+    document.querySelectorAll('canvas:not([data-capture-exclude="true"])')
+  );
   const canvas = canvases
     .map((element) => ({
       area: element.width * element.height,

@@ -32,15 +32,15 @@ export function FireflyParticles({ count = 50, className = "" }: FireflyParticle
     };
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
-    firefliesRef.current = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      size: Math.random() * 3 + 1,
-      brightness: Math.random(),
-      phase: Math.random() * Math.PI * 2,
-      phaseSpeed: Math.random() * 0.02 + 0.01,
+    firefliesRef.current = Array.from({ length: count }, (_, index) => ({
+      x: ((index * 67) % 100) * 0.01 * canvas.width,
+      y: ((index * 43) % 100) * 0.01 * canvas.height,
+      vx: (((index * 17) % 9) - 4) * 0.055,
+      vy: (((index * 29) % 9) - 4) * 0.045,
+      size: 1.2 + ((index * 13) % 30) / 10,
+      brightness: ((index * 31) % 100) / 100,
+      phase: ((index * 19) % 100) * 0.01 * Math.PI * 2,
+      phaseSpeed: 0.01 + ((index * 7) % 18) * 0.001,
     }));
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -51,10 +51,6 @@ export function FireflyParticles({ count = 50, className = "" }: FireflyParticle
         if (firefly.x > canvas.width) firefly.x = 0;
         if (firefly.y < 0) firefly.y = canvas.height;
         if (firefly.y > canvas.height) firefly.y = 0;
-        if (Math.random() < 0.01) {
-          firefly.vx = (Math.random() - 0.5) * 0.5;
-          firefly.vy = (Math.random() - 0.5) * 0.5;
-        }
         firefly.phase += firefly.phaseSpeed;
         const glow = (Math.sin(firefly.phase) + 1) / 2;
         const alpha = 0.3 + glow * 0.7;
@@ -90,6 +86,7 @@ export function FireflyParticles({ count = 50, className = "" }: FireflyParticle
   return (
     <canvas
       ref={canvasRef}
+      data-capture-exclude="true"
       className={`pointer-events-none absolute inset-0 ${className}`}
       style={{ mixBlendMode: "screen" }}
     />

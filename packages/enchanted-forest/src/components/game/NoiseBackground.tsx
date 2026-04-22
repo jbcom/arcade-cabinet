@@ -25,7 +25,9 @@ export function NoiseBackground({ className = "" }: NoiseBackgroundProps) {
       const img = ctx.createImageData(S, S);
       const d = img.data;
       for (let i = 0; i < d.length; i += 4) {
-        const v = Math.random() * 255;
+        const pixel = i / 4;
+        const seed = Math.sin(pixel * 12.9898 + frameCount * 0.37) * 43758.5453;
+        const v = (seed - Math.floor(seed)) * 255;
         d[i] = v;
         d[i + 1] = v;
         d[i + 2] = v;
@@ -50,6 +52,7 @@ export function NoiseBackground({ className = "" }: NoiseBackgroundProps) {
   return (
     <canvas
       ref={canvasRef}
+      data-capture-exclude="true"
       className={`pointer-events-none absolute inset-0 ${className}`}
       style={{ imageRendering: "pixelated", mixBlendMode: "overlay" }}
     />

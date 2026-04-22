@@ -1,155 +1,187 @@
-import { GameViewport, useResponsive } from "@arcade-cabinet/shared";
+import { GameViewport } from "@arcade-cabinet/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  applyShadowHit,
+  applySpellCast,
+  type CorruptionShadow,
+  clearHealing,
+  clearPurifyZone,
+  clearRuneFeedback,
+  clearShield,
+  createInitialForestState,
+  getForestTransition,
+  MAX_WAVES,
+  regenerateMana,
+  removePurifiedShadow,
+  spawnCorruptionWave,
+  TREE_POSITIONS,
+} from "../../engine/forestSimulation";
 import { forestAudio } from "../../lib/forestAudio";
 import type { RunePattern } from "../../lib/runePatterns";
-import { type CorruptionShadow, CorruptionWave } from "./CorruptionWave";
+import { CorruptionWave } from "./CorruptionWave";
 import { FireflyParticles } from "./FireflyParticles";
 import { GameUI } from "./GameUI";
+import { GroveStage } from "./GroveStage";
 import { ForestGradientBackground, NoiseBackground } from "./NoiseBackground";
 import { SacredTree } from "./SacredTree";
 import { Spirit } from "./Spirit";
 import { ToneDrawer } from "./ToneDrawer";
 
-const MAX_WAVES = 5;
-const TREE_POSITIONS = [
-  { id: "left-grove", x: 30, y: 70 },
-  { id: "heart-tree", x: 50, y: 75 },
-  { id: "right-grove", x: 70, y: 70 },
-];
-
 export function ForestGame() {
-  const _viewport = useResponsive();
-  const [gameState, setGameState] = useState<"intro" | "playing" | "victory" | "defeat">("intro");
-  const [wave, setWave] = useState(1);
-  const [mana, setMana] = useState(100);
-  const [trees, setTrees] = useState(
-    TREE_POSITIONS.map(() => ({ health: 100, maxHealth: 100, isShielded: false }))
-  );
-  const [shadows, setShadows] = useState<CorruptionShadow[]>([]);
+  const [forestState, setForestState] = useState(createInitialForestState);
   const [isDrawing, setIsDrawing] = useState(false);
   const [spiritPos, setSpiritPos] = useState({ x: 0, y: 0 });
-  const [lastRune, setLastRune] = useState<string | null>(null);
-  const [purifyZone, setPurifyZone] = useState<{ x: number; y: number; radius: number } | null>(
-    null
-  );
-  const [healingTreeIndex, setHealingTreeIndex] = useState<number | null>(null);
-
   const shadowIdRef = useRef(0);
+
+  const spawnWave = useCallback((waveNum: number) => {
+    const wave = spawnCorruptionWave(waveNum, shadowIdRef.current);
+    shadowIdRef.current = wave.nextShadowId;
+    forestAudio.playWaveStart(waveNum);
+    setForestState((prev) => ({
+      ...prev,
+      wave: waveNum,
+      shadows: wave.shadows,
+      objective: `Wave ${waveNum} is entering the ward line. Draw before it reaches the roots.`,
+      threatLevel: Math.min(100, wave.shadows.length * 7),
+    }));
+  }, []);
 
   const startGame = async () => {
     await forestAudio.initialize();
     forestAudio.startAmbient();
-    setGameState("playing");
-    spawnWave(1);
+    const wave = spawnCorruptionWave(1, 0);
+    shadowIdRef.current = wave.nextShadowId;
+    forestAudio.playWaveStart(1);
+    setForestState({
+      ...createInitialForestState("playing"),
+      shadows: wave.shadows,
+      threatLevel: wave.shadows.length * 7,
+    });
   };
 
-  const spawnWave = useCallback((waveNum: number) => {
-    const newShadows: CorruptionShadow[] = Array.from({ length: waveNum * 3 }, (_, _i) => ({
-      id: shadowIdRef.current++,
-      x: 10 + Math.random() * 80,
-      y: -10 - Math.random() * 20,
-      targetTreeIndex: Math.floor(Math.random() * 3),
-      health: 20,
-      maxHealth: 20,
-      speed: 0.5 + waveNum * 0.1,
-      size: 30 + Math.random() * 20,
-    }));
-    setShadows(newShadows);
-  }, []);
+  const restartGame = () => {
+    forestAudio.stopAmbient();
+    shadowIdRef.current = 0;
+    setForestState(createInitialForestState());
+  };
 
   useEffect(() => {
-    if (gameState === "playing") {
-      const manaRegen = setInterval(() => setMana((m) => Math.min(100, m + 1)), 1000);
-      return () => clearInterval(manaRegen);
+    if (forestState.phase !== "playing") return undefined;
+
+    const manaRegen = setInterval(() => {
+      setForestState((prev) => regenerateMana(prev));
+    }, 1000);
+
+    return () => clearInterval(manaRegen);
+  }, [forestState.phase]);
+
+  useEffect(() => {
+    if (forestState.phase === "playing") {
+      const avgHealth =
+        forestState.trees.reduce((sum, tree) => sum + tree.health, 0) / forestState.trees.length;
+      forestAudio.updateTreeHealth(avgHealth);
     }
-    return undefined;
-  }, [gameState]);
+  }, [forestState.phase, forestState.trees]);
 
   const handleSpellCast = (spell: RunePattern) => {
-    if (mana < spell.manaCost) return;
-    setMana((m) => m - spell.manaCost);
-    setLastRune(spell.name);
-    setTimeout(() => setLastRune(null), 1000);
+    if (forestState.mana < spell.manaCost || forestState.phase !== "playing") return;
+
+    forestAudio.playSpellEffect(spell.type);
+    setForestState((prev) => applySpellCast(prev, spell));
+    setTimeout(() => setForestState((prev) => clearRuneFeedback(prev)), 1000);
 
     if (spell.type === "shield") {
-      setTrees((prev) => prev.map((t) => ({ ...t, isShielded: true })));
-      setTimeout(
-        () => setTrees((prev) => prev.map((t) => ({ ...t, isShielded: false }))),
-        spell.duration
-      );
+      setTimeout(() => setForestState((prev) => clearShield(prev)), spell.duration);
     } else if (spell.type === "heal") {
-      setTrees((prev) => prev.map((t) => ({ ...t, health: Math.min(t.maxHealth, t.health + 20) })));
-      setHealingTreeIndex(1); // Visual simplification
-      setTimeout(() => setHealingTreeIndex(null), 1000);
+      setTimeout(() => setForestState((prev) => clearHealing(prev)), 1000);
     } else if (spell.type === "purify") {
-      setPurifyZone({ x: 50, y: 50, radius: 30 });
-      setTimeout(() => setPurifyZone(null), spell.duration);
+      setTimeout(() => setForestState((prev) => clearPurifyZone(prev)), spell.duration);
     }
   };
 
   const handleShadowReach = (shadowId: number, treeIndex: number) => {
-    setTrees((prev) => {
-      const next = [...prev];
-      if (!next[treeIndex].isShielded) {
-        next[treeIndex].health = Math.max(0, next[treeIndex].health - 10);
-      }
-      return next;
-    });
-    setShadows((prev) => prev.filter((s) => s.id !== shadowId));
+    forestAudio.playCorruptionThreat();
+    setForestState((prev) => applyShadowHit(prev, shadowId, treeIndex));
+  };
+
+  const handleShadowPurified = (shadowId: number) => {
+    setForestState((prev) => removePurifiedShadow(prev, shadowId));
   };
 
   useEffect(() => {
-    if (gameState === "playing" && shadows.length === 0 && wave < MAX_WAVES) {
-      setWave((w) => w + 1);
-      spawnWave(wave + 1);
-    } else if (gameState === "playing" && shadows.length === 0 && wave === MAX_WAVES) {
-      setGameState("victory");
+    const transition = getForestTransition(forestState, MAX_WAVES);
+
+    if (transition.type === "next-wave" && transition.nextWave) {
+      spawnWave(transition.nextWave);
+    } else if (transition.type === "victory") {
+      forestAudio.playSpellEffect("victory");
+      setForestState((prev) => ({ ...prev, phase: "victory", objective: "The grove is sealed." }));
+    } else if (transition.type === "defeat") {
+      forestAudio.playSpellEffect("defeat");
+      setForestState((prev) => ({
+        ...prev,
+        phase: "defeat",
+        objective: "The grove roots have gone dark.",
+      }));
     }
-    if (trees.every((t) => t.health <= 0)) setGameState("defeat");
-  }, [shadows, trees, wave, gameState, spawnWave]);
+  }, [forestState, spawnWave]);
 
   return (
-    <GameViewport className="bg-emerald-950" background="#064e3b">
+    <GameViewport
+      className="bg-emerald-950"
+      background="#064e3b"
+      data-browser-screenshot-mode="page"
+    >
       <ForestGradientBackground />
+      <GroveStage threatLevel={forestState.threatLevel} />
       <NoiseBackground />
       <FireflyParticles count={40} />
 
-      {trees.map((tree, i) => (
+      {forestState.trees.map((tree, index) => (
         <SacredTree
-          key={TREE_POSITIONS[i].id}
-          id={i}
+          key={TREE_POSITIONS[index].id}
+          id={index}
           {...tree}
-          position={TREE_POSITIONS[i]}
-          isHealing={healingTreeIndex === i}
+          position={TREE_POSITIONS[index]}
+          isHealing={forestState.healingTreeIndex === index}
+          isTargeted={isTreeTargeted(index, forestState.shadows)}
         />
       ))}
 
       <CorruptionWave
-        shadows={shadows}
+        shadows={forestState.shadows}
         treePositions={TREE_POSITIONS}
         onShadowReachTree={handleShadowReach}
-        isPurifying={!!purifyZone}
-        purifyZone={purifyZone}
+        onShadowPurified={handleShadowPurified}
+        isPurifying={!!forestState.purifyZone}
+        purifyZone={forestState.purifyZone}
       />
 
       <ToneDrawer
         onSpellCast={handleSpellCast}
         onDrawingChange={setIsDrawing}
         onPositionChange={setSpiritPos}
+        disabled={forestState.phase !== "playing"}
       />
       <Spirit position={spiritPos} isDrawing={isDrawing} />
 
       <GameUI
-        wave={wave}
+        wave={forestState.wave}
         totalWaves={MAX_WAVES}
-        mana={mana}
-        maxMana={100}
+        mana={forestState.mana}
+        maxMana={forestState.maxMana}
         isPaused={false}
-        gameState={gameState}
+        gameState={forestState.phase}
         onStart={startGame}
-        onRestart={() => window.location.reload()}
-        lastRune={lastRune}
+        onRestart={restartGame}
+        lastRune={forestState.lastRune}
+        objective={forestState.objective}
+        threatLevel={forestState.threatLevel}
       />
     </GameViewport>
   );
+}
+
+function isTreeTargeted(treeIndex: number, shadows: CorruptionShadow[]): boolean {
+  return shadows.some((shadow) => shadow.targetTreeIndex === treeIndex);
 }

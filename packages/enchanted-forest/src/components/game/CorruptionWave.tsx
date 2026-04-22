@@ -1,5 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import {
+  advanceShadowPosition,
+  type CorruptionShadow,
+  type TreePosition,
+} from "../../engine/forestSimulation";
 
 const VAPOR_PARTICLES = Array.from({ length: 12 }, (_, index) => ({
   id: `vapor-particle-${index + 1}`,
@@ -16,21 +21,13 @@ const SHADOW_TENDRILS = Array.from({ length: 3 }, (_, index) => ({
   index,
 }));
 
-export interface CorruptionShadow {
-  id: number;
-  x: number;
-  y: number;
-  targetTreeIndex: number;
-  health: number;
-  maxHealth: number;
-  speed: number;
-  size: number;
-}
+export type { CorruptionShadow };
 
 interface CorruptionWaveProps {
   shadows: CorruptionShadow[];
   onShadowReachTree: (shadowId: number, treeIndex: number) => void;
-  treePositions: { x: number; y: number }[];
+  onShadowPurified: (shadowId: number) => void;
+  treePositions: TreePosition[];
   isPurifying: boolean;
   purifyZone?: { x: number; y: number; radius: number } | null;
 }
@@ -38,6 +35,7 @@ interface CorruptionWaveProps {
 export function CorruptionWave({
   shadows,
   onShadowReachTree,
+  onShadowPurified,
   treePositions,
   purifyZone,
 }: CorruptionWaveProps) {
@@ -49,6 +47,7 @@ export function CorruptionWave({
           shadow={shadow}
           treePosition={treePositions[shadow.targetTreeIndex]}
           onReachTree={() => onShadowReachTree(shadow.id, shadow.targetTreeIndex)}
+          onPurified={() => onShadowPurified(shadow.id)}
           purifyZone={purifyZone}
         />
       ))}
@@ -58,8 +57,9 @@ export function CorruptionWave({
 
 interface CorruptionShadowEntityProps {
   shadow: CorruptionShadow;
-  treePosition: { x: number; y: number };
+  treePosition: TreePosition;
   onReachTree: () => void;
+  onPurified: () => void;
   purifyZone?: { x: number; y: number; radius: number } | null;
 }
 
@@ -67,43 +67,64 @@ function CorruptionShadowEntity({
   shadow,
   treePosition,
   onReachTree,
+  onPurified,
   purifyZone,
 }: CorruptionShadowEntityProps) {
   const [position, setPosition] = useState({ x: shadow.x, y: shadow.y });
   const [isVaporizing, setIsVaporizing] = useState(false);
 
   useEffect(() => {
+    if (isVaporizing) return undefined;
+
     if (purifyZone) {
       const dx = position.x - purifyZone.x;
       const dy = position.y - purifyZone.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < purifyZone.radius) {
         setIsVaporizing(true);
+        const timer = window.setTimeout(onPurified, 560);
+        return () => window.clearTimeout(timer);
       }
     }
-  }, [purifyZone, position]);
+    return undefined;
+  }, [purifyZone, position, onPurified, isVaporizing]);
 
   useEffect(() => {
     if (isVaporizing) return undefined;
     const interval = setInterval(() => {
       setPosition((prev) => {
-        const dx = treePosition.x - prev.x;
-        const dy = treePosition.y - prev.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 3) {
+        const next = advanceShadowPosition(
+          {
+            id: shadow.id,
+            x: prev.x,
+            y: prev.y,
+            targetTreeIndex: shadow.targetTreeIndex,
+            health: shadow.health,
+            maxHealth: shadow.maxHealth,
+            speed: shadow.speed,
+            size: shadow.size,
+          },
+          treePosition
+        );
+        if (next.reached) {
           onReachTree();
           return prev;
         }
-        const normalizedDx = dx / distance;
-        const normalizedDy = dy / distance;
-        return {
-          x: prev.x + normalizedDx * shadow.speed * 0.3,
-          y: prev.y + normalizedDy * shadow.speed * 0.3,
-        };
+        return { x: next.x, y: next.y };
       });
     }, 16);
     return () => clearInterval(interval);
-  }, [treePosition, shadow.speed, onReachTree, isVaporizing]);
+  }, [
+    treePosition,
+    shadow.id,
+    shadow.targetTreeIndex,
+    shadow.health,
+    shadow.maxHealth,
+    shadow.speed,
+    shadow.size,
+    onReachTree,
+    isVaporizing,
+  ]);
 
   if (isVaporizing) {
     return (
@@ -203,7 +224,7 @@ function CorruptionShadowEntity({
           y: [0, -3, 0],
         }}
         transition={{
-          duration: 0.8 + Math.random() * 0.4,
+          duration: 0.8 + (shadow.id % 5) * 0.08,
           repeat: Infinity,
           ease: "easeInOut",
         }}

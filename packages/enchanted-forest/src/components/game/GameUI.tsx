@@ -25,6 +25,8 @@ interface GameUIProps {
   onStart: () => void;
   onRestart: () => void;
   lastRune?: string | null;
+  objective: string;
+  threatLevel: number;
 }
 
 function SpeedLines({ direction = "radial" }: { direction?: "radial" | "horizontal" }) {
@@ -195,7 +197,10 @@ export function GameUI({
   maxMana,
   gameState,
   onStart,
+  onRestart,
   lastRune,
+  objective,
+  threatLevel,
 }: GameUIProps) {
   const [showRuneEffect, setShowRuneEffect] = useState<(typeof RUNE_PATTERNS)[0] | null>(null);
 
@@ -215,8 +220,8 @@ export function GameUI({
       </AnimatePresence>
 
       {(gameState === "playing" || gameState === "tutorial") && (
-        <div className="fixed top-0 left-0 right-0 z-40 p-4 pointer-events-none">
-          <div className="flex justify-between items-start max-w-4xl mx-auto">
+        <div className="fixed inset-x-0 top-0 z-40 p-3 md:p-4 pointer-events-none">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 md:gap-4 items-start max-w-5xl mx-auto">
             <motion.div
               className="relative"
               initial={{ x: -100, opacity: 0 }}
@@ -232,6 +237,30 @@ export function GameUI({
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-black text-amber-400">{wave}</span>
                   <span className="text-amber-400/60 text-lg">/ {totalWaves}</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="relative hidden sm:block"
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              <div
+                className="bg-black/70 backdrop-blur-sm px-4 py-3 border border-emerald-300/30"
+                style={{ clipPath: "polygon(3% 0, 100% 0, 97% 100%, 0% 100%)" }}
+              >
+                <div className="text-emerald-200/70 text-[10px] font-bold tracking-widest">
+                  GROVE CHORUS
+                </div>
+                <div className="text-white font-black text-sm md:text-base leading-tight truncate">
+                  {objective}
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-purple-950/80">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-emerald-400 via-amber-300 to-purple-400"
+                    animate={{ width: `${Math.max(4, Math.min(100, threatLevel))}%` }}
+                  />
                 </div>
               </div>
             </motion.div>
@@ -269,11 +298,23 @@ export function GameUI({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="text-center px-6">
-            <h1 className="text-6xl font-black text-emerald-400 mb-8">森の守護者</h1>
+          <div className="text-center px-6 max-w-3xl">
+            <div className="text-amber-200/80 font-black tracking-[0.28em] mb-3">
+              ENCHANTED FOREST
+            </div>
+            <h1
+              className="text-5xl md:text-7xl font-black text-emerald-300 mb-5"
+              style={{ textShadow: "0 0 24px rgba(52, 211, 153, 0.75)" }}
+            >
+              森の守護者
+            </h1>
+            <p className="text-emerald-50/80 leading-relaxed mb-8 text-base md:text-lg">
+              Conduct the ward line with touch or pointer gestures. Shield the sacred trees, heal
+              broken roots, and purify corruption before the grove falls silent.
+            </p>
             <button
               type="button"
-              className="px-12 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg"
+              className="px-12 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg border border-emerald-200/40"
               onClick={onStart}
             >
               START
@@ -283,7 +324,18 @@ export function GameUI({
       )}
 
       {gameState === "victory" && <DramaticFlash text="勝利" subtext="VICTORY" color="#fbbf24" />}
-      {gameState === "defeat" && <DramaticFlash text="敗北" subtext="DEFEAT" color="#ef4444" />}
+      {gameState === "defeat" && (
+        <>
+          <DramaticFlash text="敗北" subtext="DEFEAT" color="#ef4444" />
+          <button
+            type="button"
+            className="fixed bottom-8 left-1/2 z-[60] -translate-x-1/2 rounded-lg border border-red-300/40 bg-red-900/80 px-8 py-3 text-white font-black"
+            onClick={onRestart}
+          >
+            RESTART
+          </button>
+        </>
+      )}
     </>
   );
 }
