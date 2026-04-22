@@ -3,7 +3,7 @@ import type { MegaTrackState, Obstacle } from "@logic/games/mega-track/engine/ty
 import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 interface TrackSceneProps {
@@ -254,12 +254,13 @@ function TrackDressing({ distance }: { distance: number }) {
           </group>
         );
       })}
-      <TracksideSkyline distance={distance} />
+      <TracksideSkyline />
     </group>
   );
 }
 
-function TracksideSkyline({ distance }: { distance: number }) {
+const TracksideSkyline = memo(function TracksideSkyline() {
+  const towerRefs = useRef<Array<THREE.Group | null>>([]);
   const towers = useMemo(
     () =>
       Array.from({ length: 24 }, (_, index) => {
@@ -282,13 +283,28 @@ function TracksideSkyline({ distance }: { distance: number }) {
     []
   );
 
+  useFrame((state) => {
+    const travel = state.clock.elapsedTime * 95;
+    towers.forEach((tower, index) => {
+      const group = towerRefs.current[index];
+      if (!group) return;
+      group.position.z = -(((tower.zOffset + travel) % 1760) + 130);
+    });
+  });
+
   return (
     <group>
-      {towers.map((tower) => {
-        const z = -(((tower.zOffset + distance * 0.28) % 1760) + 130);
+      {towers.map((tower, index) => {
+        const initialZ = -(((tower.zOffset + index * 12) % 1760) + 130);
         return (
-          <group key={tower.key} position={[tower.x, tower.height / 2 - 1, z]}>
-            <mesh castShadow receiveShadow>
+          <group
+            key={tower.key}
+            ref={(element) => {
+              towerRefs.current[index] = element;
+            }}
+            position={[tower.x, tower.height / 2 - 1, initialZ]}
+          >
+            <mesh>
               <boxGeometry args={[tower.width, tower.height, tower.width * 1.35]} />
               <meshStandardMaterial color={tower.color} roughness={0.48} metalness={0.18} />
             </mesh>
@@ -301,7 +317,7 @@ function TracksideSkyline({ distance }: { distance: number }) {
       })}
     </group>
   );
-}
+});
 
 function CheckpointGate({ z, index }: { z: number; index: number }) {
   const color = index % 2 === 0 ? "#22d3ee" : "#facc15";

@@ -243,7 +243,11 @@ export function Player() {
     if (document.pointerLockElement) {
       camera.rotation.x = CAMERA_PITCH;
     } else {
-      camera.lookAt(position.current.clone().add(UNLOCKED_LOOK_AHEAD));
+      camera.lookAt(
+        position.current.x + UNLOCKED_LOOK_AHEAD.x,
+        position.current.y + UNLOCKED_LOOK_AHEAD.y,
+        position.current.z + UNLOCKED_LOOK_AHEAD.z
+      );
     }
 
     primordialEntity.set(
