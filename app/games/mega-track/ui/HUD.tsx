@@ -11,6 +11,10 @@ export function HUD({ state, onLaneControl }: HUDProps) {
   const speed = Math.round(state.speed * 100);
   const distance = Math.floor(state.distance / 10);
   const overdriveSeconds = (state.overdriveMs / 1000).toFixed(1);
+  const impactAge = state.elapsedMs - state.lastImpactMs;
+  const hasRecentImpact = Number.isFinite(impactAge) && impactAge >= 0 && impactAge < 900;
+  const cleanAge = state.elapsedMs - state.lastCleanPassMs;
+  const hasRecentCleanPass = Number.isFinite(cleanAge) && cleanAge >= 0 && cleanAge < 900;
   const integrityColor =
     state.integrity > 60 ? "#86efac" : state.integrity > 30 ? "#facc15" : "#f87171";
   const panelStyle = {
@@ -80,6 +84,14 @@ export function HUD({ state, onLaneControl }: HUDProps) {
             Clean pass x{state.cleanPassStreak}{" "}
             {state.overdriveMs > 0 ? `| Overdrive ${overdriveSeconds}s` : ""}
           </div>
+          {hasRecentImpact ? (
+            <div style={{ color: "#fb7185", fontSize: 12, fontWeight: 800 }}>
+              Impact: {state.lastImpactType ?? "hazard"}
+            </div>
+          ) : null}
+          {hasRecentCleanPass ? (
+            <div style={{ color: "#67e8f9", fontSize: 12, fontWeight: 800 }}>Clean lane read</div>
+          ) : null}
         </div>
       </div>
       <div

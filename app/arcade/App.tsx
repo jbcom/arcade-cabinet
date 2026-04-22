@@ -1,11 +1,10 @@
 import { useEffect } from "react";
 import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
+import ArcadeGallery from "./components/ArcadeGallery";
 import Footer from "./components/Footer";
 import GameIsland from "./components/GameIsland";
-import GameShowcase from "./components/GameShowcase";
 import GamesGrid from "./components/GamesGrid";
 import Hero from "./components/Hero";
-import TechStack from "./components/TechStack";
 import { type GameSlug, getGameBySlug } from "./games/catalog";
 
 export default function ArcadeApp() {
@@ -24,9 +23,8 @@ function CabinetHome() {
   return (
     <main>
       <Hero />
+      <ArcadeGallery />
       <GamesGrid />
-      <GameShowcase />
-      <TechStack />
       <Footer />
     </main>
   );

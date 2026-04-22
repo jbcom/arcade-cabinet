@@ -15,6 +15,10 @@ export function ConstellationPattern({
   completedConnections,
   className,
 }: ConstellationPatternProps) {
+  const completionRatio =
+    pattern.connections.length === 0 ? 1 : completedConnections.size / pattern.connections.length;
+  const inactivePulse = 0.22 + completionRatio * 0.3;
+
   return (
     <div className={cn("absolute inset-0 pointer-events-none", className)}>
       <svg
@@ -32,6 +36,7 @@ export function ConstellationPattern({
           const reverseKey = `${conn.to}-${conn.from}`;
           const isCompleted =
             completedConnections.has(connectionKey) || completedConnections.has(reverseKey);
+          const isNextLink = !isCompleted && completionRatio > 0;
 
           return (
             <motion.line
@@ -40,16 +45,31 @@ export function ConstellationPattern({
               y1={fromPoint.y}
               x2={toPoint.x}
               y2={toPoint.y}
-              stroke={isCompleted ? "rgba(251, 191, 36, 0.8)" : "rgba(255, 255, 255, 0.15)"}
-              strokeWidth={isCompleted ? 0.4 : 0.2}
+              stroke={
+                isCompleted
+                  ? "rgba(251, 191, 36, 0.88)"
+                  : isNextLink
+                    ? "rgba(125, 211, 252, 0.42)"
+                    : "rgba(255, 255, 255, 0.15)"
+              }
+              strokeWidth={isCompleted ? 0.48 : 0.22}
               strokeDasharray={isCompleted ? "none" : "1 1"}
+              filter={isCompleted ? "drop-shadow(0 0 4px rgba(251,191,36,0.85))" : undefined}
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{
                 pathLength: 1,
-                opacity: 1,
-                stroke: isCompleted ? "rgba(251, 191, 36, 0.8)" : "rgba(255, 255, 255, 0.15)",
+                opacity: isCompleted ? 1 : [inactivePulse, inactivePulse + 0.25, inactivePulse],
+                stroke: isCompleted
+                  ? "rgba(251, 191, 36, 0.88)"
+                  : isNextLink
+                    ? "rgba(125, 211, 252, 0.42)"
+                    : "rgba(255, 255, 255, 0.15)",
               }}
-              transition={{ duration: 1, delay: index * 0.1 }}
+              transition={{
+                delay: index * 0.1,
+                duration: isCompleted ? 1 : 1.6,
+                repeat: isCompleted ? 0 : Infinity,
+              }}
             />
           );
         })}

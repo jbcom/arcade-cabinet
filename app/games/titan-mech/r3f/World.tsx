@@ -1,12 +1,18 @@
 import { createArenaLayout } from "@logic/games/titan-mech/engine/titanSimulation";
 import type { ArenaBeaconData, ArenaObstacleData } from "@logic/games/titan-mech/engine/types";
+import { TitanTrait } from "@logic/games/titan-mech/store/traits";
+import { titanEntity } from "@logic/games/titan-mech/store/world";
 import { ContactShadows, Grid, Sky, Sparkles, Stars } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
+import { useTrait } from "koota/react";
 import { Mech } from "./Mech";
 
 const layout = createArenaLayout();
 
 function ArenaFloor() {
+  const state = useTrait(titanEntity, TitanTrait);
+  const objectiveProgress = state.objectiveProgress;
+
   return (
     <RigidBody type="fixed">
       <group>
@@ -33,7 +39,10 @@ function ArenaFloor() {
           </mesh>
         ))}
         {layout.beacons.map((beacon) => (
-          <Beacon key={beacon.id} beacon={beacon} />
+          <Beacon key={beacon.id} beacon={beacon} objectiveProgress={objectiveProgress} />
+        ))}
+        {layout.beacons.map((beacon) => (
+          <ExtractionRig key={`${beacon.id}-extractor`} beacon={beacon} />
         ))}
       </group>
     </RigidBody>
@@ -155,23 +164,65 @@ function Pylon({ obstacle }: { obstacle: ArenaObstacleData }) {
   );
 }
 
-function Beacon({ beacon }: { beacon: ArenaBeaconData }) {
+function Beacon({
+  beacon,
+  objectiveProgress,
+}: {
+  beacon: ArenaBeaconData;
+  objectiveProgress: number;
+}) {
+  const progressGlow = Math.max(0.18, objectiveProgress / 100);
+
   return (
     <group position={beacon.position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]}>
+        <ringGeometry args={[beacon.radius * 1.04, beacon.radius * 1.22, 64]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={progressGlow * 0.28} />
+      </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
         <ringGeometry args={[beacon.radius * 0.72, beacon.radius, 48]} />
         <meshStandardMaterial
           color="#f59e0b"
           emissive="#f59e0b"
-          emissiveIntensity={0.32}
+          emissiveIntensity={0.32 + progressGlow * 0.24}
           transparent
           opacity={0.5}
         />
       </mesh>
       <mesh position={[0, 1.4, 0]}>
         <cylinderGeometry args={[0.28, 0.28, 2.8, 10]} />
-        <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.7} />
+        <meshStandardMaterial
+          color="#f59e0b"
+          emissive="#f59e0b"
+          emissiveIntensity={0.7 + progressGlow}
+        />
       </mesh>
+    </group>
+  );
+}
+
+function ExtractionRig({ beacon }: { beacon: ArenaBeaconData }) {
+  const [x, y, z] = beacon.position;
+
+  return (
+    <group position={[x + 4.4, y, z - 3.6]}>
+      <mesh position={[0, 1.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.6, 1.8, 2.4]} />
+        <meshStandardMaterial color="#3b2f24" roughness={0.64} metalness={0.18} />
+      </mesh>
+      <mesh position={[-1.3, 2.4, 0]} castShadow>
+        <cylinderGeometry args={[0.42, 0.58, 2.5, 8]} />
+        <meshStandardMaterial color="#7c2d12" emissive="#f59e0b" emissiveIntensity={0.18} />
+      </mesh>
+      <mesh position={[1.1, 1.9, 0.25]} rotation={[0.2, 0, -0.28]} castShadow>
+        <coneGeometry args={[1.1, 2.6, 5]} />
+        <meshStandardMaterial color="#c2410c" emissive="#f97316" emissiveIntensity={0.32} />
+      </mesh>
+      <mesh position={[0, 0.28, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[2.25, 2.5, 36]} />
+        <meshBasicMaterial color="#f59e0b" transparent opacity={0.34} />
+      </mesh>
+      <pointLight color="#f59e0b" intensity={1.1} distance={14} position={[0, 2.8, 0]} />
     </group>
   );
 }

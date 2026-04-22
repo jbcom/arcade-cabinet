@@ -4,9 +4,9 @@ import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
 import MegaTrack from "@app/games/mega-track";
 import OtterlyChaotic from "@app/games/otterly-chaotic";
+import OvercastGlacier from "@app/games/overcast-glacier";
 import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
-import VoxelRealms from "@app/games/voxel-realms";
 import {
   type BrowserGameStartFlow,
   type BrowserGameViewport,
@@ -67,6 +67,15 @@ const gameCases: (BrowserGameStartFlow & {
     expectsJoystick: true,
   },
   {
+    name: "Overcast Glacier",
+    slug: "overcast-glacier",
+    Component: OvercastGlacier,
+    title: "OVERCAST: GLACIER",
+    startFlow: ["Drop In"],
+    ready: "Warmth",
+    expectsJoystick: true,
+  },
+  {
     name: "Otterly Chaotic",
     slug: "otterly-chaotic",
     Component: OtterlyChaotic,
@@ -90,19 +99,9 @@ const gameCases: (BrowserGameStartFlow & {
     name: "Titan Mech",
     slug: "titan-mech",
     Component: TitanMech,
-    title: "TITAN MECH OS",
+    title: "TITAN MECH: OVERHEAT",
     startFlow: ["Engage Chassis"],
     ready: "SYSTEM INTEGRITY",
-    expectsCanvas: true,
-    expectsJoystick: true,
-  },
-  {
-    name: "Voxel Realms",
-    slug: "voxel-realms",
-    Component: VoxelRealms,
-    title: "Voxel Realms",
-    startFlow: ["Enter Realm"],
-    ready: "HP",
     expectsCanvas: true,
     expectsJoystick: true,
   },

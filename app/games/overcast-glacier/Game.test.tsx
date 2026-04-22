@@ -7,12 +7,11 @@ afterEach(() => {
   cleanup();
 });
 
-test("Voxel Realms reaches gameplay from the start screen", async () => {
+test("Overcast Glacier reaches gameplay from the start screen", async () => {
   await verifyBrowserGameStartFlow({
     Component: Game,
-    title: "Voxel Realms",
-    startFlow: ["Enter Realm"],
-    ready: "HP",
-    expectsCanvas: true,
+    title: "OVERCAST: GLACIER",
+    startFlow: ["Drop In"],
+    ready: "Warmth",
   });
 });

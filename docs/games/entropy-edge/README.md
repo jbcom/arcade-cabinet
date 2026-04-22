@@ -15,6 +15,13 @@ The grid is a failing machine room in abstract space. Cyan player light, dark ti
 
 Browser screenshots use page capture so the R3F canvas, HUD, vector readout, and mobile directional controls are verified together through the Vitest Browser harness.
 
+## Current Feature and Polish Pass
+
+- Max resonance now produces a deterministic surge event that clears or weakens a nearby blocked cell.
+- Resonance bands around the player make stability state readable without relying only on HUD text.
+- Three.js color alpha usage was replaced with explicit opacity so R3F rendering is stable.
+- The cabinet landing uses the shared cartridge frame with an abstract grid label, play control, and rules drawer.
+
 ## Gameplay Systems
 
 - `src/engine/simulation.ts` owns deterministic anchor selection, seeded block fields, falling-block spawn choice, movement cooldowns, stability bands, target vectors, scoring, resonance, shockwaves, and win/loss transitions.

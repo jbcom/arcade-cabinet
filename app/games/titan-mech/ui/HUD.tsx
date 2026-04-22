@@ -12,16 +12,39 @@ const danger = "#f43f5e";
 export function HUD() {
   const state = useTrait(titanEntity, TitanTrait);
   const heatRatio = state.heat / state.maxHeat;
+  const damageRatio = 1 - state.hp / state.maxHp;
+  const weaponColor =
+    state.weaponFeedback === "firing"
+      ? warning
+      : state.weaponFeedback === "overheated" || state.weaponFeedback === "dry"
+        ? danger
+        : state.weaponFeedback === "cooling"
+          ? "#67e8f9"
+          : accent;
+  const extractorColor =
+    state.extraction.feedback === "blocked"
+      ? danger
+      : state.extraction.feedback === "grinding" || state.extraction.feedback === "ejecting"
+        ? warning
+        : accent;
 
   return (
     <HUDOverlay
       topLeft={
         <div style={{ color: "#e6fffb", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>
           <div style={{ color: accent, fontSize: 12, textTransform: "uppercase" }}>
-            TITAN MECH OS v5.1
+            TITAN MECH OVERHEAT v5.1
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>SCRAP {state.scrap}</div>
-          <div style={{ color: "#94a3b8", fontSize: 12 }}>RANGE SCORE {state.score}</div>
+          <div style={{ fontSize: 24, fontWeight: 900 }}>CREDITS {state.extraction.credits}</div>
+          <div style={{ color: "#94a3b8", fontSize: 12 }}>
+            SCRAP {state.scrap} / ISOTOPES {state.extraction.rareIsotopes}
+          </div>
+          <div style={{ color: weaponColor, fontSize: 12, marginTop: 6 }}>
+            WEAPON {state.weaponFeedback.toUpperCase()}
+          </div>
+          <div style={{ color: extractorColor, fontSize: 12, marginTop: 3 }}>
+            EXTRACTOR {state.extraction.feedback.toUpperCase()}
+          </div>
         </div>
       }
       topRight={
@@ -35,6 +58,12 @@ export function HUD() {
           <Gauge label="SYSTEM INTEGRITY" value={state.hp} max={state.maxHp} color={accent} />
           <Gauge label="ENERGY" value={state.energy} max={state.maxEnergy} color="#38bdf8" />
           <Gauge label="COOLANT" value={state.coolantCharge} max={100} color="#67e8f9" />
+          <Gauge
+            label="HOPPER"
+            value={state.extraction.hopperLoad}
+            max={state.extraction.hopperCapacity}
+            color="#f59e0b"
+          />
           <Gauge
             label="HEAT"
             value={state.heat}
@@ -63,6 +92,32 @@ export function HUD() {
       }
       bottomRight={<ActionCluster />}
     >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          boxShadow: `inset 0 0 ${36 + damageRatio * 110}px rgba(244, 63, 94, ${damageRatio * 0.58})`,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: 72,
+          height: 72,
+          transform: "translate(-50%, -50%)",
+          border: `2px solid ${weaponColor}`,
+          clipPath:
+            "polygon(0 0, 34% 0, 34% 8%, 8% 8%, 8% 34%, 0 34%, 0 0, 66% 0, 100% 0, 100% 34%, 92% 34%, 92% 8%, 66% 8%, 66% 0, 100% 66%, 100% 100%, 66% 100%, 66% 92%, 92% 92%, 92% 66%, 100% 66%, 34% 100%, 0 100%, 0 66%, 8% 66%, 8% 92%, 34% 92%, 34% 100%)",
+          opacity: state.weaponFeedback === "idle" ? 0.32 : 0.86,
+          pointerEvents: "none",
+          filter: `drop-shadow(0 0 10px ${weaponColor})`,
+        }}
+      />
       <FloatingJoystick
         accent={accent}
         label="Titan drive joystick"
@@ -126,11 +181,13 @@ function ActionCluster() {
     <div
       style={{
         display: "flex",
+        flexWrap: "wrap",
         gap: 8,
         justifyContent: "end",
         touchAction: "none",
       }}
     >
+      <ControlButton label="Run extractor" symbol="MINE" controls={{ extract: true }} />
       <ControlButton label="Brace coolant" symbol="BRACE" controls={{ brace: true }} />
       <ControlButton label="Fire ordnance" symbol="FIRE" controls={{ fire: true }} hot />
     </div>

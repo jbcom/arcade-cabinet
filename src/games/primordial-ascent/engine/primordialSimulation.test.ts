@@ -4,6 +4,7 @@ import {
   advancePrimordialState,
   calculateAirControlImpulse,
   calculateDistanceToLava,
+  calculateGrappleTargetState,
   calculateJumpImpulse,
   calculateObjectiveProgress,
   calculateTetherImpulse,
@@ -24,6 +25,7 @@ describe("primordial simulation", () => {
     expect(state.lavaHeight).toBe(CONFIG.lavaStartHeight);
     expect(state.distToLava).toBe(50);
     expect(state.thermalLift).toBeGreaterThan(0);
+    expect(state.grappleTargetState).toBe("none");
     expect(state.objective).toContain("cyan anchors");
   });
 
@@ -59,7 +61,9 @@ describe("primordial simulation", () => {
       position: { x: 0, y: 72.4, z: -80 },
       velocity: { x: 4, y: 10, z: 2 },
       lavaHeight: -10,
+      grappleActive: true,
       grappleDistance: 34,
+      grappleTension: 0.8,
     });
 
     expect(next).not.toBe(state);
@@ -69,6 +73,7 @@ describe("primordial simulation", () => {
     expect(next.timeSurvived).toBe(2_000);
     expect(next.distToLava).toBe(82);
     expect(next.isInGrappleRange).toBe(true);
+    expect(next.grappleTargetState).toBe("taut");
     expect(next.objectiveProgress).toBe(calculateObjectiveProgress(72));
     expect(state.maxAltitude).toBe(CONFIG.playerStartPosition.y);
 
@@ -94,6 +99,11 @@ describe("primordial simulation", () => {
     expect(impulse.z).toBeCloseTo(-7.0711);
     expect(canGrapple(CONFIG.maxTetherDist)).toBe(true);
     expect(canGrapple(CONFIG.maxTetherDist + 1)).toBe(false);
+    expect(calculateGrappleTargetState(null, false)).toBe("none");
+    expect(calculateGrappleTargetState(CONFIG.maxTetherDist + 1, true)).toBe("missed");
+    expect(calculateGrappleTargetState(24, false)).toBe("in-range");
+    expect(calculateGrappleTargetState(24, true, 0.2)).toBe("locked");
+    expect(calculateGrappleTargetState(24, true, 0.9)).toBe("taut");
   });
 
   test("calculates jump and tether impulses toward the grapple target", () => {

@@ -17,8 +17,12 @@ export interface PrimordialTelemetry {
   position: Vec3;
   velocity: Vec3;
   lavaHeight: number;
+  grappleActive?: boolean;
   grappleDistance?: number | null;
+  grappleTension?: number;
 }
+
+export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "missed";
 
 export interface PrimordialState {
   phase: "menu" | "playing" | "gameover";
@@ -30,6 +34,7 @@ export interface PrimordialState {
   isInGrappleRange: boolean;
   lavaHeight: number;
   thermalLift: number;
+  grappleTargetState: GrappleTargetState;
   objective: string;
   objectiveProgress: number;
 }

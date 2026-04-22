@@ -2,6 +2,10 @@ import type { OtterlyState, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
+const GOAT_DAMAGE_PER_MS = {
+  billy: 0.002,
+  elder: 0.003,
+} as const;
 
 export function createInitialState(): OtterlyState {
   return {
@@ -17,8 +21,9 @@ export function createInitialState(): OtterlyState {
     goalRadius: 0.9,
     elapsedMs: 0,
     barkCooldownMs: 0,
+    lastBarkMs: -Infinity,
     lastBarkStunned: 0,
-    rallyMs: 0,
+    rallyMs: 2500,
     rescueStreak: 0,
     objective: "Push the Kudzu ball into Elder Bleat's crater before the goats eat it.",
   };
@@ -51,6 +56,7 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
   const barkRadius = 2.4;
   if (barkTriggered && next.barkCooldownMs === 0) {
     next.barkCooldownMs = 1500;
+    next.lastBarkMs = next.elapsedMs;
     let stunnedCount = 0;
     for (const goat of next.goats) {
       if (distance(goat.position, next.otter) < barkRadius) {
@@ -84,10 +90,8 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
 
     if (distance(goat.position, next.ball) < 0.95) {
       const rallyScale = next.rallyMs > 0 ? 0.45 : 1;
-      next.ballHealth = Math.max(
-        0,
-        next.ballHealth - (goat.id === "elder" ? 0.02 : 0.015) * deltaMs * rallyScale
-      );
+      const damageRate = goat.id === "elder" ? GOAT_DAMAGE_PER_MS.elder : GOAT_DAMAGE_PER_MS.billy;
+      next.ballHealth = Math.max(0, next.ballHealth - damageRate * deltaMs * rallyScale);
       next.objective = "Goats are chewing! Bark to stun them and keep pushing.";
     }
   }
@@ -107,6 +111,18 @@ export function didWin(state: OtterlyState) {
 
 export function didLose(state: OtterlyState) {
   return state.ballHealth <= 0;
+}
+
+export function getGoatIntent(state: OtterlyState, goat: OtterlyState["goats"][number]) {
+  const targetDistance = distance(goat.position, state.ball);
+  const stateLabel = goat.stunnedMs > 0 ? "stunned" : targetDistance < 1.05 ? "chewing" : "chasing";
+
+  return {
+    alertLevel: stateLabel === "stunned" ? 0 : Math.max(0, Math.min(1, 1 - targetDistance / 6)),
+    goatId: goat.id,
+    state: stateLabel,
+    targetDistance: Math.round(targetDistance * 100) / 100,
+  };
 }
 
 function add(a: Vec2, b: Vec2): Vec2 {

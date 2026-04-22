@@ -9,10 +9,10 @@ const gameComponents = {
   "enchanted-forest": lazy(() => import("@app/games/enchanted-forest")),
   "entropy-edge": lazy(() => import("@app/games/entropy-edge")),
   "mega-track": lazy(() => import("@app/games/mega-track")),
+  "overcast-glacier": lazy(() => import("@app/games/overcast-glacier")),
   "otterly-chaotic": lazy(() => import("@app/games/otterly-chaotic")),
   "primordial-ascent": lazy(() => import("@app/games/primordial-ascent")),
   "titan-mech": lazy(() => import("@app/games/titan-mech")),
-  "voxel-realms": lazy(() => import("@app/games/voxel-realms")),
 } satisfies Record<GameSlug, GameComponent>;
 
 export const gameIslandSlugs = Object.keys(gameComponents) as GameSlug[];

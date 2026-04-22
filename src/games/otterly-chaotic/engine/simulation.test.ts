@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { createInitialState, didLose, didWin, GOAL, tick } from "./simulation";
+import { createInitialState, didLose, didWin, GOAL, getGoatIntent, tick } from "./simulation";
 
 describe("otterly simulation", () => {
   test("moves the otter from player input", () => {
@@ -30,7 +30,28 @@ describe("otterly simulation", () => {
     const next = tick(state, 16, { x: 0, y: 0 }, true);
 
     expect(next.barkCooldownMs).toBeGreaterThan(0);
+    expect(next.lastBarkMs).toBe(next.elapsedMs);
     expect(next.goats[0].stunnedMs).toBeGreaterThan(0);
+  });
+
+  test("reports goat intent for chase, chew, and stun telegraphs", () => {
+    const chasing = createInitialState();
+    const chaseIntent = getGoatIntent(chasing, chasing.goats[0]);
+
+    const chewing = createInitialState();
+    chewing.goats[0].position = { ...chewing.ball };
+    const chewIntent = getGoatIntent(chewing, chewing.goats[0]);
+
+    const nearOtter = createInitialState();
+    nearOtter.goats[0].position = { ...nearOtter.otter };
+    const stunned = tick(nearOtter, 16, { x: 0, y: 0 }, true);
+    stunned.goats[0].position = { ...stunned.otter };
+    const stunIntent = getGoatIntent(stunned, stunned.goats[0]);
+
+    expect(chaseIntent.state).toBe("chasing");
+    expect(chewIntent.state).toBe("chewing");
+    expect(stunIntent.state).toBe("stunned");
+    expect(chaseIntent.alertLevel).toBeGreaterThanOrEqual(0);
   });
 
   test("double bark rallies restore salad health and damp goat damage", () => {
@@ -66,6 +87,17 @@ describe("otterly simulation", () => {
     };
     const protectedNext = tick(protectedState, 500, { x: 0, y: 0 }, false);
     expect(protectedNext.ballHealth).toBe(protectedState.ballHealth);
+  });
+
+  test("fresh runs keep a playable opening window without immediate input", () => {
+    let state = createInitialState();
+
+    for (let elapsed = 0; elapsed < 12_000; elapsed += 250) {
+      state = tick(state, 250, { x: 0, y: 0 }, false);
+    }
+
+    expect(didLose(state)).toBe(false);
+    expect(state.ballHealth).toBeGreaterThan(30);
   });
 
   test("detects win and loss terminal conditions", () => {

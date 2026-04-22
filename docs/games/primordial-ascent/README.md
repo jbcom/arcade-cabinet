@@ -15,6 +15,13 @@ Low ambient light, strong emissive targets, fog, basalt ribs, and a rising lava 
 
 The color script is deliberately split: cyan for grappleable ceilings, green for recovery moss, red/orange for lava pressure, and blue-black for the shaft volume. HUD typography stays compact and tabular so desktop and mobile players can scan altitude, lava gap, velocity, time, and objective progress without blocking the climb path.
 
+## Current Feature and Polish Pass
+
+- Grapple target state now reports in-range, locked, missed, and tension from pure logic.
+- The crosshair, HUD grip control, tether beam, and target reticle respond to the same grapple state.
+- Heat shimmer near lava and stronger upward route composition make portrait screenshots read as a climb.
+- The cabinet landing uses the shared cartridge frame with a lava-ascent label, play control, and rules drawer.
+
 ## Simulation and Test Boundaries
 
 `src/engine/primordialSimulation.ts` owns the deterministic state transitions: initial boot state, lava rise, altitude, objective progress, air-control impulses, jump impulse, tether impulses, and the authored route layout. React Three Fiber components consume those helpers instead of duplicating gameplay formulas.

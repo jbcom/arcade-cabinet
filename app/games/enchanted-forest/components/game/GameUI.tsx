@@ -1,3 +1,4 @@
+import { CartridgeStartScreen } from "@app/shared";
 import { RUNE_PATTERNS } from "@logic/games/enchanted-forest/lib/runePatterns";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -318,32 +319,26 @@ export function GameUI({
 
       {gameState === "intro" && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="text-center px-6 max-w-3xl">
-            <div className="text-amber-200/80 font-black tracking-[0.28em] mb-3">
-              ENCHANTED FOREST
-            </div>
-            <h1
-              className="text-5xl md:text-7xl font-black text-emerald-300 mb-5"
-              style={{ textShadow: "0 0 24px rgba(52, 211, 153, 0.75)" }}
-            >
-              森の守護者
-            </h1>
-            <p className="text-emerald-50/80 leading-relaxed mb-8 text-base md:text-lg">
-              Conduct the ward line with touch or pointer gestures. Shield the sacred trees, heal
-              broken roots, and purify corruption before the grove falls silent.
-            </p>
-            <button
-              type="button"
-              className="px-12 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg border border-emerald-200/40"
-              onClick={onStart}
-            >
-              START
-            </button>
-          </div>
+          <CartridgeStartScreen
+            accent="#10b981"
+            cartridgeId="Slot 03"
+            description="Conduct the ward line with gesture runes and keep the grove alive."
+            kicker="Spell Grove Cartridge"
+            motif="forest"
+            onStart={onStart}
+            rules={[
+              "Draw shield, heal, and purify runes over the grove stage.",
+              "Alternate spells to build harmony and empower the next cast.",
+              "Watch shadow paths and protect the targeted sacred trees.",
+            ]}
+            secondaryAccent="#fbbf24"
+            startLabel="START"
+            title="ENCHANTED FOREST"
+          />
         </motion.div>
       )}
 

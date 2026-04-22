@@ -1,4 +1,7 @@
-import { verifyBrowserGameStartFlow } from "@app/test/browserGameHarness";
+import {
+  captureBrowserGameScreenshot,
+  verifyBrowserGameStartFlow,
+} from "@app/test/browserGameHarness";
 import { cleanup } from "@testing-library/react";
 import { afterEach, test } from "vitest";
 import Game from "./Game";
@@ -8,11 +11,22 @@ afterEach(() => {
 });
 
 test("Titan Mech reaches gameplay from the start screen", async () => {
-  await verifyBrowserGameStartFlow({
+  const { host, rootElement } = await verifyBrowserGameStartFlow({
     Component: Game,
-    title: "TITAN MECH OS",
+    title: "TITAN MECH: OVERHEAT",
     startFlow: ["Engage Chassis"],
     ready: "SYSTEM INTEGRITY",
     expectsCanvas: true,
   });
+
+  await captureBrowserGameScreenshot(
+    host,
+    rootElement,
+    {
+      name: "desktop",
+      width: 1280,
+      height: 720,
+    },
+    "test-screenshots/components/titan-mech-extraction-rig.png"
+  );
 });

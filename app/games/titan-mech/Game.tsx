@@ -1,5 +1,6 @@
 import {
   browserTestCanvasGlOptions,
+  CartridgeStartScreen,
   GameOverScreen,
   GameViewport,
   OverlayButton,
@@ -30,51 +31,22 @@ function TitanApp() {
       </Canvas>
 
       {phase === "menu" && (
-        <div
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-[#c8fff3] backdrop-blur-md"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(9,13,18,0.7), rgba(9,13,18,0.96)), linear-gradient(135deg, rgba(45,212,191,0.16), rgba(244,63,94,0.12)), repeating-linear-gradient(90deg, rgba(45,212,191,0.12) 0 1px, transparent 1px 48px)",
-          }}
-        >
-          <h1
-            className="mb-5 text-center font-black uppercase leading-none"
-            style={{
-              color: "#f8fafc",
-              fontSize: "clamp(2.8rem, 9vw, 6.4rem)",
-              letterSpacing: "0.12em",
-              textShadow: "0 0 28px rgba(45,212,191,0.45)",
-            }}
-          >
-            TITAN MECH OS
-          </h1>
-          <div className="mb-8 grid w-full max-w-2xl gap-3 rounded border border-[#2dd4bf]/35 bg-[#111827]/85 p-5 font-mono shadow-[0_0_40px_rgba(45,212,191,0.16)] sm:grid-cols-3">
-            <div>
-              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Reactor</div>
-              <div className="text-2xl font-black">100%</div>
-            </div>
-            <div>
-              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Chassis</div>
-              <div className="text-2xl font-black">MX-9</div>
-            </div>
-            <div>
-              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Mission</div>
-              <div className="text-2xl font-black">Pylon Sweep</div>
-            </div>
-            <div className="border-t border-[#2dd4bf]/20 pt-3 text-sm leading-6 text-slate-300 sm:col-span-3">
-              A heavy frame, live coolant loop, and forward ordnance array are online. Hold the
-              reactor perimeter, secure pylons, and bring back enough scrap to harden the chassis.
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleStart}
-            className="border-2 border-[#2dd4bf] bg-[#2dd4bf]/12 px-10 py-4 font-mono text-xl font-bold uppercase text-[#e6fffb] transition-colors duration-200 hover:bg-[#2dd4bf] hover:text-[#06110f]"
-            style={{ letterSpacing: "0.14em", boxShadow: "0 0 24px rgba(45,212,191,0.24)" }}
-          >
-            Engage Chassis
-          </button>
-        </div>
+        <CartridgeStartScreen
+          accent="#f43f5e"
+          cartridgeId="Slot 08"
+          description="Pilot a heat-stressed extraction titan through ore pylons and reactor pressure."
+          kicker="Overheat Cartridge"
+          motif="mech"
+          onStart={handleStart}
+          rules={[
+            "Enter pylon rings and hold extractor to grind ore into the hopper.",
+            "Full hoppers eject into credits and scrap while heat spikes climb.",
+            "Use coolant, movement, and weapons to keep the chassis online.",
+          ]}
+          secondaryAccent="#f59e0b"
+          startLabel="Engage Chassis"
+          title="TITAN MECH: OVERHEAT"
+        />
       )}
 
       {phase === "playing" && <HUD />}

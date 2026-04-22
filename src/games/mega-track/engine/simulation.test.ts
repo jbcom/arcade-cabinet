@@ -46,6 +46,8 @@ describe("mega track simulation", () => {
 
     expect(next.integrity).toBeLessThan(state.integrity);
     expect(next.impactCount).toBe(1);
+    expect(next.lastImpactType).toBe(obstacle.type);
+    expect(next.lastImpactMs).toBe(next.elapsedMs);
     expect(next.obstacles.some((entry) => entry.id === obstacle.id)).toBe(false);
     expect(next.nextObstacleIndex).toBeGreaterThanOrEqual(1);
   });
@@ -68,6 +70,8 @@ describe("mega track simulation", () => {
 
     expect(next.cleanPassStreak).toBe(4);
     expect(next.overdriveMs).toBeGreaterThan(0);
+    expect(next.lastCleanPassMs).toBe(next.elapsedMs);
+    expect(next.lastOverdriveStartMs).toBe(next.elapsedMs);
     expect(next.boostCharge).toBe(0);
   });
 });

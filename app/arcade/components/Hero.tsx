@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-const BADGES = ["React Three Fiber", "WebGL", "TypeScript", "React Router"];
-
-const BADGE_COLORS = [
-  { bg: "rgba(14,165,233,0.15)", border: "rgba(14,165,233,0.4)", text: "#0ea5e9" },
-  { bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.4)", text: "#8b5cf6" },
-  { bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.4)", text: "#ec4899" },
-  { bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.4)", text: "#06b6d4" },
-] as const;
-
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imgError, setImgError] = useState(false);
@@ -189,7 +180,7 @@ export default function Hero() {
                 background: "var(--gradient-rainbow)",
               }}
             />
-            <span>jbcom / arcade-cabinet</span>
+            <span>Insert coin / choose cabinet</span>
             <span
               style={{
                 display: "inline-block",
@@ -246,45 +237,9 @@ export default function Hero() {
               maxWidth: "480px",
             }}
           >
-            Where every frame is a universe.{" "}
-            <span style={{ color: "var(--color-text)", fontStyle: "italic" }}>
-              A monorepo of browser games
-            </span>{" "}
-            built with React Three Fiber.
+            Nine cabinet-scale games, each with its own controls, mood, and visual identity. Pick a
+            marquee, start the machine, and play full screen.
           </p>
-
-          {/* Tech badges */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.6rem",
-              marginBottom: "2.5rem",
-              justifyContent: showImage ? "flex-start" : "center",
-            }}
-          >
-            {BADGES.map((badge, i) => {
-              const c = BADGE_COLORS[i % BADGE_COLORS.length] ?? BADGE_COLORS[0];
-              return (
-                <span
-                  key={badge}
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "0.72rem",
-                    letterSpacing: "0.05em",
-                    padding: "0.35rem 0.9rem",
-                    borderRadius: "999px",
-                    background: c.bg,
-                    border: `1px solid ${c.border}`,
-                    color: c.text,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {badge}
-                </span>
-              );
-            })}
-          </div>
 
           {/* CTAs */}
           <div
@@ -319,35 +274,7 @@ export default function Hero() {
                 (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
               }}
             >
-              Explore Games
-            </a>
-            <a
-              href="https://github.com/jbcom/arcade-cabinet"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                padding: "0.8rem 2rem",
-                borderRadius: "8px",
-                background: "transparent",
-                color: "var(--color-text)",
-                letterSpacing: "0.02em",
-                border: "1px solid var(--color-border)",
-                transition: "border-color 0.2s, transform 0.2s",
-                display: "inline-block",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(139,92,246,0.6)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--color-border)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-              }}
-            >
-              View on GitHub
+              Enter Cabinet
             </a>
           </div>
         </div>
@@ -379,7 +306,7 @@ export default function Hero() {
             />
             <img
               src={heroImgSrc}
-              alt="Arcade Cabinet — browser games built in React Three Fiber"
+              alt="Arcade Cabinet game selection marquee"
               onError={() => setImgError(true)}
               style={{
                 position: "relative",

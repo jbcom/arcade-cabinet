@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   findMatchedPointId,
+  getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
 } from "./constellationProgress";
@@ -34,5 +35,21 @@ describe("constellation progress", () => {
 
     expect(isConstellationComplete(lyra, points, partialConnections)).toBe(false);
     expect(isConstellationComplete(lyra, points, completeConnections)).toBe(true);
+  });
+
+  test("previews the next constellation reward target", () => {
+    const preview = getNextConstellationPreview(1);
+
+    expect(preview).not.toBeNull();
+    if (!preview) return;
+
+    expect(preview.level).toBe(2);
+    expect(preview.name).toBe(CONSTELLATIONS[1].name);
+    expect(preview.pointCount).toBe(CONSTELLATIONS[1].points.length);
+    expect(preview.connectionCount).toBe(CONSTELLATIONS[1].connections.length);
+  });
+
+  test("returns no preview after the final constellation", () => {
+    expect(getNextConstellationPreview(CONSTELLATIONS.length)).toBeNull();
   });
 });

@@ -3,7 +3,11 @@ import {
   calculateDriveForces,
   normalizeTitanControls,
 } from "@logic/games/titan-mech/engine/titanSimulation";
-import type { TitanControls } from "@logic/games/titan-mech/engine/types";
+import type {
+  ExtractionFeedbackState,
+  TitanControls,
+  WeaponFeedbackState,
+} from "@logic/games/titan-mech/engine/types";
 import { CONFIG } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
@@ -18,7 +22,15 @@ export function Mech() {
   const renderState = useTrait(titanEntity, TitanTrait);
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3());
-  const movement = useRef({ w: false, a: false, s: false, d: false, fire: false, brace: false });
+  const movement = useRef({
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+    fire: false,
+    brace: false,
+    extract: false,
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -62,6 +74,9 @@ export function Mech() {
         case "ShiftLeft":
         case "ShiftRight":
           movement.current.brace = active;
+          break;
+        case "KeyE":
+          movement.current.extract = active;
           break;
       }
     };
@@ -130,13 +145,30 @@ export function Mech() {
     >
       <CuboidCollider args={[2.8, 4.8, 2.4]} position={[0, -0.8, 0]} />
       <group>
-        <MechChassis coolantActive={renderState.coolantBurstMs > 0} />
+        <MechChassis
+          coolantActive={renderState.coolantBurstMs > 0}
+          extractionFeedback={renderState.extraction.feedback}
+          weaponFeedback={renderState.weaponFeedback}
+        />
       </group>
     </RigidBody>
   );
 }
 
-function MechChassis({ coolantActive }: { coolantActive: boolean }) {
+function MechChassis({
+  coolantActive,
+  extractionFeedback,
+  weaponFeedback,
+}: {
+  coolantActive: boolean;
+  extractionFeedback: ExtractionFeedbackState;
+  weaponFeedback: WeaponFeedbackState;
+}) {
+  const isFiring = weaponFeedback === "firing";
+  const isOverheated = weaponFeedback === "overheated";
+  const isExtracting = extractionFeedback === "grinding";
+  const isEjecting = extractionFeedback === "ejecting";
+
   return (
     <group>
       <ArmorBox position={[0, 1.3, 0]} scale={[4.8, 3.4, 3.4]} color="#334155" />
@@ -150,10 +182,40 @@ function MechChassis({ coolantActive }: { coolantActive: boolean }) {
       <Leg side={1} />
       <Arm side={-1} cannon />
       <Arm side={1} />
+      {isExtracting ? (
+        <group position={[2.92, -1.75, 3.8]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.42, 5.2, 18]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.5} />
+          </mesh>
+          <pointLight color="#f59e0b" intensity={4.4} distance={18} />
+        </group>
+      ) : null}
+      {isEjecting ? (
+        <mesh position={[0, 2.2, -3.25]} rotation={[0.5, 0.2, 0.1]} castShadow>
+          <boxGeometry args={[1.1, 1.1, 1.1]} />
+          <meshStandardMaterial color="#c2410c" emissive="#f97316" emissiveIntensity={0.7} />
+        </mesh>
+      ) : null}
       {coolantActive ? (
         <mesh position={[0, 1.1, -2.72]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[2.4, 0.08, 8, 48]} />
           <meshBasicMaterial color="#67e8f9" transparent opacity={0.7} />
+        </mesh>
+      ) : null}
+      {isFiring ? (
+        <group position={[-3.43, -0.7, 5.2]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.72, 4.6, 18]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.86} />
+          </mesh>
+          <pointLight color="#f59e0b" intensity={6} distance={16} />
+        </group>
+      ) : null}
+      {isOverheated ? (
+        <mesh position={[0, 2.6, -2.76]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[2.7, 0.12, 8, 48]} />
+          <meshBasicMaterial color="#f43f5e" transparent opacity={0.78} />
         </mesh>
       ) : null}
 
@@ -235,7 +297,15 @@ function ArmorBox({
 
 function mergeControls(
   stateControls: TitanControls | undefined,
-  keyboard: { w: boolean; a: boolean; s: boolean; d: boolean; fire: boolean; brace: boolean }
+  keyboard: {
+    w: boolean;
+    a: boolean;
+    s: boolean;
+    d: boolean;
+    fire: boolean;
+    brace: boolean;
+    extract: boolean;
+  }
 ) {
   const keyboardThrottle = keyboard.w ? 1 : keyboard.s ? -1 : 0;
   const keyboardTurn = keyboard.a ? -1 : keyboard.d ? 1 : 0;
@@ -245,5 +315,6 @@ function mergeControls(
     turn: keyboardTurn || stateControls?.turn,
     fire: keyboard.fire || stateControls?.fire,
     brace: keyboard.brace || stateControls?.brace,
+    extract: keyboard.extract || stateControls?.extract,
   });
 }

@@ -221,8 +221,8 @@ export function ToneDrawer({
         className="absolute inset-0 z-30 touch-none"
         style={{ cursor: disabled ? "not-allowed" : "crosshair" }}
       />
-      <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
-        <div className="flex flex-col-reverse gap-1">
+      <div className="fixed left-3 top-1/2 z-40 -translate-y-1/2 pointer-events-none sm:left-4">
+        <div className="flex flex-col-reverse gap-1.5 sm:gap-1">
           {SCALE_NOTE_STEPS.map(({ id, note, index }) => (
             <motion.div
               key={id}
@@ -234,10 +234,14 @@ export function ToneDrawer({
               transition={{ duration: 0.1 }}
             >
               <div
-                className="w-8 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
+                className="flex h-8 w-10 items-center justify-center rounded text-sm font-bold text-white sm:h-6 sm:w-8 sm:text-xs"
                 style={{
                   background: NOTE_COLORS[index],
-                  boxShadow: activeNote === index ? `0 0 20px ${NOTE_COLORS[index]}` : "none",
+                  border:
+                    activeNote === index
+                      ? "1px solid rgba(255,255,255,0.8)"
+                      : "1px solid rgba(255,255,255,0.22)",
+                  boxShadow: activeNote === index ? `0 0 22px ${NOTE_COLORS[index]}` : "none",
                 }}
               >
                 {note}

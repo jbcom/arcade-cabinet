@@ -5,6 +5,7 @@ import {
   calculateObjectiveProgress,
   createArenaLayout,
   createInitialTitanState,
+  getWeaponFeedbackState,
   normalizeTitanControls,
 } from "./titanSimulation";
 
@@ -15,11 +16,21 @@ describe("titan simulation", () => {
     expect(state.phase).toBe("playing");
     expect(state.hp).toBe(state.maxHp);
     expect(state.energy).toBe(state.maxEnergy);
-    expect(state.controls).toEqual({ throttle: 0, turn: 0, fire: false, brace: false });
+    expect(state.controls).toEqual({
+      throttle: 0,
+      turn: 0,
+      fire: false,
+      brace: false,
+      extract: false,
+    });
     expect(state.pose.position.y).toBeGreaterThan(0);
     expect(state.systems.reactor).toBe(100);
     expect(state.coolantCharge).toBe(100);
     expect(state.coolantBurstMs).toBe(0);
+    expect(state.weaponFeedback).toBe("idle");
+    expect(state.extraction.hopperLoad).toBe(0);
+    expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
+    expect(state.extraction.feedback).toBe("idle");
   });
 
   test("normalizes analog and binary control input", () => {
@@ -28,12 +39,13 @@ describe("titan simulation", () => {
       turn: -1,
       fire: true,
       brace: false,
+      extract: false,
     });
   });
 
   test("calculates heading-aware heavy chassis forces", () => {
     const forces = calculateDriveForces(
-      { throttle: 1, turn: 1, fire: false, brace: false },
+      { throttle: 1, turn: 1, fire: false, brace: false, extract: false },
       Math.PI / 2,
       0.5
     );
@@ -60,6 +72,8 @@ describe("titan simulation", () => {
     expect(next).not.toBe(state);
     expect(next.energy).toBeLessThan(state.energy);
     expect(next.heat).toBeGreaterThan(state.heat);
+    expect(next.weaponFeedback).toBe("firing");
+    expect(next.lastWeaponEventMs).toBeGreaterThan(0);
     expect(next.objectiveProgress).toBe(100);
     expect(next.pose.heading).toBe(0.25);
     expect(state.pose.position.x).toBe(0);
@@ -87,6 +101,134 @@ describe("titan simulation", () => {
     expect(burst.coolantBurstMs).toBeGreaterThan(0);
     expect(burst.coolantCharge).toBe(0);
     expect(burst.heat).toBeLessThan(hot.heat);
+    expect(burst.weaponFeedback).toBe("cooling");
     expect(burst.objective).toContain("Coolant burst");
+  });
+
+  test("classifies weapon feedback for dry fire and overheating", () => {
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
+        firingAllowed: false,
+        heat: 20,
+        requestedFire: false,
+      })
+    ).toBe("idle");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
+        firingAllowed: true,
+        heat: 20,
+        requestedFire: true,
+      })
+    ).toBe("firing");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 0,
+        firingAllowed: false,
+        heat: 20,
+        requestedFire: true,
+      })
+    ).toBe("dry");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
+        firingAllowed: false,
+        heat: 94,
+        requestedFire: true,
+      })
+    ).toBe("overheated");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: true,
+        energy: 100,
+        firingAllowed: false,
+        heat: 50,
+        requestedFire: false,
+      })
+    ).toBe("cooling");
+  });
+
+  test("resets transient weapon and extraction timers when feedback returns idle", () => {
+    const active = {
+      ...createInitialTitanState("playing"),
+      lastWeaponEventMs: 640,
+      weaponFeedback: "firing" as const,
+      extraction: {
+        ...createInitialTitanState("playing").extraction,
+        feedback: "grinding" as const,
+        lastExtractionEventMs: 480,
+      },
+    };
+    const next = advanceTitanSystems(active, 100, {}, {});
+
+    expect(next.weaponFeedback).toBe("idle");
+    expect(next.lastWeaponEventMs).toBe(0);
+    expect(next.extraction.feedback).toBe("idle");
+    expect(next.extraction.lastExtractionEventMs).toBe(0);
+  });
+
+  test("allows natural cooling while extract is held but overheated", () => {
+    const hot = { ...createInitialTitanState("playing"), heat: 92, coolantCharge: 0 };
+    const next = advanceTitanSystems(
+      hot,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(next.extraction.feedback).toBe("blocked");
+    expect(next.heat).toBeLessThan(hot.heat);
+  });
+
+  test("grinds pylon ore into the hopper and converts a full hopper into credits", () => {
+    const state = createInitialTitanState("playing");
+    const grinding = advanceTitanSystems(
+      state,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(grinding.extraction.feedback).toBe("grinding");
+    expect(grinding.extraction.hopperLoad).toBeGreaterThan(0);
+    expect(grinding.energy).toBeLessThan(state.energy);
+    expect(grinding.heat).toBeGreaterThan(state.heat);
+    expect(grinding.objective).toContain("Pylon vein");
+
+    const nearlyFull = {
+      ...grinding,
+      extraction: {
+        ...grinding.extraction,
+        hopperLoad: grinding.extraction.hopperCapacity - 2,
+      },
+    };
+    const sold = advanceTitanSystems(
+      nearlyFull,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(sold.extraction.feedback).toBe("ejecting");
+    expect(sold.extraction.hopperLoad).toBe(0);
+    expect(sold.extraction.credits).toBeGreaterThan(grinding.extraction.credits);
+    expect(sold.scrap).toBeGreaterThan(grinding.scrap);
   });
 });
