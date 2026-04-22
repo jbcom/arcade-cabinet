@@ -1,6 +1,7 @@
 import { HUDOverlay } from "@arcade-cabinet/shared";
 import { useTrait } from "koota/react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, type LucideIcon } from "lucide-react";
+import type { PointerEvent } from "react";
 import { MovementTrait, RealmTrait } from "../store/traits";
 import { realmEntity } from "../store/world";
 
@@ -35,6 +36,11 @@ export function HUD() {
   const state = useTrait(realmEntity, RealmTrait);
   const setMovement = (x: number, z: number) => realmEntity.set(MovementTrait, { x, z });
   const stopMovement = () => setMovement(0, 0);
+  const startMovement = (event: PointerEvent<HTMLButtonElement>, x: number, z: number) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setMovement(x, z);
+  };
 
   return (
     <HUDOverlay
@@ -73,7 +79,7 @@ export function HUD() {
       }
       bottomLeft={
         <div style={{ color: "#c4b5fd", fontFamily: "serif", fontSize: 14 }}>
-          <div style={{ color: "#94a3b8", marginBottom: 10 }}>[W][A][S][D] or touch to move</div>
+          <div style={{ color: "#94a3b8", marginBottom: 10 }}>{state.objective}</div>
           <div
             style={{
               display: "grid",
@@ -88,7 +94,7 @@ export function HUD() {
                 type="button"
                 aria-label={label}
                 title={label}
-                onPointerDown={() => setMovement(x, z)}
+                onPointerDown={(event) => startMovement(event, x, z)}
                 onPointerUp={stopMovement}
                 onPointerCancel={stopMovement}
                 onPointerLeave={stopMovement}

@@ -7,6 +7,7 @@ import {
 } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { createInitialRealmState } from "./engine/realmSimulation";
 import { World } from "./r3f/World";
 import { MovementTrait, RealmTrait } from "./store/traits";
 import { realmEntity, realmWorld } from "./store/world";
@@ -20,32 +21,27 @@ function RealmApp() {
   const handleStart = () => {
     realmEntity.set(PhaseTrait, { phase: "playing" });
     realmEntity.set(MovementTrait, { x: 0, z: 0 });
-    realmEntity.set(RealmTrait, {
-      phase: "playing",
-      hp: 100,
-      maxHp: 100,
-      atk: 10,
-      zone: 1,
-      score: 0,
-      loot: [],
-    });
+    realmEntity.set(RealmTrait, createInitialRealmState("playing"));
   };
 
   return (
-    <GameViewport background="#050505">
-      <Canvas shadows camera={{ fov: 45 }} gl={browserTestCanvasGlOptions}>
+    <GameViewport background="#08111d">
+      <Canvas shadows camera={{ fov: 42, position: [0, 14, 24] }} gl={browserTestCanvasGlOptions}>
         {phase === "playing" && <World />}
       </Canvas>
 
       {phase === "menu" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#050505]/95 backdrop-blur-lg z-20 text-[#e2e8f0] font-serif">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#050505]/95 px-4 text-[#e2e8f0] font-serif backdrop-blur-lg">
           <h1
-            className="text-6xl md:text-8xl font-black uppercase tracking-[12px] mb-8 text-center text-transparent bg-clip-text bg-gradient-to-b from-[#c084fc] to-[#7c3aed]"
-            style={{ filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.4))" }}
+            className="mb-8 bg-gradient-to-b from-[#c084fc] to-[#7c3aed] bg-clip-text text-center text-6xl font-black uppercase text-transparent md:text-8xl"
+            style={{
+              letterSpacing: "0.14em",
+              filter: "drop-shadow(0 0 20px rgba(124, 58, 237, 0.4))",
+            }}
           >
             REALMWALKER
           </h1>
-          <div className="bg-[#1e1b4b]/40 p-10 rounded-xl border border-[#c084fc]/30 max-w-2xl text-center leading-relaxed mb-12 relative overflow-hidden">
+          <div className="relative mb-12 max-w-2xl overflow-hidden rounded-lg border border-[#c084fc]/30 bg-[#1e1b4b]/40 p-7 text-center leading-relaxed sm:p-10">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#c084fc]/50 to-transparent" />
             <p className="text-xl italic mb-6 text-slate-300">
               "The realms shift, the shadows deepen. Will you walk the light or be consumed by the
