@@ -29,6 +29,30 @@ export function createInitialState(): SimSovietState {
   };
 }
 
+function recomputeDerived(state: SimSovietState) {
+  const next = { ...state, grid: state.grid.map((cell) => ({ ...cell })) };
+  let foodDelta = 0;
+  let power = 0;
+  let water = 0;
+  let incomeDelta = 0;
+  let population = 0;
+
+  for (const cell of next.grid) {
+    if (!cell.building) continue;
+    const definition = BUILDINGS[cell.building];
+    foodDelta += definition.food ?? 0;
+    power += definition.power ?? 0;
+    water += definition.water ?? 0;
+    incomeDelta += definition.income ?? 0;
+    population += definition.population ?? 0;
+  }
+
+  next.power = power;
+  next.water = water;
+  next.population = population;
+  return { next, foodDelta, incomeDelta };
+}
+
 export function placeBuilding(state: SimSovietState, x: number, y: number) {
   const next = structuredClone(state) as SimSovietState;
   const cell = next.grid.find((entry) => entry.x === x && entry.y === y);
@@ -38,7 +62,7 @@ export function placeBuilding(state: SimSovietState, x: number, y: number) {
   }
   cell.building = next.selectedTool;
   next.funds -= tool.cost;
-  return recompute(next);
+  return recomputeDerived(next).next;
 }
 
 export function selectTool(state: SimSovietState, selectedTool: BuildingTypeId) {
@@ -53,43 +77,25 @@ export function tickSimulation(state: SimSovietState, deltaMs: number) {
 
   let next = structuredClone(state) as SimSovietState;
   for (let index = 0; index < monthsAdvanced; index += 1) {
-    next = recompute(next);
+    const derived = recomputeDerived(next);
+    next = derived.next;
+    
+    // Apply monthly changes
+    const foodConsumed = Math.max(6, Math.floor(next.population / 8));
+    next.food = Math.max(0, next.food + derived.foodDelta - foodConsumed);
+    next.funds = Math.max(0, next.funds + derived.incomeDelta + 6); // Keep base +6 income
+    
     next.month += 1;
     next.quotaProgress = Math.min(100, next.quotaProgress + 4);
     if (next.month > 12) {
       next.month = 1;
       next.year += 1;
     }
-    next.funds += 6;
+    
+    // Starvation penalty modifies the population stored in state for the next frame
     if (next.food <= 0) {
       next.population = Math.max(0, next.population - 2);
     }
   }
-  return next;
-}
-
-function recompute(state: SimSovietState) {
-  const next = { ...state, grid: state.grid.map((cell) => ({ ...cell })) };
-  let food = 0;
-  let power = 0;
-  let water = 0;
-  let income = 0;
-  let population = 0;
-
-  for (const cell of next.grid) {
-    if (!cell.building) continue;
-    const definition = BUILDINGS[cell.building];
-    food += definition.food ?? 0;
-    power += definition.power ?? 0;
-    water += definition.water ?? 0;
-    income += definition.income ?? 0;
-    population += definition.population ?? 0;
-  }
-
-  next.food = Math.max(0, next.food + food - Math.max(6, Math.floor(population / 8)));
-  next.power = power;
-  next.water = water;
-  next.population = population;
-  next.funds = Math.max(0, next.funds + income);
   return next;
 }

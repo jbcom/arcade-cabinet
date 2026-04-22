@@ -9,18 +9,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@arcade-cabinet/shared": "workspace:*",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@react-three/postprocessing": "^3.0.0",
     "koota": "^0.6.6",
-    "postprocessing": "^6.36.3",
-    "react": "^19.0.0",
-    "three": "^0.176.0"
+    "postprocessing": "^6.36.3"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/three": "^0.176.0",
+    "react": "^19.0.0",
+    "three": "^0.176.0",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
