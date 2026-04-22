@@ -34,17 +34,17 @@ function InstancedBlocks({
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
-  const positions = useMemo(
+  const instances = useMemo(
     () =>
-      blocks.map(
-        (b) =>
-          [cx * CONFIG.CHUNK_SIZE + b.x + 0.5, b.y + 0.5, cz * CONFIG.CHUNK_SIZE + b.z + 0.5] as [
-            number,
-            number,
-            number,
-          ]
-      ),
-    [blocks, cx, cz]
+      blocks.map((block, index) => ({
+        key: `${type}-${cx}-${cz}-${index}`,
+        position: [
+          cx * CONFIG.CHUNK_SIZE + block.x + 0.5,
+          block.y + 0.5,
+          cz * CONFIG.CHUNK_SIZE + block.z + 0.5,
+        ] as [number, number, number],
+      })),
+    [blocks, cx, cz, type]
   );
 
   useEffect(() => {
@@ -66,7 +66,7 @@ function InstancedBlocks({
   return (
     <>
       {!isVitest && (
-        <InstancedRigidBodies positions={positions} colliders="cuboid" type="fixed">
+        <InstancedRigidBodies instances={instances} colliders="cuboid" type="fixed">
           <instancedMesh args={[undefined, undefined, blocks.length]} castShadow receiveShadow>
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial color={COLORS[type] || "#ffffff"} />
