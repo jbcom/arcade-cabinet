@@ -63,18 +63,18 @@ importers:
 
   packages/entropy-edge:
     dependencies:
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@react-three/drei':
         specifier: ^10.0.0
         version: 10.7.7(@react-three/fiber@9.6.0(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0))(@types/react@19.2.14)(@types/three@0.176.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0)
       '@react-three/fiber':
         specifier: ^9.0.0
         version: 9.6.0(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0)
-      '@react-three/postprocessing':
-        specifier: ^3.0.0
-        version: 3.0.4(@react-three/fiber@9.6.0(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0))(@types/three@0.176.0)(react@19.2.5)(three@0.176.0)
-      postprocessing:
-        specifier: ^6.36.3
-        version: 6.39.1(three@0.176.0)
+      koota:
+        specifier: ^0.6.6
+        version: 0.6.6(@types/react@19.2.14)(react@19.2.5)
       react:
         specifier: ^19.0.0
         version: 19.2.5
