@@ -11,19 +11,29 @@
     "clean": "rm -rf dist .astro"
   },
   "dependencies": {
+    "@arcade-cabinet/bioluminescent-sea": "workspace:*",
+    "@arcade-cabinet/cosmic-gardener": "workspace:*",
+    "@arcade-cabinet/enchanted-forest": "workspace:*",
     "@arcade-cabinet/gridizen": "workspace:*",
     "@arcade-cabinet/otterly-chaotic": "workspace:*",
+    "@arcade-cabinet/primordial-ascent": "workspace:*",
+    "@arcade-cabinet/reach-for-the-sky": "workspace:*",
     "@arcade-cabinet/sim-soviet": "workspace:*",
-    "@astrojs/react": "^4.2.0",
-    "@astrojs/sitemap": "^3.3.0",
-    "astro": "^5.7.7",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@astrojs/react": "^5.0.3",
+    "@astrojs/sitemap": "^3.7.2",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/device": "^8.0.2",
+    "astro": "^6.1.8",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
+    "@capacitor/cli": "^8.3.1",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.8.3"
   }
 }

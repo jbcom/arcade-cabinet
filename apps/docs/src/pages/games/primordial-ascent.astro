@@ -1,0 +1,10 @@
+---
+import Game from "@arcade-cabinet/primordial-ascent";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Primordial Ascent">
+  <main class="w-full h-[100svh] bg-[#020608]">
+    <Game client:only="react" />
+  </main>
+</BaseLayout>

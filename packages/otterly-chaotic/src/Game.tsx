@@ -91,11 +91,12 @@ function OtterlyApp() {
   useGameLoop(
     (deltaMs) => {
       if (phase.phase !== "playing") return;
+      const currentTimer = (otterlyEntity.get(TimerTrait) as typeof timer | undefined) ?? timer;
       const next = tick(readState(), deltaMs, movement, barkQueued);
       writeState(next);
       otterlyEntity.set(ScoreTrait, { value: Math.round(next.ballHealth), label: "SALAD" });
       otterlyEntity.set(TimerTrait, {
-        elapsedMs: timer.elapsedMs + deltaMs,
+        elapsedMs: currentTimer.elapsedMs + deltaMs,
         remainingMs: next.barkCooldownMs,
         label: "TIMER",
       });
@@ -108,7 +109,7 @@ function OtterlyApp() {
         setBarkQueued(false);
       }
     },
-    [phase.phase, movement.x, movement.y, barkQueued, timer.elapsedMs]
+    [phase.phase, movement.x, movement.y, barkQueued]
   );
 
   return (
@@ -117,7 +118,7 @@ function OtterlyApp() {
       style={{
         position: "relative",
         width: "100%",
-        height: "100%",
+        height: "100svh",
         minHeight: 720,
         overflow: "hidden",
         background: "#082f49",

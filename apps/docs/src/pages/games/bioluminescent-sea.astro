@@ -1,0 +1,10 @@
+---
+import Game from "@arcade-cabinet/bioluminescent-sea";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Bioluminescent Sea">
+  <main class="w-full h-[100svh] bg-[#050d15]">
+    <Game client:only="react" />
+  </main>
+</BaseLayout>

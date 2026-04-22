@@ -8,5 +8,5 @@ export const simSovietEntity = simSovietWorld.spawn(
   PhaseTrait({ phase: "menu" }),
   ScoreTrait({ value: 8, label: "QUOTA" }),
   TimerTrait({ elapsedMs: 0, remainingMs: 0, label: "CALENDAR" }),
-  SimSovietTrait(createInitialState() as never)
+  SimSovietTrait(createInitialState())
 );

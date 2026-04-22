@@ -44,16 +44,20 @@ export function HUDOverlay({
           alignItems: "flex-start",
         }}
       >
-        <div
-          style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-        >
-          {topLeft}
-        </div>
-        <div
-          style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-        >
-          {topRight}
-        </div>
+        {topLeft ? (
+          <div
+            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
+          >
+            {topLeft}
+          </div>
+        ) : null}
+        {topRight ? (
+          <div
+            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
+          >
+            {topRight}
+          </div>
+        ) : null}
       </div>
       {children ? <div style={{ flex: 1, position: "relative" }}>{children}</div> : null}
       <div
@@ -64,16 +68,20 @@ export function HUDOverlay({
           alignItems: "flex-end",
         }}
       >
-        <div
-          style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-        >
-          {bottomLeft}
-        </div>
-        <div
-          style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-        >
-          {bottomRight}
-        </div>
+        {bottomLeft ? (
+          <div
+            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
+          >
+            {bottomLeft}
+          </div>
+        ) : null}
+        {bottomRight ? (
+          <div
+            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
+          >
+            {bottomRight}
+          </div>
+        ) : null}
       </div>
     </div>
   );

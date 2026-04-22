@@ -43,7 +43,7 @@ export function HUD({ state, onSelectTool }: HUDProps) {
           <span>Power: {state.power}</span>
           <span>Water: {state.water}</span>
           <span>
-            {state.month.toString().padStart(2, "0")}/{state.year}
+            Date: {state.month.toString().padStart(2, "0")}/{state.year}
           </span>
         </div>
       }

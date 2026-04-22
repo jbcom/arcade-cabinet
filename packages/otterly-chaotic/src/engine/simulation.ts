@@ -1,6 +1,6 @@
 import type { OtterlyState, Vec2 } from "./types";
 
-export const WATER_ZONE = { x: -2.5, z: -1.6, width: 2.8, depth: 2.4 };
+export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
 
 export function createInitialState(): OtterlyState {
@@ -130,7 +130,7 @@ function isInsideWater(position: Vec2) {
   return (
     position.x > WATER_ZONE.x &&
     position.x < WATER_ZONE.x + WATER_ZONE.width &&
-    position.y > WATER_ZONE.z &&
-    position.y < WATER_ZONE.z + WATER_ZONE.depth
+    position.y > WATER_ZONE.y &&
+    position.y < WATER_ZONE.y + WATER_ZONE.height
   );
 }

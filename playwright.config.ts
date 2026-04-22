@@ -27,8 +27,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "corepack pnpm --filter @arcade-cabinet/docs dev --host 0.0.0.0 --port 4321",
+    command: "corepack pnpm --filter @arcade-cabinet/docs build && corepack pnpm --filter @arcade-cabinet/docs preview --host 0.0.0.0 --port 4321",
     url: appBaseUrl,
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
   },
 });
