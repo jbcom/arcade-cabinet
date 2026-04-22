@@ -126,12 +126,12 @@ export function HUD() {
 
 function BlockHotbar({ inventory }: { inventory: string[] }) {
   const slots = [
-    { label: "Stone", color: "#8b98a6", count: inventory.includes("Copper") ? 4 : 0 },
-    { label: "Wood", color: "#6b4423", count: inventory.includes("Sapwood") ? 6 : 0 },
-    { label: "Leaves", color: "#2f8f3a", count: inventory.includes("Sapwood") ? 3 : 0 },
-    { label: "Dirt", color: "#7c5a3a", count: 2 },
-    { label: "Sand", color: "#e7c86e", count: inventory.includes("Water") ? 5 : 1 },
-    { label: "Torch", color: "#f59e0b", count: 3 },
+    { label: "Stone", color: "#8b98a6", available: true },
+    { label: "Ore", color: "#c56a28", available: inventory.includes("Copper") },
+    { label: "Wood", color: "#6b4423", available: inventory.includes("Sapwood") },
+    { label: "Leaves", color: "#2f8f3a", available: inventory.includes("Sapwood") },
+    { label: "Sand", color: "#e7c86e", available: true },
+    { label: "Water", color: "#38bdf8", available: inventory.includes("Water") },
   ];
 
   return (
@@ -146,33 +146,41 @@ function BlockHotbar({ inventory }: { inventory: string[] }) {
       {slots.map((slot, index) => (
         <div
           key={slot.label}
-          title={slot.label}
+          aria-label={`${slot.label} ${slot.available ? "available" : "survey pending"}`}
+          role="img"
+          title={`${slot.label}: ${slot.available ? "available" : "survey pending"}`}
           style={{
             position: "relative",
             width: "2rem",
             height: "2rem",
-            border: index === 0 ? "2px solid #facc15" : "1px solid rgba(226,232,240,0.32)",
+            border:
+              index === 0
+                ? "2px solid #facc15"
+                : slot.available
+                  ? "1px solid rgba(226,232,240,0.5)"
+                  : "1px solid rgba(148,163,184,0.22)",
             borderRadius: 6,
             background: slot.color,
             boxShadow:
               index === 0 ? "0 0 14px rgba(250,204,21,0.4)" : "0 8px 16px rgba(0,0,0,0.22)",
-            filter: slot.count <= 0 ? "grayscale(0.75) brightness(0.55)" : undefined,
+            filter: slot.available ? undefined : "grayscale(0.75) brightness(0.55)",
           }}
         >
-          <span
-            style={{
-              position: "absolute",
-              right: 3,
-              bottom: 1,
-              color: "#fff",
-              fontFamily: "ui-monospace, SFMono-Regular, monospace",
-              fontSize: 10,
-              fontWeight: 900,
-              textShadow: "0 1px 2px #000",
-            }}
-          >
-            {slot.count}
-          </span>
+          {slot.available ? (
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                right: 4,
+                bottom: 4,
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#f8fafc",
+                boxShadow: "0 0 8px rgba(248,250,252,0.85)",
+              }}
+            />
+          ) : null}
         </div>
       ))}
     </div>

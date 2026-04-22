@@ -5,6 +5,7 @@ import * as THREE from "three";
 import TerrainWorker from "../engine/TerrainWorker?worker";
 import { CONFIG } from "../engine/types";
 import { type BlockData, type ChunkData, generateChunkData } from "../engine/voxelSimulation";
+import type { ChunkCoords } from "./Player";
 
 const MATERIALS: Record<
   string,
@@ -49,14 +50,17 @@ function InstancedBlocks({
   blocks,
   cx,
   cz,
+  physicsEnabled,
 }: {
   type: string;
   blocks: BlockData[];
   cx: number;
   cz: number;
+  physicsEnabled: boolean;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = MATERIALS[type] ?? { color: "#ffffff", roughness: 0.8 };
+  const shouldUsePhysics = physicsEnabled && !isVitest && type !== "water";
 
   const instances = useMemo(
     () =>
@@ -72,7 +76,7 @@ function InstancedBlocks({
   );
 
   useEffect(() => {
-    if ((isVitest || type === "water") && meshRef.current) {
+    if (!shouldUsePhysics && meshRef.current) {
       const dummy = new THREE.Object3D();
       blocks.forEach((block, i) => {
         dummy.position.set(
@@ -85,11 +89,11 @@ function InstancedBlocks({
       });
       meshRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [blocks, cx, cz, type]);
+  }, [blocks, cx, cz, shouldUsePhysics]);
 
   return (
     <>
-      {!isVitest && type !== "water" && (
+      {shouldUsePhysics && (
         <InstancedRigidBodies instances={instances} colliders="cuboid" type="fixed">
           <instancedMesh args={[undefined, undefined, blocks.length]} castShadow receiveShadow>
             <boxGeometry args={[1, 1, 1]} />
@@ -97,7 +101,7 @@ function InstancedBlocks({
           </instancedMesh>
         </InstancedRigidBodies>
       )}
-      {(isVitest || type === "water") && (
+      {!shouldUsePhysics && (
         <instancedMesh
           ref={meshRef}
           args={[undefined, undefined, blocks.length]}
@@ -126,7 +130,7 @@ function VoxelBlockMaterial({ material }: { material: (typeof MATERIALS)[string]
   );
 }
 
-function Chunk({ data }: { data: ChunkData }) {
+function Chunk({ data, physicsEnabled }: { data: ChunkData; physicsEnabled: boolean }) {
   const blocksByType = useMemo(() => {
     const grouped = new Map<string, BlockData[]>();
     data.blocks.forEach((block) => {
@@ -140,13 +144,28 @@ function Chunk({ data }: { data: ChunkData }) {
   return (
     <group>
       {Array.from(blocksByType.entries()).map(([type, blocks]) => (
-        <InstancedBlocks key={type} type={type} blocks={blocks} cx={data.cx} cz={data.cz} />
+        <InstancedBlocks
+          key={type}
+          type={type}
+          blocks={blocks}
+          cx={data.cx}
+          cz={data.cz}
+          physicsEnabled={physicsEnabled}
+        />
       ))}
     </group>
   );
 }
 
-export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
+export function TerrainManager({
+  playerChunk,
+  physicsEnabled,
+  streamingEnabled,
+}: {
+  playerChunk: ChunkCoords;
+  physicsEnabled: boolean;
+  streamingEnabled: boolean;
+}) {
   const initialChunks = useMemo(() => createInitialChunkRing(), []);
   const [chunks, setChunks] = useState<Map<string, ChunkData>>(initialChunks);
   const workerRef = useRef<Worker>(null);
@@ -156,6 +175,8 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
   const streamingTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!streamingEnabled) return undefined;
+
     workerRef.current = new TerrainWorker();
 
     workerRef.current.onmessage = (e) => {
@@ -174,13 +195,13 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
       }
       workerRef.current?.terminate();
     };
-  }, []);
+  }, [streamingEnabled]);
 
   useEffect(() => {
-    if (!workerRef.current) return;
+    if (!streamingEnabled || !workerRef.current) return;
 
-    const pCx = Math.floor(playerPos.x / CONFIG.CHUNK_SIZE);
-    const pCz = Math.floor(playerPos.z / CONFIG.CHUNK_SIZE);
+    const pCx = playerChunk.cx;
+    const pCz = playerChunk.cz;
 
     const R = CONFIG.RENDER_DISTANCE;
     const currentVisibleKeys = new Set<string>();
@@ -219,12 +240,12 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
       }
       return changed ? next : prev;
     });
-  }, [playerPos.x, playerPos.z]); // Only react to player position changes, not chunk state updates
+  }, [playerChunk.cx, playerChunk.cz, streamingEnabled]);
 
   return (
     <>
       {Array.from(chunks.values()).map((data) => (
-        <Chunk key={`${data.cx},${data.cz}`} data={data} />
+        <Chunk key={`${data.cx},${data.cz}`} data={data} physicsEnabled={physicsEnabled} />
       ))}
     </>
   );

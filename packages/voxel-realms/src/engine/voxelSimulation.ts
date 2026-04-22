@@ -247,7 +247,7 @@ export function getProceduralHeight(x: number, z: number): number {
     const shorelineBias = z < -5 ? -1.2 : z < -1 ? -0.35 : 0.15;
     const detail = Math.sin(x * 0.34) * 0.45 + Math.cos(z * 0.29) * 0.38;
 
-    return Math.floor(shorelineBias + islandRise + detail);
+    return Math.max(-1, Math.floor(shorelineBias + islandRise + detail));
   }
 
   const ridge = valueNoise(x * 0.025, z * 0.025, 11) * 19;

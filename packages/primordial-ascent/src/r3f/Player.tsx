@@ -41,6 +41,21 @@ export function Player() {
   );
 
   useEffect(() => {
+    return () => {
+      tetherLine.removeFromParent();
+      tetherLine.geometry.dispose();
+
+      if (Array.isArray(tetherLine.material)) {
+        tetherLine.material.forEach((material) => {
+          material.dispose();
+        });
+      } else {
+        tetherLine.material.dispose();
+      }
+    };
+  }, [tetherLine]);
+
+  useEffect(() => {
     camera.position.set(
       CONFIG.playerStartPosition.x,
       CONFIG.playerStartPosition.y,
@@ -151,12 +166,11 @@ export function Player() {
       const detail = (event as CustomEvent<{ x?: number; y?: number }>).detail ?? {};
       const x = detail.x ?? 0;
       const y = detail.y ?? 0;
-      const deadZone = 0.08;
 
-      movement.current.forward = y < -deadZone;
-      movement.current.back = y > deadZone;
-      movement.current.left = x < -deadZone;
-      movement.current.right = x > deadZone;
+      movement.current.forward = y < 0;
+      movement.current.back = y > 0;
+      movement.current.left = x < 0;
+      movement.current.right = x > 0;
     };
 
     window.addEventListener("keydown", handleKeyDown);

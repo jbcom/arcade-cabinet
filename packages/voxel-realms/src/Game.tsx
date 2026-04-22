@@ -24,7 +24,10 @@ function VoxelApp() {
     <GameViewport background="#9fd7e8">
       <Canvas shadows camera={{ fov: 72, position: [0, 4.6, 0] }} gl={browserTestCanvasGlOptions}>
         {state.phase !== "gameover" && (
-          <World key={state.phase === "playing" ? "playing" : "preview"} />
+          <World
+            key={state.phase === "playing" ? "playing" : "preview"}
+            interactive={state.phase === "playing"}
+          />
         )}
       </Canvas>
 

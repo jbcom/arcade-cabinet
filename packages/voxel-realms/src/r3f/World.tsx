@@ -1,13 +1,17 @@
 import { PointerLockControls, Sky } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
-import { useMemo, useState } from "react";
-import * as THREE from "three";
-import { Player } from "./Player";
+import { useEffect, useMemo, useState } from "react";
+import { CONFIG } from "../engine/types";
+import { type ChunkCoords, Player } from "./Player";
 import { SpawnCamp } from "./SpawnCamp";
 import { TerrainManager } from "./TerrainManager";
 
-export function World() {
-  const [playerPos, setPlayerPos] = useState(new THREE.Vector3(0, 4, 0));
+export function World({ interactive = true }: { interactive?: boolean }) {
+  const [playerChunk, setPlayerChunk] = useState<ChunkCoords>(() => ({
+    cx: Math.floor(CONFIG.PLAYER_START.x / CONFIG.CHUNK_SIZE),
+    cz: Math.floor(CONFIG.PLAYER_START.z / CONFIG.CHUNK_SIZE),
+  }));
 
   return (
     <>
@@ -32,14 +36,38 @@ export function World() {
         shadow-camera-bottom={-100}
       />
       <hemisphereLight args={["#c7f3ff", "#2f5a31", 0.45]} />
-      <Physics gravity={[0, -15, 0]}>
-        <Player onPositionChange={setPlayerPos} />
-        <TerrainManager playerPos={playerPos} />
-        <SpawnCamp />
-      </Physics>
-      <PointerLockControls />
+      {interactive ? (
+        <Physics gravity={[0, -15, 0]}>
+          <Player onChunkChange={setPlayerChunk} />
+          <TerrainManager playerChunk={playerChunk} physicsEnabled streamingEnabled />
+          <SpawnCamp physicsEnabled />
+        </Physics>
+      ) : (
+        <>
+          <PreviewCamera />
+          <TerrainManager
+            playerChunk={playerChunk}
+            physicsEnabled={false}
+            streamingEnabled={false}
+          />
+          <SpawnCamp physicsEnabled={false} />
+        </>
+      )}
+      {interactive ? <PointerLockControls /> : null}
     </>
   );
+}
+
+function PreviewCamera() {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    camera.position.set(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.y + 0.75, CONFIG.PLAYER_START.z);
+    camera.lookAt(5.5, 1.8, 13);
+    camera.updateProjectionMatrix();
+  }, [camera]);
+
+  return null;
 }
 
 function BlockClouds() {

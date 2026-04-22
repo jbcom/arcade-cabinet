@@ -1,4 +1,5 @@
 import { RigidBody } from "@react-three/rapier";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { createSpawnCampLayout } from "../engine/voxelSimulation";
 
@@ -14,23 +15,21 @@ const RESOURCE_COLORS = {
   leaves: "#166534",
 } as const;
 
-export function SpawnCamp() {
+export function SpawnCamp({ physicsEnabled = true }: { physicsEnabled?: boolean }) {
   const layout = useMemo(() => createSpawnCampLayout(), []);
   const solidBlocks = layout.blocks.filter((block) => block.type !== "water");
   const waterBlocks = layout.blocks.filter((block) => block.type === "water");
 
   return (
     <group>
-      <RigidBody type="fixed" colliders="cuboid">
-        <group>
-          {solidBlocks.map((block) => (
-            <mesh key={block.id} position={block.position} castShadow receiveShadow>
-              <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={block.color} roughness={0.88} />
-            </mesh>
-          ))}
-        </group>
-      </RigidBody>
+      <MaybeRigidBody enabled={physicsEnabled}>
+        {solidBlocks.map((block) => (
+          <mesh key={block.id} position={block.position} castShadow receiveShadow>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={block.color} roughness={0.88} />
+          </mesh>
+        ))}
+      </MaybeRigidBody>
 
       {waterBlocks.map((block) => (
         <mesh key={block.id} position={block.position} receiveShadow>
@@ -72,12 +71,12 @@ export function SpawnCamp() {
 
       {layout.landmarks.map((landmark) => (
         <group key={landmark.id} position={landmark.position}>
-          <RigidBody type="fixed" colliders="cuboid">
+          <MaybeRigidBody enabled={physicsEnabled}>
             <mesh position={[0, landmark.height / 2, 0]} castShadow receiveShadow>
               <boxGeometry args={[0.55, landmark.height, 0.55]} />
               <meshStandardMaterial color="#334155" metalness={0.08} roughness={0.72} />
             </mesh>
-          </RigidBody>
+          </MaybeRigidBody>
           <mesh position={[0, landmark.height + 0.55, 0]}>
             <octahedronGeometry args={[0.58, 0]} />
             <meshStandardMaterial
@@ -109,5 +108,17 @@ export function SpawnCamp() {
         ))}
       </group>
     </group>
+  );
+}
+
+function MaybeRigidBody({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const content = <group>{children}</group>;
+
+  return enabled ? (
+    <RigidBody type="fixed" colliders="cuboid">
+      {content}
+    </RigidBody>
+  ) : (
+    content
   );
 }

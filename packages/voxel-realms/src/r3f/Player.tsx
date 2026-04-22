@@ -14,10 +14,18 @@ import {
 import { VoxelTrait } from "../store/traits";
 import { voxelEntity } from "../store/world";
 
-export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vector3) => void }) {
+export interface ChunkCoords {
+  cx: number;
+  cz: number;
+}
+
+export function Player({ onChunkChange }: { onChunkChange: (chunk: ChunkCoords) => void }) {
   const { camera } = useThree();
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.y, 0));
+  const lastChunk = useRef<ChunkCoords>(
+    toChunkCoords(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.z)
+  );
 
   const movement = useRef<VoxelControls>({
     forward: false,
@@ -91,12 +99,11 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
       const detail = (event as CustomEvent<{ x?: number; y?: number }>).detail ?? {};
       const x = detail.x ?? 0;
       const y = detail.y ?? 0;
-      const deadZone = 0.08;
 
-      movement.current.forward = y < -deadZone;
-      movement.current.backward = y > deadZone;
-      movement.current.left = x < -deadZone;
-      movement.current.right = x > deadZone;
+      movement.current.forward = y < 0;
+      movement.current.backward = y > 0;
+      movement.current.left = x < 0;
+      movement.current.right = x > 0;
     };
     const handleForwardStart = () => setMobileControl("forward", true);
     const handleForwardEnd = () => setMobileControl("forward", false);
@@ -136,7 +143,12 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
     const currentTrans = rbRef.current.translation();
     const currentVel = rbRef.current.linvel();
     position.current.set(currentTrans.x, currentTrans.y, currentTrans.z);
-    onPositionChange(position.current.clone());
+
+    const currentChunk = toChunkCoords(currentTrans.x, currentTrans.z);
+    if (currentChunk.cx !== lastChunk.current.cx || currentChunk.cz !== lastChunk.current.cz) {
+      lastChunk.current = currentChunk;
+      onChunkChange(currentChunk);
+    }
 
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
@@ -195,6 +207,13 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
       <FirstPersonTool />
     </>
   );
+}
+
+function toChunkCoords(x: number, z: number): ChunkCoords {
+  return {
+    cx: Math.floor(x / CONFIG.CHUNK_SIZE),
+    cz: Math.floor(z / CONFIG.CHUNK_SIZE),
+  };
 }
 
 function FirstPersonTool() {

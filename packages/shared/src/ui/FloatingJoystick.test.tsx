@@ -56,3 +56,39 @@ test("FloatingJoystick opens at the pointer origin and emits normalized movement
     expect(vectors.at(-1)).toEqual({ x: 0, y: 0, magnitude: 0, angle: 0 });
   });
 });
+
+test("FloatingJoystick can claim a non-primary touch pointer for multi-touch controls", async () => {
+  const vectors: JoystickVector[] = [];
+  const { getByTestId } = render(
+    <div data-testid="game-viewport" style={{ width: 320, height: 320 }}>
+      <FloatingJoystick onChange={(vector) => vectors.push(vector)} />
+    </div>
+  );
+
+  const host = getByTestId("game-viewport");
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  host.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      bubbles: true,
+      clientX: 80,
+      clientY: 140,
+      isPrimary: false,
+      pointerId: 22,
+      pointerType: "touch",
+    })
+  );
+  window.dispatchEvent(
+    new PointerEvent("pointermove", {
+      clientX: 80,
+      clientY: 82,
+      isPrimary: false,
+      pointerId: 22,
+      pointerType: "touch",
+    })
+  );
+
+  await waitFor(() => {
+    expect(document.querySelector('[data-testid="floating-joystick"]')).not.toBeNull();
+    expect(vectors.at(-1)?.y).toBeLessThan(-0.9);
+  });
+});

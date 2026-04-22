@@ -171,7 +171,7 @@ function ControlButton({
       style={{
         width: 44,
         height: 44,
-        minWidth: hot ? 64 : 74,
+        minWidth: hot ? 74 : 64,
         border: `1px solid ${hot ? danger : "rgba(45,212,191,0.65)"}`,
         background: hot ? "rgba(244,63,94,0.22)" : "rgba(13,148,136,0.18)",
         color: hot ? "#ffe4e6" : "#d8fff8",

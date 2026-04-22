@@ -27,7 +27,7 @@ export const GameViewport = forwardRef<HTMLDivElement, GameViewportProps>(functi
       style={{
         position: "relative",
         width: "100%",
-        height: "100%",
+        height: "100svh",
         minHeight: 0,
         overflow: "hidden",
         background,
@@ -393,7 +393,6 @@ export function FloatingJoystick({
 
     const handlePointerDown = (event: PointerEvent) => {
       if (activePointer.current !== null) return;
-      if (event.isPrimary === false) return;
       if (event.pointerType === "mouse" && !allowMouse) return;
       if (!isInsideHost(event)) return;
       if (isInteractiveTarget(event.target)) return;
