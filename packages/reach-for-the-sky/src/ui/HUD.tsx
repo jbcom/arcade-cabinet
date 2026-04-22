@@ -1,17 +1,29 @@
 import { HUDOverlay } from "@arcade-cabinet/shared";
 import { useTrait } from "koota/react";
-import { Bed, Briefcase, Coffee, Home, type LucideIcon, Star, Users, Wrench } from "lucide-react";
+import {
+  Bed,
+  Briefcase,
+  Coffee,
+  Hammer,
+  Home,
+  type LucideIcon,
+  Star,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { BUILDINGS, type BuildingId } from "../engine/types";
 import { SkyTrait } from "../store/traits";
 import { skyEntity } from "../store/world";
 
 interface HUDProps {
+  onBuildSelected: () => void;
   onSelectTool: (toolId: BuildingId | null) => void;
   selectedTool: BuildingId | null;
 }
 
-export function HUD({ onSelectTool, selectedTool }: HUDProps) {
+export function HUD({ onBuildSelected, onSelectTool, selectedTool }: HUDProps) {
   const state = useTrait(skyEntity, SkyTrait);
+  const selectedBuilding = selectedTool ? BUILDINGS[selectedTool] : null;
 
   const formatHour = (tick: number) => {
     const totalTicks = 2000;
@@ -73,6 +85,52 @@ export function HUD({ onSelectTool, selectedTool }: HUDProps) {
               <t.icon size={24} />
             </button>
           ))}
+        </div>
+      }
+      bottomRight={
+        <div
+          style={{
+            alignItems: "center",
+            color: "#e2e8f0",
+            display: "flex",
+            gap: 12,
+            justifyContent: "flex-end",
+            minWidth: 190,
+          }}
+        >
+          <div style={{ textAlign: "right" }}>
+            <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: "0.14em" }}>
+              {selectedBuilding?.name ?? "Select"}
+            </div>
+            <div style={{ color: "#facc15", fontFamily: "monospace", fontSize: 18 }}>
+              {selectedBuilding ? `$${selectedBuilding.cost.toLocaleString()}` : "$0"}
+            </div>
+          </div>
+          <button
+            type="button"
+            aria-label="Build selected module"
+            disabled={!selectedBuilding || state.funds < selectedBuilding.cost}
+            onClick={onBuildSelected}
+            style={{
+              alignItems: "center",
+              background:
+                selectedBuilding && state.funds >= selectedBuilding.cost
+                  ? "linear-gradient(135deg, #2563eb, #22d3ee)"
+                  : "rgba(51, 65, 85, 0.72)",
+              border: "1px solid rgba(226, 232, 240, 0.4)",
+              borderRadius: 8,
+              color: "#f8fafc",
+              cursor: selectedBuilding ? "pointer" : "not-allowed",
+              display: "flex",
+              height: 48,
+              justifyContent: "center",
+              opacity: selectedBuilding ? 1 : 0.58,
+              width: 48,
+            }}
+            title="Build selected module"
+          >
+            <Hammer size={24} />
+          </button>
         </div>
       }
     />

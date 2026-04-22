@@ -31,6 +31,16 @@ export interface BuildingType {
   speed?: number;
 }
 
+export interface BuildingData {
+  id: string;
+  type: BuildingId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  dirt: number;
+}
+
 export const BUILDINGS: Record<BuildingId, BuildingType> = {
   lobby: { id: "lobby", cat: "infra", name: "Lobby", cost: 1500, color: "#CFD8DC", drag: "area" },
   floor: { id: "floor", cat: "infra", name: "Floor", cost: 500, color: "#455A64", drag: "area" },

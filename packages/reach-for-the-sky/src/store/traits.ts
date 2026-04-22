@@ -1,25 +1,9 @@
 import { trait } from "koota";
-import { CONFIG } from "../engine/types";
+import { createInitialSkyState, createStarterTower } from "../engine/towerPlanning";
+import type { BuildingData } from "../engine/types";
 
-export const SkyTrait = trait(() => ({
-  funds: CONFIG.STARTING_FUNDS,
-  tick: 500,
-  day: 1,
-  speed: 1,
-  population: 0,
-  stars: 1,
-}));
-
-export interface BuildingData {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  dirt: number;
-}
+export const SkyTrait = trait(() => createInitialSkyState());
 
 export const TowerTrait = trait(() => ({
-  buildings: [],
+  buildings: createStarterTower() as BuildingData[],
 }));

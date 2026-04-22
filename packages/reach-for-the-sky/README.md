@@ -10,12 +10,13 @@ An isometric skyscraper construction and management simulation.
 
 ## Presentation Direction
 
-The skyscraper is a model rising into frame. Sky gradients, sun movement, clean module colors, and centered camera controls keep the tower legible while making height feel aspirational.
+The skyscraper starts as a seeded mixed-use tower rather than an empty lot. Floor plates, elevator and stair cores, a luminous crown, window grids, cloud layers, and changing sun/fog color make the tower read as a 3D architectural object. Build placement fills deterministic bays so growth feels deliberate and inspectable.
 
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.
-- Map controls keep the tower centered across mouse and touch.
+- Responsive camera framing keeps the tower centered across portrait and landscape.
+- Map controls and the HUD build button support mouse and touch interaction.
 - HUD and tool selection must stay edge-aligned.
 - Android packaging uses the standalone Capacitor app shell.
 
