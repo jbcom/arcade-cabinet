@@ -155,12 +155,11 @@ async function captureLargestCanvas() {
 
   if (!canvas || canvas.width === 0 || canvas.height === 0) return undefined;
 
+  const metrics = measureCanvasPixels(canvas);
   const dataUrl = canvas.toDataURL("image/png");
   const marker = "base64,";
   const markerIndex = dataUrl.indexOf(marker);
   if (markerIndex === -1) return undefined;
-
-  const metrics = await measurePngDataUrl(dataUrl);
 
   return {
     base64: dataUrl.slice(markerIndex + marker.length),
@@ -168,11 +167,7 @@ async function captureLargestCanvas() {
   };
 }
 
-async function measurePngDataUrl(dataUrl: string) {
-  const image = new Image();
-  image.src = dataUrl;
-  await image.decode();
-
+function measureCanvasPixels(canvas: HTMLCanvasElement) {
   const sampleSize = 64;
   const probe = document.createElement("canvas");
   probe.width = sampleSize;
@@ -183,7 +178,7 @@ async function measurePngDataUrl(dataUrl: string) {
     return { colorBuckets: 0, visiblePixelRatio: 0 };
   }
 
-  context.drawImage(image, 0, 0, sampleSize, sampleSize);
+  context.drawImage(canvas, 0, 0, sampleSize, sampleSize);
   const pixels = context.getImageData(0, 0, sampleSize, sampleSize).data;
   const colorBuckets = new Set<string>();
   let visiblePixels = 0;

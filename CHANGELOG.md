@@ -1,12 +1,23 @@
 ---
 title: Changelog
 description: Record of all major updates and migrations.
-version: 1.0.0
+version: 0.3.0
 ---
 
 # Changelog
 
-## [1.0.0] - 2026-04-21
+## [0.3.0](https://github.com/jbcom/arcade-cabinet/compare/arcade-cabinet-v0.2.0...arcade-cabinet-v0.3.0) (2026-04-22)
+
+
+### Features
+
+* ship arcade cabinet monorepo ([fc48720](https://github.com/jbcom/arcade-cabinet/commit/fc48720ecf8273626fcb60d129b884ec9457d387))
+
+### Changed
+
+* normalize the legacy changelog heading to the Release Please version series
+
+## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/arcade-cabinet-v0.1.0...arcade-cabinet-v0.2.0) (2026-04-21)
 
 ### Changed
 - **Massive Monorepo Migration**: Completely dismantled the legacy `pending/` HTML monoliths.
