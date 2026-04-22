@@ -7,6 +7,7 @@ import {
 } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { createInitialTitanState } from "./engine/titanSimulation";
 import { World } from "./r3f/World";
 import { TitanTrait } from "./store/traits";
 import { titanEntity, titanWorld } from "./store/world";
@@ -19,52 +20,51 @@ function TitanApp() {
 
   const handleStart = () => {
     titanEntity.set(PhaseTrait, { phase: "playing" });
-    titanEntity.set(TitanTrait, {
-      phase: "playing",
-      hp: 200,
-      maxHp: 200,
-      energy: 100,
-      maxEnergy: 100,
-      scrap: 0,
-      score: 0,
-    });
+    titanEntity.set(TitanTrait, createInitialTitanState("playing"));
   };
 
   return (
-    <GameViewport background="#020617">
-      <Canvas shadows camera={{ fov: 60 }} gl={browserTestCanvasGlOptions}>
+    <GameViewport background="#0b0f14">
+      <Canvas shadows camera={{ fov: 48, position: [0, 20, -42] }} gl={browserTestCanvasGlOptions}>
         {phase === "playing" && <World />}
       </Canvas>
 
       {phase === "menu" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020617]/90 backdrop-blur-md z-20 text-[#00ffcc] font-mono">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#090d12]/92 px-4 text-[#c8fff3] backdrop-blur-md">
           <h1
-            className="text-5xl md:text-7xl font-black uppercase tracking-[10px] mb-8 text-center"
-            style={{ textShadow: "0 0 20px rgba(0,255,204,0.5)" }}
+            className="mb-5 text-center font-black uppercase leading-none"
+            style={{
+              color: "#f8fafc",
+              fontSize: "clamp(2.8rem, 9vw, 6.4rem)",
+              letterSpacing: "0.12em",
+              textShadow: "0 0 28px rgba(45,212,191,0.45)",
+            }}
           >
             TITAN MECH OS
           </h1>
-          <div className="bg-black/60 p-8 rounded border border-[#00ffcc]/30 max-w-xl text-left leading-relaxed mb-10">
-            <div className="text-xs opacity-50 mb-4 tracking-widest">
-              BOOT SEQUENCE INITIALIZED...
+          <div className="mb-8 grid w-full max-w-2xl gap-3 rounded border border-[#2dd4bf]/35 bg-[#111827]/85 p-5 font-mono shadow-[0_0_40px_rgba(45,212,191,0.16)] sm:grid-cols-3">
+            <div>
+              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Reactor</div>
+              <div className="text-2xl font-black">100%</div>
             </div>
-            [W][A][S][D] - Pilot the chassis
-            <br />
-            [MOUSE] - Target acquisition
-            <br />
-            [LEFT CLICK] - Discharge ordinance
-            <br />
-            [ESC] - System pause
-            <br />
-            <br />
-            <span className="text-amber-400 font-bold">OBJECTIVE:</span> Neutralize hostile
-            constructs. Accumulate scrap for hardware iterations.
+            <div>
+              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Chassis</div>
+              <div className="text-2xl font-black">MX-9</div>
+            </div>
+            <div>
+              <div className="text-[0.68rem] uppercase text-[#f59e0b]">Mission</div>
+              <div className="text-2xl font-black">Pylon Sweep</div>
+            </div>
+            <div className="border-t border-[#2dd4bf]/20 pt-3 text-sm leading-6 text-slate-300 sm:col-span-3">
+              A heavy frame, live coolant loop, and forward ordnance array are online. Hold the
+              reactor perimeter, secure pylons, and bring back enough scrap to harden the chassis.
+            </div>
           </div>
           <button
             type="button"
             onClick={handleStart}
-            className="px-12 py-4 text-2xl font-bold uppercase tracking-[5px] bg-[#00ffcc]/10 border-2 border-[#00ffcc] hover:bg-[#00ffcc] hover:text-black transition-all duration-300"
-            style={{ boxShadow: "0 0 20px rgba(0,255,204,0.2)" }}
+            className="border-2 border-[#2dd4bf] bg-[#2dd4bf]/12 px-10 py-4 font-mono text-xl font-bold uppercase text-[#e6fffb] transition-colors duration-200 hover:bg-[#2dd4bf] hover:text-[#06110f]"
+            style={{ letterSpacing: "0.14em", boxShadow: "0 0 24px rgba(45,212,191,0.24)" }}
           >
             Engage Chassis
           </button>
