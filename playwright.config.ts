@@ -1,5 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const usePagesBase =
+  process.env.USE_CI === "true" ||
+  process.env.CI === "true" ||
+  process.env.GITHUB_ACTIONS === "true";
+const appBasePath = usePagesBase ? "/arcade-cabinet" : "";
+const appBaseUrl = `http://localhost:4321${appBasePath}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -8,7 +15,7 @@ export default defineConfig({
   ...(process.env.CI ? { workers: 1 } : {}),
   reporter: "html",
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: appBaseUrl,
     trace: "on-first-retry",
   },
   projects: [
@@ -18,8 +25,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm --filter @arcade-cabinet/docs build && pnpm --filter @arcade-cabinet/docs preview",
-    url: "http://localhost:4321",
+    command: "corepack pnpm --filter @arcade-cabinet/docs dev --host 0.0.0.0 --port 4321",
+    url: appBaseUrl,
     reuseExistingServer: !process.env.CI,
   },
 });

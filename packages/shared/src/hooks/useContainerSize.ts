@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import type { RefObject } from 'react';
-import type { ContainerSize } from '../types';
+import { useEffect, useState } from "react";
+import type { RefObject } from "react";
+import type { ContainerSize } from "../types";
 
 const EMPTY_SIZE: ContainerSize = { width: 0, height: 0 };
 
@@ -10,7 +10,7 @@ export function useContainerSize<T extends HTMLElement>(ref: RefObject<T | null>
   useEffect(() => {
     const element = ref.current;
     if (!element) {
-      return;
+      return undefined;
     }
 
     const update = () => {

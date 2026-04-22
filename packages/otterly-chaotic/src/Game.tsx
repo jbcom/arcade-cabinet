@@ -1,11 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { WorldProvider, useTrait } from 'koota/react';
-import { GameOverScreen, OverlayButton, PhaseTrait, ScoreTrait, StartScreen, TimerTrait, createEventBus, useContainerSize, useGameLoop } from '@arcade-cabinet/shared';
-import { HUD } from './ui/HUD';
-import { OtterScene } from './r3f/OtterScene';
-import { createInitialState, didLose, didWin, tick } from './engine/simulation';
-import { otterlyEntity, otterlyWorld } from './store/world';
-import { OtterlyTrait } from './store/traits';
+import {
+  GameOverScreen,
+  OverlayButton,
+  PhaseTrait,
+  ScoreTrait,
+  StartScreen,
+  TimerTrait,
+  createEventBus,
+  useContainerSize,
+  useGameLoop,
+} from "@arcade-cabinet/shared";
+import { WorldProvider, useTrait } from "koota/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createInitialState, didLose, didWin, tick } from "./engine/simulation";
+import type { OtterlyState } from "./engine/types";
+import { OtterScene } from "./r3f/OtterScene";
+import { OtterlyTrait } from "./store/traits";
+import { otterlyEntity, otterlyWorld } from "./store/world";
+import { HUD } from "./ui/HUD";
 
 interface OtterEvents {
   bark: undefined;
@@ -18,8 +29,12 @@ function useMovementInput() {
     const pressed = new Set<string>();
     const update = () => {
       setInput({
-        x: (pressed.has('ArrowRight') || pressed.has('d') ? 1 : 0) - (pressed.has('ArrowLeft') || pressed.has('a') ? 1 : 0),
-        y: (pressed.has('ArrowDown') || pressed.has('s') ? 1 : 0) - (pressed.has('ArrowUp') || pressed.has('w') ? 1 : 0),
+        x:
+          (pressed.has("arrowright") || pressed.has("d") ? 1 : 0) -
+          (pressed.has("arrowleft") || pressed.has("a") ? 1 : 0),
+        y:
+          (pressed.has("arrowdown") || pressed.has("s") ? 1 : 0) -
+          (pressed.has("arrowup") || pressed.has("w") ? 1 : 0),
       });
     };
     const handleDown = (event: KeyboardEvent) => {
@@ -30,11 +45,11 @@ function useMovementInput() {
       pressed.delete(event.key.toLowerCase());
       update();
     };
-    window.addEventListener('keydown', handleDown);
-    window.addEventListener('keyup', handleUp);
+    window.addEventListener("keydown", handleDown);
+    window.addEventListener("keyup", handleUp);
     return () => {
-      window.removeEventListener('keydown', handleDown);
-      window.removeEventListener('keyup', handleUp);
+      window.removeEventListener("keydown", handleDown);
+      window.removeEventListener("keyup", handleUp);
     };
   }, []);
 
@@ -43,30 +58,51 @@ function useMovementInput() {
 
 function OtterlyApp() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const phase = useTrait(otterlyEntity, PhaseTrait);
-  const state = useTrait(otterlyEntity, OtterlyTrait);
-  const score = useTrait(otterlyEntity, ScoreTrait);
-  const timer = useTrait(otterlyEntity, TimerTrait);
+  const initialState = useMemo(() => createInitialState(), []);
+  const phase = (useTrait(otterlyEntity, PhaseTrait) as { phase: string } | undefined) ?? {
+    phase: "menu",
+  };
+  const state = (useTrait(otterlyEntity, OtterlyTrait) as OtterlyState | undefined) ?? initialState;
+  const score = (useTrait(otterlyEntity, ScoreTrait) as
+    | { value: number; label: string }
+    | undefined) ?? { value: 100, label: "SALAD" };
+  const timer = (useTrait(otterlyEntity, TimerTrait) as
+    | { elapsedMs: number; remainingMs: number; label: string }
+    | undefined) ?? { elapsedMs: 0, remainingMs: 0, label: "TIMER" };
   const movement = useMovementInput();
   const [barkQueued, setBarkQueued] = useState(false);
   const eventBus = useMemo(() => createEventBus<OtterEvents>(), []);
   useContainerSize(mountRef);
 
+  const readState = useCallback(
+    () => (otterlyEntity.get(OtterlyTrait) as OtterlyState | undefined) ?? initialState,
+    [initialState]
+  );
+  const writeState = useCallback((next: OtterlyState) => {
+    otterlyEntity.set(OtterlyTrait, next as never);
+  }, []);
+
   useEffect(() => {
-    return eventBus.on('bark', () => setBarkQueued(true));
+    const handleBark = () => setBarkQueued(true);
+    eventBus.on("bark", handleBark);
+    return () => eventBus.off("bark", handleBark);
   }, [eventBus]);
 
   useGameLoop(
     (deltaMs) => {
-      if (phase.phase !== 'playing') return;
-      const next = tick(otterlyEntity.get(OtterlyTrait), deltaMs, movement, barkQueued);
-      otterlyEntity.set(OtterlyTrait, next);
-      otterlyEntity.set(ScoreTrait, { value: Math.round(next.ballHealth), label: 'SALAD' });
-      otterlyEntity.set(TimerTrait, { elapsedMs: timer.elapsedMs + deltaMs, remainingMs: next.barkCooldownMs, label: 'TIMER' });
+      if (phase.phase !== "playing") return;
+      const next = tick(readState(), deltaMs, movement, barkQueued);
+      writeState(next);
+      otterlyEntity.set(ScoreTrait, { value: Math.round(next.ballHealth), label: "SALAD" });
+      otterlyEntity.set(TimerTrait, {
+        elapsedMs: timer.elapsedMs + deltaMs,
+        remainingMs: next.barkCooldownMs,
+        label: "TIMER",
+      });
       if (didWin(next)) {
-        otterlyEntity.set(PhaseTrait, { phase: 'win' });
+        otterlyEntity.set(PhaseTrait, { phase: "win" });
       } else if (didLose(next)) {
-        otterlyEntity.set(PhaseTrait, { phase: 'gameover' });
+        otterlyEntity.set(PhaseTrait, { phase: "gameover" });
       }
       if (barkQueued) {
         setBarkQueued(false);
@@ -76,24 +112,47 @@ function OtterlyApp() {
   );
 
   return (
-    <div ref={mountRef} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 720, overflow: 'hidden', background: '#082f49' }}>
+    <div
+      ref={mountRef}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        minHeight: 720,
+        overflow: "hidden",
+        background: "#082f49",
+      }}
+    >
       <OtterScene state={state} />
-      {phase.phase === 'menu' ? (
+      {phase.phase === "menu" ? (
         <StartScreen
           title="Otterly Chaotic"
           subtitle="The prototype is now a 3D chase: steer the otter with WASD or Arrow keys, bark to stun goats, and roll the Kudzu ball into the crater."
-          primaryAction={<OverlayButton onClick={() => { otterlyEntity.set(OtterlyTrait, createInitialState()); otterlyEntity.set(PhaseTrait, { phase: 'playing' }); }}>Start Sprint</OverlayButton>}
+          primaryAction={
+            <OverlayButton
+              onClick={() => {
+                writeState(createInitialState());
+                otterlyEntity.set(PhaseTrait, { phase: "playing" });
+              }}
+            >
+              Start Sprint
+            </OverlayButton>
+          }
         />
       ) : null}
-      {phase.phase === 'playing' ? <HUD state={state} onBark={() => eventBus.emit('bark', undefined)} /> : null}
-      {phase.phase === 'win' ? (
+      {phase.phase === "playing" ? (
+        <HUD state={state} onBark={() => eventBus.emit("bark", undefined)} />
+      ) : null}
+      {phase.phase === "win" ? (
         <GameOverScreen
           title="Salad Saved"
           subtitle={`You delivered the Kudzu ball with ${score.value}% integrity after ${(state.elapsedMs / 1000).toFixed(1)} seconds.`}
-          actions={<OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>}
+          actions={
+            <OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>
+          }
         />
       ) : null}
-      {phase.phase === 'gameover' ? (
+      {phase.phase === "gameover" ? (
         <GameOverScreen
           title="Munched"
           subtitle="The goats ate the entire ball. Bark earlier and keep the otter between them and the salad next run."

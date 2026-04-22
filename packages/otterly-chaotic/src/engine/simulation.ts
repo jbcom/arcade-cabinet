@@ -1,4 +1,4 @@
-import type { GoatState, OtterlyState, Vec2 } from './types';
+import type { OtterlyState, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, z: -1.6, width: 2.8, depth: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
@@ -11,13 +11,13 @@ export function createInitialState(): OtterlyState {
     ballVelocity: { x: 0, y: 0 },
     ballHealth: 100,
     goats: [
-      { id: 'billy', position: { x: 1.4, y: -1 }, speed: 0.00125, stunnedMs: 0 },
-      { id: 'elder', position: { x: 2.4, y: 1.8 }, speed: 0.001, stunnedMs: 0 },
+      { id: "billy", position: { x: 1.4, y: -1 }, speed: 0.00125, stunnedMs: 0 },
+      { id: "elder", position: { x: 2.4, y: 1.8 }, speed: 0.001, stunnedMs: 0 },
     ],
     goalRadius: 0.9,
     elapsedMs: 0,
     barkCooldownMs: 0,
-    objective: 'Push the Kudzu ball into Elder Bleat's crater before the goats eat it.',
+    objective: "Push the Kudzu ball into Elder Bleat's crater before the goats eat it.",
   };
 }
 
@@ -62,15 +62,18 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
     goat.position = clampPosition(add(goat.position, scale(direction, goat.speed * deltaMs)));
 
     if (distance(goat.position, next.ball) < 0.95) {
-      next.ballHealth = Math.max(0, next.ballHealth - (goat.id === 'elder' ? 0.02 : 0.015) * deltaMs);
-      next.objective = 'Goats are chewing! Bark to stun them and keep pushing.';
+      next.ballHealth = Math.max(
+        0,
+        next.ballHealth - (goat.id === "elder" ? 0.02 : 0.015) * deltaMs
+      );
+      next.objective = "Goats are chewing! Bark to stun them and keep pushing.";
     }
   }
 
   if (distance(next.ball, GOAL) < next.goalRadius) {
-    next.objective = 'The salad reached the crater.';
+    next.objective = "The salad reached the crater.";
   } else if (next.ballHealth > 35) {
-    next.objective = 'Use WASD or Arrow keys, then bark to keep the goats away.';
+    next.objective = "Use WASD or Arrow keys, then bark to keep the goats away.";
   }
 
   return next;
@@ -124,5 +127,10 @@ function distance(a: Vec2, b: Vec2) {
 }
 
 function isInsideWater(position: Vec2) {
-  return position.x > WATER_ZONE.x && position.x < WATER_ZONE.x + WATER_ZONE.width && position.y > WATER_ZONE.z && position.y < WATER_ZONE.z + WATER_ZONE.depth;
+  return (
+    position.x > WATER_ZONE.x &&
+    position.x < WATER_ZONE.x + WATER_ZONE.width &&
+    position.y > WATER_ZONE.z &&
+    position.y < WATER_ZONE.z + WATER_ZONE.depth
+  );
 }

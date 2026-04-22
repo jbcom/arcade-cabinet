@@ -1,4 +1,4 @@
-import type { BuildingTypeId } from './BuildingTypes';
+import type { BuildingTypeId } from "./BuildingTypes";
 
 export interface CityCell {
   x: number;

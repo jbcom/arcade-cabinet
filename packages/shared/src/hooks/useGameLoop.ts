@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-export function useGameLoop(tick: (deltaMs: number, elapsedMs: number) => void, deps: unknown[] = []) {
+export function useGameLoop(
+  tick: (deltaMs: number, elapsedMs: number) => void,
+  deps: unknown[] = []
+) {
   const tickRef = useRef(tick);
 
   useEffect(() => {

@@ -6,7 +6,8 @@
     "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "strict": false
+    "strict": false,
+    "exactOptionalPropertyTypes": false
   },
   "include": ["src"]
 }

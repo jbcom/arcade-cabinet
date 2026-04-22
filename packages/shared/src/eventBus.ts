@@ -1,8 +1,10 @@
-import mitt, { type Emitter } from 'mitt';
+import mitt, { type Emitter } from "mitt";
 
-export type EventMap = Record<string, unknown>;
-export type TypedEventBus<TEvents extends EventMap> = Emitter<TEvents>;
+export type EventMap = object;
+export type TypedEventBus<TEvents extends EventMap> = Emitter<
+  Record<keyof TEvents, TEvents[keyof TEvents]>
+>;
 
 export function createEventBus<TEvents extends EventMap>() {
-  return mitt<TEvents>();
+  return mitt() as TypedEventBus<TEvents>;
 }

@@ -1,5 +1,5 @@
-import { BUILDINGS, type BuildingTypeId } from './BuildingTypes';
-import { createInitialGrid, type CityCell } from './Grid';
+import { BUILDINGS, type BuildingTypeId } from "./BuildingTypes";
+import { type CityCell, createInitialGrid } from "./Grid";
 
 export interface SimSovietState {
   grid: CityCell[];
@@ -17,7 +17,7 @@ export interface SimSovietState {
 export function createInitialState(): SimSovietState {
   return {
     grid: createInitialGrid(),
-    selectedTool: 'housing',
+    selectedTool: "housing",
     funds: 120,
     food: 40,
     power: 0,

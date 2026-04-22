@@ -1,20 +1,33 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { BUILDINGS } from '../engine/BuildingTypes';
-import type { SimSovietState } from '../engine/Simulation';
+import { OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { BUILDINGS } from "../engine/BuildingTypes";
+import type { SimSovietState } from "../engine/Simulation";
 
 interface CitySceneProps {
   state: SimSovietState;
   onCellClick: (x: number, y: number) => void;
 }
 
-function CityCellMesh({ x, y, building, elevation, onClick }: { x: number; y: number; building?: keyof typeof BUILDINGS; elevation: number; onClick: () => void }) {
+function CityCellMesh({
+  x,
+  y,
+  building,
+  elevation,
+  onClick,
+}: {
+  x: number;
+  y: number;
+  building: keyof typeof BUILDINGS | undefined;
+  elevation: number;
+  onClick: () => void;
+}) {
   const buildingInfo = building ? BUILDINGS[building] : null;
   return (
     <group position={[x - 4.5, elevation / 2, y - 4.5]}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: three.js meshes are not keyboard-focusable DOM nodes. */}
       <mesh receiveShadow castShadow onClick={onClick}>
         <boxGeometry args={[0.92, 0.08 + elevation, 0.92]} />
-        <meshStandardMaterial color={building ? '#1e293b' : '#334155'} />
+        <meshStandardMaterial color={building ? "#1e293b" : "#334155"} />
       </mesh>
       {buildingInfo ? (
         <mesh castShadow receiveShadow position={[0, buildingInfo.height / 2 + 0.08, 0]}>
@@ -28,10 +41,21 @@ function CityCellMesh({ x, y, building, elevation, onClick }: { x: number; y: nu
 
 export function CityScene({ state, onCellClick }: CitySceneProps) {
   return (
-    <Canvas shadows camera={{ position: [8, 11, 8], fov: 45 }} style={{ width: '100%', height: '100%' }} data-testid="sim-soviet-canvas">
-      <color attach="background" args={['#020617']} />
+    <Canvas
+      shadows
+      camera={{ position: [8, 11, 8], fov: 45 }}
+      style={{ width: "100%", height: "100%" }}
+      data-testid="sim-soviet-canvas"
+    >
+      <color attach="background" args={["#020617"]} />
       <ambientLight intensity={0.6} />
-      <directionalLight position={[8, 12, 5]} intensity={2.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+      <directionalLight
+        position={[8, 12, 5]}
+        intensity={2.2}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
       <group rotation={[0, Math.PI / 4, 0]}>
         {state.grid.map((cell) => (
           <CityCellMesh
@@ -48,7 +72,14 @@ export function CityScene({ state, onCellClick }: CitySceneProps) {
         <planeGeometry args={[24, 24]} />
         <meshStandardMaterial color="#0f766e" />
       </mesh>
-      <OrbitControls enablePan={false} minPolarAngle={0.5} maxPolarAngle={1.1} minDistance={10} maxDistance={18} target={[0, 0.8, 0]} />
+      <OrbitControls
+        enablePan={false}
+        minPolarAngle={0.5}
+        maxPolarAngle={1.1}
+        minDistance={10}
+        maxDistance={18}
+        target={[0, 0.8, 0]}
+      />
     </Canvas>
   );
 }
