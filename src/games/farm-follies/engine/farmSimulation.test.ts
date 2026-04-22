@@ -7,6 +7,7 @@ import {
   FARM_MIN_RUN_MS,
   getFarmModeTuning,
   getFarmRunSummary,
+  getFarmWobbleBand,
   tickFarmState,
 } from "./farmSimulation";
 
@@ -31,12 +32,42 @@ describe("Farm Follies stack and bank loop", () => {
   test("drops animals deterministically and can merge same-lane tiers", () => {
     let state = createInitialFarmState("standard", "playing");
     state = dropFarmAnimal(state, 0);
-    state = { ...state, nextAnimal: "chick", nextTier: 0 };
     state = dropFarmAnimal(state, 0);
 
     expect(state.stack).toHaveLength(1);
     expect(state.stack[0]?.animal).toBe("goat");
+    expect(state.lastAbility).toMatchObject({
+      ability: "headbutt",
+      animal: "goat",
+    });
     expect(state.score).toBeGreaterThan(100);
+  });
+
+  test("merge abilities reduce wobble and expose warning bands", () => {
+    const state = dropFarmAnimal(
+      {
+        ...createInitialFarmState("standard", "playing"),
+        nextAnimal: "pig",
+        nextTier: 2,
+        stack: [
+          {
+            animal: "pig",
+            id: "setup-pig",
+            lane: 1,
+            tier: 2,
+          },
+        ],
+        wobble: 88,
+      },
+      1
+    );
+
+    expect(state.stack.at(-1)).toMatchObject({ animal: "cow", tier: 3 });
+    expect(state.lastAbility).toMatchObject({
+      ability: "milk-brace",
+      wobbleRecovery: 11,
+    });
+    expect(getFarmWobbleBand(state)).toBe("sway");
   });
 
   test("banking recovers wobble after a mistake", () => {

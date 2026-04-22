@@ -130,7 +130,7 @@ const gameCases: (BrowserGameStartFlow & {
     slug: "farm-follies",
     Component: FarmFollies,
     title: "FARM FOLLIES",
-    startFlow: ["Start Stacking"],
+    startFlow: ["Start Stacking", "Drop Center", "Drop Center"],
     ready: "Banked",
   },
 ];

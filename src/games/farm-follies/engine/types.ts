@@ -2,6 +2,8 @@ import type { SessionMode } from "@logic/shared";
 
 export type FarmPhase = "menu" | "playing" | "banked" | "collapsed";
 export type FarmAnimal = "chick" | "goat" | "pig" | "cow" | "horse";
+export type FarmAbility = "chirp" | "headbutt" | "mud-cushion" | "milk-brace" | "gallop-brace";
+export type FarmWobbleBand = "steady" | "sway" | "danger";
 
 export interface FarmModeTuning {
   lives: number;
@@ -17,6 +19,15 @@ export interface FarmStackAnimal {
   lane: -1 | 0 | 1;
 }
 
+export interface FarmAbilityEvent {
+  ability: FarmAbility;
+  animal: FarmAnimal;
+  dropCount: number;
+  message: string;
+  scoreBonus: number;
+  wobbleRecovery: number;
+}
+
 export interface FarmState {
   phase: FarmPhase;
   sessionMode: SessionMode;
@@ -24,6 +35,7 @@ export interface FarmState {
   score: number;
   bankedScore: number;
   lives: number;
+  lastAbility: FarmAbilityEvent | null;
   stack: FarmStackAnimal[];
   nextAnimal: FarmAnimal;
   nextTier: number;

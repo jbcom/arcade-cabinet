@@ -12,6 +12,13 @@ A farm-chaos stacker about dropping, merging, and banking animal tiers before wo
 
 Drop animals into lanes, merge matching tiers, let the tower get a little dangerous, then bank before wobble peaks. The run is meant to be replayable from the couch, not a 30-second fail-fast physics demo.
 
+## 1.0 Polish Notes
+
+- Same-lane merges now fire deterministic animal abilities: goats headbutt sway, pigs cushion drops, cows brace the beam, and horses kick the tower upright.
+- The standard drop sequence opens with pair-friendly tiers so the player learns the merge rule immediately instead of waiting for a rare setup.
+- The playfield renders distinct animal tokens instead of letter blocks, with tier badges, species silhouettes, and a live sway meter.
+- Wobble has steady/sway/danger bands so mobile players can read when to widen drops or bank before collapse.
+
 ## Responsive and Android Contract
 
 The initial cabinet import uses deterministic stack logic under `src/games/farm-follies` and a responsive barn presentation under `app/games/farm-follies`. Drop lanes and bank controls are thumb-sized for mobile and Android.

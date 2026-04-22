@@ -10,24 +10,15 @@ import {
   bankFarmScore,
   createInitialFarmState,
   dropFarmAnimal,
+  getFarmModeTuning,
   getFarmRunSummary,
+  getFarmWobbleBand,
+  getFarmWobbleRatio,
   tickFarmState,
 } from "@logic/games/farm-follies/engine/farmSimulation";
-import type {
-  FarmAnimal,
-  FarmStackAnimal,
-  FarmState,
-} from "@logic/games/farm-follies/engine/types";
+import type { FarmAnimal, FarmState } from "@logic/games/farm-follies/engine/types";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useState } from "react";
-
-const ANIMAL_EMOJI: Record<FarmAnimal, string> = {
-  chick: "CH",
-  cow: "CW",
-  goat: "GT",
-  horse: "HR",
-  pig: "PG",
-};
 
 const ANIMAL_COLORS: Record<FarmAnimal, string> = {
   chick: "#fde68a",
@@ -35,6 +26,14 @@ const ANIMAL_COLORS: Record<FarmAnimal, string> = {
   goat: "#d9f99d",
   horse: "#fdba74",
   pig: "#f9a8d4",
+};
+
+const ANIMAL_ACCENTS: Record<FarmAnimal, string> = {
+  chick: "#f97316",
+  cow: "#111827",
+  goat: "#65a30d",
+  horse: "#7c2d12",
+  pig: "#be185d",
 };
 
 export default function Game() {
@@ -109,22 +108,32 @@ export default function Game() {
         <main className="relative z-10 grid h-full grid-rows-[auto_minmax(0,1fr)_auto] gap-3 p-3 sm:p-5">
           <Hud state={state} />
           <section className="grid min-h-0 gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
-            <BarnStack stack={state.stack} wobble={state.wobble} />
+            <BarnStack state={state} />
             <aside className="hidden min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 rounded-md border border-lime-200/18 bg-black/42 p-3 shadow-2xl md:grid">
               <div>
                 <div className="font-mono text-[0.62rem] font-black uppercase tracking-[0.22em] text-lime-100/52">
                   Next Drop
                 </div>
                 <div className="mt-2 rounded-md border border-amber-200/24 bg-amber-300/12 p-4 text-center">
-                  <div
-                    className="text-4xl font-black"
-                    style={{ color: ANIMAL_COLORS[state.nextAnimal] }}
-                  >
-                    {ANIMAL_EMOJI[state.nextAnimal]}
+                  <div className="grid place-items-center">
+                    <AnimalToken animal={state.nextAnimal} tier={state.nextTier} size="large" />
                   </div>
                   <div className="mt-1 font-black uppercase text-amber-50">{state.nextAnimal}</div>
                 </div>
               </div>
+              {state.lastAbility ? (
+                <div className="rounded-md border border-fuchsia-200/28 bg-fuchsia-300/10 p-3">
+                  <div className="font-mono text-[0.58rem] font-black uppercase tracking-[0.2em] text-fuchsia-100/58">
+                    Ability
+                  </div>
+                  <p className="mt-1 text-sm font-black uppercase text-fuchsia-50">
+                    {state.lastAbility.ability.replace("-", " ")}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold leading-snug text-fuchsia-100/72">
+                    -{state.lastAbility.wobbleRecovery} wobble / +{state.lastAbility.scoreBonus} pts
+                  </p>
+                </div>
+              ) : null}
               <div className="rounded-md border border-white/12 bg-white/[0.05] p-3">
                 <div className="font-mono text-[0.6rem] font-black uppercase tracking-[0.2em] text-white/48">
                   Objective
@@ -150,8 +159,11 @@ export default function Game() {
               <div className="font-mono text-[0.58rem] font-black uppercase tracking-[0.2em] text-lime-100/52">
                 Next Drop
               </div>
-              <div className="truncate text-sm font-black uppercase text-white">
-                {state.nextAnimal} / {state.objective}
+              <div className="mt-1 flex items-center gap-2">
+                <AnimalToken animal={state.nextAnimal} tier={state.nextTier} size="small" />
+                <div className="min-w-0 truncate text-sm font-black uppercase text-white">
+                  {state.nextAnimal} / {state.objective}
+                </div>
               </div>
             </div>
             <button
@@ -265,11 +277,126 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
   );
 }
 
-function BarnStack({ stack, wobble }: { stack: FarmStackAnimal[]; wobble: number }) {
+function AnimalToken({
+  animal,
+  size = "normal",
+  tier,
+}: {
+  animal: FarmAnimal;
+  size?: "small" | "normal" | "large";
+  tier: number;
+}) {
+  const tokenSize = size === "large" ? "h-20 w-24" : size === "small" ? "h-10 w-12" : "h-12 w-16";
+  const eyeSize = size === "small" ? "h-1 w-1" : "h-1.5 w-1.5";
+  const accent = ANIMAL_ACCENTS[animal];
+
   return (
-    <div className="relative min-h-[300px] overflow-hidden rounded-md border border-amber-200/20 bg-gradient-to-b from-sky-950/28 to-lime-950/72 shadow-2xl">
+    <div
+      className={`relative ${tokenSize} overflow-hidden rounded-md border-2 shadow-[inset_0_-10px_16px_rgba(0,0,0,0.18),0_10px_22px_rgba(0,0,0,0.24)]`}
+      style={{
+        background: `linear-gradient(180deg, ${ANIMAL_COLORS[animal]}, color-mix(in srgb, ${ANIMAL_COLORS[animal]} 76%, #000 24%))`,
+        borderColor: "rgba(255,255,255,0.72)",
+      }}
+    >
+      {animal === "goat" ? (
+        <>
+          <span
+            className="absolute left-2 top-0 h-5 w-2 -rotate-12 rounded-sm bg-stone-100"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute right-2 top-0 h-5 w-2 rotate-12 rounded-sm bg-stone-100"
+            aria-hidden="true"
+          />
+        </>
+      ) : null}
+      {animal === "cow" ? (
+        <>
+          <span className="absolute left-2 top-2 h-5 w-7 rounded-full bg-slate-900/82" />
+          <span className="absolute bottom-2 right-3 h-4 w-6 rounded-full bg-slate-900/82" />
+        </>
+      ) : null}
+      {animal === "horse" ? (
+        <span className="absolute left-0 top-0 h-full w-4 bg-orange-950/72" aria-hidden="true" />
+      ) : null}
+      <span
+        className={`absolute left-[32%] top-[34%] ${eyeSize} rounded-full bg-slate-950`}
+        aria-hidden="true"
+      />
+      <span
+        className={`absolute right-[32%] top-[34%] ${eyeSize} rounded-full bg-slate-950`}
+        aria-hidden="true"
+      />
+      {animal === "pig" ? (
+        <span
+          className="absolute left-1/2 top-[52%] h-4 w-8 -translate-x-1/2 rounded-full border border-pink-950/40 bg-pink-200"
+          aria-hidden="true"
+        />
+      ) : null}
+      {animal === "chick" ? (
+        <span
+          className="absolute left-1/2 top-[52%] h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-orange-500"
+          aria-hidden="true"
+        />
+      ) : null}
+      <span
+        className="absolute bottom-1 right-1 rounded-sm bg-black/42 px-1 font-mono text-[0.52rem] font-black text-white"
+        style={{ color: animal === "cow" ? "#f8fafc" : "#ffffff" }}
+      >
+        T{tier + 1}
+      </span>
+      <span
+        className="absolute bottom-1 left-1 h-1.5 w-7 rounded-full"
+        style={{ background: accent }}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+function BarnStack({ state }: { state: FarmState }) {
+  const wobbleBand = getFarmWobbleBand(state);
+  const wobbleRatio = getFarmWobbleRatio(state);
+  const stack = state.stack;
+  const wobble = state.wobble;
+  const wobbleLimit = getFarmModeTuning(state.sessionMode).wobbleLimit;
+  const warningColor =
+    wobbleBand === "danger" ? "#fb7185" : wobbleBand === "sway" ? "#fbbf24" : "#84cc16";
+
+  return (
+    <div
+      className="relative min-h-[300px] overflow-hidden rounded-md border bg-gradient-to-b from-sky-950/28 to-lime-950/72 shadow-2xl"
+      style={{
+        borderColor:
+          wobbleBand === "danger"
+            ? "rgba(251,113,133,0.58)"
+            : wobbleBand === "sway"
+              ? "rgba(251,191,36,0.42)"
+              : "rgba(253,186,116,0.22)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            wobbleBand === "danger"
+              ? "radial-gradient(circle at 50% 20%, rgba(251,113,133,0.18), transparent 34%)"
+              : "radial-gradient(circle at 50% 18%, rgba(250,204,21,0.1), transparent 38%)",
+          opacity: wobbleBand === "steady" ? 0.55 : 1,
+        }}
+      />
       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-lime-600/55 to-lime-900" />
       <div className="absolute inset-x-[12%] bottom-14 h-[70%] rounded-t-md border-x-8 border-t-8 border-red-900/76 bg-red-950/18" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-[16%] bottom-14 h-[70%] rounded-t-md border-x-2 border-dashed"
+        style={{
+          borderColor: warningColor,
+          opacity: wobbleBand === "steady" ? 0.18 : 0.55,
+          transform: `skewX(${(wobbleRatio - 0.5) * 5}deg)`,
+        }}
+      />
       <div className="absolute bottom-14 left-1/2 h-[78%] w-[min(58vw,360px)] -translate-x-1/2">
         {stack.map((animal, index) => {
           const laneOffset = animal.lane * 34;
@@ -278,22 +405,43 @@ function BarnStack({ stack, wobble }: { stack: FarmStackAnimal[]; wobble: number
           return (
             <div
               key={animal.id}
-              className="absolute left-1/2 grid h-12 w-24 place-items-center rounded-md border-2 font-black uppercase shadow-xl"
+              className="absolute left-1/2 grid h-14 w-24 place-items-center rounded-md border-2 font-black uppercase shadow-xl"
               style={{
-                background: ANIMAL_COLORS[animal.animal],
                 borderColor: "rgba(255,255,255,0.7)",
                 bottom: index * 42,
-                color: "#1f1307",
                 transform: `translateX(calc(-50% + ${laneOffset + wobbleOffset}px)) rotate(${wobbleOffset * 0.28}deg)`,
               }}
             >
-              {ANIMAL_EMOJI[animal.animal]} T{animal.tier + 1}
+              <AnimalToken animal={animal.animal} tier={animal.tier} />
             </div>
           );
         })}
       </div>
-      <div className="absolute left-4 top-4 rounded-md border border-white/12 bg-black/44 px-3 py-2 font-mono text-[0.62rem] font-black uppercase tracking-[0.18em] text-white/56">
+      <div className="absolute left-4 top-4 rounded-md border border-white/12 bg-black/54 px-3 py-2 font-mono text-[0.62rem] font-black uppercase tracking-[0.18em] text-white/66">
         Merge same lane pairs
+      </div>
+      <div className="absolute right-4 top-4 grid w-28 gap-1 rounded-md border border-white/12 bg-black/54 p-2">
+        <div className="flex items-center justify-between font-mono text-[0.55rem] font-black uppercase tracking-[0.16em] text-white/52">
+          <span>Sway</span>
+          <span>
+            {Math.round(wobble)}/{wobbleLimit}
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: warningColor,
+              width: `${Math.round(wobbleRatio * 100)}%`,
+            }}
+          />
+        </div>
+        <div
+          className="font-mono text-[0.56rem] font-black uppercase"
+          style={{ color: warningColor }}
+        >
+          {wobbleBand === "danger" ? "Bank now" : wobbleBand === "sway" ? "Widen drops" : "Stable"}
+        </div>
       </div>
     </div>
   );

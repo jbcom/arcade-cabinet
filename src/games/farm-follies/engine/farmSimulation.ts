@@ -1,7 +1,16 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
-import type { FarmAnimal, FarmModeTuning, FarmStackAnimal, FarmState } from "./types";
+import type {
+  FarmAbilityEvent,
+  FarmAnimal,
+  FarmModeTuning,
+  FarmStackAnimal,
+  FarmState,
+  FarmWobbleBand,
+} from "./types";
 
 const ANIMALS: readonly FarmAnimal[] = ["chick", "goat", "pig", "cow", "horse"];
+const STANDARD_DROP_SEQUENCE = [0, 0, 1, 1, 2, 0, 2, 2] as const;
+const CHALLENGE_DROP_SEQUENCE = [0, 1, 1, 2, 0, 2, 1, 2] as const;
 export const FARM_BANK_TARGET = 2_500;
 export const FARM_MIN_RUN_MS = 8 * 60_000;
 
@@ -42,6 +51,7 @@ export function createInitialFarmState(
     dropCount: 0,
     elapsedMs: 0,
     lastEvent: "The barn rail is steady. Drop the first animal when the lane feels right.",
+    lastAbility: null,
     lives: getFarmModeTuning(sessionMode).lives,
     nextAnimal: "chick",
     nextTier: 0,
@@ -76,14 +86,19 @@ export function dropFarmAnimal(state: FarmState, lane: -1 | 0 | 1): FarmState {
   };
   const stack = [...state.stack, incoming];
   const merged = mergeStackTop(stack);
+  const ability =
+    merged.mergedTier !== null
+      ? createFarmAbilityEvent(merged.mergedTier, state.dropCount + 1)
+      : null;
   const mergeBonus = merged.didMerge ? (merged.stack.at(-1)?.tier ?? 0) * 120 : 0;
-  const score = state.score + 40 + state.combo * 12 + mergeBonus;
+  const score = state.score + 40 + state.combo * 12 + mergeBonus + (ability?.scoreBonus ?? 0);
   const wobble =
     state.wobble +
     tuning.wobblePerDrop +
     Math.abs(lane) * 3 +
     Math.max(0, merged.stack.length - 7) * 2 -
-    (merged.didMerge ? 9 : 0);
+    (merged.didMerge ? 9 : 0) -
+    (ability?.wobbleRecovery ?? 0);
   const lives = wobble > tuning.wobbleLimit ? state.lives - 1 : state.lives;
   const recoveredWobble = wobble > tuning.wobbleLimit ? tuning.wobbleLimit * 0.58 : wobble;
   const phase = lives <= 0 ? "collapsed" : "playing";
@@ -94,9 +109,12 @@ export function dropFarmAnimal(state: FarmState, lane: -1 | 0 | 1): FarmState {
     ...state,
     combo: merged.didMerge ? state.combo + 1 : Math.max(0, state.combo - 1),
     dropCount: state.dropCount + 1,
-    lastEvent: merged.didMerge
-      ? `${labelAnimal(incoming.animal)} pair merged into ${labelAnimal(nextAnimalForTier(incoming.tier + 1))}.`
-      : `${labelAnimal(incoming.animal)} lands in lane ${laneLabel(lane)}.`,
+    lastAbility: ability,
+    lastEvent: ability
+      ? ability.message
+      : merged.didMerge
+        ? `${labelAnimal(incoming.animal)} pair merged into ${labelAnimal(nextAnimalForTier(incoming.tier + 1))}.`
+        : `${labelAnimal(incoming.animal)} lands in lane ${laneLabel(lane)}.`,
     lives,
     nextAnimal,
     nextTier,
@@ -146,6 +164,17 @@ export function getFarmRunSummary(state: FarmState) {
   };
 }
 
+export function getFarmWobbleBand(state: FarmState): FarmWobbleBand {
+  const ratio = getFarmWobbleRatio(state);
+  if (ratio >= 0.78) return "danger";
+  if (ratio >= 0.52) return "sway";
+  return "steady";
+}
+
+export function getFarmWobbleRatio(state: FarmState) {
+  return Math.max(0, Math.min(1, state.wobble / getFarmModeTuning(state.sessionMode).wobbleLimit));
+}
+
 export function recoverFarmAfterMistake(state: FarmState): FarmState {
   return bankFarmScore({
     ...state,
@@ -156,13 +185,14 @@ export function recoverFarmAfterMistake(state: FarmState): FarmState {
 function mergeStackTop(stack: FarmStackAnimal[]) {
   const next = [...stack];
   let didMerge = false;
+  let mergedTier: number | null = null;
 
   while (next.length >= 2) {
     const top = next[next.length - 1];
     const below = next[next.length - 2];
     if (!top || !below || top.tier !== below.tier || top.lane !== below.lane) break;
 
-    const mergedTier = Math.min(top.tier + 1, ANIMALS.length - 1);
+    mergedTier = Math.min(top.tier + 1, ANIMALS.length - 1);
     next.splice(next.length - 2, 2, {
       animal: nextAnimalForTier(mergedTier),
       id: `merge-${below.id}-${top.id}`,
@@ -172,12 +202,57 @@ function mergeStackTop(stack: FarmStackAnimal[]) {
     didMerge = true;
   }
 
-  return { didMerge, stack: next };
+  return { didMerge, mergedTier, stack: next };
+}
+
+function createFarmAbilityEvent(mergedTier: number, dropCount: number): FarmAbilityEvent {
+  const animal = nextAnimalForTier(mergedTier);
+  const abilityByAnimal: Record<
+    FarmAnimal,
+    Pick<FarmAbilityEvent, "ability" | "message" | "scoreBonus" | "wobbleRecovery">
+  > = {
+    chick: {
+      ability: "chirp",
+      message: "Chick chorus steadies the rail for the next drop.",
+      scoreBonus: 35,
+      wobbleRecovery: 3,
+    },
+    cow: {
+      ability: "milk-brace",
+      message: "Cow brace locks the barn beam and slows the sway.",
+      scoreBonus: 170,
+      wobbleRecovery: 11,
+    },
+    goat: {
+      ability: "headbutt",
+      message: "Goat headbutt knocks the stack back toward center.",
+      scoreBonus: 80,
+      wobbleRecovery: 5,
+    },
+    horse: {
+      ability: "gallop-brace",
+      message: "Horse gallop brace kicks the tower upright.",
+      scoreBonus: 260,
+      wobbleRecovery: 15,
+    },
+    pig: {
+      ability: "mud-cushion",
+      message: "Pig mud cushion absorbs the bad wobble.",
+      scoreBonus: 120,
+      wobbleRecovery: 8,
+    },
+  };
+
+  return {
+    animal,
+    dropCount,
+    ...abilityByAnimal[animal],
+  };
 }
 
 function nextTierForDrop(dropCount: number, mode: SessionMode) {
-  const offset = mode === "challenge" ? 1 : 0;
-  return (dropCount * 2 + offset) % 3;
+  const sequence = mode === "challenge" ? CHALLENGE_DROP_SEQUENCE : STANDARD_DROP_SEQUENCE;
+  return sequence[dropCount % sequence.length] ?? 0;
 }
 
 function nextAnimalForTier(tier: number): FarmAnimal {
