@@ -8,7 +8,7 @@ const viteEnv = (
   }
 ).env;
 
-const isVitestBrowser =
+export const isVitestBrowser =
   globalWithVitest.__vitest_browser__ === true ||
   viteEnv?.MODE === "test" ||
   viteEnv?.VITEST === true ||

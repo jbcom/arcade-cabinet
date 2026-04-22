@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
 import type { VoidZone as VoidZoneType } from "../engine/constellations";
 
+const VOID_PARTICLES = Array.from({ length: 6 }, (_, index) => ({
+  id: `void-particle-${index + 1}`,
+  x: Math.cos((index * Math.PI) / 3) * 20,
+  y: Math.sin((index * Math.PI) / 3) * 20,
+  duration: 2 + index * 0.3,
+  delay: index * 0.2,
+}));
+
 interface VoidZoneProps {
   zone: VoidZoneType;
 }
@@ -54,24 +62,24 @@ export function VoidZone({ zone }: VoidZoneProps) {
         }}
       />
 
-      {[...Array(6)].map((_, i) => (
+      {VOID_PARTICLES.map((particle) => (
         <motion.div
-          key={i}
+          key={particle.id}
           className="absolute w-1 h-1 rounded-full bg-purple-900/60"
           style={{
             left: "50%",
             top: "50%",
           }}
           animate={{
-            x: [0, Math.cos((i * Math.PI) / 3) * 20, 0],
-            y: [0, Math.sin((i * Math.PI) / 3) * 20, 0],
+            x: [0, particle.x, 0],
+            y: [0, particle.y, 0],
             opacity: [0.3, 0.7, 0.3],
           }}
           transition={{
-            duration: 2 + i * 0.3,
+            duration: particle.duration,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: i * 0.2,
+            delay: particle.delay,
           }}
         />
       ))}

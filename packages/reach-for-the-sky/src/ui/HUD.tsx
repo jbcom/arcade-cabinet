@@ -1,6 +1,6 @@
 import { HUDOverlay } from "@arcade-cabinet/shared";
 import { useTrait } from "koota/react";
-import { Bed, Briefcase, Coffee, Home, Star, Users, Wrench } from "lucide-react";
+import { Bed, Briefcase, Coffee, Home, type LucideIcon, Star, Users, Wrench } from "lucide-react";
 import { BUILDINGS, type BuildingId } from "../engine/types";
 import { SkyTrait } from "../store/traits";
 import { skyEntity } from "../store/world";
@@ -20,7 +20,7 @@ export function HUD({ onSelectTool, selectedTool }: HUDProps) {
     return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
   };
 
-  const tools: { id: BuildingId; icon: any }[] = [
+  const tools: { id: BuildingId; icon: LucideIcon }[] = [
     { id: "lobby", icon: Home },
     { id: "office", icon: Briefcase },
     { id: "condo", icon: Star },
@@ -52,6 +52,7 @@ export function HUD({ onSelectTool, selectedTool }: HUDProps) {
         <div style={{ display: "flex", gap: 8 }}>
           {tools.map((t) => (
             <button
+              type="button"
               key={t.id}
               onClick={() => onSelectTool(selectedTool === t.id ? null : t.id)}
               style={{

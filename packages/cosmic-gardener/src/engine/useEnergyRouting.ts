@@ -20,28 +20,24 @@ export interface EnergyStream {
 }
 
 interface UseEnergyRoutingProps {
-  onConstellationComplete?: () => void;
   onEnergyDepleted?: () => void;
 }
 
-export function useEnergyRouting({
-  onConstellationComplete,
-  onEnergyDepleted,
-}: UseEnergyRoutingProps = {}) {
+function getGrowthStage(energy: number, maxEnergy: number): number {
+  const percentage = energy / maxEnergy;
+  if (percentage >= 0.9) return 3;
+  if (percentage >= 0.6) return 2;
+  if (percentage >= 0.3) return 1;
+  return 0;
+}
+
+export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {}) {
   const [stars, setStars] = useState<Map<string, StarSeed>>(new Map());
   const [streams, setStreams] = useState<Map<string, EnergyStream>>(new Map());
   const [totalEnergy, setTotalEnergy] = useState(500);
   const [cosmicCold, setCosmicCold] = useState(0);
   const animationRef = useRef<number>(null);
   const lastTimeRef = useRef<number>(0);
-
-  const getGrowthStage = (energy: number, maxEnergy: number): number => {
-    const percentage = energy / maxEnergy;
-    if (percentage >= 0.9) return 3;
-    if (percentage >= 0.6) return 2;
-    if (percentage >= 0.3) return 1;
-    return 0;
-  };
 
   const plantSeed = useCallback(
     (x: number, y: number): string | null => {
@@ -137,7 +133,7 @@ export function useEnergyRouting({
 
       setTotalEnergy((prev) => prev - amount);
     },
-    [totalEnergy, getGrowthStage]
+    [totalEnergy]
   );
 
   const checkConstellationComplete = useCallback(
@@ -216,7 +212,7 @@ export function useEnergyRouting({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [streams, getGrowthStage, onEnergyDepleted]);
+  }, [streams, onEnergyDepleted]);
 
   const resetGame = useCallback(() => {
     setStars(new Map());

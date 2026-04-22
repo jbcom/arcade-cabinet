@@ -9,3 +9,8 @@ export const RealmTrait = trait(() => ({
   score: 0,
   loot: [],
 }));
+
+export const MovementTrait = trait(() => ({
+  x: 0,
+  z: 0,
+}));

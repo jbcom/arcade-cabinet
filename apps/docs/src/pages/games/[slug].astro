@@ -1,10 +1,7 @@
 ---
-// biome-ignore lint/correctness/noUnusedImports: Astro renders this component in the template.
 import GameIsland from "../../components/GameIsland";
 import { type Game, games } from "../../games/catalog";
-// biome-ignore lint/correctness/noUnusedImports: Astro renders this layout in the template.
 import BaseLayout from "../../layouts/BaseLayout.astro";
-// biome-ignore lint/correctness/noUnusedImports: Astro renders this href in the template.
 import { withBasePath } from "../../utils/basePath";
 
 export function getStaticPaths() {
@@ -18,7 +15,6 @@ interface Props {
   game: Game;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: Astro renders this prop in the template.
 const { game } = Astro.props;
 ---
 

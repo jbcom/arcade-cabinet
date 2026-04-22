@@ -11,6 +11,11 @@ interface ToneDrawerProps {
 }
 
 const SCALE_NOTES = ["C", "D", "E", "G", "A", "C", "D", "E"];
+const SCALE_NOTE_STEPS = SCALE_NOTES.map((note, index) => ({
+  id: `scale-note-${index + 1}-${note}`,
+  note,
+  index,
+}));
 const NOTE_COLORS = [
   "rgba(239, 68, 68, 0.6)",
   "rgba(249, 115, 22, 0.6)",
@@ -247,18 +252,21 @@ export function ToneDrawer({
       />
       <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
         <div className="flex flex-col-reverse gap-1">
-          {SCALE_NOTES.map((note, i) => (
+          {SCALE_NOTE_STEPS.map(({ id, note, index }) => (
             <motion.div
-              key={i}
+              key={id}
               className="flex items-center gap-2"
-              animate={{ scale: activeNote === i ? 1.2 : 1, opacity: activeNote === i ? 1 : 0.5 }}
+              animate={{
+                scale: activeNote === index ? 1.2 : 1,
+                opacity: activeNote === index ? 1 : 0.5,
+              }}
               transition={{ duration: 0.1 }}
             >
               <div
                 className="w-8 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
                 style={{
-                  background: NOTE_COLORS[i],
-                  boxShadow: activeNote === i ? `0 0 20px ${NOTE_COLORS[i]}` : "none",
+                  background: NOTE_COLORS[index],
+                  boxShadow: activeNote === index ? `0 0 20px ${NOTE_COLORS[index]}` : "none",
                 }}
               >
                 {note}

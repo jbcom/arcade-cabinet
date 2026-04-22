@@ -97,7 +97,6 @@ export default function TechStack() {
           }}
         >
           {TECH.map((item) => (
-            // biome-ignore lint/a11y/noStaticElementInteractions: visual-only hover highlight, no interactive action
             <div
               key={item.name}
               style={{

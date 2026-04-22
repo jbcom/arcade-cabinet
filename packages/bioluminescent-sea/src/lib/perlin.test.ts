@@ -7,11 +7,7 @@ describe("perlin noise helpers", () => {
   });
 
   test("returns deterministic bounded values for repeated samples", () => {
-    const samples = [
-      noise2D(0.125, 0.25),
-      noise2D(8.5, 2.75),
-      fbm(1.2, 4.8, 5),
-    ];
+    const samples = [noise2D(0.125, 0.25), noise2D(8.5, 2.75), fbm(1.2, 4.8, 5)];
 
     expect(samples).toEqual([noise2D(0.125, 0.25), noise2D(8.5, 2.75), fbm(1.2, 4.8, 5)]);
     for (const sample of samples) {

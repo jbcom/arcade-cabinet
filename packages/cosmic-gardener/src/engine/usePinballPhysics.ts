@@ -15,10 +15,9 @@ interface UsePinballPhysicsProps {
   stars: Map<string, { id: string; x: number; y: number; energy: number; growthStage: number }>;
   onStarHit: (starId: string) => void;
   onDrain: () => void;
-  bounds: { width: number; height: number };
 }
 
-export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinballPhysicsProps) {
+export function usePinballPhysics({ stars, onStarHit, onDrain }: UsePinballPhysicsProps) {
   const [orbs, setOrbs] = useState<Map<string, PinballOrb>>(new Map());
   const [leftFlipper, setLeftFlipper] = useState(false);
   const [rightFlipper, setRightFlipper] = useState(false);

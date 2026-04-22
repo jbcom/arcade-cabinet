@@ -7,6 +7,7 @@ interface SpiritProps {
 }
 
 const NOTES = ["♪", "♫", "♬", "♩"];
+const PULSE_RINGS = ["inner", "middle", "outer"] as const;
 
 export function Spirit({ position, isDrawing }: SpiritProps) {
   const [trail, setTrail] = useState<{ x: number; y: number; id: number; note: string }[]>([]);
@@ -100,9 +101,9 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
         />
 
         {isDrawing &&
-          [0, 1, 2].map((i) => (
+          PULSE_RINGS.map((ring, index) => (
             <motion.div
-              key={i}
+              key={ring}
               className="absolute rounded-full border-2"
               style={{
                 borderColor: "rgba(251, 191, 36, 0.4)",
@@ -118,7 +119,7 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
               transition={{
                 duration: 1,
                 repeat: Infinity,
-                delay: i * 0.33,
+                delay: index * 0.33,
                 ease: "easeOut",
               }}
             />
@@ -164,9 +165,9 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
         />
 
         {isDrawing &&
-          [...Array(4)].map((_, i) => (
+          NOTES.map((note, index) => (
             <motion.div
-              key={i}
+              key={note}
               className="absolute text-amber-200 text-sm font-bold"
               initial={{
                 x: 0,
@@ -175,21 +176,21 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
                 rotate: 0,
               }}
               animate={{
-                x: Math.cos((i * Math.PI) / 2 + Date.now() / 500) * 25,
-                y: Math.sin((i * Math.PI) / 2 + Date.now() / 500) * 25 - 10,
+                x: Math.cos((index * Math.PI) / 2 + Date.now() / 500) * 25,
+                y: Math.sin((index * Math.PI) / 2 + Date.now() / 500) * 25 - 10,
                 opacity: [0.8, 0.4, 0.8],
                 rotate: [0, 15, 0, -15, 0],
               }}
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
-                delay: i * 0.2,
+                delay: index * 0.2,
               }}
               style={{
                 textShadow: "0 0 8px rgba(255, 220, 100, 0.8)",
               }}
             >
-              {NOTES[i]}
+              {note}
             </motion.div>
           ))}
       </motion.div>

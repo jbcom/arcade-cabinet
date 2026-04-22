@@ -2,6 +2,14 @@ import { motion, useAnimationControls } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils";
 
+const HEALING_PARTICLES = Array.from({ length: 8 }, (_, index) => ({
+  id: `healing-particle-${index + 1}`,
+  left: `${30 + ((index * 11) % 40)}%`,
+  rise: -80 - ((index * 13) % 40),
+  drift: ((index * 17) % 30) - 15,
+  delay: index * 0.1,
+}));
+
 interface SacredTreeProps {
   id: number;
   health: number;
@@ -97,7 +105,7 @@ export function SacredTree({
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            <svg viewBox="0 0 100 100" className="w-full h-full">
+            <svg aria-hidden="true" viewBox="0 0 100 100" className="w-full h-full">
               <defs>
                 <filter id={`shieldGlow-${id}`}>
                   <feGaussianBlur stdDeviation="2" result="blur" />
@@ -161,26 +169,26 @@ export function SacredTree({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          {[...Array(8)].map((_, i) => (
+          {HEALING_PARTICLES.map((particle) => (
             <motion.div
-              key={i}
+              key={particle.id}
               className="absolute w-2 h-2 rounded-full"
               style={{
-                left: `${30 + Math.random() * 40}%`,
+                left: particle.left,
                 bottom: 0,
                 background: "linear-gradient(45deg, #a78bfa, #c4b5fd)",
                 boxShadow: "0 0 10px rgba(167, 139, 250, 0.8)",
               }}
               initial={{ y: 0, opacity: 1, scale: 1 }}
               animate={{
-                y: -80 - Math.random() * 40,
+                y: particle.rise,
                 opacity: [1, 1, 0],
                 scale: [1, 0.5],
-                x: (Math.random() - 0.5) * 30,
+                x: particle.drift,
               }}
               transition={{
                 duration: 1.5,
-                delay: i * 0.1,
+                delay: particle.delay,
                 repeat: 2,
               }}
             />
@@ -238,7 +246,13 @@ export function SacredTree({
           </motion.div>
         )}
 
-        <svg width="60" height="120" viewBox="0 0 60 120" className="drop-shadow-lg">
+        <svg
+          aria-hidden="true"
+          width="60"
+          height="120"
+          viewBox="0 0 60 120"
+          className="drop-shadow-lg"
+        >
           <path
             d="M25 120 L25 70 Q20 60 25 50 L25 50 Q30 45 30 40 Q30 45 35 50 L35 50 Q40 60 35 70 L35 120"
             fill={isCritical ? "#4a3728" : "#5d4037"}

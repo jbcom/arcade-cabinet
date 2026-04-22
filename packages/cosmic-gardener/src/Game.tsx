@@ -2,6 +2,11 @@ import { GameViewport, useResponsive } from "@arcade-cabinet/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  findMatchedPointId,
+  getPatternConnectionKey,
+  isConstellationComplete,
+} from "./engine/constellationProgress";
+import {
   generateVoidZones,
   getConstellationForLevel,
   type VoidZone as VoidZoneType,
@@ -43,6 +48,7 @@ export default function Game({ className }: { className?: string }) {
   const [dragEnd, setDragEnd] = useState<{ x: number; y: number } | null>(null);
   const [completedPoints, setCompletedPoints] = useState<Set<string>>(new Set());
   const [completedConnections, setCompletedConnections] = useState<Set<string>>(new Set());
+  const [starPointMatches, setStarPointMatches] = useState<Map<string, string>>(new Map());
   const [score, setScore] = useState(0);
   const [ballsRemaining, setBallsRemaining] = useState(3);
   const [comboMultiplier, setComboMultiplier] = useState(1);
@@ -84,7 +90,6 @@ export default function Game({ className }: { className?: string }) {
     transferEnergy,
     resetGame,
   } = useEnergyRouting({
-    onConstellationComplete: handleConstellationComplete,
     onEnergyDepleted: handleEnergyDepleted,
   });
 
@@ -144,7 +149,6 @@ export default function Game({ className }: { className?: string }) {
     stars: starsForPhysics,
     onStarHit: handleStarHit,
     onDrain: handleDrain,
-    bounds: { width: 100, height: 100 },
   });
 
   const currentPattern = getConstellationForLevel(level);
@@ -185,13 +189,11 @@ export default function Game({ className }: { className?: string }) {
         const newStarId = plantSeed(x, y);
         if (newStarId) {
           setSelectedStarId(null);
-          currentPattern.points.forEach((point) => {
-            const dx = point.x - x;
-            const dy = point.y - y;
-            if (Math.sqrt(dx * dx + dy * dy) < 8) {
-              setCompletedPoints((prev) => new Set([...prev, point.id]));
-            }
-          });
+          const matchedPointId = findMatchedPointId(currentPattern, x, y);
+          if (matchedPointId) {
+            setStarPointMatches((prev) => new Map(prev).set(newStarId, matchedPointId));
+            setCompletedPoints((prev) => new Set([...prev, matchedPointId]));
+          }
         }
       }
     },
@@ -263,15 +265,15 @@ export default function Game({ className }: { className?: string }) {
 
       if (targetStar) {
         createStream(selectedStarId, targetStar.id);
-        currentPattern.connections.forEach((conn) => {
-          if (
-            (conn.from === selectedStarId && conn.to === targetStar.id) ||
-            (conn.from === targetStar.id && conn.to === selectedStarId)
-          ) {
-            const key = `${conn.from}-${conn.to}`;
-            setCompletedConnections((prev) => new Set([...prev, key]));
-          }
-        });
+        const connectionKey = getPatternConnectionKey(
+          currentPattern,
+          starPointMatches,
+          selectedStarId,
+          targetStar.id
+        );
+        if (connectionKey) {
+          setCompletedConnections((prev) => new Set([...prev, connectionKey]));
+        }
       }
 
       setIsDragging(false);
@@ -279,7 +281,7 @@ export default function Game({ className }: { className?: string }) {
       setDragEnd(null);
       setSelectedStarId(null);
     },
-    [isDragging, selectedStarId, stars, createStream, currentPattern]
+    [isDragging, selectedStarId, stars, createStream, currentPattern, starPointMatches]
   );
 
   const handleLaunch = useCallback(
@@ -297,6 +299,7 @@ export default function Game({ className }: { className?: string }) {
     setConstellationsCompleted(0);
     setCompletedPoints(new Set());
     setCompletedConnections(new Set());
+    setStarPointMatches(new Map());
     setScore(0);
     setBallsRemaining(3);
     setComboMultiplier(1);
@@ -311,10 +314,25 @@ export default function Game({ className }: { className?: string }) {
     setLevel((prev) => prev + 1);
     setCompletedPoints(new Set());
     setCompletedConnections(new Set());
+    setStarPointMatches(new Map());
     setBallsRemaining((prev) => Math.min(prev + 1, 5));
     resetGame();
     setGameState("playing");
   };
+
+  useEffect(() => {
+    if (gameState !== "playing") return;
+
+    if (isConstellationComplete(currentPattern, completedPoints, completedConnections)) {
+      handleConstellationComplete();
+    }
+  }, [
+    gameState,
+    currentPattern,
+    completedPoints,
+    completedConnections,
+    handleConstellationComplete,
+  ]);
 
   return (
     <GameViewport

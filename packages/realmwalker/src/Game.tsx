@@ -8,7 +8,7 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
-import { RealmTrait } from "./store/traits";
+import { MovementTrait, RealmTrait } from "./store/traits";
 import { realmEntity, realmWorld } from "./store/world";
 import { HUD } from "./ui/HUD";
 
@@ -19,6 +19,7 @@ function RealmApp() {
 
   const handleStart = () => {
     realmEntity.set(PhaseTrait, { phase: "playing" });
+    realmEntity.set(MovementTrait, { x: 0, z: 0 });
     realmEntity.set(RealmTrait, {
       phase: "playing",
       hp: 100,

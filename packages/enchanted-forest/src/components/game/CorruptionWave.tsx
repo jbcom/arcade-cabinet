@@ -1,6 +1,21 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+const VAPOR_PARTICLES = Array.from({ length: 12 }, (_, index) => ({
+  id: `vapor-particle-${index + 1}`,
+  x: Math.cos((index * Math.PI * 2) / 12) * 50,
+  y: Math.sin((index * Math.PI * 2) / 12) * 50,
+  delay: index * 0.02,
+}));
+const SHADOW_DROPLETS = Array.from({ length: 3 }, (_, index) => ({
+  id: `shadow-droplet-${index + 1}`,
+  index,
+}));
+const SHADOW_TENDRILS = Array.from({ length: 3 }, (_, index) => ({
+  id: `shadow-tendril-${index + 1}`,
+  index,
+}));
+
 export interface CorruptionShadow {
   id: number;
   x: number;
@@ -125,18 +140,18 @@ function CorruptionShadowEntity({
         >
           浄化!
         </motion.div>
-        {[...Array(12)].map((_, i) => (
+        {VAPOR_PARTICLES.map((particle) => (
           <motion.div
-            key={i}
+            key={particle.id}
             className="absolute w-2 h-2 bg-amber-400 rounded-full"
             initial={{ x: 0, y: 0, opacity: 1 }}
             animate={{
-              x: Math.cos((i * Math.PI * 2) / 12) * 50,
-              y: Math.sin((i * Math.PI * 2) / 12) * 50,
+              x: particle.x,
+              y: particle.y,
               opacity: 0,
               scale: [1, 0],
             }}
-            transition={{ duration: 0.5, delay: i * 0.02 }}
+            transition={{ duration: 0.5, delay: particle.delay }}
             style={{
               boxShadow: "0 0 8px rgba(251, 191, 36, 0.8)",
             }}
@@ -249,12 +264,12 @@ function CorruptionShadowEntity({
             <div className="absolute w-1 h-1 bg-white rounded-full top-0.5 left-0.5 opacity-60" />
           </motion.div>
         </div>
-        {[...Array(3)].map((_, i) => (
+        {SHADOW_DROPLETS.map(({ id, index }) => (
           <motion.div
-            key={i}
+            key={id}
             className="absolute w-1.5 h-1.5 rounded-full bg-purple-800"
             style={{
-              left: shadow.size * 0.3 + i * 8,
+              left: shadow.size * 0.3 + index * 8,
               bottom: -5,
             }}
             animate={{
@@ -263,29 +278,29 @@ function CorruptionShadowEntity({
               scale: [1, 0.8, 1],
             }}
             transition={{
-              duration: 1 + i * 0.3,
+              duration: 1 + index * 0.3,
               repeat: Infinity,
-              delay: i * 0.2,
+              delay: index * 0.2,
             }}
           />
         ))}
-        {[...Array(3)].map((_, i) => (
+        {SHADOW_TENDRILS.map(({ id, index }) => (
           <motion.div
-            key={i}
+            key={id}
             className="absolute bg-gradient-to-t from-purple-900/80 to-transparent rounded-full"
             style={{
               width: 4,
               height: shadow.size * 0.5,
-              left: shadow.size * 0.3 + i * (shadow.size * 0.2),
+              left: shadow.size * 0.3 + index * (shadow.size * 0.2),
               top: shadow.size * -0.3,
               transformOrigin: "bottom center",
             }}
             animate={{
-              rotate: [-10 + i * 10, 10 + i * 10, -10 + i * 10],
+              rotate: [-10 + index * 10, 10 + index * 10, -10 + index * 10],
               scaleY: [1, 1.1, 1],
             }}
             transition={{
-              duration: 1.2 + i * 0.2,
+              duration: 1.2 + index * 0.2,
               repeat: Infinity,
               ease: "easeInOut",
             }}

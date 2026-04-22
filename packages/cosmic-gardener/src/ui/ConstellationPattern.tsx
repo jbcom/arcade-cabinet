@@ -35,7 +35,7 @@ export function ConstellationPattern({
 
           return (
             <motion.line
-              key={`conn-${index}`}
+              key={connectionKey}
               x1={fromPoint.x}
               y1={fromPoint.y}
               x2={toPoint.x}

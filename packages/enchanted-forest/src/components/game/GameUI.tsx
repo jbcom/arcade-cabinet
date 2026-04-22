@@ -2,6 +2,19 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { RUNE_PATTERNS } from "../../lib/runePatterns";
 
+const RADIAL_SPEED_LINES = Array.from({ length: 24 }, (_, index) => ({
+  id: `radial-speed-line-${index + 1}`,
+  rotate: index * 15,
+  delay: index * 0.02,
+}));
+const HORIZONTAL_SPEED_LINES = Array.from({ length: 20 }, (_, index) => ({
+  id: `horizontal-speed-line-${index + 1}`,
+  top: `${5 + index * 5}%`,
+  width: `${50 + ((index * 17) % 50)}%`,
+  left: `${(index * 23) % 50}%`,
+  delay: index * 0.03,
+}));
+
 interface GameUIProps {
   wave: number;
   totalWaves: number;
@@ -18,28 +31,28 @@ function SpeedLines({ direction = "radial" }: { direction?: "radial" | "horizont
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {direction === "radial"
-        ? [...Array(24)].map((_, i) => (
+        ? RADIAL_SPEED_LINES.map((line) => (
             <motion.div
-              key={i}
+              key={line.id}
               className="absolute top-1/2 left-1/2 h-[200vh] w-1 bg-gradient-to-b from-transparent via-white/20 to-transparent"
-              style={{ transformOrigin: "top center", rotate: `${i * 15}deg` }}
+              style={{ transformOrigin: "top center", rotate: `${line.rotate}deg` }}
               initial={{ scaleY: 0, opacity: 0 }}
               animate={{ scaleY: 1, opacity: [0, 0.5, 0] }}
-              transition={{ duration: 0.8, delay: i * 0.02 }}
+              transition={{ duration: 0.8, delay: line.delay }}
             />
           ))
-        : [...Array(20)].map((_, i) => (
+        : HORIZONTAL_SPEED_LINES.map((line) => (
             <motion.div
-              key={i}
+              key={line.id}
               className="absolute h-0.5 bg-gradient-to-r from-transparent via-white/30 to-transparent"
               style={{
-                top: `${5 + i * 5}%`,
-                width: `${50 + Math.random() * 50}%`,
-                left: `${Math.random() * 50}%`,
+                top: line.top,
+                width: line.width,
+                left: line.left,
               }}
               initial={{ x: "-100%", opacity: 0 }}
               animate={{ x: "200%", opacity: [0, 1, 0] }}
-              transition={{ duration: 0.5, delay: i * 0.03 }}
+              transition={{ duration: 0.5, delay: line.delay }}
             />
           ))}
     </div>
@@ -259,6 +272,7 @@ export function GameUI({
           <div className="text-center px-6">
             <h1 className="text-6xl font-black text-emerald-400 mb-8">森の守護者</h1>
             <button
+              type="button"
               className="px-12 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg"
               onClick={onStart}
             >

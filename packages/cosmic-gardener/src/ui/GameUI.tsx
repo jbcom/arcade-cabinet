@@ -24,6 +24,11 @@ export function GameUI({
   onResume,
   onRestart,
 }: GameUIProps) {
+  const constellationSlots = Array.from({ length: totalConstellations }, (_, index) => ({
+    id: `constellation-${index + 1}`,
+    index,
+  }));
+
   return (
     <>
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start pointer-events-none z-50">
@@ -39,24 +44,25 @@ export function GameUI({
           </div>
 
           <div className="flex gap-1.5">
-            {Array.from({ length: totalConstellations }).map((_, i) => (
+            {constellationSlots.map((slot) => (
               <motion.div
-                key={i}
+                key={slot.id}
                 className={cn(
                   "w-3 h-3 rounded-full border transition-colors duration-300",
-                  i < constellationsCompleted
+                  slot.index < constellationsCompleted
                     ? "bg-amber-400 border-amber-400"
                     : "bg-transparent border-white/30"
                 )}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
+                transition={{ delay: 0.3 + slot.index * 0.1 }}
               />
             ))}
           </div>
         </motion.div>
 
         <motion.button
+          type="button"
           className="pointer-events-auto px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm hover:bg-white/20 transition-colors"
           onClick={isPaused ? onResume : onPause}
           initial={{ opacity: 0, x: 20 }}

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { GRID_SIZE } from "./types";
 import { createInitialState, handleInteraction, initMap, setTool, tickGame } from "./logic";
+import { GRID_SIZE } from "./types";
 
 describe("gridizen logic", () => {
   test("initializes a full map", () => {
@@ -12,12 +12,14 @@ describe("gridizen logic", () => {
   test("places buildings only when the selected tool and terrain allow it", () => {
     let state = initMap(createInitialState());
     const tile = state.grid.find((entry) => entry.terrain !== "FOREST");
-    expect(tile).toBeDefined();
+    if (!tile) {
+      throw new Error("Expected the generated map to include at least one buildable tile.");
+    }
 
     state = setTool(state, "ROAD");
-    const next = handleInteraction(state, tile!.x, tile!.z);
+    const next = handleInteraction(state, tile.x, tile.z);
 
-    expect(next.grid[tile!.z * GRID_SIZE + tile!.x].building).toBe("ROAD");
+    expect(next.grid[tile.z * GRID_SIZE + tile.x].building).toBe("ROAD");
     expect(next.funds).toBe(state.funds - 10);
   });
 

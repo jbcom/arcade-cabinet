@@ -138,9 +138,9 @@ class ForestAudioEngine {
         this.padSynth?.triggerAttackRelease(["C3", "G3", "C4", "E4", "G4"], "1n", now + 0.5, 0.5);
         break;
       case "defeat":
-        ["E4", "D4", "C4", "B3", "A3"].forEach((note, i) =>
-          this.melodySynth?.triggerAttackRelease(note, "4n", now + i * 0.4, 0.4)
-        );
+        ["E4", "D4", "C4", "B3", "A3"].forEach((note, i) => {
+          this.melodySynth?.triggerAttackRelease(note, "4n", now + i * 0.4, 0.4);
+        });
         this.padSynth?.triggerAttackRelease(["A2", "E3", "A3"], "1n", now + 1, 0.3);
         break;
     }

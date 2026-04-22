@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { GOAL, createInitialState, didLose, didWin, tick } from "./simulation";
+import { createInitialState, didLose, didWin, GOAL, tick } from "./simulation";
 
 describe("otterly simulation", () => {
   test("moves the otter from player input", () => {

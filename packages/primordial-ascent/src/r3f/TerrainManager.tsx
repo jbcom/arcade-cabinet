@@ -1,3 +1,4 @@
+import { isVitestBrowser } from "@arcade-cabinet/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RigidBody, TrimeshCollider } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,11 +17,9 @@ function Chunk({ data }: { data: ChunkData }) {
     return geo;
   }, [data]);
 
-  const isVitest = typeof window !== "undefined" && (window as any).__vitest_browser__;
-
   return (
     <RigidBody type="fixed" colliders={false}>
-      {!isVitest && (
+      {!isVitestBrowser && (
         <TrimeshCollider args={[new Float32Array(data.positions), new Uint32Array(data.indices)]} />
       )}
       <mesh geometry={geometry} name="terrain-chunk">

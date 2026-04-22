@@ -2,6 +2,29 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 
+const OCTOPUS_TENTACLES = Array.from({ length: 8 }, (_, index) => index);
+const JELLY_TENTACLES = [20, 35, 50, 65, 80].map((x, index) => ({
+  id: `jelly-tentacle-${x}`,
+  x,
+  bend: index % 2 ? 10 : -10,
+}));
+const TITLE_LETTERS = Array.from("DEEP SEA").map((letter, index) => ({
+  id: `title-letter-${index}-${letter === " " ? "space" : letter}`,
+  letter,
+  index,
+}));
+const BUBBLES = Array.from({ length: 20 }, (_, index) => {
+  const seed = (index + 1) * 37;
+  return {
+    id: `bubble-${index + 1}`,
+    size: 8 + (seed % 20),
+    left: `${(seed * 11) % 100}%`,
+    drift: Math.sin(index) * 50,
+    duration: 8 + (seed % 6),
+    delay: (seed % 10) * 0.7,
+  };
+});
+
 // Nautical stock images from Unsplash (public domain style)
 const _IMAGES = {
   ship: "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=400&q=80",
@@ -67,9 +90,9 @@ const CutoutOctopus = () => (
     <ellipse cx="120" cy="55" rx="12" ry="15" fill="#F7DC6F" />
     <circle cx="80" cy="58" r="6" fill="#1a1a2e" />
     <circle cx="120" cy="58" r="6" fill="#1a1a2e" />
-    {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+    {OCTOPUS_TENTACLES.map((i) => (
       <path
-        key={i}
+        key={`octopus-tentacle-${i}`}
         d={`M${60 + i * 12} 95 Q${50 + i * 15} 140 ${40 + i * 18} 180`}
         fill="none"
         stroke="url(#octoGrad)"
@@ -125,10 +148,10 @@ const CutoutJellyfish = () => (
       stroke="#7D3C98"
       strokeWidth="2"
     />
-    {[20, 35, 50, 65, 80].map((x, i) => (
+    {JELLY_TENTACLES.map((tentacle) => (
       <path
-        key={i}
-        d={`M${x} 55 Q${x + (i % 2 ? 10 : -10)} 90 ${x} 130`}
+        key={tentacle.id}
+        d={`M${tentacle.x} 55 Q${tentacle.x + tentacle.bend} 90 ${tentacle.x} 130`}
         fill="none"
         stroke="#BB8FCE"
         strokeWidth="3"
@@ -222,27 +245,29 @@ const FloatingElement = ({
 };
 
 const Bubbles = () => {
+  const travelDistance = typeof window === "undefined" ? -900 : -window.innerHeight - 100;
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {BUBBLES.map((bubble) => (
         <motion.div
-          key={i}
+          key={bubble.id}
           className="absolute rounded-full bg-white/20 border border-white/30"
           style={{
-            width: 8 + Math.random() * 20,
-            height: 8 + Math.random() * 20,
-            left: `${Math.random() * 100}%`,
+            width: bubble.size,
+            height: bubble.size,
+            left: bubble.left,
             bottom: -50,
           }}
           animate={{
-            y: [0, -window.innerHeight - 100],
-            x: [0, Math.sin(i) * 50, 0],
+            y: [0, travelDistance],
+            x: [0, bubble.drift, 0],
             opacity: [0, 0.6, 0],
           }}
           transition={{
-            duration: 8 + Math.random() * 6,
+            duration: bubble.duration,
             repeat: Infinity,
-            delay: Math.random() * 10,
+            delay: bubble.delay,
             ease: "linear",
           }}
         />
@@ -303,9 +328,9 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
         transition={{ duration: 1, delay: 0.5 }}
       >
         <h1 className="text-5xl md:text-7xl font-bold tracking-wider">
-          {["D", "E", "E", "P", " ", "S", "E", "A"].map((letter, i) => (
+          {TITLE_LETTERS.map(({ id, letter, index }) => (
             <motion.span
-              key={i}
+              key={id}
               className="inline-block text-transparent bg-clip-text"
               style={{
                 backgroundImage: "linear-gradient(180deg, #F5DEB3 0%, #D4A574 50%, #8B7355 100%)",
@@ -313,14 +338,14 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
                 WebkitTextStroke: "1px #2C1810",
               }}
               animate={{
-                rotate: [0, i % 2 ? 2 : -2, 0],
-                y: [0, i % 2 ? -5 : 5, 0],
+                rotate: [0, index % 2 ? 2 : -2, 0],
+                y: [0, index % 2 ? -5 : 5, 0],
               }}
               transition={{
-                duration: 3 + i * 0.2,
+                duration: 3 + index * 0.2,
                 repeat: Infinity,
                 ease: "easeInOut",
-                delay: i * 0.1,
+                delay: index * 0.1,
               }}
             >
               {letter === " " ? "\u00A0" : letter}

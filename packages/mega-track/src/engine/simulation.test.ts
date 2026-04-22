@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { CONFIG } from "./types";
 import { createInitialState, tick } from "./simulation";
+import { CONFIG } from "./types";
 
 afterEach(() => {
   vi.restoreAllMocks();

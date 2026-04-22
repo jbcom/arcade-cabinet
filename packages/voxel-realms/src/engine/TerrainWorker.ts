@@ -4,7 +4,9 @@ const noise2D = createNoise2D();
 const _noise3D = createNoise3D();
 
 export interface ChunkConfig {
-  chunkSize: number;
+  CHUNK_SIZE: number;
+  WORLD_HEIGHT: number;
+  RENDER_DISTANCE: number;
 }
 
 export interface BlockData {
@@ -36,7 +38,7 @@ function getProceduralHeight(x: number, z: number) {
   return finalY;
 }
 
-self.onmessage = (e: MessageEvent<{ cx: number; cz: number; config: any }>) => {
+self.onmessage = (e: MessageEvent<{ cx: number; cz: number; config: ChunkConfig }>) => {
   const { cx, cz, config } = e.data;
   const CHUNK_SIZE = config.CHUNK_SIZE;
   const blocks: BlockData[] = [];

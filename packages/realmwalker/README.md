@@ -10,13 +10,13 @@ A fantasy traversal game where the player crosses unstable realms, fights hostil
 
 ## Presentation Direction
 
-The player is a small figure inside unstable realms. Zone color, mist, pillars, and a bright weapon silhouette establish fantasy space while preserving motion readability.
+The player is a small hooded figure with a bright weapon silhouette inside unstable realms. Zone color, mist, runic floor rings, floating sigils, portal lighting, and crystal-capped pylons establish fantasy space while preserving motion readability.
 
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.
 - Third-person camera follow keeps the player centered.
-- Desktop keyboard play is supported today.
+- Desktop keyboard and touch D-pad movement are supported.
 - Android packaging uses the standalone Capacitor app shell.
 
 ## Stack
