@@ -94,6 +94,9 @@ importers:
 
   packages/gridizen:
     dependencies:
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@react-three/drei':
         specifier: ^10.0.0
         version: 10.7.7(@react-three/fiber@9.6.0(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0))(@types/react@19.2.14)(@types/three@0.176.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0)
