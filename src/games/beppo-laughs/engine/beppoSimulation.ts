@@ -3,7 +3,7 @@ import type { BeppoDirection, BeppoItem, BeppoModeTuning, BeppoRoom, BeppoState 
 
 export const BEPPO_ROOMS: readonly BeppoRoom[] = [
   {
-    exits: { east: "mirror-midway", north: "ticket-booth" },
+    exits: { east: "mirror-midway", north: "ticket-booth", west: "calliope-tunnel" },
     id: "center-ring",
     kind: "start",
     label: "Center Ring",
@@ -16,40 +16,86 @@ export const BEPPO_ROOMS: readonly BeppoRoom[] = [
     label: "Ticket Booth",
   },
   {
-    exits: { north: "laughing-gate", south: "clown-car", west: "center-ring" },
+    exits: { east: "wax-gallery", north: "laughing-gate", south: "clown-car", west: "center-ring" },
     id: "mirror-midway",
     item: "mirror",
     kind: "item",
     label: "Mirror Midway",
   },
   {
-    exits: { north: "mirror-midway", west: "shadow-stalls" },
+    exits: { north: "mirror-midway", west: "prize-arcade" },
     id: "clown-car",
     item: "red-key",
     kind: "item",
     label: "Clown Car",
   },
   {
-    exits: { east: "clown-car", north: "exit-flap" },
+    exits: { east: "laughing-gate", south: "prize-arcade" },
     id: "shadow-stalls",
     kind: "junction",
     label: "Shadow Stalls",
   },
   {
-    exits: { east: "exit-flap", south: "mirror-midway", west: "ticket-booth" },
+    exits: { east: "wax-gallery", south: "mirror-midway", west: "ticket-booth" },
     id: "laughing-gate",
     kind: "gate",
     label: "Laughing Gate",
     requiredItem: "ticket",
   },
   {
-    exits: { south: "shadow-stalls", west: "laughing-gate" },
+    exits: { north: "fortune-hall", west: "mirror-midway" },
+    id: "wax-gallery",
+    kind: "junction",
+    label: "Wax Gallery",
+  },
+  {
+    exits: { east: "rope-bridge", south: "wax-gallery", west: "laughing-gate" },
+    id: "fortune-hall",
+    kind: "gate",
+    label: "Fortune Hall",
+    requiredItem: "mirror",
+  },
+  {
+    exits: { south: "prop-room", west: "fortune-hall" },
+    id: "rope-bridge",
+    kind: "junction",
+    label: "Rope Bridge",
+  },
+  {
+    exits: { east: "prize-arcade", north: "rope-bridge", west: "drum-tunnel" },
+    id: "prop-room",
+    kind: "junction",
+    label: "Prop Room",
+  },
+  {
+    exits: { east: "clown-car", north: "shadow-stalls", west: "prop-room" },
+    id: "prize-arcade",
+    kind: "junction",
+    label: "Prize Arcade",
+  },
+  {
+    exits: { east: "prop-room", north: "exit-flap" },
+    id: "drum-tunnel",
+    kind: "junction",
+    label: "Drum Tunnel",
+  },
+  {
+    exits: { east: "center-ring", west: "drum-tunnel" },
+    id: "calliope-tunnel",
+    kind: "junction",
+    label: "Calliope Tunnel",
+  },
+  {
+    exits: { south: "drum-tunnel" },
     id: "exit-flap",
     kind: "exit",
     label: "Exit Flap",
     requiredItem: "red-key",
+    requiredVisitedCount: 10,
   },
 ] as const;
+
+export const BEPPO_ESCAPE_VISIT_TARGET = 10;
 
 const MODE_TUNING: Record<SessionMode, BeppoModeTuning> = {
   challenge: {
@@ -107,6 +153,7 @@ export function getAvailableBeppoMoves(state: BeppoState) {
   return Object.entries(room.exits).map(([direction, roomId]) => ({
     direction: direction as BeppoDirection,
     lockedBy: getLockedItem(roomId, state.inventory),
+    lockedByRouteMemory: getRouteMemoryLock(roomId, state.visitedRoomIds.length),
     room: findRoom(roomId),
   }));
 }
@@ -145,6 +192,15 @@ export function moveBeppo(state: BeppoState, direction: BeppoDirection): BeppoSt
       objective: `Find ${formatItem(lockedBy)} before forcing this gate.`,
     });
   }
+  const routeMemoryLock = getRouteMemoryLock(nextRoomId, state.visitedRoomIds.length);
+  if (routeMemoryLock > 0) {
+    return finalizeState({
+      ...state,
+      despair: clamp(state.despair + 1, 0, 100),
+      lastEvent: `The exit flap will not hold. Map ${routeMemoryLock} more room${routeMemoryLock === 1 ? "" : "s"} before leaving.`,
+      objective: "Build route memory through the tent before forcing the final flap.",
+    });
+  }
 
   const tuning = getBeppoModeTuning(state.sessionMode);
   const alreadyVisited = state.visitedRoomIds.includes(nextRoomId);
@@ -174,6 +230,17 @@ export function moveBeppo(state: BeppoState, direction: BeppoDirection): BeppoSt
     phase,
     visitedRoomIds,
   });
+}
+
+export function getBeppoRunSummary(state: BeppoState) {
+  return {
+    composure: Math.round(state.composure),
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    fear: Math.round(state.fear),
+    inventoryCount: state.inventory.length,
+    roomsMapped: state.visitedRoomIds.length,
+    routeMemoryTarget: BEPPO_ESCAPE_VISIT_TARGET,
+  };
 }
 
 export function recoverBeppoAfterMistake(state: BeppoState): BeppoState {
@@ -207,6 +274,12 @@ function getLockedItem(roomId: string | undefined, inventory: BeppoItem[]): Bepp
   if (!roomId) return null;
   const requiredItem = findRoom(roomId).requiredItem;
   return requiredItem && !inventory.includes(requiredItem) ? requiredItem : null;
+}
+
+function getRouteMemoryLock(roomId: string | undefined, visitedCount: number): number {
+  if (!roomId) return 0;
+  const requiredVisitedCount = findRoom(roomId).requiredVisitedCount ?? 0;
+  return Math.max(0, requiredVisitedCount - visitedCount);
 }
 
 function describeRoomArrival(room: BeppoRoom, item: BeppoItem | undefined) {

@@ -3,6 +3,7 @@ import type { EntropyState, FallingBlock, GridNode, Shockwave, Vec2 } from "./ty
 
 export const GRID_HALF = 5;
 export const GRID_SIZE = GRID_HALF * 2 + 1;
+export const RUN_SECTORS_REQUIRED = 3;
 const COMBO_WINDOW_MS = 800;
 const MOVE_COOLDOWN_MS = 200;
 const BLOCK_SPAWN_HEIGHT = 18;
@@ -450,4 +451,19 @@ export function didLose(state: EntropyState): boolean {
 
 export function didWin(state: EntropyState): boolean {
   return state.phase === "levelcomplete";
+}
+
+export function isRunComplete(state: EntropyState): boolean {
+  return state.phase === "levelcomplete" && state.level >= RUN_SECTORS_REQUIRED;
+}
+
+export function getEntropyRunSummary(state: EntropyState) {
+  return {
+    anchorsThisSector: state.anchorsSecuredThisLevel,
+    score: state.score,
+    sector: state.level,
+    sectorsRequired: RUN_SECTORS_REQUIRED,
+    stabilitySeconds: Math.round(state.timeMs / 1000),
+    totalAnchors: state.totalAnchors,
+  };
 }

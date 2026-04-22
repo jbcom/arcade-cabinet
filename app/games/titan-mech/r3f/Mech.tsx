@@ -11,6 +11,7 @@ import type {
 import { CONFIG } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
+import { PhaseTrait } from "@logic/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useTrait } from "koota/react";
@@ -122,14 +123,15 @@ export function Mech() {
 
     if (titanState) {
       const linvel = rbRef.current.linvel();
-      titanEntity.set(
-        TitanTrait,
-        advanceTitanSystems(titanState, delta * 1000, controls, {
-          position: { x: currentTrans.x, y: currentTrans.y, z: currentTrans.z },
-          heading,
-          velocity: { x: linvel.x, y: linvel.y, z: linvel.z },
-        })
-      );
+      const next = advanceTitanSystems(titanState, delta * 1000, controls, {
+        position: { x: currentTrans.x, y: currentTrans.y, z: currentTrans.z },
+        heading,
+        velocity: { x: linvel.x, y: linvel.y, z: linvel.z },
+      });
+      titanEntity.set(TitanTrait, next);
+      if (next.phase !== "playing") {
+        titanEntity.set(PhaseTrait, { phase: next.phase });
+      }
     }
   });
 

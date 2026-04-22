@@ -2,8 +2,10 @@ import { describe, expect, test } from "vitest";
 import {
   advanceOvercastState,
   createInitialOvercastState,
+  getOvercastRunSummary,
   normalizeOvercastControls,
 } from "./overcastSimulation";
+import { OVERCAST_CONFIG } from "./types";
 
 describe("overcast glacier simulation", () => {
   test("creates a warm opening slope with readable entities", () => {
@@ -25,6 +27,25 @@ describe("overcast glacier simulation", () => {
     expect(standardAfterMinute.phase).toBe("playing");
     expect(standardAfterMinute.warmth).toBeGreaterThan(50);
     expect(challengeAfterMinute.warmth).toBeLessThan(standardAfterMinute.warmth);
+  });
+
+  test("standard glacier route targets a 9 minute segment run and can finish", () => {
+    const targetMinutes = OVERCAST_CONFIG.RUN_TARGET_MS / 60_000;
+    const nearFinish = {
+      ...createInitialOvercastState("playing", "standard"),
+      timeMs: OVERCAST_CONFIG.RUN_TARGET_MS - 1_000,
+      warmth: 80,
+    };
+    const finished = advanceOvercastState(nearFinish, 2_000, {});
+
+    expect(targetMinutes).toBeGreaterThanOrEqual(8);
+    expect(targetMinutes).toBeLessThanOrEqual(15);
+    expect(finished.phase).toBe("finished");
+    expect(finished.segmentsCleared).toBe(OVERCAST_CONFIG.TARGET_SEGMENTS);
+    expect(getOvercastRunSummary(finished)).toMatchObject({
+      segment: OVERCAST_CONFIG.TARGET_SEGMENTS,
+      targetSegments: OVERCAST_CONFIG.TARGET_SEGMENTS,
+    });
   });
 
   test("normalizes steering and action controls", () => {

@@ -598,6 +598,22 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
   };
 }
 
+export function isDiveComplete(scene: SceneState): boolean {
+  return scene.creatures.length === 0;
+}
+
+export function getDiveRunSummary(scene: SceneState, score: number, timeLeft: number) {
+  return {
+    beaconsRemaining: scene.creatures.length,
+    completionPercent: Math.round(((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS) * 100),
+    depthMeters: getDiveTelemetry(scene, timeLeft).depthMeters,
+    elapsedSeconds: GAME_DURATION - timeLeft,
+    score,
+    timeLeft,
+    totalBeacons: TOTAL_BEACONS,
+  };
+}
+
 export function getDiveRouteLandmark(
   collectionRatio: number,
   nearestBeacon: { bearingRadians: number | null; distance: number }

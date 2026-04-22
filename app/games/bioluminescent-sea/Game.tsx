@@ -1,11 +1,13 @@
-import { CartridgeStartScreen, GameViewport } from "@app/shared";
+import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } from "@app/shared";
 import {
   advanceScene,
   type Creature,
   createInitialScene,
   type DiveTelemetry,
   GAME_DURATION,
+  getDiveRunSummary,
   getDiveTelemetry,
+  isDiveComplete,
   type Particle,
   type Pirate,
   type Player,
@@ -572,7 +574,13 @@ function formatThreatDistance(distance: number) {
   return `${Math.round(distance)}m`;
 }
 
-function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
+function DeepSeaGame({
+  onComplete,
+  onGameOver,
+}: {
+  onComplete: (score: number) => void;
+  onGameOver: (score: number) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const initialSceneRef = useRef<SceneState | null>(null);
@@ -693,6 +701,12 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         setScore(scoreRef.current);
       }
 
+      if (isDiveComplete(result.scene)) {
+        setIsGameOver(true);
+        onComplete(scoreRef.current);
+        return;
+      }
+
       setTelemetry((current) => {
         if (!shouldUpdateTelemetry(current, result.telemetry)) return current;
         return result.telemetry;
@@ -706,7 +720,7 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
 
       renderScene(ctx, width, height, result.scene, totalTime, collectionBurstsRef.current);
     },
-    [dimensions, input, timeLeft, isGameOver, onGameOver]
+    [dimensions, input, timeLeft, isGameOver, onGameOver, onComplete]
   );
 
   useGameLoop(gameLoop, !isGameOver);
@@ -827,8 +841,15 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
 }
 
 export default function Game() {
-  const [gameState, setGameState] = useState<"landing" | "playing" | "gameover">("landing");
+  const [gameState, setGameState] = useState<"landing" | "playing" | "gameover" | "complete">(
+    "landing"
+  );
   const [finalScore, setFinalScore] = useState(0);
+  const finalSummary = getDiveRunSummary(
+    createInitialScene({ height: 600, width: 800 }),
+    finalScore,
+    0
+  );
 
   return (
     <GameViewport background="#050d15">
@@ -862,6 +883,10 @@ export default function Game() {
             animate={{ opacity: 1 }}
           >
             <DeepSeaGame
+              onComplete={(s) => {
+                setFinalScore(s);
+                setGameState("complete");
+              }}
               onGameOver={(s) => {
                 setFinalScore(s);
                 setGameState("gameover");
@@ -870,18 +895,29 @@ export default function Game() {
           </motion.div>
         )}
         {gameState === "gameover" && (
-          <motion.div
-            key="gameover"
-            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80"
-          >
-            <h2 className="text-6xl font-bold text-white mb-8">Score: {finalScore}</h2>
-            <button
-              type="button"
-              onClick={() => setGameState("landing")}
-              className="px-8 py-4 bg-cyan-500 text-white font-bold rounded-full"
-            >
-              Restart
-            </button>
+          <motion.div key="gameover" className="absolute inset-0" exit={{ opacity: 0 }}>
+            <GameOverScreen
+              accent="#4ecdc4"
+              title="Dive Logged"
+              subtitle={`Score ${finalScore}. The route remains recoverable: follow beacon chains before oxygen or predators close in.`}
+              actions={
+                <OverlayButton onClick={() => setGameState("landing")}>Dive Again</OverlayButton>
+              }
+            />
+          </motion.div>
+        )}
+        {gameState === "complete" && (
+          <motion.div key="complete" className="absolute inset-0" exit={{ opacity: 0 }}>
+            <GameOverScreen
+              accent="#4ecdc4"
+              title="Living Map Complete"
+              subtitle={`All ${finalSummary.totalBeacons} beacons recovered. Score ${finalScore}. Replay for cleaner chains and deeper landmark mastery.`}
+              actions={
+                <OverlayButton onClick={() => setGameState("landing")}>
+                  Chart Another Route
+                </OverlayButton>
+              }
+            />
           </motion.div>
         )}
       </AnimatePresence>

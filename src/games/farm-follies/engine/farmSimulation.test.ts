@@ -3,7 +3,10 @@ import {
   bankFarmScore,
   createInitialFarmState,
   dropFarmAnimal,
+  FARM_BANK_TARGET,
+  FARM_MIN_RUN_MS,
   getFarmModeTuning,
+  getFarmRunSummary,
   tickFarmState,
 } from "./farmSimulation";
 
@@ -47,5 +50,28 @@ describe("Farm Follies stack and bank loop", () => {
     expect(banked.bankedScore).toBeGreaterThan(0);
     expect(banked.wobble).toBeLessThan(state.wobble);
     expect(banked.phase).toBe("playing");
+  });
+
+  test("banks a complete standard run only after quota and couch loop time", () => {
+    const premature = bankFarmScore({
+      ...createInitialFarmState("standard", "playing"),
+      bankedScore: FARM_BANK_TARGET - 100,
+      elapsedMs: FARM_MIN_RUN_MS - 1_000,
+      score: 1_000,
+    });
+    const completed = bankFarmScore({
+      ...premature,
+      phase: "playing",
+      elapsedMs: FARM_MIN_RUN_MS,
+      score: 1_000,
+    });
+
+    expect(premature.phase).toBe("playing");
+    expect(premature.objective).toContain("auction");
+    expect(completed.phase).toBe("banked");
+    expect(getFarmRunSummary(completed)).toMatchObject({
+      bankTarget: FARM_BANK_TARGET,
+      progressPercent: 100,
+    });
   });
 });

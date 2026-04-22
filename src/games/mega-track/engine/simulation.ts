@@ -18,6 +18,8 @@ const TYPE_PATTERN: Obstacle["type"][] = [
   "cone",
 ];
 
+export const CUP_LEG_COUNT = 3;
+
 export function createInitialState(mode: string | null | undefined = "standard"): MegaTrackState {
   const obstacles = createObstacleRun(0, CONFIG.OBSTACLE_LOOKAHEAD);
   return {
@@ -84,7 +86,7 @@ export function tick(
   const maxSpeed = next.overdriveMs > 0 ? CONFIG.MAX_SPEED * 1.32 : CONFIG.MAX_SPEED;
   const acceleration = next.overdriveMs > 0 ? 1.35 : 0.9;
   next.speed = Math.min(maxSpeed, next.speed + acceleration * seconds);
-  next.distance += next.speed * deltaMs;
+  next.distance += next.speed * deltaMs * CONFIG.DISTANCE_PER_SPEED_MS;
   next.boostCharge = Math.min(100, next.boostCharge + seconds * (next.currentLane === 0 ? 8 : 5));
   next.integrity = Math.min(
     100,
@@ -101,7 +103,7 @@ export function tick(
     next.currentLane = Math.max(-1, Math.min(1, next.currentLane + input.laneChange));
   }
 
-  while (next.nextObstacleIndex < 200) {
+  while (next.nextObstacleIndex < CONFIG.MAX_OBSTACLE_INDEX) {
     const obstacle = createObstacle(next.nextObstacleIndex);
     if (obstacle.z >= next.distance + CONFIG.OBSTACLE_LOOKAHEAD) break;
     next.obstacles.push(obstacle);
@@ -161,6 +163,39 @@ export function tick(
   }
 
   return next;
+}
+
+export function didFinishCup(state: MegaTrackState): boolean {
+  return state.distance >= CONFIG.GOAL_DISTANCE;
+}
+
+export function getCupLegProgress(state: MegaTrackState) {
+  const clampedDistance = Math.min(CONFIG.GOAL_DISTANCE, Math.max(0, state.distance));
+  const legLength = CONFIG.GOAL_DISTANCE / CUP_LEG_COUNT;
+  const leg = Math.min(CUP_LEG_COUNT, Math.floor(clampedDistance / legLength) + 1);
+  const legStart = (leg - 1) * legLength;
+
+  return {
+    leg,
+    legProgress: Math.min(1, (clampedDistance - legStart) / legLength),
+    overallProgress: clampedDistance / CONFIG.GOAL_DISTANCE,
+    remainingDistance: Math.max(0, CONFIG.GOAL_DISTANCE - clampedDistance),
+  };
+}
+
+export function getMegaTrackRunSummary(state: MegaTrackState) {
+  const cup = getCupLegProgress(state);
+
+  return {
+    cupLeg: cup.leg,
+    cupLegCount: CUP_LEG_COUNT,
+    distanceMeters: Math.floor(Math.min(state.distance, CONFIG.GOAL_DISTANCE) / 10),
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    impactCount: state.impactCount,
+    integrity: Math.round(state.integrity),
+    overdrives: state.lastOverdriveStartMs > Number.NEGATIVE_INFINITY ? 1 : 0,
+    progressPercent: Math.round(cup.overallProgress * 100),
+  };
 }
 
 function getObstacleHalfWidth(obstacle: Obstacle): number {

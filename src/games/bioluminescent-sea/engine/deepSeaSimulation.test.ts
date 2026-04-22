@@ -13,8 +13,10 @@ import {
   GAME_DURATION,
   getDeterministicWrapX,
   getDiveRouteLandmark,
+  getDiveRunSummary,
   getDiveTelemetry,
   hasPredatorCollision,
+  isDiveComplete,
   type Player,
   type Predator,
   TOTAL_BEACONS,
@@ -182,6 +184,20 @@ describe("deep sea simulation", () => {
     expect(early.bearingRadians).toBeCloseTo(0.4);
     expect(late.label).toBe("Living Map");
     expect(late.distance).toBeLessThan(early.distance);
+  });
+
+  test("reports dive completion and run summary when all beacons are recovered", () => {
+    const scene = { ...createInitialScene(desktop), creatures: [] };
+    const summary = getDiveRunSummary(scene, 12_500, 80);
+
+    expect(isDiveComplete(scene)).toBe(true);
+    expect(summary).toMatchObject({
+      beaconsRemaining: 0,
+      completionPercent: 100,
+      score: 12_500,
+      timeLeft: 80,
+      totalBeacons: TOTAL_BEACONS,
+    });
   });
 });
 

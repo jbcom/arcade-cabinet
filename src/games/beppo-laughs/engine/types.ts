@@ -11,6 +11,7 @@ export interface BeppoRoom {
   kind: BeppoRoomKind;
   item?: BeppoItem;
   requiredItem?: BeppoItem;
+  requiredVisitedCount?: number;
   exits: Partial<Record<BeppoDirection, string>>;
 }
 

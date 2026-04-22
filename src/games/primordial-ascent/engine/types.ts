@@ -27,7 +27,7 @@ export interface PrimordialTelemetry {
 export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "missed";
 
 export interface PrimordialState {
-  phase: "menu" | "playing" | "gameover";
+  phase: "menu" | "playing" | "gameover" | "complete";
   sessionMode: SessionMode;
   altitude: number;
   maxAltitude: number;

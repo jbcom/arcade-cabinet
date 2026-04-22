@@ -8,9 +8,13 @@ import {
   TimerTrait,
   useGameLoop,
 } from "@app/shared";
-import { createInitialState, tick } from "@logic/games/mega-track/engine/simulation";
+import {
+  createInitialState,
+  didFinishCup,
+  getMegaTrackRunSummary,
+  tick,
+} from "@logic/games/mega-track/engine/simulation";
 import type { MegaTrackState } from "@logic/games/mega-track/engine/types";
-import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { MegaTrackTrait } from "@logic/games/mega-track/store/traits";
 import { megaTrackEntity, megaTrackWorld } from "@logic/games/mega-track/store/world";
 import type { SessionMode } from "@logic/shared";
@@ -69,7 +73,7 @@ function MegaTrackApp() {
 
       if (next.integrity <= 0) {
         megaTrackEntity.set(PhaseTrait, { phase: "gameover" });
-      } else if (next.distance >= CONFIG.GOAL_DISTANCE) {
+      } else if (didFinishCup(next)) {
         megaTrackEntity.set(PhaseTrait, { phase: "win" });
       }
     },
@@ -81,6 +85,8 @@ function MegaTrackApp() {
     writeState(next);
     megaTrackEntity.set(PhaseTrait, { phase: "playing" });
   };
+
+  const summary = getMegaTrackRunSummary(state);
 
   const handleLaneControl = useCallback((direction: number) => {
     setLaneChange(direction);
@@ -114,10 +120,12 @@ function MegaTrackApp() {
 
       {phase.phase === "win" ? (
         <GameOverScreen
-          title="Victory!"
-          subtitle={`You completed the track in ${(state.elapsedMs / 1000).toFixed(1)} seconds.`}
+          title="Cup Complete"
+          subtitle={`Three legs cleared in ${summary.elapsedSeconds}s with ${summary.integrity}% integrity and ${summary.impactCount} impacts.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
+              Run the Cup Again
+            </OverlayButton>
           }
         />
       ) : null}
@@ -125,9 +133,9 @@ function MegaTrackApp() {
       {phase.phase === "gameover" ? (
         <GameOverScreen
           title="Wrecked"
-          subtitle="Your car couldn't handle the impact."
+          subtitle={`Leg ${summary.cupLeg}/${summary.cupLegCount}, ${summary.progressPercent}% of the cup complete. Chain clean passes to rebuild overdrive before hazards close in.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Try Again</OverlayButton>
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>Try Again</OverlayButton>
           }
         />
       ) : null}

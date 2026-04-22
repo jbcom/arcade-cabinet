@@ -3,6 +3,7 @@ import {
   bankFarmScore,
   createInitialFarmState,
   dropFarmAnimal,
+  getFarmRunSummary,
   tickFarmState,
 } from "@logic/games/farm-follies/engine/farmSimulation";
 import type {
@@ -55,6 +56,7 @@ export default function Game() {
   const restart = () => {
     setState(createInitialFarmState(state.sessionMode, "menu"));
   };
+  const summary = getFarmRunSummary(state);
 
   return (
     <GameViewport background="#16230f" data-browser-screenshot-mode="page">
@@ -163,7 +165,16 @@ export default function Game() {
         <GameOverScreen
           accent="#f59e0b"
           title="Tower Down"
-          subtitle={`Banked ${state.bankedScore} points. Drop wider and bank before wobble peaks.`}
+          subtitle={`Banked ${summary.bankedScore}/${summary.bankTarget} points. Drop wider and bank before wobble peaks.`}
+          actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}
+        />
+      ) : null}
+
+      {state.phase === "banked" ? (
+        <GameOverScreen
+          accent="#84cc16"
+          title="Barn Banked"
+          subtitle={`${summary.bankedScore} points locked after ${summary.dropCount} drops and ${summary.elapsedSeconds}s. Replay for a cleaner tower and higher merges.`}
           actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}
         />
       ) : null}

@@ -5,9 +5,11 @@ import {
   calculateObjectiveProgress,
   createArenaLayout,
   createInitialTitanState,
+  getTitanRunSummary,
   getWeaponFeedbackState,
   normalizeTitanControls,
 } from "./titanSimulation";
+import { CONFIG } from "./types";
 
 describe("titan simulation", () => {
   test("creates a full boot state with telemetry and system reserves", () => {
@@ -243,5 +245,45 @@ describe("titan simulation", () => {
     expect(sold.extraction.hopperLoad).toBe(0);
     expect(sold.extraction.credits).toBeGreaterThan(grinding.extraction.credits);
     expect(sold.scrap).toBeGreaterThan(grinding.scrap);
+  });
+
+  test("overheat damage is recoverable but can destroy the chassis if ignored", () => {
+    const hot = {
+      ...createInitialTitanState("playing"),
+      heat: 100,
+      hp: 8,
+    };
+    const destroyed = advanceTitanSystems(hot, 2_000, { throttle: 1 }, {});
+
+    expect(destroyed.hp).toBeLessThan(hot.hp);
+    expect(destroyed.phase).toBe("gameover");
+  });
+
+  test("completes a contract when enough ore credits are banked", () => {
+    const almostDone = {
+      ...createInitialTitanState("playing"),
+      extraction: {
+        ...createInitialTitanState("playing").extraction,
+        credits: CONFIG.CONTRACT_CREDITS_TARGET - CONFIG.HOPPER_CAPACITY * CONFIG.ORE_CREDIT_VALUE,
+        hopperLoad: CONFIG.HOPPER_CAPACITY - 1,
+      },
+    };
+    const completed = advanceTitanSystems(
+      almostDone,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(completed.phase).toBe("upgrade");
+    expect(completed.extraction.credits).toBe(CONFIG.CONTRACT_CREDITS_TARGET);
+    expect(getTitanRunSummary(completed)).toMatchObject({
+      contractCreditsTarget: CONFIG.CONTRACT_CREDITS_TARGET,
+      credits: CONFIG.CONTRACT_CREDITS_TARGET,
+    });
   });
 });

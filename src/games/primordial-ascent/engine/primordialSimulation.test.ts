@@ -12,6 +12,7 @@ import {
   canGrapple,
   createCavernLayout,
   createInitialPrimordialState,
+  getPrimordialRunSummary,
 } from "./primordialSimulation";
 import { CONFIG } from "./types";
 
@@ -90,6 +91,24 @@ describe("primordial simulation", () => {
 
     expect(consumed.phase).toBe("gameover");
     expect(consumed.distToLava).toBe(0);
+  });
+
+  test("completes the ascent when escape altitude is reached", () => {
+    const state = createInitialPrimordialState("playing");
+    const escaped = advancePrimordialState(state, 720_000, {
+      position: { x: 0, y: CONFIG.escapeAltitude + 2, z: -180 },
+      velocity: { x: 0, y: 6, z: 0 },
+      lavaHeight: 42,
+      grappleDistance: null,
+    });
+
+    expect(escaped.phase).toBe("complete");
+    expect(escaped.objectiveProgress).toBe(100);
+    expect(getPrimordialRunSummary(escaped)).toMatchObject({
+      elapsedSeconds: 720,
+      maxAltitude: CONFIG.escapeAltitude + 2,
+      objectiveProgress: 100,
+    });
   });
 
   test("normalizes air control and grapple range decisions", () => {

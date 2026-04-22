@@ -28,6 +28,9 @@ export function createInitialOvercastState(
     score: 0,
     scoreRemainder: 0,
     combo: 0,
+    segmentIndex: 0,
+    segmentProgress: 0,
+    segmentsCleared: 0,
     photoCharges: 1,
     speed: OVERCAST_CONFIG.BASE_SPEED,
     entities: createOpeningEntities(),
@@ -87,22 +90,51 @@ export function advanceOvercastState(
   );
   const distanceScore = state.scoreRemainder + deltaMs * speed;
   const wholeDistanceScore = Math.floor(distanceScore);
+  const segmentIndex = Math.min(
+    OVERCAST_CONFIG.TARGET_SEGMENTS - 1,
+    Math.floor(nextTime / OVERCAST_CONFIG.SEGMENT_DURATION_MS)
+  );
+  const segmentsCleared = Math.min(
+    OVERCAST_CONFIG.TARGET_SEGMENTS,
+    Math.floor(nextTime / OVERCAST_CONFIG.SEGMENT_DURATION_MS)
+  );
+  const segmentProgress =
+    nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS
+      ? 1
+      : (nextTime % OVERCAST_CONFIG.SEGMENT_DURATION_MS) / OVERCAST_CONFIG.SEGMENT_DURATION_MS;
+  const phase =
+    nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS ? "finished" : warmth <= 0 ? "gameover" : "playing";
 
   return {
     ...state,
-    phase: warmth <= 0 ? "gameover" : "playing",
+    phase,
     timeMs: nextTime,
     playerLane,
     warmth,
     score: resolved.score + wholeDistanceScore,
     scoreRemainder: distanceScore - wholeDistanceScore,
     combo: resolved.combo,
+    segmentIndex,
+    segmentProgress,
+    segmentsCleared,
     photoCharges: resolved.photoCharges,
     speed,
     entities: spawned,
     lastEvent: resolved.lastEvent,
     lastEventMs: resolved.lastEvent === "idle" ? state.lastEventMs : nextTime,
     objective: describeObjective(warmth, spawned, playerLane),
+  };
+}
+
+export function getOvercastRunSummary(state: OvercastState) {
+  return {
+    combo: state.combo,
+    elapsedSeconds: Math.round(state.timeMs / 1000),
+    score: state.score,
+    segment: Math.min(state.segmentIndex + 1, OVERCAST_CONFIG.TARGET_SEGMENTS),
+    segmentsCleared: state.segmentsCleared,
+    targetSegments: OVERCAST_CONFIG.TARGET_SEGMENTS,
+    warmth: Math.round(state.warmth),
   };
 }
 

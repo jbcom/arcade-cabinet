@@ -8,6 +8,7 @@ import {
 import {
   advanceOvercastState,
   createInitialOvercastState,
+  getOvercastRunSummary,
 } from "@logic/games/overcast-glacier/engine/overcastSimulation";
 import type {
   OvercastControls,
@@ -41,6 +42,7 @@ export default function Game() {
 
   useKeyboardControls(controlsRef);
   useOvercastLoop(state.phase, controlsRef, setState);
+  const summary = getOvercastRunSummary(state);
 
   return (
     <GameViewport background="#0f172a">
@@ -71,8 +73,21 @@ export default function Game() {
       {state.phase === "gameover" ? (
         <GameOverScreen
           title="FROST CURSE"
-          subtitle={`Final Score: ${state.score}`}
+          subtitle={`Segment ${summary.segment}/${summary.targetSegments}. Score ${summary.score}. Cocoa and clean kicks keep warmth recoverable.`}
           actions={<OverlayButton onClick={() => start(state.sessionMode)}>Warm Up</OverlayButton>}
+          accent="#7dd3fc"
+        />
+      ) : null}
+
+      {state.phase === "finished" ? (
+        <GameOverScreen
+          title="GLACIER CLEARED"
+          subtitle={`${summary.segmentsCleared} segments, ${summary.score} points, ${summary.warmth}% warmth remaining.`}
+          actions={
+            <OverlayButton onClick={() => start(state.sessionMode)}>
+              Run Another Route
+            </OverlayButton>
+          }
           accent="#7dd3fc"
         />
       ) : null}

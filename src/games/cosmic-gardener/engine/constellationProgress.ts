@@ -67,3 +67,7 @@ export function getNextConstellationPreview(level: number) {
     pointCount: nextPattern.points.length,
   };
 }
+
+export function isGardenCompleteLevel(level: number): boolean {
+  return level >= CONSTELLATIONS.length;
+}

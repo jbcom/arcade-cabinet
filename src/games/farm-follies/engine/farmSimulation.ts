@@ -2,6 +2,8 @@ import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type { FarmAnimal, FarmModeTuning, FarmStackAnimal, FarmState } from "./types";
 
 const ANIMALS: readonly FarmAnimal[] = ["chick", "goat", "pig", "cow", "horse"];
+export const FARM_BANK_TARGET = 2_500;
+export const FARM_MIN_RUN_MS = 8 * 60_000;
 
 const MODE_TUNING: Record<SessionMode, FarmModeTuning> = {
   challenge: {
@@ -114,14 +116,33 @@ export function bankFarmScore(state: FarmState): FarmState {
 
   const tuning = getFarmModeTuning(state.sessionMode);
   const bankedScore = state.bankedScore + Math.floor(state.score * 0.45);
+  const bankReady = bankedScore >= FARM_BANK_TARGET && state.elapsedMs >= FARM_MIN_RUN_MS;
 
   return {
     ...state,
     bankedScore,
-    lastEvent: "Score banked. The barn crew braces the tower and the run continues.",
-    objective: "Banked safely. Start building the next merge chain.",
+    lastEvent: bankReady
+      ? "The auction bell rings. The barn crew banks the full score chase."
+      : "Score banked. The barn crew braces the tower and the run continues.",
+    objective: bankReady
+      ? "Run banked. Start a new stack to chase a cleaner farm tower."
+      : describeBankObjective(bankedScore, state.elapsedMs),
+    phase: bankReady ? "banked" : state.phase,
     score: Math.ceil(state.score * 0.55),
     wobble: Math.max(0, state.wobble - tuning.recoveryPerBank),
+  };
+}
+
+export function getFarmRunSummary(state: FarmState) {
+  return {
+    bankedScore: state.bankedScore,
+    bankTarget: FARM_BANK_TARGET,
+    dropCount: state.dropCount,
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    lives: state.lives,
+    progressPercent: Math.min(100, Math.round((state.bankedScore / FARM_BANK_TARGET) * 100)),
+    score: state.score,
+    wobble: Math.round(state.wobble),
   };
 }
 
@@ -168,6 +189,19 @@ function describeFarmObjective(wobble: number, limit: number, lives: number) {
     return `Tower swaying. Bank now or spend one of ${lives} recovery lives.`;
   if (wobble > limit * 0.56) return "Wobble building. Drop wider or bank the current score.";
   return "Build pairs in the same lane to merge into bigger farm tiers.";
+}
+
+function describeBankObjective(bankedScore: number, elapsedMs: number) {
+  const scoreRemaining = Math.max(0, FARM_BANK_TARGET - bankedScore);
+  const secondsRemaining = Math.ceil(Math.max(0, FARM_MIN_RUN_MS - elapsedMs) / 1000);
+
+  if (scoreRemaining === 0 && secondsRemaining > 0) {
+    return `Quota met. Keep the tower alive ${secondsRemaining}s until the auction bell.`;
+  }
+  if (scoreRemaining > 0) {
+    return `${scoreRemaining} banked points to the auction quota. Build another merge chain.`;
+  }
+  return "Auction quota is ready. Bank again to lock the run.";
 }
 
 function labelAnimal(animal: FarmAnimal) {

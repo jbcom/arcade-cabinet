@@ -4,6 +4,7 @@ import {
   getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
+  isGardenCompleteLevel,
 } from "./constellationProgress";
 import { CONSTELLATIONS } from "./constellations";
 
@@ -51,5 +52,7 @@ describe("constellation progress", () => {
 
   test("returns no preview after the final constellation", () => {
     expect(getNextConstellationPreview(CONSTELLATIONS.length)).toBeNull();
+    expect(isGardenCompleteLevel(CONSTELLATIONS.length - 1)).toBe(false);
+    expect(isGardenCompleteLevel(CONSTELLATIONS.length)).toBe(true);
   });
 });

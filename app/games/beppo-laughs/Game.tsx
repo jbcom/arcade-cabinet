@@ -4,6 +4,7 @@ import {
   BEPPO_ROOMS,
   createInitialBeppoState,
   getAvailableBeppoMoves,
+  getBeppoRunSummary,
   getCurrentBeppoRoom,
   moveBeppo,
 } from "@logic/games/beppo-laughs/engine/beppoSimulation";
@@ -47,6 +48,7 @@ export default function Game() {
 
   const room = getCurrentBeppoRoom(state);
   const moves = useMemo(() => getAvailableBeppoMoves(state), [state]);
+  const summary = getBeppoRunSummary(state);
 
   return (
     <GameViewport background="#130706" data-browser-screenshot-mode="page">
@@ -134,12 +136,14 @@ export default function Game() {
                     type="button"
                     className="rounded-md border px-3 py-3 text-left transition hover:-translate-y-0.5 focus:outline-none focus:ring-2"
                     style={{
-                      background: move.lockedBy
-                        ? "rgba(127,29,29,0.48)"
-                        : "linear-gradient(135deg, rgba(249,115,22,0.24), rgba(34,211,238,0.12))",
-                      borderColor: move.lockedBy
-                        ? "rgba(252,165,165,0.42)"
-                        : "rgba(251,146,60,0.42)",
+                      background:
+                        move.lockedBy || move.lockedByRouteMemory
+                          ? "rgba(127,29,29,0.48)"
+                          : "linear-gradient(135deg, rgba(249,115,22,0.24), rgba(34,211,238,0.12))",
+                      borderColor:
+                        move.lockedBy || move.lockedByRouteMemory
+                          ? "rgba(252,165,165,0.42)"
+                          : "rgba(251,146,60,0.42)",
                     }}
                     onClick={() => setState((current) => moveBeppo(current, move.direction))}
                   >
@@ -154,6 +158,11 @@ export default function Game() {
                         Needs {move.lockedBy.replace("-", " ")}
                       </span>
                     ) : null}
+                    {move.lockedByRouteMemory ? (
+                      <span className="mt-1 block text-xs font-bold uppercase text-cyan-100">
+                        Map {move.lockedByRouteMemory} more
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </nav>
@@ -166,7 +175,7 @@ export default function Game() {
         <GameOverScreen
           accent="#22d3ee"
           title="Escaped"
-          subtitle={`You left the tent with ${Math.round(state.composure)} composure.`}
+          subtitle={`You left after mapping ${summary.roomsMapped}/${summary.routeMemoryTarget} rooms with ${summary.composure}% composure.`}
           actions={<OverlayButton onClick={restart}>Run Again</OverlayButton>}
         />
       ) : null}
@@ -213,7 +222,7 @@ function MazeMap({ state }: { state: BeppoState }) {
       <div className="absolute inset-0 opacity-40">
         <div className="h-full w-full bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.06)_0_1px,transparent_1px_18px),repeating-linear-gradient(90deg,rgba(255,255,255,0.06)_0_1px,transparent_1px_18px)]" />
       </div>
-      <div className="relative grid h-full min-h-[250px] grid-cols-3 grid-rows-3 gap-2">
+      <div className="relative grid h-full min-h-[250px] grid-cols-3 auto-rows-fr gap-2 sm:grid-cols-4">
         {BEPPO_ROOMS.map((room, index) => {
           const visited = state.visitedRoomIds.includes(room.id);
           const current = room.id === state.currentRoomId;

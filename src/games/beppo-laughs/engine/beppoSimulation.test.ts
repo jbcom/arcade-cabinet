@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
   advanceBeppoTime,
+  BEPPO_ESCAPE_VISIT_TARGET,
   createInitialBeppoState,
   getAvailableBeppoMoves,
   getBeppoModeTuning,
+  getBeppoRunSummary,
   moveBeppo,
   recoverBeppoAfterMistake,
 } from "./beppoSimulation";
@@ -29,21 +31,43 @@ describe("Beppo Laughs couch-friendly maze logic", () => {
   test("items unlock route gates and allow a deterministic escape", () => {
     let state = createInitialBeppoState("standard", "playing");
     state = moveBeppo(state, "north");
+    state = moveBeppo(state, "south");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "north");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "north");
     state = moveBeppo(state, "east");
     state = moveBeppo(state, "south");
-    state = moveBeppo(state, "south");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "west");
+    state = moveBeppo(state, "west");
     state = moveBeppo(state, "west");
     state = moveBeppo(state, "north");
 
     expect(state.phase).toBe("escaped");
     expect(state.inventory).toEqual(["ticket", "mirror", "red-key"]);
+    expect(getBeppoRunSummary(state).roomsMapped).toBeGreaterThanOrEqual(BEPPO_ESCAPE_VISIT_TARGET);
+  });
+
+  test("exit stays route-locked until enough rooms are mapped", () => {
+    let state = createInitialBeppoState("standard", "playing");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "south");
+    state = moveBeppo(state, "west");
+    state = moveBeppo(state, "west");
+    state = moveBeppo(state, "west");
+    state = moveBeppo(state, "north");
+
+    expect(state.phase).toBe("playing");
+    expect(state.lastEvent).toContain("Map");
+    expect(getAvailableBeppoMoves(state).some((move) => move.lockedByRouteMemory)).toBe(true);
   });
 
   test("one bad gate choice is recoverable in standard", () => {
     let state = createInitialBeppoState("standard", "playing");
     state = moveBeppo(state, "east");
-    state = moveBeppo(state, "north");
-    const blocked = moveBeppo(state, "east");
+    const blocked = moveBeppo(state, "north");
     const recovered = recoverBeppoAfterMistake(blocked);
 
     expect(blocked.phase).toBe("playing");
@@ -57,6 +81,6 @@ describe("Beppo Laughs couch-friendly maze logic", () => {
       getAvailableBeppoMoves(state)
         .map((move) => move.direction)
         .sort()
-    ).toEqual(["east", "north"]);
+    ).toEqual(["east", "north", "west"]);
   });
 });

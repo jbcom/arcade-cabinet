@@ -121,7 +121,9 @@ export function advancePrimordialState(
   const nextPhase =
     telemetry.position.y <= telemetry.lavaHeight + CONFIG.lavaContactMargin
       ? "gameover"
-      : state.phase;
+      : objectiveProgress >= 100
+        ? "complete"
+        : state.phase;
 
   return {
     ...state,
@@ -141,6 +143,15 @@ export function advancePrimordialState(
     ),
     objective: describeObjective(objectiveProgress, distToLava),
     objectiveProgress,
+  };
+}
+
+export function getPrimordialRunSummary(state: PrimordialState) {
+  return {
+    elapsedSeconds: Math.round(state.timeSurvived / 1000),
+    maxAltitude: Math.round(state.maxAltitude),
+    objectiveProgress: state.objectiveProgress,
+    finalDistanceToLava: Math.round(state.distToLava),
   };
 }
 

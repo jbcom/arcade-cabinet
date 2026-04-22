@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { createInitialState, createObstacle, tick } from "./simulation";
+import {
+  createInitialState,
+  createObstacle,
+  didFinishCup,
+  getCupLegProgress,
+  getMegaTrackRunSummary,
+  tick,
+} from "./simulation";
 import { CONFIG } from "./types";
 
 describe("mega track simulation", () => {
@@ -28,6 +35,16 @@ describe("mega track simulation", () => {
     }
 
     expect(state.integrity).toBeGreaterThan(0);
+    expect(didFinishCup(state)).toBe(false);
+  });
+
+  test("standard cup target is an 8 to 15 minute couch loop at cruise speed", () => {
+    const targetMinutes =
+      CONFIG.GOAL_DISTANCE / (CONFIG.MAX_SPEED * CONFIG.DISTANCE_PER_SPEED_MS * 60_000);
+
+    expect(targetMinutes).toBeGreaterThanOrEqual(8);
+    expect(targetMinutes).toBeLessThanOrEqual(15);
+    expect(CONFIG.MAX_OBSTACLE_INDEX * 290).toBeGreaterThan(CONFIG.GOAL_DISTANCE);
   });
 
   test("challenge impacts hit harder than cozy impacts", () => {
@@ -100,5 +117,26 @@ describe("mega track simulation", () => {
     expect(next.lastCleanPassMs).toBe(next.elapsedMs);
     expect(next.lastOverdriveStartMs).toBe(next.elapsedMs);
     expect(next.boostCharge).toBe(0);
+  });
+
+  test("reports cup legs and run summary deterministically", () => {
+    const state = {
+      ...createInitialState(),
+      distance: CONFIG.GOAL_DISTANCE * 0.52,
+      elapsedMs: 560_000,
+      impactCount: 2,
+      integrity: 76.4,
+    };
+
+    expect(getCupLegProgress(state).leg).toBe(2);
+    expect(getMegaTrackRunSummary(state)).toMatchObject({
+      cupLeg: 2,
+      cupLegCount: 3,
+      elapsedSeconds: 560,
+      impactCount: 2,
+      integrity: 76,
+      progressPercent: 52,
+    });
+    expect(didFinishCup({ ...state, distance: CONFIG.GOAL_DISTANCE })).toBe(true);
   });
 });

@@ -6,7 +6,10 @@ import {
   OverlayButton,
   PhaseTrait,
 } from "@app/shared";
-import { createInitialTitanState } from "@logic/games/titan-mech/engine/titanSimulation";
+import {
+  createInitialTitanState,
+  getTitanRunSummary,
+} from "@logic/games/titan-mech/engine/titanSimulation";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity, titanWorld } from "@logic/games/titan-mech/store/world";
 import { Canvas } from "@react-three/fiber";
@@ -18,6 +21,7 @@ function TitanApp() {
   const state = useTrait(titanEntity, TitanTrait);
   const phase =
     (useTrait(titanEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
+  const summary = getTitanRunSummary(state);
 
   const handleStart = (mode: string) => {
     titanEntity.set(PhaseTrait, { phase: "playing" });
@@ -55,9 +59,21 @@ function TitanApp() {
       {phase === "gameover" && (
         <GameOverScreen
           title="CHASSIS DESTROYED"
-          subtitle={`Final Scrap: ${state.scrap}`}
+          subtitle={`Final Scrap: ${summary.scrap}. Credits ${summary.credits}/${summary.contractCreditsTarget}. Heat discipline keeps the contract recoverable.`}
           actions={
             <OverlayButton onClick={() => handleStart(state.sessionMode)}>Reboot OS</OverlayButton>
+          }
+        />
+      )}
+
+      {phase === "upgrade" && (
+        <GameOverScreen
+          title="CONTRACT EXTRACTED"
+          subtitle={`${summary.credits} credits banked, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Coolant cycles held at ${summary.hp} HP.`}
+          actions={
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
+              Accept Next Contract
+            </OverlayButton>
           }
         />
       )}

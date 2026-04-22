@@ -169,9 +169,26 @@ export function advanceTitanSystems(
       : 0) +
       (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0)) *
     coolingRecoveryScale;
+  const heat = clamp(
+    state.heat + (heatGain + extraction.heatGain) * heatPressureScale - cooling,
+    0,
+    state.maxHeat
+  );
+  const overheatDamage =
+    heat >= CONFIG.OVERHEAT_THRESHOLD
+      ? (heat - CONFIG.OVERHEAT_THRESHOLD) * CONFIG.OVERHEAT_DAMAGE_PER_SECOND * deltaSeconds
+      : 0;
+  const hp = clamp(state.hp - overheatDamage, 0, state.maxHp);
+  const phase =
+    hp <= 0
+      ? "gameover"
+      : extraction.next.credits >= CONFIG.CONTRACT_CREDITS_TARGET
+        ? "upgrade"
+        : state.phase;
 
   return {
     ...state,
+    phase,
     controls: { ...controls, fire: firingAllowed },
     coolantBurstMs,
     coolantCharge: coolantRequested
@@ -182,11 +199,8 @@ export function advanceTitanSystems(
       0,
       state.maxEnergy
     ),
-    heat: clamp(
-      state.heat + (heatGain + extraction.heatGain) * heatPressureScale - cooling,
-      0,
-      state.maxHeat
-    ),
+    heat,
+    hp,
     lastWeaponEventMs: finalWeaponFeedback === "idle" ? 0 : state.lastWeaponEventMs + deltaMs,
     scrap: state.scrap + extraction.scrapGain,
     score: Math.max(state.score, distanceScore + extraction.next.credits),
@@ -221,6 +235,19 @@ export function advanceTitanSystems(
     },
     weaponFeedback: finalWeaponFeedback,
     extraction: extraction.next,
+  };
+}
+
+export function getTitanRunSummary(state: TitanState) {
+  return {
+    contractCreditsTarget: CONFIG.CONTRACT_CREDITS_TARGET,
+    credits: state.extraction.credits,
+    heat: Math.round(state.heat),
+    hopperLoad: Math.round(state.extraction.hopperLoad),
+    hp: Math.round(state.hp),
+    rareIsotopes: state.extraction.rareIsotopes,
+    scrap: state.scrap,
+    score: state.score,
   };
 }
 

@@ -14,6 +14,8 @@ import {
   createInitialState,
   didLose,
   didWin,
+  getEntropyRunSummary,
+  isRunComplete,
   nextLevel,
   restartGame,
   startGame,
@@ -115,6 +117,8 @@ function EntropyApp() {
   );
 
   const isPlaying = phase === "playing";
+  const summary = getEntropyRunSummary(state);
+  const runComplete = isRunComplete(state);
 
   return (
     <GameViewport ref={mountRef} background="#060d1a" data-browser-screenshot-mode="page">
@@ -154,17 +158,23 @@ function EntropyApp() {
 
       {phase === "win" ? (
         <GameOverScreen
-          title="Sector Stabilized"
-          subtitle={`Anchors secured: ${state.anchorsRequired}. Score: ${scoreData.value} pts. Prepare for the next sector.`}
+          title={runComplete ? "Cabinet Stabilized" : "Sector Stabilized"}
+          subtitle={
+            runComplete
+              ? `All ${summary.sectorsRequired} sectors stabilized. Score: ${summary.score} pts. ${summary.totalAnchors} anchors held.`
+              : `Sector ${summary.sector}/${summary.sectorsRequired} secured. Score: ${scoreData.value} pts. Prepare for the next sector.`
+          }
           actions={
             <OverlayButton
               type="button"
               onClick={() => {
-                writeState(nextLevel(readState()));
+                writeState(
+                  runComplete ? restartGame(readState().sessionMode) : nextLevel(readState())
+                );
                 entropyEntity.set(PhaseTrait, { phase: "playing" });
               }}
             >
-              Proceed to Next Sector
+              {runComplete ? "Stabilize Again" : "Proceed to Next Sector"}
             </OverlayButton>
           }
         />

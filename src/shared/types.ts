@@ -1,4 +1,4 @@
-export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "win";
+export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "win" | "upgrade";
 
 export interface GameScore {
   value: number;

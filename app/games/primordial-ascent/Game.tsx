@@ -1,10 +1,15 @@
 import {
   browserTestCanvasGlOptions,
   CartridgeStartScreen,
+  GameOverScreen,
   GameViewport,
+  OverlayButton,
   PhaseTrait,
 } from "@app/shared";
-import { createInitialPrimordialState } from "@logic/games/primordial-ascent/engine/primordialSimulation";
+import {
+  createInitialPrimordialState,
+  getPrimordialRunSummary,
+} from "@logic/games/primordial-ascent/engine/primordialSimulation";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity, primordialWorld } from "@logic/games/primordial-ascent/store/world";
 import { Canvas } from "@react-three/fiber";
@@ -15,6 +20,7 @@ import { HUD } from "./ui/HUD";
 
 function PrimordialApp() {
   const state = useTrait(primordialEntity, PrimordialTrait);
+  const summary = getPrimordialRunSummary(state);
 
   const handleStart = (mode: string) => {
     primordialEntity.set(PhaseTrait, { phase: "playing" });
@@ -91,6 +97,19 @@ function PrimordialApp() {
             Retry Ascent
           </button>
         </div>
+      )}
+
+      {state.phase === "complete" && (
+        <GameOverScreen
+          accent="#00ff66"
+          title="SURFACE BREACHED"
+          subtitle={`Escaped in ${summary.elapsedSeconds}s at ${summary.maxAltitude}m. Final lava gap: ${summary.finalDistanceToLava}m.`}
+          actions={
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
+              Climb Again
+            </OverlayButton>
+          }
+        />
       )}
     </GameViewport>
   );

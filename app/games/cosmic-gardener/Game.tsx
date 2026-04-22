@@ -4,6 +4,7 @@ import {
   getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
+  isGardenCompleteLevel,
 } from "@logic/games/cosmic-gardener/engine/constellationProgress";
 import {
   generateVoidZones,
@@ -142,11 +143,7 @@ export default function Game({ className }: { className?: string }) {
   const handleConstellationComplete = useCallback(() => {
     setConstellationsCompleted((prev) => {
       const newCount = prev + 1;
-      if (newCount >= 5) {
-        setGameState("zenMode");
-      } else {
-        setGameState("levelComplete");
-      }
+      setGameState("levelComplete");
       return newCount;
     });
     setScore((prev) => prev + 5000 * comboMultiplier);
@@ -417,6 +414,11 @@ export default function Game({ className }: { className?: string }) {
   };
 
   const nextLevel = () => {
+    if (isGardenCompleteLevel(level)) {
+      setGameState("zenMode");
+      return;
+    }
+
     const targetLevel = level + 1;
     setLevel(targetLevel);
     loadLevel(targetLevel);
@@ -805,7 +807,7 @@ export default function Game({ className }: { className?: string }) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Next Constellation
+                {nextPreview ? "Next Constellation" : "Enter Zen Garden"}
               </motion.button>
             </motion.div>
           </motion.div>

@@ -9,8 +9,11 @@ import {
   didWin,
   findNearestBlockedCell,
   generateNode,
+  getEntropyRunSummary,
   getStabilityBand,
   getTargetVector,
+  isRunComplete,
+  RUN_SECTORS_REQUIRED,
   startGame,
   tick,
 } from "./simulation";
@@ -70,6 +73,26 @@ describe("entropy simulation", () => {
   test("reports loss only for depleted active sectors", () => {
     expect(didLose({ phase: "playing", timeMs: 0 } as never)).toBe(true);
     expect(didLose({ phase: "menu", timeMs: 0 } as never)).toBe(false);
+  });
+
+  test("treats the third stabilized sector as a full run completion", () => {
+    const sectorComplete = {
+      ...startGame({} as never),
+      phase: "levelcomplete" as const,
+      level: RUN_SECTORS_REQUIRED,
+      score: 12_000,
+      totalAnchors: 12,
+    };
+
+    expect(didWin(sectorComplete)).toBe(true);
+    expect(isRunComplete({ ...sectorComplete, level: RUN_SECTORS_REQUIRED - 1 })).toBe(false);
+    expect(isRunComplete(sectorComplete)).toBe(true);
+    expect(getEntropyRunSummary(sectorComplete)).toMatchObject({
+      score: 12_000,
+      sector: RUN_SECTORS_REQUIRED,
+      sectorsRequired: RUN_SECTORS_REQUIRED,
+      totalAnchors: 12,
+    });
   });
 
   test("chooses deterministic anchors and blocked cell layouts", () => {
