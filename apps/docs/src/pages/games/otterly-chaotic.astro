@@ -1,8 +1,10 @@
 ---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/otterly-chaotic";
 ---
 
-<BaseLayout title="Otterly Chaotic">
-  <main style="padding: 2rem; min-height: 100vh; background: #082f49;">
-    <div style="height: 80vh;"><Game client:only="react" /></div>
+<BaseLayout title="Otterly Chaotic | Arcade Cabinet">
+  <main class="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black touch-none select-none">
+    <Game client:only="react" />
   </main>
 </BaseLayout>

@@ -1,8 +1,10 @@
 ---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/cosmic-gardener";
 ---
 
-<BaseLayout title="Cosmic Gardener">
-  <main class="w-full h-[100svh] bg-[#0c0a1a]">
-    <Game client:only="react" className="w-full h-full" />
+<BaseLayout title="Cosmic Gardener | Arcade Cabinet">
+  <main class="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black touch-none select-none">
+    <Game client:only="react" />
   </main>
 </BaseLayout>

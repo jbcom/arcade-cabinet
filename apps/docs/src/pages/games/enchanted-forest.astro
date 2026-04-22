@@ -1,8 +1,10 @@
 ---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/enchanted-forest";
 ---
 
-<BaseLayout title="Enchanted Forest Spirit">
-  <main class="w-full h-[100svh] bg-[#064e3b]">
+<BaseLayout title="Enchanted Forest | Arcade Cabinet">
+  <main class="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black touch-none select-none">
     <Game client:only="react" />
   </main>
 </BaseLayout>

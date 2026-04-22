@@ -14,6 +14,13 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      conditions: ["development", "browser"],
+    },
+  },
+  experimental: {
+    // Disable the experimental bundler which is currently causing rolldown panics with tailwind
+    clientPrerender: true,
   },
   output: "static",
 });
