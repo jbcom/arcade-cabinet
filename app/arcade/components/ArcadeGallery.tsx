@@ -1,4 +1,4 @@
-import { type CartridgeMotif, CircularGallery, useResponsive } from "@app/shared";
+import { CircularGallery, useResponsive } from "@app/shared";
 import type { MouseEvent } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -20,8 +20,8 @@ export default function ArcadeGallery() {
       cartridgeId: `Slot ${String(index + 1).padStart(2, "0")}`,
       description: game.description,
       kicker: "Cabinet Cartridge",
-      motif: getCartridgeMotif(game.slug),
-      secondaryAccent: getSecondaryAccent(game.slug),
+      motif: game.motif,
+      secondaryAccent: game.secondaryAccent,
       title: game.title,
     },
     onActivate: (event: MouseEvent<HTMLAnchorElement>) => {
@@ -102,50 +102,4 @@ function launchGameFromGallery(
   transition.finished.finally(() => {
     label?.style.removeProperty("view-transition-name");
   });
-}
-
-function getCartridgeMotif(slug: string): CartridgeMotif {
-  switch (slug) {
-    case "bioluminescent-sea":
-      return "sea";
-    case "cosmic-gardener":
-      return "cosmic";
-    case "enchanted-forest":
-      return "forest";
-    case "entropy-edge":
-      return "entropy";
-    case "mega-track":
-      return "track";
-    case "otterly-chaotic":
-      return "otter";
-    case "primordial-ascent":
-      return "primordial";
-    case "titan-mech":
-      return "mech";
-    default:
-      return "voxel";
-  }
-}
-
-function getSecondaryAccent(slug: string) {
-  switch (slug) {
-    case "bioluminescent-sea":
-      return "#a78bfa";
-    case "cosmic-gardener":
-      return "#ec4899";
-    case "enchanted-forest":
-      return "#fbbf24";
-    case "entropy-edge":
-      return "#ff0055";
-    case "mega-track":
-      return "#facc15";
-    case "otterly-chaotic":
-      return "#84cc16";
-    case "primordial-ascent":
-      return "#ff3333";
-    case "titan-mech":
-      return "#f59e0b";
-    default:
-      return "#38bdf8";
-  }
 }

@@ -5,6 +5,8 @@ export const games = [
     description: "Descend into the deep ocean as a glowing collector of light.",
     tags: ["canvas", "framer-motion", "exploration"],
     color: "#4ecdc4",
+    motif: "sea",
+    secondaryAccent: "#a78bfa",
     gradient: "linear-gradient(135deg, #4ecdc4, #051018)",
     pillars: ["Quiet navigation", "Light as currency", "Threats read as silhouettes"],
     presentation:
@@ -20,6 +22,8 @@ export const games = [
     description: "Plant stars and build constellations in a hybrid pinball puzzle.",
     tags: ["react", "framer-motion", "puzzle"],
     color: "#fbbf24",
+    motif: "cosmic",
+    secondaryAccent: "#ec4899",
     gradient: "linear-gradient(135deg, #fbbf24, #ec4899)",
     pillars: ["Pinball energy", "Readable constellation routing", "Wonder without visual clutter"],
     presentation:
@@ -35,6 +39,8 @@ export const games = [
     description: "Protect sacred trees using musical runes and spirit magic.",
     tags: ["react", "tone.js", "manga"],
     color: "#10b981",
+    motif: "forest",
+    secondaryAccent: "#fbbf24",
     gradient: "linear-gradient(135deg, #10b981, #7c3aed)",
     pillars: ["Gesture spellcasting", "Sacred grove protection", "Music reinforces intent"],
     presentation:
@@ -50,6 +56,8 @@ export const games = [
     description: "Hold a collapsing resonance field together at the edge of failure.",
     tags: ["r3f", "simulation", "systems"],
     color: "#38bdf8",
+    motif: "entropy",
+    secondaryAccent: "#ff0055",
     gradient: "linear-gradient(135deg, #38bdf8, #312e81)",
     pillars: [
       "Spatial logic under pressure",
@@ -69,6 +77,8 @@ export const games = [
     description: "Thread a high-speed machine through a deterministic hazard ribbon.",
     tags: ["r3f", "racing", "action"],
     color: "#fb7185",
+    motif: "track",
+    secondaryAccent: "#facc15",
     gradient: "linear-gradient(135deg, #fb7185, #7c2d12)",
     pillars: ["Instant lane reads", "Toy-scale speed", "Impact clarity"],
     presentation:
@@ -84,6 +94,8 @@ export const games = [
     description: "Ski a corrupted glacier as a kung-fu kitten fighting snowmen and glitches.",
     tags: ["react", "lane-runner", "action"],
     color: "#7dd3fc",
+    motif: "track",
+    secondaryAccent: "#10b981",
     gradient: "linear-gradient(135deg, #7dd3fc, #0f172a 48%, #10b981)",
     pillars: ["Downhill clarity", "Kung-fu interruption", "Warmth survival"],
     presentation:
@@ -99,6 +111,8 @@ export const games = [
     description: "Navigate a chaotic otter through a series of wild challenges.",
     tags: ["r3f", "physics", "action"],
     color: "#0ea5e9",
+    motif: "otter",
+    secondaryAccent: "#84cc16",
     gradient: "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
     pillars: ["Protect the salad", "Readable chase triangle", "Comedic physicality"],
     presentation:
@@ -114,6 +128,8 @@ export const games = [
     description: "Grapple your way out of a rising lava cavern using procedural physics.",
     tags: ["r3f", "physics", "procedural"],
     color: "#00ff66",
+    motif: "primordial",
+    secondaryAccent: "#ff3333",
     gradient: "linear-gradient(135deg, #00ff66, #ff3333)",
     pillars: ["Vertical escape", "Grapple readability", "Lava pressure"],
     presentation:
@@ -129,6 +145,8 @@ export const games = [
     description: "Pilot a heat-stressed extraction titan through ore pylons and reactor pressure.",
     tags: ["r3f", "cockpit", "action"],
     color: "#f43f5e",
+    motif: "mech",
+    secondaryAccent: "#f59e0b",
     gradient: "linear-gradient(135deg, #f43f5e, #4c0519)",
     pillars: ["Heavy chassis control", "Heat economy", "Industrial extraction"],
     presentation:
