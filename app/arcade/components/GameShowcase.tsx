@@ -4,7 +4,7 @@ import { withBasePath } from "../utils/basePath";
 import GameIsland from "./GameIsland";
 
 export default function GameShowcase() {
-  const [activeSlug, setActiveSlug] = useState<GameSlug>("sim-soviet");
+  const [activeSlug, setActiveSlug] = useState<GameSlug>(games[0].slug);
   const activeGame = useMemo(() => gamesBySlug[activeSlug], [activeSlug]);
 
   return (

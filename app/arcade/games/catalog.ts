@@ -64,21 +64,6 @@ export const games = [
       "The camera distance and orbit controls frame the full grid in a parent-sized canvas, allowing cabinet, desktop, and Android WebView containers to share the same scene.",
   },
   {
-    slug: "gridizen",
-    title: "GRIDIZEN",
-    description: "Found a river settlement and keep roads, power, water, and residents in balance.",
-    tags: ["r3f", "strategy", "city"],
-    color: "#22c55e",
-    gradient: "linear-gradient(135deg, #22c55e, #155e75)",
-    pillars: ["City legibility", "Infrastructure feedback", "Calm civic iteration"],
-    presentation:
-      "Gridizen reads as a model-table city: a seeded starter district, utility landmarks, roads, parks, terrain, and warnings stay distinguishable even on a phone.",
-    sceneDirection:
-      "Muted civic terrain, lane markings, composite utility silhouettes, bounded orbit controls, and day/night lighting turn the grid into a playable planning diorama.",
-    responsiveDirection:
-      "The cabinet route, standalone web app, and Android shell share the same parent-filling viewport; page-mode Vitest Browser captures prove both HUD and model on desktop and mobile.",
-  },
-  {
     slug: "mega-track",
     title: "MEGA TRACK",
     description: "Thread a high-speed machine through a deterministic hazard ribbon.",
@@ -122,66 +107,6 @@ export const games = [
       "Low ambient light, strong emissive targets, fog, and a rising lava plane turn simple procedural geometry into a hostile vertical space.",
     responsiveDirection:
       "Pointer-lock play remains fullscreen-first, while the root fills the cabinet island for smoke tests and preview without imposing viewport height.",
-  },
-  {
-    slug: "protocol-snw",
-    title: "PROTOCOL: SNW",
-    description: "Tactical survival combat protocol in a shifting neon void.",
-    tags: ["r3f", "tactical", "combat"],
-    color: "#2dd4bf",
-    gradient: "linear-gradient(135deg, #2dd4bf, #042f2e)",
-    pillars: ["Combat perimeter", "Neon target clarity", "System health pressure"],
-    presentation:
-      "The player reads the void as a tactical firing range: enemies, crosshair, integrity, and wave pressure are more important than environmental detail.",
-    sceneDirection:
-      "Dark teal space, restrained directional light, and cyan UI create a cold protocol mood while keeping targets high contrast.",
-    responsiveDirection:
-      "The scene fills desktop, mobile, and Android shells; HUD panels stay compact so the crosshair and threat lane remain open.",
-  },
-  {
-    slug: "reach-for-the-sky",
-    title: "REACH FOR THE SKY",
-    description: "Architect, manage, and evolve your vertical skyscraper empire.",
-    tags: ["r3f", "simulation", "management"],
-    color: "#1e88e5",
-    gradient: "linear-gradient(135deg, #1e88e5, #43a047)",
-    pillars: ["Vertical ambition", "Readable stacking", "Day-cycle economy"],
-    presentation:
-      "The skyscraper is a model rising into frame: the player should understand every placed module as part of an upward economic machine.",
-    sceneDirection:
-      "Sky gradients, sun movement, and clean module colors keep the tower legible while making height feel aspirational.",
-    responsiveDirection:
-      "Map controls and camera distance must keep the tower centered across mouse, touch, and Android WebView inputs.",
-  },
-  {
-    slug: "realmwalker",
-    title: "REALMWALKER",
-    description: "High-fantasy adventure through shifting realms and mystical relics.",
-    tags: ["r3f", "fantasy", "adventure"],
-    color: "#c084fc",
-    gradient: "linear-gradient(135deg, #c084fc, #4c1d95)",
-    pillars: ["Mythic traversal", "Zone-shift identity", "Relic risk/reward"],
-    presentation:
-      "The player should feel like a small figure crossing unstable realms, with color shifts and silhouettes carrying more weight than dense geometry.",
-    sceneDirection:
-      "Zone color, mist, pillars, and a bright player weapon establish fantasy space while preserving motion readability.",
-    responsiveDirection:
-      "Third-person camera follow keeps the player centered and avoids precision UI so mobile and Android remain viable.",
-  },
-  {
-    slug: "sim-soviet",
-    title: "SIM SOVIET 3000",
-    description: "Manage a Soviet-era city in this strategic simulation.",
-    tags: ["r3f", "simulation", "strategy"],
-    color: "#ef4444",
-    gradient: "linear-gradient(135deg, #ef4444, #f97316)",
-    pillars: ["Command-table planning", "Quota pressure", "Utilities as visible systems"],
-    presentation:
-      "The city should read like a physical planning table: buildings are simple blocks, quota is constant pressure, and tool choice is always close.",
-    sceneDirection:
-      "Cold slate terrain, red/orange civic accents, and a fixed isometric presentation make political pressure and infrastructure state visible.",
-    responsiveDirection:
-      "The whole board stays within the camera target, with HUD and building palette occupying predictable edges on mobile and desktop.",
   },
   {
     slug: "titan-mech",

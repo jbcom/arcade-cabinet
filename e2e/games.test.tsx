@@ -2,14 +2,9 @@ import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CosmicGardener from "@app/games/cosmic-gardener";
 import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
-import Gridizen from "@app/games/gridizen";
 import MegaTrack from "@app/games/mega-track";
 import OtterlyChaotic from "@app/games/otterly-chaotic";
 import PrimordialAscent from "@app/games/primordial-ascent";
-import ProtocolSnw from "@app/games/protocol-snw";
-import ReachForTheSky from "@app/games/reach-for-the-sky";
-import Realmwalker from "@app/games/realmwalker";
-import SimSoviet from "@app/games/sim-soviet";
 import TitanMech from "@app/games/titan-mech";
 import VoxelRealms from "@app/games/voxel-realms";
 import {
@@ -62,15 +57,6 @@ const gameCases: (BrowserGameStartFlow & {
     expectsJoystick: true,
   },
   {
-    name: "Gridizen",
-    slug: "gridizen",
-    Component: Gridizen,
-    title: "Gridizen",
-    startFlow: ["Found a Settlement"],
-    ready: "Data Lens",
-    expectsCanvas: true,
-  },
-  {
     name: "Mega Track",
     slug: "mega-track",
     Component: MegaTrack,
@@ -99,44 +85,6 @@ const gameCases: (BrowserGameStartFlow & {
     ready: "Altitude",
     expectsCanvas: true,
     expectsJoystick: true,
-  },
-  {
-    name: "Protocol SNW",
-    slug: "protocol-snw",
-    Component: ProtocolSnw,
-    title: "PROTOCOL: SILENT NIGHT",
-    startFlow: ["Engage"],
-    ready: "INTEGRITY",
-    expectsCanvas: true,
-    expectsJoystick: true,
-  },
-  {
-    name: "Reach for the Sky",
-    slug: "reach-for-the-sky",
-    Component: ReachForTheSky,
-    title: "REACH FOR THE SKY",
-    startFlow: ["Break Ground"],
-    ready: /DAY/,
-    expectsCanvas: true,
-  },
-  {
-    name: "Realmwalker",
-    slug: "realmwalker",
-    Component: Realmwalker,
-    title: "REALMWALKER",
-    startFlow: ["Enter the Shifting Realm"],
-    ready: "VITALITY",
-    expectsCanvas: true,
-    expectsJoystick: true,
-  },
-  {
-    name: "Sim Soviet",
-    slug: "sim-soviet",
-    Component: SimSoviet,
-    title: "Sim Soviet 3000",
-    startFlow: ["Begin the Plan"],
-    ready: "Quota progress",
-    expectsCanvas: true,
   },
   {
     name: "Titan Mech",
