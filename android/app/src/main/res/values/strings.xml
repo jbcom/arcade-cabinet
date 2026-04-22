@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arcade Cabinet</string>
+    <string name="title_activity_main">Arcade Cabinet</string>
+    <string name="package_name">com.arcade.cabinet</string>
+    <string name="custom_url_scheme">com.arcade.cabinet</string>
+</resources>

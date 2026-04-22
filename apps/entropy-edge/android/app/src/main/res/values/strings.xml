@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Entropy Edge</string>
-    <string name="title_activity_main">Entropy Edge</string>
-    <string name="package_name">com.arcade.entropyedge</string>
-    <string name="custom_url_scheme">com.arcade.entropyedge</string>
-</resources>

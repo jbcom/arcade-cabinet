@@ -4,23 +4,6 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
-const gamePackages = [
-  "bioluminescent-sea",
-  "cosmic-gardener",
-  "enchanted-forest",
-  "entropy-edge",
-  "gridizen",
-  "mega-track",
-  "otterly-chaotic",
-  "primordial-ascent",
-  "protocol-snw",
-  "reach-for-the-sky",
-  "realmwalker",
-  "sim-soviet",
-  "titan-mech",
-  "voxel-realms",
-];
-
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
@@ -39,22 +22,13 @@ export default defineConfig({
       instances: [{ browser: "chromium" }],
       headless: true,
     },
-    setupFiles: "./src/test/setup.ts",
-    include: [
-      "packages/*/src/**/*.test.{ts,tsx}",
-      "apps/docs/src/**/*.test.{ts,tsx}",
-      "e2e/**/*.test.{ts,tsx}",
-    ],
+    setupFiles: "./app/test/setup.ts",
+    include: ["app/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}", "e2e/**/*.test.{ts,tsx}"],
   },
   resolve: {
     alias: {
-      "@arcade-cabinet/shared": path.resolve(__dirname, "./packages/shared/src/index.ts"),
-      ...Object.fromEntries(
-        gamePackages.map((name) => [
-          `@arcade-cabinet/${name}`,
-          path.resolve(__dirname, `./packages/${name}/src/index.ts`),
-        ])
-      ),
+      "@app": path.resolve(__dirname, "app"),
+      "@logic": path.resolve(__dirname, "src"),
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       three: path.resolve(__dirname, "node_modules/three"),
@@ -66,20 +40,22 @@ export default defineConfig({
       "three",
       "@react-three/fiber",
       "@react-three/drei",
-      "koota",
       "@react-three/rapier",
       "framer-motion",
+      "koota",
     ],
   },
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
+      "react-dom/client",
       "three",
       "@react-three/fiber",
-      "koota",
+      "@react-three/drei",
       "@react-three/rapier",
       "framer-motion",
+      "koota",
       "simplex-noise",
       "@testing-library/jest-dom/vitest",
     ],

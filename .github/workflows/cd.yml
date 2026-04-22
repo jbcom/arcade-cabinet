@@ -1,4 +1,4 @@
-name: Deploy & Publish Apps
+name: Deploy & Publish App
 
 on:
   push:
@@ -22,24 +22,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-docs:
-    name: Build Docs
+  build-pages:
+    name: Build Pages
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Build with Astro
-        uses: withastro/action@b7d53628f8b666036b0238aadb0b984a2a489f26 # v6.1.1
-        with:
-          path: apps/docs
-          package-manager: pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
 
-  deploy-docs:
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Vite app
+        run: pnpm build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: dist
+
+  deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: build-docs
+    needs: build-pages
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -48,29 +63,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
 
-  build-apks:
-    name: Build Android APKs
+  build-apk:
+    name: Build Android APK
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [
-          "bioluminescent-sea",
-          "cosmic-gardener",
-          "enchanted-forest",
-          "entropy-edge",
-          "gridizen",
-          "mega-track",
-          "otterly-chaotic",
-          "primordial-ascent",
-          "protocol-snw",
-          "reach-for-the-sky",
-          "realmwalker",
-          "sim-soviet",
-          "titan-mech",
-          "voxel-realms"
-        ]
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -85,8 +81,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
-          distribution: 'zulu'
-          java-version: '21'
+          distribution: "zulu"
+          java-version: "21"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
@@ -101,22 +97,18 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Sync Capacitor
-        run: |
-          cd apps/${{ matrix.app }}
-          pnpm run build
-          pnpm exec cap sync android
+        run: pnpm android:sync
 
       - name: Build APK
         run: |
-          cd apps/${{ matrix.app }}/android
+          cd android
           ./gradlew assembleDebug
 
       - name: Rename APK
-        run: |
-          mv apps/${{ matrix.app }}/android/app/build/outputs/apk/debug/app-debug.apk ${{ matrix.app }}-debug.apk
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk arcade-cabinet-debug.apk
 
       - name: Upload to Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          files: ${{ matrix.app }}-debug.apk
+          files: arcade-cabinet-debug.apk
           tag_name: ${{ github.event.release.tag_name || inputs.release_tag }}

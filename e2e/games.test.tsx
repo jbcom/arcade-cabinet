@@ -1,27 +1,26 @@
-import BioluminescentSea from "@arcade-cabinet/bioluminescent-sea";
-import CosmicGardener from "@arcade-cabinet/cosmic-gardener";
-import EnchantedForest from "@arcade-cabinet/enchanted-forest";
-import EntropyEdge from "@arcade-cabinet/entropy-edge";
-import Gridizen from "@arcade-cabinet/gridizen";
-import MegaTrack from "@arcade-cabinet/mega-track";
-import OtterlyChaotic from "@arcade-cabinet/otterly-chaotic";
-import PrimordialAscent from "@arcade-cabinet/primordial-ascent";
-import ProtocolSnw from "@arcade-cabinet/protocol-snw";
-import ReachForTheSky from "@arcade-cabinet/reach-for-the-sky";
-import Realmwalker from "@arcade-cabinet/realmwalker";
-import SimSoviet from "@arcade-cabinet/sim-soviet";
-import TitanMech from "@arcade-cabinet/titan-mech";
-import VoxelRealms from "@arcade-cabinet/voxel-realms";
-import { cleanup } from "@testing-library/react";
-import { afterEach, describe, test } from "vitest";
+import BioluminescentSea from "@app/games/bioluminescent-sea";
+import CosmicGardener from "@app/games/cosmic-gardener";
+import EnchantedForest from "@app/games/enchanted-forest";
+import EntropyEdge from "@app/games/entropy-edge";
+import MegaTrack from "@app/games/mega-track";
+import OtterlyChaotic from "@app/games/otterly-chaotic";
+import PrimordialAscent from "@app/games/primordial-ascent";
+import TitanMech from "@app/games/titan-mech";
+import VoxelRealms from "@app/games/voxel-realms";
 import {
   type BrowserGameStartFlow,
   type BrowserGameViewport,
   captureBrowserGameScreenshot,
   verifyBrowserGameStartFlow,
-} from "../src/test/browserGameHarness";
+} from "@app/test/browserGameHarness";
+import { cleanup, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, test } from "vitest";
 
-const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
+const gameCases: (BrowserGameStartFlow & {
+  name: string;
+  slug: string;
+  expectsJoystick?: boolean;
+})[] = [
   {
     name: "Bioluminescent Sea",
     slug: "bioluminescent-sea",
@@ -55,15 +54,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Initialize Link"],
     ready: /RESONANCE/,
     expectsCanvas: true,
-  },
-  {
-    name: "Gridizen",
-    slug: "gridizen",
-    Component: Gridizen,
-    title: "Gridizen",
-    startFlow: ["Found a Settlement"],
-    ready: "Data Lens",
-    expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Mega Track",
@@ -73,6 +64,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Start Race"],
     ready: /Speed:/,
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Otterly Chaotic",
@@ -82,6 +74,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Start Sprint"],
     ready: "Bark Pulse",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Primordial Ascent",
@@ -91,42 +84,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Initiate Sequence"],
     ready: "Altitude",
     expectsCanvas: true,
-  },
-  {
-    name: "Protocol SNW",
-    slug: "protocol-snw",
-    Component: ProtocolSnw,
-    title: "PROTOCOL: SILENT NIGHT",
-    startFlow: ["Engage"],
-    ready: "INTEGRITY",
-    expectsCanvas: true,
-  },
-  {
-    name: "Reach for the Sky",
-    slug: "reach-for-the-sky",
-    Component: ReachForTheSky,
-    title: "REACH FOR THE SKY",
-    startFlow: ["Break Ground"],
-    ready: /DAY/,
-    expectsCanvas: true,
-  },
-  {
-    name: "Realmwalker",
-    slug: "realmwalker",
-    Component: Realmwalker,
-    title: "REALMWALKER",
-    startFlow: ["Enter the Shifting Realm"],
-    ready: "VITALITY",
-    expectsCanvas: true,
-  },
-  {
-    name: "Sim Soviet",
-    slug: "sim-soviet",
-    Component: SimSoviet,
-    title: "Sim Soviet 3000",
-    startFlow: ["Begin the Plan"],
-    ready: "Quota progress",
-    expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Titan Mech",
@@ -136,6 +94,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Engage Chassis"],
     ready: "SYSTEM INTEGRITY",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Voxel Realms",
@@ -145,6 +104,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Enter Realm"],
     ready: "HP",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
 ];
 
@@ -162,6 +122,10 @@ describe("browser game e2e flows and visual captures", () => {
     gameCases
   )("$name reaches gameplay and captures responsive screenshots", async (game) => {
     const { host, rootElement } = await verifyBrowserGameStartFlow(game);
+
+    if (game.expectsJoystick) {
+      await verifyFloatingJoystick(rootElement);
+    }
 
     for (const viewport of screenshotViewports) {
       await captureBrowserGameScreenshot(
@@ -181,4 +145,45 @@ function cleanupBrowserRender() {
   }
 
   cleanup();
+}
+
+async function verifyFloatingJoystick(rootElement: Element) {
+  const rect = rootElement.getBoundingClientRect();
+  const pointerId = 41;
+  const originX = rect.left + Math.min(180, rect.width * 0.42);
+  const originY = rect.top + Math.min(360, rect.height * 0.58);
+
+  rootElement.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      bubbles: true,
+      clientX: originX,
+      clientY: originY,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
+  window.dispatchEvent(
+    new PointerEvent("pointermove", {
+      clientX: originX + 44,
+      clientY: originY - 30,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
+
+  await waitFor(() => {
+    expect(document.querySelector('[data-testid="floating-joystick"]')).not.toBeNull();
+  });
+
+  window.dispatchEvent(
+    new PointerEvent("pointerup", {
+      clientX: originX + 44,
+      clientY: originY - 30,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
 }

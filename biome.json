@@ -7,15 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "**",
-      "!**/node_modules",
-      "!**/dist",
-      "!**/dist-app",
-      "!**/.astro",
-      "!**/*.tsbuildinfo",
-      "!pending"
-    ]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!android", "!**/*.tsbuildinfo", "!pending"]
   },
   "css": {
     "parser": {
@@ -44,17 +36,5 @@
       "trailingCommas": "es5"
     }
   },
-  "overrides": [
-    {
-      "includes": ["**/*.astro"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedImports": "off",
-            "noUnusedVariables": "off"
-          }
-        }
-      }
-    }
-  ]
+  "overrides": []
 }
