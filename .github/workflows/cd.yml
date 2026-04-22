@@ -1,8 +1,16 @@
 name: Deploy & Publish Apps
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to receive APK assets"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -10,13 +18,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-and-publish
+  group: ${{ github.event_name == 'push' && 'pages-deploy' || format('apk-publish-{0}', github.event.release.tag_name || inputs.release_tag) }}
   cancel-in-progress: false
 
 jobs:
   build-docs:
     name: Build Docs
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -42,6 +51,7 @@ jobs:
   build-apks:
     name: Build Android APKs
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -65,11 +75,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Verify target release exists
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: gh release view "$RELEASE_TAG" >/dev/null
+
       - name: Setup Java
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
@@ -102,3 +118,4 @@ jobs:
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           files: ${{ matrix.app }}-debug.apk
+          tag_name: ${{ github.event.release.tag_name || inputs.release_tag }}
