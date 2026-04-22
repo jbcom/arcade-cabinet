@@ -22,6 +22,7 @@ export interface OvercastState {
   warmth: number;
   maxWarmth: number;
   score: number;
+  scoreRemainder: number;
   combo: number;
   photoCharges: number;
   speed: number;

@@ -1,5 +1,8 @@
-import type { ConstellationPattern } from "./constellations";
-import { getConstellationForLevel } from "./constellations";
+import {
+  CONSTELLATIONS,
+  type ConstellationPattern,
+  getConstellationForLevel,
+} from "./constellations";
 
 export const DEFAULT_POINT_MATCH_RADIUS = 8;
 
@@ -53,6 +56,8 @@ export function isConstellationComplete(
 }
 
 export function getNextConstellationPreview(level: number) {
+  if (level + 1 > CONSTELLATIONS.length) return null;
+
   const nextPattern = getConstellationForLevel(level + 1);
 
   return {

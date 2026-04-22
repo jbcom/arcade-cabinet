@@ -15,6 +15,7 @@ export function createInitialOvercastState(phase: OvercastState["phase"] = "menu
     warmth: 100,
     maxWarmth: 100,
     score: 0,
+    scoreRemainder: 0,
     combo: 0,
     photoCharges: 1,
     speed: OVERCAST_CONFIG.BASE_SPEED,
@@ -68,6 +69,8 @@ export function advanceOvercastState(
     0,
     state.maxWarmth
   );
+  const distanceScore = state.scoreRemainder + deltaMs * speed;
+  const wholeDistanceScore = Math.floor(distanceScore);
 
   return {
     ...state,
@@ -75,7 +78,8 @@ export function advanceOvercastState(
     timeMs: nextTime,
     playerLane,
     warmth,
-    score: resolved.score + Math.floor(deltaMs * speed),
+    score: resolved.score + wholeDistanceScore,
+    scoreRemainder: distanceScore - wholeDistanceScore,
     combo: resolved.combo,
     photoCharges: resolved.photoCharges,
     speed,

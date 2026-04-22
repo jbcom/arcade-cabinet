@@ -19,7 +19,7 @@ Browser screenshots use page capture so the R3F canvas, HUD, vector readout, and
 
 - Max resonance now produces a deterministic surge event that clears or weakens a nearby blocked cell.
 - Resonance bands around the player make stability state readable without relying only on HUD text.
-- Three color alpha usage was replaced with explicit opacity so R3F rendering is stable.
+- Three.js color alpha usage was replaced with explicit opacity so R3F rendering is stable.
 - The cabinet landing uses the shared cartridge frame with an abstract grid label, play control, and rules drawer.
 
 ## Gameplay Systems

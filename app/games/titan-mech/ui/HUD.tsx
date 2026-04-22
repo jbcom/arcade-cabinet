@@ -21,6 +21,12 @@ export function HUD() {
         : state.weaponFeedback === "cooling"
           ? "#67e8f9"
           : accent;
+  const extractorColor =
+    state.extraction.feedback === "blocked"
+      ? danger
+      : state.extraction.feedback === "grinding" || state.extraction.feedback === "ejecting"
+        ? warning
+        : accent;
 
   return (
     <HUDOverlay
@@ -36,7 +42,7 @@ export function HUD() {
           <div style={{ color: weaponColor, fontSize: 12, marginTop: 6 }}>
             WEAPON {state.weaponFeedback.toUpperCase()}
           </div>
-          <div style={{ color: warning, fontSize: 12, marginTop: 3 }}>
+          <div style={{ color: extractorColor, fontSize: 12, marginTop: 3 }}>
             EXTRACTOR {state.extraction.feedback.toUpperCase()}
           </div>
         </div>

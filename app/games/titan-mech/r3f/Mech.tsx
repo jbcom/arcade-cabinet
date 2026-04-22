@@ -204,7 +204,7 @@ function MechChassis({
         </mesh>
       ) : null}
       {isFiring ? (
-        <group position={[-2.67, -0.7, 5.2]}>
+        <group position={[-3.43, -0.7, 5.2]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.72, 4.6, 18]} />
             <meshBasicMaterial color="#f59e0b" transparent opacity={0.86} />

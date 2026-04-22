@@ -110,6 +110,15 @@ describe("titan simulation", () => {
       getWeaponFeedbackState({
         coolantActive: false,
         energy: 100,
+        firingAllowed: false,
+        heat: 20,
+        requestedFire: false,
+      })
+    ).toBe("idle");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
         firingAllowed: true,
         heat: 20,
         requestedFire: true,
@@ -133,6 +142,51 @@ describe("titan simulation", () => {
         requestedFire: true,
       })
     ).toBe("overheated");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: true,
+        energy: 100,
+        firingAllowed: false,
+        heat: 50,
+        requestedFire: false,
+      })
+    ).toBe("cooling");
+  });
+
+  test("resets transient weapon and extraction timers when feedback returns idle", () => {
+    const active = {
+      ...createInitialTitanState("playing"),
+      lastWeaponEventMs: 640,
+      weaponFeedback: "firing" as const,
+      extraction: {
+        ...createInitialTitanState("playing").extraction,
+        feedback: "grinding" as const,
+        lastExtractionEventMs: 480,
+      },
+    };
+    const next = advanceTitanSystems(active, 100, {}, {});
+
+    expect(next.weaponFeedback).toBe("idle");
+    expect(next.lastWeaponEventMs).toBe(0);
+    expect(next.extraction.feedback).toBe("idle");
+    expect(next.extraction.lastExtractionEventMs).toBe(0);
+  });
+
+  test("allows natural cooling while extract is held but overheated", () => {
+    const hot = { ...createInitialTitanState("playing"), heat: 92, coolantCharge: 0 };
+    const next = advanceTitanSystems(
+      hot,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(next.extraction.feedback).toBe("blocked");
+    expect(next.heat).toBeLessThan(hot.heat);
   });
 
   test("grinds pylon ore into the hopper and converts a full hopper into credits", () => {

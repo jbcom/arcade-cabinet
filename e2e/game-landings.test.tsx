@@ -82,7 +82,7 @@ describe("game cartridge landing captures", () => {
       const { container } = render(
         <div
           data-testid="game-host"
-          style={{ width: "100vw", height: "100vh", overflow: "hidden" }}
+          style={{ width: "100svw", height: "100svh", overflow: "hidden" }}
         >
           <game.Component />
         </div>

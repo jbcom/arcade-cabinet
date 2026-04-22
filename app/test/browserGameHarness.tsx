@@ -49,7 +49,7 @@ export async function startBrowserGame(
   await page.viewport(viewport.width, viewport.height);
 
   const { container } = render(
-    <div data-testid="game-host" style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div data-testid="game-host" style={{ width: "100svw", height: "100svh", overflow: "hidden" }}>
       <Component />
     </div>
   );

@@ -9,7 +9,10 @@ import { Mech } from "./Mech";
 
 const layout = createArenaLayout();
 
-function ArenaFloor({ objectiveProgress }: { objectiveProgress: number }) {
+function ArenaFloor() {
+  const state = useTrait(titanEntity, TitanTrait);
+  const objectiveProgress = state.objectiveProgress;
+
   return (
     <RigidBody type="fixed">
       <group>
@@ -225,8 +228,6 @@ function ExtractionRig({ beacon }: { beacon: ArenaBeaconData }) {
 }
 
 export function World() {
-  const state = useTrait(titanEntity, TitanTrait);
-
   return (
     <>
       <fog attach="fog" args={["#141922", 42, 176]} />
@@ -245,7 +246,7 @@ export function World() {
       <pointLight position={[-42, 11, -38]} color="#f59e0b" intensity={1.8} distance={58} />
 
       <Physics gravity={[0, -9.8, 0]}>
-        <ArenaFloor objectiveProgress={state.objectiveProgress} />
+        <ArenaFloor />
         {layout.obstacles.map((obstacle) => (
           <ArenaObstacle key={obstacle.id} obstacle={obstacle} />
         ))}

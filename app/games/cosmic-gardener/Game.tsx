@@ -776,15 +776,25 @@ export default function Game({ className }: { className?: string }) {
               <h2 className="text-4xl font-light text-white mb-4">Constellation Complete!</h2>
               <p className="text-white/60 mb-2">{currentPattern.name} has awakened</p>
               <p className="text-amber-400 text-2xl mb-2">{score.toLocaleString()} points</p>
-              <div className="mx-auto mb-6 grid max-w-sm gap-1 rounded-md border border-cyan-200/20 bg-cyan-950/25 px-4 py-3 text-left">
-                <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-cyan-200">
-                  Next Pattern
+              {nextPreview ? (
+                <div className="mx-auto mb-6 grid max-w-sm gap-1 rounded-md border border-cyan-200/20 bg-cyan-950/25 px-4 py-3 text-left">
+                  <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-cyan-200">
+                    Next Pattern
+                  </div>
+                  <div className="truncate text-lg font-bold text-white">{nextPreview.name}</div>
+                  <div className="text-sm text-white/55">
+                    {nextPreview.pointCount} seeds / {nextPreview.connectionCount} links
+                  </div>
                 </div>
-                <div className="truncate text-lg font-bold text-white">{nextPreview.name}</div>
-                <div className="text-sm text-white/55">
-                  {nextPreview.pointCount} seeds / {nextPreview.connectionCount} links
+              ) : (
+                <div className="mx-auto mb-6 grid max-w-sm gap-1 rounded-md border border-amber-200/20 bg-amber-950/25 px-4 py-3 text-left">
+                  <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-amber-200">
+                    Garden Complete
+                  </div>
+                  <div className="text-lg font-bold text-white">All patterns awakened</div>
+                  <div className="text-sm text-white/55">Keep playing in zen cultivation.</div>
                 </div>
-              </div>
+              )}
               <p className="text-white/40 text-sm mb-8">
                 {constellationsCompleted} of 5 constellations cultivated
               </p>

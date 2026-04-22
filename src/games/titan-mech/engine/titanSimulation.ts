@@ -110,31 +110,24 @@ export function advanceTitanSystems(
     controls.fire &&
     state.energy > CONFIG.FIRE_ENERGY_PER_SECOND * 0.18 &&
     state.heat < CONFIG.OVERHEAT_THRESHOLD;
-  const weaponFeedback = getWeaponFeedbackState({
-    coolantActive: false,
+  const coolantRequested = controls.brace && state.coolantCharge >= 100 && state.heat > 30;
+  const coolantBurstMs = coolantRequested ? 1800 : Math.max(0, state.coolantBurstMs - deltaMs);
+  const coolantActive = coolantBurstMs > 0;
+  const finalWeaponFeedback = getWeaponFeedbackState({
+    coolantActive,
     energy: state.energy,
     firingAllowed,
     heat: state.heat,
     requestedFire: controls.fire,
   });
-
   const energySpend =
     drive.energyCost + (firingAllowed ? CONFIG.FIRE_ENERGY_PER_SECOND * deltaSeconds : 0);
-  const coolantRequested = controls.brace && state.coolantCharge >= 100 && state.heat > 30;
-  const coolantBurstMs = coolantRequested ? 1800 : Math.max(0, state.coolantBurstMs - deltaMs);
-  const coolantActive = coolantBurstMs > 0;
-  const finalWeaponFeedback = coolantActive && !firingAllowed ? "cooling" : weaponFeedback;
   const energyRegen =
     controls.throttle === 0 && !firingAllowed
       ? CONFIG.ENERGY_REGEN_PER_SECOND * (controls.brace ? 1.35 : 1) * deltaSeconds
       : 0;
   const heatGain =
     drive.heatGain + (firingAllowed ? CONFIG.FIRE_HEAT_PER_SECOND * deltaSeconds : 0);
-  const cooling =
-    (controls.throttle === 0 && !firingAllowed && !controls.extract
-      ? CONFIG.COOLING_PER_SECOND * deltaSeconds
-      : 0) + (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
-
   const position = telemetry.position ?? state.pose.position;
   const velocity = telemetry.velocity ?? state.pose.velocity;
   const heading = telemetry.heading ?? state.pose.heading;
@@ -150,6 +143,11 @@ export function advanceTitanSystems(
     objectiveProgress,
     previous: state.extraction,
   });
+  const extracting = extraction.heatGain > 0;
+  const cooling =
+    (controls.throttle === 0 && !firingAllowed && !extracting
+      ? CONFIG.COOLING_PER_SECOND * deltaSeconds
+      : 0) + (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
 
   return {
     ...state,
@@ -164,8 +162,7 @@ export function advanceTitanSystems(
       state.maxEnergy
     ),
     heat: clamp(state.heat + heatGain + extraction.heatGain - cooling, 0, state.maxHeat),
-    lastWeaponEventMs:
-      finalWeaponFeedback !== "idle" ? state.lastWeaponEventMs + deltaMs : state.lastWeaponEventMs,
+    lastWeaponEventMs: finalWeaponFeedback === "idle" ? 0 : state.lastWeaponEventMs + deltaMs,
     scrap: state.scrap + extraction.scrapGain,
     score: Math.max(state.score, distanceScore + extraction.next.credits),
     objectiveProgress,
@@ -254,9 +251,7 @@ export function advanceExtractionState({
       credits,
       rareIsotopes: previous.rareIsotopes + rareGain,
       lastExtractionEventMs:
-        canExtract || hopperFull
-          ? previous.lastExtractionEventMs + deltaMs
-          : previous.lastExtractionEventMs,
+        canExtract || hopperFull ? previous.lastExtractionEventMs + deltaMs : 0,
       feedback,
     },
   };
@@ -275,8 +270,8 @@ export function getWeaponFeedbackState({
   heat: number;
   requestedFire: boolean;
 }) {
-  if (coolantActive) return "cooling";
   if (firingAllowed) return "firing";
+  if (coolantActive) return "cooling";
   if (!requestedFire) return "idle";
   if (heat >= CONFIG.OVERHEAT_THRESHOLD) return "overheated";
   if (energy <= CONFIG.FIRE_ENERGY_PER_SECOND * 0.18) return "dry";

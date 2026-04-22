@@ -57,20 +57,24 @@ function HeatShimmer({ y, intensity }: { y: number; intensity: number }) {
 
   return (
     <group position={[0, y, -20]}>
-      {[0, 1, 2, 3].map((index) => (
-        <mesh
-          key={`heat-shimmer-${index}`}
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, index * 2.2, 0]}
-        >
-          <ringGeometry args={[12 + index * 4.4, 0.09, 8, 72]} />
-          <meshBasicMaterial
-            color="#ff8a2a"
-            transparent
-            opacity={Math.max(0, intensity * (0.26 - index * 0.045))}
-          />
-        </mesh>
-      ))}
+      {[0, 1, 2, 3].map((index) => {
+        const innerRadius = 12 + index * 4.4;
+
+        return (
+          <mesh
+            key={`heat-shimmer-${index}`}
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[0, index * 2.2, 0]}
+          >
+            <ringGeometry args={[innerRadius, innerRadius + 0.09, 72]} />
+            <meshBasicMaterial
+              color="#ff8a2a"
+              transparent
+              opacity={Math.max(0, intensity * (0.26 - index * 0.045))}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 }

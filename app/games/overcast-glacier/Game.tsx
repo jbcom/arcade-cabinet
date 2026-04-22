@@ -93,12 +93,13 @@ function useOvercastLoop(
     const tick = (now: number) => {
       const delta = Math.min(64, now - last);
       last = now;
-      setState((current) => advanceOvercastState(current, delta, controlsRef.current));
+      const controlsSnapshot = { ...controlsRef.current };
       controlsRef.current = {
         ...controlsRef.current,
         kick: false,
         photo: false,
       };
+      setState((current) => advanceOvercastState(current, delta, controlsSnapshot));
       frame = requestAnimationFrame(tick);
     };
 

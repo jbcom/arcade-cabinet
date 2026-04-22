@@ -40,9 +40,16 @@ describe("constellation progress", () => {
   test("previews the next constellation reward target", () => {
     const preview = getNextConstellationPreview(1);
 
+    expect(preview).not.toBeNull();
+    if (!preview) return;
+
     expect(preview.level).toBe(2);
     expect(preview.name).toBe(CONSTELLATIONS[1].name);
     expect(preview.pointCount).toBe(CONSTELLATIONS[1].points.length);
     expect(preview.connectionCount).toBe(CONSTELLATIONS[1].connections.length);
+  });
+
+  test("returns no preview after the final constellation", () => {
+    expect(getNextConstellationPreview(CONSTELLATIONS.length)).toBeNull();
   });
 });

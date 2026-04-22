@@ -36,6 +36,20 @@ describe("overcast glacier simulation", () => {
     expect(next.lastEvent).toBe("cocoa");
   });
 
+  test("preserves fractional downhill score across frames", () => {
+    const state = createInitialOvercastState("playing");
+    const first = advanceOvercastState(state, 16, {});
+    let advanced = first;
+    for (let index = 0; index < 4; index += 1) {
+      advanced = advanceOvercastState(advanced, 16, {});
+    }
+
+    expect(first.score).toBe(0);
+    expect(first.scoreRemainder).toBeGreaterThan(0);
+    expect(advanced.score).toBeGreaterThan(0);
+    expect(advanced.scoreRemainder).toBeLessThan(1);
+  });
+
   test("kick defeats snowmen while missed snowmen damage warmth", () => {
     const base = {
       ...createInitialOvercastState("playing"),

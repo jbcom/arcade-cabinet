@@ -16,9 +16,7 @@
     "hold-refactor": 4,
     "non-game/tool": 3
   },
-  "excludedLocalWorktrees": [
-    "protocol-silent-night-prodmod"
-  ],
+  "excludedLocalWorktrees": ["protocol-silent-night-prodmod"],
   "notes": [
     "protocol-silent-night-prodmod has a .git file and was excluded as a linked worktree rather than counted as a clone directory.",
     "poki-soweli is represented locally by /Users/jbogaty/src/arcade-cabinet/toki-pona-tutor.",
@@ -61,9 +59,7 @@
     "mergeTracks": [
       {
         "destination": "bok",
-        "sources": [
-          "voxel-realms"
-        ],
+        "sources": ["voxel-realms"],
         "decision": "merge Voxel Realms visual and telemetry techniques into Bok",
         "scopeReduction": [
           "ship three biomes first",
@@ -75,11 +71,7 @@
       },
       {
         "destination": "kings-road",
-        "sources": [
-          "aetheria",
-          "aethermoor",
-          "dragons-labyrinth"
-        ],
+        "sources": ["aetheria", "aethermoor", "dragons-labyrinth"],
         "decision": "merge ideas and content patterns into King's Road, not engines wholesale",
         "scopeReduction": [
           "ship one main route plus micro and meso side quests first",
@@ -90,10 +82,7 @@
       },
       {
         "destination": "otter-elite-force",
-        "sources": [
-          "pond-warfare",
-          "rivermarsh"
-        ],
+        "sources": ["pond-warfare", "rivermarsh"],
         "decision": "evaluate Pond Warfare engine concepts inside Otter Elite Force identity; use Rivermarsh for biome and mechanics references",
         "scopeReduction": [
           "start with one defend-lodge mission",
@@ -114,9 +103,7 @@
       },
       {
         "destination": "current cabinet titan game",
-        "sources": [
-          "overheat-titan-extraction"
-        ],
+        "sources": ["overheat-titan-extraction"],
         "decision": "merge Overheat extraction, heat, cockpit, resource, and feedback ideas into Titan Mech",
         "scopeReduction": [
           "reframe as a 5 to 10 minute extraction arena",
@@ -127,9 +114,7 @@
       },
       {
         "destination": "overcast-glacier",
-        "sources": [
-          "overcast-glacier"
-        ],
+        "sources": ["overcast-glacier"],
         "decision": "reduce scope and approve",
         "scopeReduction": [
           "endless downhill movement",
@@ -142,10 +127,7 @@
       },
       {
         "destination": "jbcom org education product",
-        "sources": [
-          "pixels-pygame-palace",
-          "typescript-tutor"
-        ],
+        "sources": ["pixels-pygame-palace", "typescript-tutor"],
         "decision": "merge into one product under jbcom org, not arcade-cabinet"
       }
     ],
@@ -182,18 +164,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Expo",
-        "React",
-        "React Native"
-      ],
+      "runtimeSignals": ["Expo", "React", "React Native"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          ".kiro/specs/e2e-testing/design.md",
-          "docs/DESIGN.md"
-        ],
+        "design": [".kiro/specs/e2e-testing/design.md", "docs/DESIGN.md"],
         "gameBibleOrRoadmap": [
           ".maestro/gameplay_loop.yaml",
           "test-results/gameplay_loop-Gameplay-Loo-7dd95-plete-Awakening-Interaction-chromium/error-context.md",
@@ -253,18 +228,8 @@
           "assets/models/environment/medieval/T_MetalOrnaments_BaseColor.png",
           "assets/models/environment/medieval/T_MetalOrnaments_Roughness.png"
         ],
-        "buildScriptSignals": [
-          "start",
-          "web",
-          "android",
-          "ios"
-        ],
-        "allScriptNames": [
-          "android",
-          "ios",
-          "start",
-          "web"
-        ],
+        "buildScriptSignals": ["start", "web", "android", "ios"],
+        "allScriptNames": ["android", "ios", "start", "web"],
         "hasPackageJson": true,
         "hasGodotProject": false,
         "hasCargoToml": false,
@@ -286,11 +251,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": null,
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -484,20 +445,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": false,
       "language": "GDScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Godot",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Godot", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "REDESIGN_PLAN.md",
-          "docs/GAME_DESIGN.md"
-        ],
+        "design": ["REDESIGN_PLAN.md", "docs/GAME_DESIGN.md"],
         "gameBibleOrRoadmap": [
           ".plugged/phantom-camera/.github/assets/icons/Readme-Roadmap.svg",
           "docs/GAME_BIBLE.md",
@@ -559,11 +511,7 @@
           ".plugged/AdaptiSound/addons/AdaptiSound/DEMO/Assets/Tiles/Simple Fantasy/cave_/cave_ [bridgeAnimatedTiles].png",
           ".plugged/AdaptiSound/addons/AdaptiSound/DEMO/Assets/Tiles/Simple Fantasy/cave_/cave_ [bridgeHorizontal].png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test"
-        ],
+        "buildScriptSignals": ["dev", "build", "test"],
         "allScriptNames": [
           "build",
           "build:watch",
@@ -603,14 +551,8 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DDL_SYSTEM_DESIGN.md",
-          "docs/DESIGN.md"
-        ],
-        "gameBibleOrRoadmap": [
-          "docs/VISION.md",
-          "legacy-astro-react/e2e/full-gameplay.spec.ts"
-        ],
+        "design": ["docs/DDL_SYSTEM_DESIGN.md", "docs/DESIGN.md"],
+        "gameBibleOrRoadmap": ["docs/VISION.md", "legacy-astro-react/e2e/full-gameplay.spec.ts"],
         "keyDocs": [
           ".github/agents/README.md",
           "AGENTS.md",
@@ -666,14 +608,7 @@
           "attached_assets/generated_images/backdrop_lion_cage.png",
           "attached_assets/generated_images/backdrop_shadowy_crowd.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "build:app",
@@ -723,9 +658,7 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           ".maestro/README.md",
@@ -830,14 +763,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": false,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "Three.js",
-        "Vite",
-        "Vitest",
-        "Vitest Browser"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "Three.js", "Vite", "Vitest", "Vitest Browser"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -964,10 +890,7 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          ".kiro/specs/1.0-migration/design.md",
-          "docs/DESIGN.md"
-        ],
+        "design": [".kiro/specs/1.0-migration/design.md", "docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           ".github/agents/README.md",
@@ -1013,12 +936,7 @@
           "packages/core/vitest.config.ts"
         ],
         "screenshotExamples": [],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint"],
         "allScriptNames": [
           "build",
           "check",
@@ -1051,11 +969,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "Python",
-      "runtimeSignals": [
-        "Bevy",
-        "Python",
-        "Rust"
-      ],
+      "runtimeSignals": ["Bevy", "Python", "Rust"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -1119,13 +1033,7 @@
           "apps/game/assets/biomes/dragon_scar/Final Dread Terrain.png",
           "apps/game/assets/biomes/famine_fields/Bone Forest.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "clean",
@@ -1158,12 +1066,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "React",
-        "React Three Fiber",
-        "Three.js"
-      ],
+      "runtimeSignals": ["Capacitor", "React", "React Three Fiber", "Three.js"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -1235,13 +1138,7 @@
           ".playwright-mcp/test-game-load.png",
           ".playwright-mcp/test-game-running.png"
         ],
-        "buildScriptSignals": [
-          "build",
-          "android",
-          "ios",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["build", "android", "ios", "test", "lint"],
         "allScriptNames": [
           "android",
           "build",
@@ -1273,19 +1170,12 @@
       "activityStatus": "stale-3mo",
       "dirtyLocalState": false,
       "language": "Rust",
-      "runtimeSignals": [
-        "Rust"
-      ],
+      "runtimeSignals": ["Rust"],
       "docsPresent": {
         "readme": true,
         "agents": false,
-        "design": [
-          ".github/prompts/metaprompts/level-design-cascade.md",
-          "docs/DESIGN-SYSTEM.md"
-        ],
-        "gameBibleOrRoadmap": [
-          "MIGRATION_ROADMAP.md"
-        ],
+        "design": [".github/prompts/metaprompts/level-design-cascade.md", "docs/DESIGN-SYSTEM.md"],
+        "gameBibleOrRoadmap": ["MIGRATION_ROADMAP.md"],
         "keyDocs": [
           ".github/agents/README.md",
           ".github/prompts/game-generation/audio-generator.md",
@@ -1336,13 +1226,7 @@
           "tests/e2e/playthrough-move-down.png",
           "tests/e2e/playthrough-move-right.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "build:android",
@@ -1465,14 +1349,7 @@
           "pocs/infinite-headaches/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
           "pocs/infinite-headaches/android/app/src/main/res/drawable-land-xxxhdpi/splash.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "audio:capture",
           "build",
@@ -1607,14 +1484,7 @@
           ".playwright-mcp/page-2026-02-27T18-31-03-920Z.png",
           ".playwright-mcp/page-2026-02-27T18-31-33-310Z.png"
         ],
-        "buildScriptSignals": [
-          "start",
-          "android",
-          "ios",
-          "test",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["start", "android", "ios", "test", "lint", "typecheck"],
         "allScriptNames": [
           "android",
           "build:levels",
@@ -1909,14 +1779,7 @@
           "app/www/textures/sky/evening.jpg",
           "app/www/textures/sky/morning.jpg"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "coverage",
@@ -1971,9 +1834,7 @@
           "docs/game-design/tools.md",
           "docs/game-design/tree-catalog.md"
         ],
-        "gameBibleOrRoadmap": [
-          "src/ui/game/RulesModal.tsx"
-        ],
+        "gameBibleOrRoadmap": ["src/ui/game/RulesModal.tsx"],
         "keyDocs": [
           "AGENTS.md",
           "README.md",
@@ -2029,14 +1890,7 @@
           "public/icon-192.png",
           "public/icon-512.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "test:browser",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "test:browser", "lint"],
         "allScriptNames": [
           "build",
           "build:watch",
@@ -2081,21 +1935,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "HTML",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "GAME_DESIGN.md",
-          "docs/DESIGN.md"
-        ],
+        "design": ["GAME_DESIGN.md", "docs/DESIGN.md"],
         "gameBibleOrRoadmap": [
           ".maestro/flows/test-gameplay-mechanics.yaml",
           "gameplay-screenshot.png",
@@ -2165,14 +2009,7 @@
           "public/assets/environment/grass_roughness.jpg",
           "public/assets/environment/sky.jpg"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "build:capacitor",
@@ -2246,9 +2083,7 @@
           ".claude/agents/system-designer.md",
           ".kiro/specs/comprehensive-e2e-testing/design.md"
         ],
-        "gameBibleOrRoadmap": [
-          ".maestro/basic-gameplay.yaml"
-        ],
+        "gameBibleOrRoadmap": [".maestro/basic-gameplay.yaml"],
         "keyDocs": [
           ".claude/agents/system-designer.md",
           ".claude/commands/audit-game.md",
@@ -2510,20 +2345,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           "AGENTS.md",
@@ -2580,13 +2406,7 @@
           "game-camera-telemetry.png",
           "game-start.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "dev",
@@ -2634,9 +2454,7 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [
           "src/__tests__/gameplayBackground.browser.test.tsx",
           "src/components/GameplayBackground.tsx",
@@ -2792,14 +2610,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "Python",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "Python", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -3107,12 +2918,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Expo",
-        "Playwright",
-        "React",
-        "React Native"
-      ],
+      "runtimeSignals": ["Expo", "Playwright", "React", "React Native"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -3196,15 +3002,7 @@
           ".claude/worktrees/bold-elm-8yoi/assets/icons/mf-fury.webp",
           ".claude/worktrees/bold-elm-8yoi/assets/icons/mf-generic.webp"
         ],
-        "buildScriptSignals": [
-          "start",
-          "web",
-          "build:web",
-          "android",
-          "ios",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["start", "web", "build:web", "android", "ios", "test", "lint"],
         "allScriptNames": [
           "android",
           "assemblage",
@@ -3261,12 +3059,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -3338,15 +3131,7 @@
           "Library/PackageCache/com.unity.addressables@5d870284b3d9/Documentation~/images/BuildReportPotentialIssuesView.png",
           "Library/PackageCache/com.unity.addressables@5d870284b3d9/Documentation~/images/BuildReportSummaryView.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "start",
-          "build",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "start", "build", "cap:sync", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "build:prod",
@@ -3385,13 +3170,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "Vite",
-        "Vitest",
-        "Vitest Browser"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "Vite", "Vitest", "Vitest Browser"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -3522,9 +3301,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Playwright"
-      ],
+      "runtimeSignals": ["Playwright"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -3611,13 +3388,7 @@
           ".worktrees/workflow-patch-fix/packages/app/game-react-cities.png",
           ".worktrees/workflow-patch-fix/packages/app/game-react-hud.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "build:app",
@@ -3655,9 +3426,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "GDScript",
-      "runtimeSignals": [
-        "Godot"
-      ],
+      "runtimeSignals": ["Godot"],
       "docsPresent": {
         "readme": true,
         "agents": false,
@@ -3754,18 +3523,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/legacy/DESIGN-SYSTEM.md",
-          "electron/app/svg/logo-designernews.svg"
-        ],
+        "design": ["docs/legacy/DESIGN-SYSTEM.md", "electron/app/svg/logo-designernews.svg"],
         "gameBibleOrRoadmap": [
           "docs/legacy/NEXT_PHASE_ROADMAP.md",
           "docs/legacy/agents/gameplay_agent.md"
@@ -3877,19 +3639,12 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Playwright",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Playwright", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
-        "gameBibleOrRoadmap": [
-          "e2e-screenshots/mobile-gameplay.png"
-        ],
+        "design": ["docs/DESIGN.md"],
+        "gameBibleOrRoadmap": ["e2e-screenshots/mobile-gameplay.png"],
         "keyDocs": [
           ".kiro/README.md",
           "AGENTS.md",
@@ -4080,13 +3835,7 @@
           ".vitest-attachments/17632ed221529c4aced802d4e7bb8a69dd91d848.png",
           ".vitest-attachments/1e28805cb4760a3194d60be26acb37511c5b79d8.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:browser",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:browser", "lint"],
         "allScriptNames": [
           "build",
           "check",
@@ -4122,14 +3871,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "React",
-        "Vite",
-        "Vitest",
-        "Vitest Browser"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "React", "Vite", "Vitest", "Vitest Browser"],
       "docsPresent": {
         "readme": true,
         "agents": false,
@@ -4203,13 +3945,7 @@
           ".vitest-attachments/72c3e1bbb39ff7d821b41f4c62d6e003d16ffd13.png",
           ".vitest-attachments/8f6fb89eac33b9bf47fb7bdc527b191cf49c1b3f.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint", "typecheck"],
         "allScriptNames": [
           "brainstorm",
           "build",
@@ -4252,12 +3988,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Playwright",
-        "Python",
-        "React",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Playwright", "Python", "React", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4318,12 +4049,7 @@
           "apps/web/client/public/assets/backgrounds/background_elements_cloud3.png",
           "apps/web/client/public/assets/backgrounds/background_elements_cloud4.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint"],
         "allScriptNames": [
           "build",
           "check",
@@ -4356,13 +4082,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Godot",
-        "Playwright",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Capacitor", "Godot", "Playwright", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4440,13 +4160,7 @@
           ".worktrees/rpgjs-v5-pivot/public/assets/animals/crab.png",
           ".worktrees/rpgjs-v5-pivot/public/assets/animals/crocodile.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "typecheck"],
         "allScriptNames": [
           "author:all",
           "author:build",
@@ -4501,13 +4215,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": false,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "Vite",
-        "Vitest",
-        "Vitest Browser"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "Vite", "Vitest", "Vitest Browser"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4641,9 +4349,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "GDScript",
-      "runtimeSignals": [
-        "Godot"
-      ],
+      "runtimeSignals": ["Godot"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4740,11 +4446,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Playwright",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Capacitor", "Playwright", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4755,9 +4457,7 @@
           ".kiro/specs/fix-wobble-tests/design.md",
           "docs/DESIGN.md"
         ],
-        "gameBibleOrRoadmap": [
-          "tests/e2e/visual-gameplay.spec.ts"
-        ],
+        "gameBibleOrRoadmap": ["tests/e2e/visual-gameplay.spec.ts"],
         "keyDocs": [
           ".kiro/specs/complete-game-stabilization/design.md",
           ".kiro/specs/complete-game-stabilization/requirements.md",
@@ -4806,14 +4506,7 @@
           "test-results/inputs-multi-input-Multi-I-b42cd--maintain-state-consistency-chromium/test-failed-1.png",
           "test-results/mechanics-levelup-Level-Up-860aa-ize-after-level-up-continue-chromium/test-failed-1.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "cap:add:android",
@@ -4852,12 +4545,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Capacitor",
-        "Three.js",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Capacitor", "Three.js", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -4896,14 +4584,7 @@
           "test-screenshots/reach-sky-opening-desktop.png",
           "test-screenshots/reach-sky-opening-mobile.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "build:android",
@@ -4940,17 +4621,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": false,
       "language": null,
-      "runtimeSignals": [
-        "Expo",
-        "React",
-        "React Native"
-      ],
+      "runtimeSignals": ["Expo", "React", "React Native"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           "AGENTS.md",
@@ -4999,21 +4674,8 @@
           "assets/images/splash.png",
           "imports/arcade-cabinet-2026-04-22/app/shared/ui/__screenshots__/FloatingJoystick.test.tsx/FloatingJoystick-opens-at-the-pointer-origin-and-emits-normalized-movement-1.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "web",
-          "android",
-          "ios",
-          "lint"
-        ],
-        "allScriptNames": [
-          "android",
-          "clean",
-          "dev",
-          "ios",
-          "lint",
-          "web"
-        ],
+        "buildScriptSignals": ["dev", "web", "android", "ios", "lint"],
+        "allScriptNames": ["android", "clean", "dev", "ios", "lint", "web"],
         "hasPackageJson": true,
         "hasGodotProject": false,
         "hasCargoToml": false,
@@ -5107,15 +4769,7 @@
           "apps/web/public/textures/terrain/forest/albedo.jpg",
           "apps/web/public/textures/terrain/forest/ao.jpg"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "build:mobile",
-          "android",
-          "ios",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "build:mobile", "android", "ios", "test", "lint"],
         "allScriptNames": [
           "android",
           "build",
@@ -5154,18 +4808,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": false,
-        "design": [
-          ".kiro/specs/comprehensive-e2e-testing/design.md"
-        ],
+        "design": [".kiro/specs/comprehensive-e2e-testing/design.md"],
         "gameBibleOrRoadmap": [
           ".maestro/flows/gameplay-flow.yaml",
           ".tox/.tox/lib/python3.13/site-packages/tox/__pycache__/provision.cpython-313.pyc",
@@ -5228,15 +4875,7 @@
           ".tox/docs/lib/python3.13/site-packages/pygame/docs/generated/_images/AdvancedOutputProcess2.webp",
           ".tox/docs/lib/python3.13/site-packages/pygame/docs/generated/_images/AdvancedOutputProcess3.webp"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "test:e2e", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "cap:add:android",
@@ -5281,15 +4920,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "GDScript",
-      "runtimeSignals": [
-        "Godot"
-      ],
+      "runtimeSignals": ["Godot"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           ".godot/editor/game_options_menu.tscn-folding-62f9a3a13418fb4d04c07bd03ecc3826.cfg",
@@ -5380,12 +5015,8 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          ".claude/agents/ui-designer.md"
-        ],
-        "gameBibleOrRoadmap": [
-          "__tests__/game/WeatherGameplay.test.ts"
-        ],
+        "design": [".claude/agents/ui-designer.md"],
+        "gameBibleOrRoadmap": ["__tests__/game/WeatherGameplay.test.ts"],
         "keyDocs": [
           ".claude/agents/game-systems-expert.md",
           ".claude/agents/ui-designer.md",
@@ -5492,22 +5123,12 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md",
-          "www/svg/logo-designernews.svg"
-        ],
-        "gameBibleOrRoadmap": [
-          "docs/GAMEPLAY.md",
-          "docs/ROADMAP.md"
-        ],
+        "design": ["docs/DESIGN.md", "www/svg/logo-designernews.svg"],
+        "gameBibleOrRoadmap": ["docs/GAMEPLAY.md", "docs/ROADMAP.md"],
         "keyDocs": [
           ".github/agents/README.md",
           ".github/workflows/README.md",
@@ -5615,14 +5236,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -5689,15 +5303,7 @@
           "electron/app/assets/ui/buttons/btn_military_olive_normal.png",
           "electron/app/assets/ui/buttons/btn_military_olive_pressed.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "build:web",
-          "cap:sync",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "build:web", "cap:sync", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "build:all",
@@ -5777,14 +5383,7 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": true,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Babylon.js",
-        "Capacitor",
-        "Playwright",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Babylon.js", "Capacitor", "Playwright", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
@@ -5866,14 +5465,7 @@
           "docs/screenshots/playtest-05-gameplay-clean.png",
           "docs/screenshots/playtest-06-running-stable.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:e2e",
-          "test:browser",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:e2e", "test:browser", "lint"],
         "allScriptNames": [
           "build",
           "dev",
@@ -5908,19 +5500,11 @@
       "activityStatus": "active-3mo",
       "dirtyLocalState": false,
       "language": "TypeScript",
-      "runtimeSignals": [
-        "Playwright",
-        "Python",
-        "React",
-        "Vite",
-        "Vitest"
-      ],
+      "runtimeSignals": ["Playwright", "Python", "React", "Vite", "Vitest"],
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN.md"],
         "gameBibleOrRoadmap": [],
         "keyDocs": [
           ".github/agents/README.md",
@@ -5977,14 +5561,7 @@
           "assets/2d/platformer/backgrounds/set2_background.png",
           "assets/2d/platformer/backgrounds/set2_hills.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "start",
-          "build",
-          "test",
-          "test:e2e",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "start", "build", "test", "test:e2e", "lint"],
         "allScriptNames": [
           "build",
           "check",
@@ -6031,9 +5608,7 @@
           "docs/DESIGN.md",
           "docs/plans/2026-02-20-adapter-ecs-architecture-design.md"
         ],
-        "gameBibleOrRoadmap": [
-          "docs/ROADMAP.md"
-        ],
+        "gameBibleOrRoadmap": ["docs/ROADMAP.md"],
         "keyDocs": [
           ".kiro/specs/v1.0-mvp/design.md",
           "AGENTS.md",
@@ -6089,12 +5664,7 @@
           "apps/mobile/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
           "apps/mobile/android/app/src/main/res/drawable-port-xxxhdpi/splash.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "lint"],
         "allScriptNames": [
           "build",
           "check",
@@ -6222,14 +5792,7 @@
           "PSX Hands/Hands_skintone_2.png",
           "PSX Hands/Hands_skintone_3.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "test",
-          "test:browser",
-          "lint",
-          "typecheck"
-        ],
+        "buildScriptSignals": ["dev", "build", "test", "test:browser", "lint", "typecheck"],
         "allScriptNames": [
           "build",
           "cap:android",
@@ -6284,10 +5847,7 @@
       "docsPresent": {
         "readme": true,
         "agents": true,
-        "design": [
-          "docs/DESIGN-SYSTEM.md",
-          "docs/DESIGN.md"
-        ],
+        "design": ["docs/DESIGN-SYSTEM.md", "docs/DESIGN.md"],
         "gameBibleOrRoadmap": [
           "docs/ROADMAP.md",
           "gameplay-after-flight.png",
@@ -6349,13 +5909,7 @@
           "menu-screen-test.png",
           "menu-screen.png"
         ],
-        "buildScriptSignals": [
-          "dev",
-          "build",
-          "cap:sync",
-          "test",
-          "lint"
-        ],
+        "buildScriptSignals": ["dev", "build", "cap:sync", "test", "lint"],
         "allScriptNames": [
           "assets:optimize",
           "build",

@@ -184,6 +184,16 @@ a {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(active-cartridge-label),
+  ::view-transition-new(active-cartridge-label) {
+    animation-duration: 1ms;
+    animation-name: none;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

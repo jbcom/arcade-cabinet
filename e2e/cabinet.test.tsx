@@ -10,6 +10,7 @@ const cabinetViewports = [
 ];
 
 afterEach(() => {
+  document.getElementById("cabinet-viewport-clip")?.remove();
   cleanup();
 });
 
@@ -31,7 +32,7 @@ describe("cabinet landing visual captures", () => {
       await new Promise((resolve) => window.setTimeout(resolve, 260));
       await captureCabinetScreenshot(`test-screenshots/cabinet/home-${viewport.name}.png`);
 
-      document.getElementById("games")?.scrollIntoView();
+      document.getElementById("library")?.scrollIntoView();
       await new Promise((resolve) => window.setTimeout(resolve, 420));
       const screenshot = await captureCabinetScreenshot(
         `test-screenshots/cabinet/gallery-${viewport.name}.png`

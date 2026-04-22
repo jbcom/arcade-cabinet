@@ -261,23 +261,19 @@ interface CabinetActionButtonProps {
   active?: boolean;
 }
 
-function CabinetActionButton({
-  active = false,
-  command,
-  icon,
-  label,
-  onClick,
-}: CabinetActionButtonProps) {
+function CabinetActionButton({ active, command, icon, label, onClick }: CabinetActionButtonProps) {
+  const isActive = active === true;
+
   return (
     <button
       type="button"
       aria-pressed={active}
       className="grid min-h-14 min-w-36 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-md border px-3 py-2 text-left transition hover:-translate-y-0.5 focus:outline-none focus:ring-2"
       style={{
-        background: active
+        background: isActive
           ? "linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08))"
           : "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))",
-        borderColor: active ? "rgba(255,255,255,0.44)" : "rgba(255,255,255,0.18)",
+        borderColor: isActive ? "rgba(255,255,255,0.44)" : "rgba(255,255,255,0.18)",
         color: "#f8fafc",
       }}
       onClick={onClick}
