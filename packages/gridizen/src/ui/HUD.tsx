@@ -118,7 +118,9 @@ export function HUD({ state, onToggleHeatmap }: HUDProps) {
   const currentTier = MILESTONES.find((m) => m.tier === milestone);
   const nextTier = MILESTONES.find((m) => m.tier === milestone + 1);
   const inspectedTile =
-    state.inspectedTileIdx !== null ? state.grid[state.inspectedTileIdx] : undefined;
+    state.inspectedTileIdx !== null && state.inspectedTileIdx < state.grid.length
+      ? state.grid[state.inspectedTileIdx]
+      : undefined;
 
   const ampm = time >= 12 ? "PM" : "AM";
   const hour = time % 12 === 0 ? 12 : time % 12;
