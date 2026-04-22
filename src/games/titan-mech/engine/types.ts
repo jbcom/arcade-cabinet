@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -38,6 +40,7 @@ export interface TitanExtractionState {
 
 export interface TitanState {
   phase: "menu" | "playing" | "gameover" | "upgrade";
+  sessionMode: SessionMode;
   hp: number;
   maxHp: number;
   energy: number;

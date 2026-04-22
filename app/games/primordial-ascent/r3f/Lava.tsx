@@ -29,7 +29,12 @@ export function Lava() {
     if (meshRef.current) {
       const pState = primordialEntity.get(PrimordialTrait);
       if (pState?.phase === "playing") {
-        const newY = advanceLavaHeight(pState.lavaHeight, pState.timeSurvived, delta * 1000);
+        const newY = advanceLavaHeight(
+          pState.lavaHeight,
+          pState.timeSurvived,
+          delta * 1000,
+          pState.sessionMode
+        );
         meshRef.current.position.y = newY;
         const distToLava = calculateDistanceToLava(pState.altitude, newY);
 

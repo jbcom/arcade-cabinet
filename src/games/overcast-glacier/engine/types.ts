@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export type OvercastPhase = "menu" | "playing" | "gameover";
 export type OvercastEntityKind = "snowman" | "cocoa" | "glitch";
 export type OvercastEvent = "idle" | "kick" | "photo" | "cocoa" | "hit" | "glitch";
@@ -17,6 +19,7 @@ export interface OvercastEntity {
 
 export interface OvercastState {
   phase: OvercastPhase;
+  sessionMode: SessionMode;
   timeMs: number;
   playerLane: -1 | 0 | 1;
   warmth: number;

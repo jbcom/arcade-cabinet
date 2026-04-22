@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -12,6 +14,7 @@ export interface Obstacle {
 }
 
 export interface MegaTrackState {
+  sessionMode: SessionMode;
   isPlaying: boolean;
   speed: number;
   distance: number;

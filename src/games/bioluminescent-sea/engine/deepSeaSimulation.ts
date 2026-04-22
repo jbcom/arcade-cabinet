@@ -104,7 +104,7 @@ export interface SceneAdvanceResult {
   telemetry: DiveTelemetry;
 }
 
-export const GAME_DURATION = 60;
+export const GAME_DURATION = 600;
 export const MAX_CHAIN_MULTIPLIER = 5;
 export const STREAK_WINDOW_SECONDS = 2;
 export const CREATURE_TYPES: CreatureType[] = ["jellyfish", "plankton", "fish"];

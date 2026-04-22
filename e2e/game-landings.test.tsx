@@ -1,7 +1,10 @@
+import BeppoLaughs from "@app/games/beppo-laughs";
 import BioluminescentSea from "@app/games/bioluminescent-sea";
+import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import CosmicGardener from "@app/games/cosmic-gardener";
 import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
+import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
 import OtterlyChaotic from "@app/games/otterly-chaotic";
 import OvercastGlacier from "@app/games/overcast-glacier";
@@ -63,6 +66,21 @@ const landingCases: {
     slug: "titan-mech",
     title: "TITAN MECH: OVERHEAT",
   },
+  {
+    Component: BeppoLaughs,
+    slug: "beppo-laughs",
+    title: "BEPPO LAUGHS",
+  },
+  {
+    Component: CognitiveDissonance,
+    slug: "cognitive-dissonance",
+    title: "COGNITIVE DISSONANCE",
+  },
+  {
+    Component: FarmFollies,
+    slug: "farm-follies",
+    title: "FARM FOLLIES",
+  },
 ];
 
 const landingViewports = [
@@ -89,6 +107,7 @@ describe("game cartridge landing captures", () => {
       );
 
       await expect.element(page.getByText(game.title)).toBeVisible();
+      await expect.element(page.getByText("Standard")).toBeVisible();
 
       const host = container.querySelector('[data-testid="game-host"]');
       expect(host).not.toBeNull();

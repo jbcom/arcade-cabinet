@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -11,6 +13,7 @@ export interface GoatState {
 }
 
 export interface OtterlyState {
+  sessionMode: SessionMode;
   otter: Vec2;
   otterVelocity: Vec2;
   ball: Vec2;

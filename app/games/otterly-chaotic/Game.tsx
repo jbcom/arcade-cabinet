@@ -19,6 +19,7 @@ import {
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 import { OtterlyTrait } from "@logic/games/otterly-chaotic/store/traits";
 import { otterlyEntity, otterlyWorld } from "@logic/games/otterly-chaotic/store/world";
+import type { SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OtterScene } from "./r3f/OtterScene";
@@ -136,8 +137,8 @@ function OtterlyApp() {
           description="Keep the salad rolling while goats try to turn the rescue into lunch."
           kicker="Pasture Panic Cartridge"
           motif="otter"
-          onStart={() => {
-            writeState(createInitialState());
+          onStart={(mode: SessionMode) => {
+            writeState(createInitialState(mode));
             otterlyEntity.set(PhaseTrait, { phase: "playing" });
           }}
           rules={[

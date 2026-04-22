@@ -160,7 +160,7 @@ describe("deep sea simulation", () => {
     expect(telemetry.beaconBearingRadians).not.toBeNull();
     expect(telemetry.routeLandmarkLabel).toBe("Trench Choir");
     expect(telemetry.routeLandmarkDistance).toBeGreaterThan(0);
-    expect(telemetry.oxygenRatio).toBeCloseTo(1 / 6);
+    expect(telemetry.oxygenRatio).toBeCloseTo(1 / 60);
     expect(["Ascent", "Hunted", "Critical", "Calm"]).toContain(telemetry.pressureLabel);
   });
 

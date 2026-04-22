@@ -1,3 +1,4 @@
+import { getSessionPressureScale, normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type { EntropyState, FallingBlock, GridNode, Shockwave, Vec2 } from "./types";
 
 export const GRID_HALF = 5;
@@ -5,7 +6,12 @@ export const GRID_SIZE = GRID_HALF * 2 + 1;
 const COMBO_WINDOW_MS = 800;
 const MOVE_COOLDOWN_MS = 200;
 const BLOCK_SPAWN_HEIGHT = 18;
-const TIME_BONUS_PER_ANCHOR_MS = 15_000;
+const TIME_BONUS_PER_ANCHOR_MS = 35_000;
+const BASE_STABILITY_RESERVE_MS: Record<SessionMode, number> = {
+  challenge: 55_000,
+  cozy: 300_000,
+  standard: 180_000,
+};
 
 const ANCHOR_SEQUENCE: Vec2[] = [
   { x: -4, y: -2 },
@@ -173,8 +179,10 @@ function buildPlayingState(
   level: number,
   anchorsRequired: number,
   score: number,
-  totalAnchors: number
+  totalAnchors: number,
+  mode: string | null | undefined = "standard"
 ): EntropyState {
+  const sessionMode = normalizeSessionMode(mode);
   const node = generateNode(["0,0"], 0, 0, level, totalAnchors);
   const protectedKeys = ["0,0", cellKey(node.gridX, node.gridZ)];
   const blockedCells = createInitialBlockedCells(level, protectedKeys);
@@ -199,27 +207,37 @@ function buildPlayingState(
     playerGridZ: 0,
     resonance: 0,
     score,
+    sessionMode,
     shockwaves: [],
     targetNode: node,
-    timeMs: Math.max(10_000, 20_000 - (level - 1) * 1_500),
+    timeMs: Math.max(30_000, BASE_STABILITY_RESERVE_MS[sessionMode] - (level - 1) * 8_000),
     totalAnchors,
   };
 }
 
-export function createInitialState(): EntropyState {
-  return { ...buildPlayingState(1, 3, 0, 0), phase: "menu" };
+export function createInitialState(mode: string | null | undefined = "standard"): EntropyState {
+  return { ...buildPlayingState(1, 3, 0, 0, mode), phase: "menu" };
 }
 
-export function startGame(_prev: EntropyState): EntropyState {
-  return buildPlayingState(1, 3, 0, 0);
+export function startGame(
+  prev: EntropyState,
+  mode: string | null | undefined = prev?.sessionMode ?? "standard"
+): EntropyState {
+  return buildPlayingState(1, 3, 0, 0, mode);
 }
 
 export function nextLevel(prev: EntropyState): EntropyState {
-  return buildPlayingState(prev.level + 1, prev.anchorsRequired + 1, prev.score, prev.totalAnchors);
+  return buildPlayingState(
+    prev.level + 1,
+    prev.anchorsRequired + 1,
+    prev.score,
+    prev.totalAnchors,
+    prev.sessionMode
+  );
 }
 
-export function restartGame(): EntropyState {
-  return buildPlayingState(1, 3, 0, 0);
+export function restartGame(mode: string | null | undefined = "standard"): EntropyState {
+  return buildPlayingState(1, 3, 0, 0, mode);
 }
 
 function secureNode(s: EntropyState): void {
@@ -346,7 +364,8 @@ export function tick(state: EntropyState, deltaMs: number, input: Vec2): Entropy
   const s = structuredClone(state) as EntropyState;
 
   s.elapsedMs += deltaMs;
-  s.timeMs = Math.max(0, s.timeMs - deltaMs);
+  const pressureScale = getSessionPressureScale(s.sessionMode);
+  s.timeMs = Math.max(0, s.timeMs - deltaMs * pressureScale);
   s.cameraShake = Math.max(0, s.cameraShake - deltaMs * 0.003);
 
   // Movement
@@ -376,7 +395,7 @@ export function tick(state: EntropyState, deltaMs: number, input: Vec2): Entropy
   // Spawn falling blocks
   s.blockSpawnCooldownMs -= deltaMs;
   if (s.blockSpawnCooldownMs <= 0 && s.phase === "playing") {
-    const interval = Math.max(1_200, 3_000 - s.level * 300);
+    const interval = Math.max(1_200, (3_000 - s.level * 300) / pressureScale);
     s.blockSpawnCooldownMs = interval;
     trySpawnBlock(s);
   }

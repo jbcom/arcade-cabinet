@@ -14,6 +14,7 @@ import type {
   OvercastEntity,
   OvercastState,
 } from "@logic/games/overcast-glacier/engine/types";
+import type { SessionMode } from "@logic/shared";
 import {
   type Dispatch,
   type MutableRefObject,
@@ -33,9 +34,9 @@ export default function Game() {
   const [state, setState] = useState<OvercastState>(() => createInitialOvercastState("menu"));
   const controlsRef = useRef<Partial<OvercastControls>>({});
 
-  const start = () => {
+  const start = (mode: SessionMode = state.sessionMode) => {
     controlsRef.current = {};
-    setState(createInitialOvercastState("playing"));
+    setState(createInitialOvercastState("playing", mode));
   };
 
   useKeyboardControls(controlsRef);
@@ -70,7 +71,7 @@ export default function Game() {
         <GameOverScreen
           title="FROST CURSE"
           subtitle={`Final Score: ${state.score}`}
-          actions={<OverlayButton onClick={start}>Warm Up</OverlayButton>}
+          actions={<OverlayButton onClick={() => start(state.sessionMode)}>Warm Up</OverlayButton>}
           accent="#7dd3fc"
         />
       ) : null}

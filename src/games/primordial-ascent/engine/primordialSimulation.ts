@@ -1,3 +1,4 @@
+import { getSessionPressureScale, normalizeSessionMode } from "@logic/shared";
 import type {
   CavernLayout,
   PrimordialControls,
@@ -19,13 +20,16 @@ const DEFAULT_CONTROLS: PrimordialControls = {
 };
 
 export function createInitialPrimordialState(
-  phase: PrimordialState["phase"] = "menu"
+  phase: PrimordialState["phase"] = "menu",
+  mode: string | null | undefined = "standard"
 ): PrimordialState {
+  const sessionMode = normalizeSessionMode(mode);
   const altitude = calculateAltitude(CONFIG.playerStartPosition.y);
   const lavaHeight = CONFIG.lavaStartHeight;
 
   return {
     phase,
+    sessionMode,
     altitude,
     maxAltitude: altitude,
     timeSurvived: 0,
@@ -143,13 +147,19 @@ export function advancePrimordialState(
 export function advanceLavaHeight(
   currentHeight: number,
   elapsedMs: number,
-  deltaMs: number
+  deltaMs: number,
+  mode: string | null | undefined = "standard"
 ): number {
   const deltaSeconds = Math.max(0, deltaMs) / 1000;
   const elapsedSeconds = Math.max(0, elapsedMs) / 1000;
   const speed = CONFIG.lavaBaseSpeed + elapsedSeconds * CONFIG.lavaAccel;
+  const pressureScale = getSessionPressureScale(mode, {
+    challenge: 1.35,
+    cozy: 0.55,
+    standard: 0.78,
+  });
 
-  return round(currentHeight + speed * deltaSeconds * CONFIG.lavaSpeedScale, 3);
+  return round(currentHeight + speed * deltaSeconds * CONFIG.lavaSpeedScale * pressureScale, 3);
 }
 
 export function calculateAltitude(positionY: number): number {

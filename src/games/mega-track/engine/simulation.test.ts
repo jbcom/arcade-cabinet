@@ -14,9 +14,36 @@ describe("mega track simulation", () => {
     const second = createInitialState();
 
     expect(first).toEqual(second);
+    expect(first.sessionMode).toBe("standard");
     expect(first.obstacles.length).toBeGreaterThan(3);
     expect(first.obstacles[0]).toEqual(createObstacle(0));
     expect(first.nextObstacleIndex).toBe(first.obstacles.length);
+  });
+
+  test("standard mode survives one minute of imperfect center-lane driving", () => {
+    let state = { ...createInitialState("standard"), isPlaying: true };
+
+    for (let elapsed = 0; elapsed < 60_000; elapsed += 250) {
+      state = tick(state, 250, { laneChange: 0 });
+    }
+
+    expect(state.integrity).toBeGreaterThan(0);
+  });
+
+  test("challenge impacts hit harder than cozy impacts", () => {
+    const obstacle = createObstacle(0);
+    const base = {
+      isPlaying: true,
+      currentLane: obstacle.lane,
+      distance: obstacle.z - 5,
+      obstacles: [obstacle],
+      nextObstacleIndex: 1,
+      speed: 2,
+    };
+    const cozy = tick({ ...createInitialState("cozy"), ...base }, 16, { laneChange: 0 });
+    const challenge = tick({ ...createInitialState("challenge"), ...base }, 16, { laneChange: 0 });
+
+    expect(challenge.integrity).toBeLessThan(cozy.integrity);
   });
 
   test("accelerates and clamps lane changes while playing", () => {

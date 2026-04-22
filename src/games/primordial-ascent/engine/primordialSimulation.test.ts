@@ -20,6 +20,7 @@ describe("primordial simulation", () => {
     const state = createInitialPrimordialState("playing");
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.altitude).toBe(CONFIG.playerStartPosition.y);
     expect(state.maxAltitude).toBe(CONFIG.playerStartPosition.y);
     expect(state.lavaHeight).toBe(CONFIG.lavaStartHeight);
@@ -47,9 +48,12 @@ describe("primordial simulation", () => {
   });
 
   test("advances lava pressure from elapsed time", () => {
-    expect(advanceLavaHeight(-40, 0, 1000)).toBeCloseTo(-39.4);
-    expect(advanceLavaHeight(-40, 60_000, 1000)).toBeCloseTo(-38.92);
-    expect(calculateDistanceToLava(12, -38.92)).toBe(50);
+    expect(advanceLavaHeight(-40, 0, 1000)).toBeCloseTo(-39.532);
+    expect(advanceLavaHeight(-40, 60_000, 1000)).toBeCloseTo(-39.158);
+    expect(advanceLavaHeight(-40, 60_000, 1000, "challenge")).toBeGreaterThan(
+      advanceLavaHeight(-40, 60_000, 1000, "cozy")
+    );
+    expect(calculateDistanceToLava(12, -39.158)).toBe(51);
     expect(calculateThermalLift(50)).toBeGreaterThan(0);
     expect(calculateThermalLift(8)).toBe(0);
     expect(calculateThermalLift(80)).toBe(0);

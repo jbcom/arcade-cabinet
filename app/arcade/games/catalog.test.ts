@@ -12,6 +12,9 @@ const expectedSlugs = [
   "otterly-chaotic",
   "primordial-ascent",
   "titan-mech",
+  "beppo-laughs",
+  "cognitive-dissonance",
+  "farm-follies",
 ];
 
 describe("arcade cabinet game catalog", () => {
@@ -29,6 +32,17 @@ describe("arcade cabinet game catalog", () => {
       expect(game.presentation.length).toBeGreaterThan(40);
       expect(game.sceneDirection.length).toBeGreaterThan(40);
       expect(game.responsiveDirection.length).toBeGreaterThan(40);
+      expect(game.coreMessage.length).toBeGreaterThan(30);
+      expect(game.coreLoop.length).toBeGreaterThan(40);
+      expect(game.sessionTarget).toContain("8-15");
+      expect(game.pressureType.length).toBeGreaterThan(40);
+      expect(game.defaultControls.length).toBeGreaterThan(30);
+      expect(game.winReplayPromise.length).toBeGreaterThan(40);
+      expect(game.difficultyVariants.map((variant) => variant.mode)).toEqual([
+        "cozy",
+        "standard",
+        "challenge",
+      ]);
     }
   });
 });

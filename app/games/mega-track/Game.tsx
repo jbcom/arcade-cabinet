@@ -13,6 +13,7 @@ import type { MegaTrackState } from "@logic/games/mega-track/engine/types";
 import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { MegaTrackTrait } from "@logic/games/mega-track/store/traits";
 import { megaTrackEntity, megaTrackWorld } from "@logic/games/mega-track/store/world";
+import type { SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TrackScene } from "./r3f/TrackScene";
@@ -75,8 +76,8 @@ function MegaTrackApp() {
     [phase.phase, laneChange]
   );
 
-  const handleStart = () => {
-    const next = { ...createInitialState(), isPlaying: true };
+  const handleStart = (mode: SessionMode) => {
+    const next = { ...createInitialState(mode), isPlaying: true };
     writeState(next);
     megaTrackEntity.set(PhaseTrait, { phase: "playing" });
   };

@@ -14,6 +14,7 @@ describe("titan simulation", () => {
     const state = createInitialTitanState("playing");
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.hp).toBe(state.maxHp);
     expect(state.energy).toBe(state.maxEnergy);
     expect(state.controls).toEqual({
@@ -31,6 +32,18 @@ describe("titan simulation", () => {
     expect(state.extraction.hopperLoad).toBe(0);
     expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
     expect(state.extraction.feedback).toBe("idle");
+  });
+
+  test("session modes tune heat pressure and recovery", () => {
+    const input = { throttle: 1, fire: true };
+    const cozy = advanceTitanSystems(createInitialTitanState("playing", "cozy"), 1_000, input);
+    const challenge = advanceTitanSystems(
+      createInitialTitanState("playing", "challenge"),
+      1_000,
+      input
+    );
+
+    expect(challenge.heat).toBeGreaterThan(cozy.heat);
   });
 
   test("normalizes analog and binary control input", () => {

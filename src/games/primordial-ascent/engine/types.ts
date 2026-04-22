@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -26,6 +28,7 @@ export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "miss
 
 export interface PrimordialState {
   phase: "menu" | "playing" | "gameover";
+  sessionMode: SessionMode;
   altitude: number;
   maxAltitude: number;
   timeSurvived: number; // in milliseconds

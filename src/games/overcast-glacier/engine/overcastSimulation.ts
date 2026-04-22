@@ -1,3 +1,8 @@
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
 import type { OvercastControls, OvercastEntity, OvercastState } from "./types";
 import { OVERCAST_CONFIG } from "./types";
 
@@ -7,9 +12,15 @@ const DEFAULT_CONTROLS: OvercastControls = {
   photo: false,
 };
 
-export function createInitialOvercastState(phase: OvercastState["phase"] = "menu"): OvercastState {
+export function createInitialOvercastState(
+  phase: OvercastState["phase"] = "menu",
+  mode: string | null | undefined = "standard"
+): OvercastState {
+  const sessionMode = normalizeSessionMode(mode);
+
   return {
     phase,
+    sessionMode,
     timeMs: 0,
     playerLane: 0,
     warmth: 100,
@@ -62,10 +73,15 @@ export function advanceOvercastState(
   const remainingEntities = collision
     ? advancedEntities.filter((entity) => entity.id !== collision.id)
     : advancedEntities;
+  const pressureScale = getSessionPressureScale(state.sessionMode, {
+    challenge: 1.4,
+    cozy: 0.52,
+    standard: 0.72,
+  });
   const resolved = resolveCollision(state, controls, collision);
   const spawned = spawnEntities(remainingEntities, nextTime);
   const warmth = clamp(
-    resolved.warmth - OVERCAST_CONFIG.WARMTH_DRAIN_PER_SECOND * (deltaMs / 1000),
+    resolved.warmth - OVERCAST_CONFIG.WARMTH_DRAIN_PER_SECOND * pressureScale * (deltaMs / 1000),
     0,
     state.maxWarmth
   );
@@ -106,8 +122,9 @@ function resolveCollision(
   }
 
   if (collision.kind === "cocoa") {
+    const recoveryScale = getSessionRecoveryScale(state.sessionMode);
     return {
-      warmth: clamp(state.warmth + 18, 0, state.maxWarmth),
+      warmth: clamp(state.warmth + 18 * recoveryScale, 0, state.maxWarmth),
       score: state.score + 80 + state.combo * 10,
       combo: state.combo + 1,
       photoCharges: Math.min(3, state.photoCharges + 1),
@@ -135,8 +152,18 @@ function resolveCollision(
     };
   }
 
+  const pressureScale = getSessionPressureScale(state.sessionMode, {
+    challenge: 1.3,
+    cozy: 0.58,
+    standard: 0.82,
+  });
+
   return {
-    warmth: clamp(state.warmth - (collision.kind === "glitch" ? 14 : 22), 0, state.maxWarmth),
+    warmth: clamp(
+      state.warmth - (collision.kind === "glitch" ? 14 : 22) * pressureScale,
+      0,
+      state.maxWarmth
+    ),
     score: state.score,
     combo: 0,
     photoCharges: state.photoCharges,

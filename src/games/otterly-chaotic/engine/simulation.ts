@@ -1,3 +1,8 @@
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
 import type { OtterlyState, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
@@ -7,16 +12,24 @@ const GOAT_DAMAGE_PER_MS = {
   elder: 0.003,
 } as const;
 
-export function createInitialState(): OtterlyState {
+export function createInitialState(mode: string | null | undefined = "standard"): OtterlyState {
+  const sessionMode = normalizeSessionMode(mode);
+  const speedScale = getSessionPressureScale(sessionMode, {
+    challenge: 1.25,
+    cozy: 0.72,
+    standard: 0.88,
+  });
+
   return {
+    sessionMode,
     otter: { x: -3.8, y: -3.2 },
     otterVelocity: { x: 0, y: 0 },
     ball: { x: -1.2, y: -0.3 },
     ballVelocity: { x: 0, y: 0 },
     ballHealth: 100,
     goats: [
-      { id: "billy", position: { x: 1.4, y: -1 }, speed: 0.00125, stunnedMs: 0 },
-      { id: "elder", position: { x: 2.4, y: 1.8 }, speed: 0.001, stunnedMs: 0 },
+      { id: "billy", position: { x: 1.4, y: -1 }, speed: 0.00125 * speedScale, stunnedMs: 0 },
+      { id: "elder", position: { x: 2.4, y: 1.8 }, speed: 0.001 * speedScale, stunnedMs: 0 },
     ],
     goalRadius: 0.9,
     elapsedMs: 0,
@@ -55,7 +68,8 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
 
   const barkRadius = 2.4;
   if (barkTriggered && next.barkCooldownMs === 0) {
-    next.barkCooldownMs = 1500;
+    const recoveryScale = getSessionRecoveryScale(next.sessionMode);
+    next.barkCooldownMs = 1500 / recoveryScale;
     next.lastBarkMs = next.elapsedMs;
     let stunnedCount = 0;
     for (const goat of next.goats) {
@@ -67,7 +81,7 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
     next.lastBarkStunned = stunnedCount;
     if (stunnedCount > 0) {
       next.rescueStreak += stunnedCount;
-      next.ballHealth = Math.min(100, next.ballHealth + stunnedCount * 3);
+      next.ballHealth = Math.min(100, next.ballHealth + stunnedCount * 3 * recoveryScale);
       next.objective =
         stunnedCount >= 2
           ? "Double bark rally! Push hard while the goats scatter."
@@ -90,8 +104,18 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
 
     if (distance(goat.position, next.ball) < 0.95) {
       const rallyScale = next.rallyMs > 0 ? 0.45 : 1;
+      const pressureScale = getSessionPressureScale(next.sessionMode, {
+        challenge: 1.35,
+        cozy: 0.58,
+        standard: 0.78,
+      });
+      const openingGraceScale =
+        next.sessionMode === "challenge" || next.elapsedMs > 60_000 ? 1 : 0.18;
       const damageRate = goat.id === "elder" ? GOAT_DAMAGE_PER_MS.elder : GOAT_DAMAGE_PER_MS.billy;
-      next.ballHealth = Math.max(0, next.ballHealth - damageRate * deltaMs * rallyScale);
+      next.ballHealth = Math.max(
+        0,
+        next.ballHealth - damageRate * deltaMs * rallyScale * pressureScale * openingGraceScale
+      );
       next.objective = "Goats are chewing! Bark to stun them and keep pushing.";
     }
   }

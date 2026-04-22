@@ -1,3 +1,8 @@
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
 import type {
   ArenaLayout,
   ArenaObstacleData,
@@ -17,9 +22,13 @@ const DEFAULT_CONTROLS: TitanControls = {
   extract: false,
 };
 
-export function createInitialTitanState(phase: TitanState["phase"] = "menu"): TitanState {
+export function createInitialTitanState(
+  phase: TitanState["phase"] = "menu",
+  mode: string | null | undefined = "standard"
+): TitanState {
   return {
     phase,
+    sessionMode: normalizeSessionMode(mode),
     hp: 200,
     maxHp: 200,
     energy: 100,
@@ -128,6 +137,16 @@ export function advanceTitanSystems(
       : 0;
   const heatGain =
     drive.heatGain + (firingAllowed ? CONFIG.FIRE_HEAT_PER_SECOND * deltaSeconds : 0);
+  const heatPressureScale = getSessionPressureScale(state.sessionMode, {
+    challenge: 1.28,
+    cozy: 0.56,
+    standard: 0.78,
+  });
+  const coolingRecoveryScale = getSessionRecoveryScale(state.sessionMode, {
+    challenge: 0.74,
+    cozy: 1.36,
+    standard: 1.1,
+  });
   const position = telemetry.position ?? state.pose.position;
   const velocity = telemetry.velocity ?? state.pose.velocity;
   const heading = telemetry.heading ?? state.pose.heading;
@@ -145,9 +164,11 @@ export function advanceTitanSystems(
   });
   const extracting = extraction.heatGain > 0;
   const cooling =
-    (controls.throttle === 0 && !firingAllowed && !extracting
+    ((controls.throttle === 0 && !firingAllowed && !extracting
       ? CONFIG.COOLING_PER_SECOND * deltaSeconds
-      : 0) + (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
+      : 0) +
+      (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0)) *
+    coolingRecoveryScale;
 
   return {
     ...state,
@@ -161,7 +182,11 @@ export function advanceTitanSystems(
       0,
       state.maxEnergy
     ),
-    heat: clamp(state.heat + heatGain + extraction.heatGain - cooling, 0, state.maxHeat),
+    heat: clamp(
+      state.heat + (heatGain + extraction.heatGain) * heatPressureScale - cooling,
+      0,
+      state.maxHeat
+    ),
     lastWeaponEventMs: finalWeaponFeedback === "idle" ? 0 : state.lastWeaponEventMs + deltaMs,
     scrap: state.scrap + extraction.scrapGain,
     score: Math.max(state.score, distanceScore + extraction.next.credits),

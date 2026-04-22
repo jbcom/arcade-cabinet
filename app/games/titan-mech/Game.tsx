@@ -19,9 +19,9 @@ function TitanApp() {
   const phase =
     (useTrait(titanEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
 
-  const handleStart = () => {
+  const handleStart = (mode: string) => {
     titanEntity.set(PhaseTrait, { phase: "playing" });
-    titanEntity.set(TitanTrait, createInitialTitanState("playing"));
+    titanEntity.set(TitanTrait, createInitialTitanState("playing", mode));
   };
 
   return (
@@ -55,7 +55,9 @@ function TitanApp() {
         <GameOverScreen
           title="CHASSIS DESTROYED"
           subtitle={`Final Scrap: ${state.scrap}`}
-          actions={<OverlayButton onClick={handleStart}>Reboot OS</OverlayButton>}
+          actions={
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>Reboot OS</OverlayButton>
+          }
         />
       )}
     </GameViewport>

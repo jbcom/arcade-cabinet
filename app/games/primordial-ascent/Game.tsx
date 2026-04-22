@@ -16,9 +16,9 @@ import { HUD } from "./ui/HUD";
 function PrimordialApp() {
   const state = useTrait(primordialEntity, PrimordialTrait);
 
-  const handleStart = () => {
+  const handleStart = (mode: string) => {
     primordialEntity.set(PhaseTrait, { phase: "playing" });
-    primordialEntity.set(PrimordialTrait, createInitialPrimordialState("playing"));
+    primordialEntity.set(PrimordialTrait, createInitialPrimordialState("playing", mode));
   };
 
   return (
@@ -81,7 +81,7 @@ function PrimordialApp() {
 
           <button
             type="button"
-            onClick={handleStart}
+            onClick={() => handleStart(state.sessionMode)}
             className="px-12 py-4 text-xl font-bold uppercase tracking-[3px] text-[#ff3333] bg-[#ff3333]/10 border-2 border-[#ff3333] rounded hover:bg-[#ff3333] hover:text-black transition-all duration-200"
             style={{
               boxShadow: "0 0 15px rgba(255,51,51,0.2), inset 0 0 10px rgba(255,51,51,0.1)",

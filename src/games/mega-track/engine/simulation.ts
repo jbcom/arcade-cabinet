@@ -1,3 +1,8 @@
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
 import type { MegaTrackState } from "./types";
 import { CONFIG, type Obstacle } from "./types";
 
@@ -13,9 +18,10 @@ const TYPE_PATTERN: Obstacle["type"][] = [
   "cone",
 ];
 
-export function createInitialState(): MegaTrackState {
+export function createInitialState(mode: string | null | undefined = "standard"): MegaTrackState {
   const obstacles = createObstacleRun(0, CONFIG.OBSTACLE_LOOKAHEAD);
   return {
+    sessionMode: normalizeSessionMode(mode),
     isPlaying: false,
     speed: 0,
     distance: 0,
@@ -80,6 +86,16 @@ export function tick(
   next.speed = Math.min(maxSpeed, next.speed + acceleration * seconds);
   next.distance += next.speed * deltaMs;
   next.boostCharge = Math.min(100, next.boostCharge + seconds * (next.currentLane === 0 ? 8 : 5));
+  next.integrity = Math.min(
+    100,
+    next.integrity +
+      seconds *
+        getSessionRecoveryScale(next.sessionMode, {
+          challenge: 0.2,
+          cozy: 2.4,
+          standard: 1.1,
+        })
+  );
 
   if (input.laneChange !== 0) {
     next.currentLane = Math.max(-1, Math.min(1, next.currentLane + input.laneChange));
@@ -109,7 +125,16 @@ export function tick(
       dx < getObstacleHalfWidth(obs) + CONFIG.CAR_HALF_WIDTH
     ) {
       next.speed *= obs.type === "pace-car" ? 0.38 : 0.5;
-      next.integrity = Math.max(0, next.integrity - getObstacleDamage(obs));
+      next.integrity = Math.max(
+        0,
+        next.integrity -
+          getObstacleDamage(obs) *
+            getSessionPressureScale(next.sessionMode, {
+              challenge: 1.2,
+              cozy: 0.42,
+              standard: 0.62,
+            })
+      );
       next.impactCount++;
       next.lastImpactMs = next.elapsedMs;
       next.lastImpactType = obs.type;

@@ -4,10 +4,13 @@ import { type GameSlug, gamesBySlug } from "../games/catalog";
 type GameComponent = LazyExoticComponent<ComponentType>;
 
 const gameComponents = {
+  "beppo-laughs": lazy(() => import("@app/games/beppo-laughs")),
   "bioluminescent-sea": lazy(() => import("@app/games/bioluminescent-sea")),
+  "cognitive-dissonance": lazy(() => import("@app/games/cognitive-dissonance")),
   "cosmic-gardener": lazy(() => import("@app/games/cosmic-gardener")),
   "enchanted-forest": lazy(() => import("@app/games/enchanted-forest")),
   "entropy-edge": lazy(() => import("@app/games/entropy-edge")),
+  "farm-follies": lazy(() => import("@app/games/farm-follies")),
   "mega-track": lazy(() => import("@app/games/mega-track")),
   "overcast-glacier": lazy(() => import("@app/games/overcast-glacier")),
   "otterly-chaotic": lazy(() => import("@app/games/otterly-chaotic")),

@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -29,6 +31,7 @@ export type EntropyPhase = "menu" | "playing" | "gameover" | "levelcomplete";
 
 export interface EntropyState {
   phase: EntropyPhase;
+  sessionMode: SessionMode;
   level: number;
   playerGridX: number;
   playerGridZ: number;

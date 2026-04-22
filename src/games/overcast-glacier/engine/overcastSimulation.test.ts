@@ -10,9 +10,21 @@ describe("overcast glacier simulation", () => {
     const state = createInitialOvercastState("playing");
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.warmth).toBe(state.maxWarmth);
     expect(state.entities.map((entity) => entity.kind)).toEqual(["cocoa", "snowman", "glitch"]);
     expect(state.objective).toContain("warm");
+  });
+
+  test("standard mode keeps passive warmth loss couch-friendly for the first minute", () => {
+    const standard = createInitialOvercastState("playing", "standard");
+    const challenge = createInitialOvercastState("playing", "challenge");
+    const standardAfterMinute = advanceOvercastState(standard, 60_000, {});
+    const challengeAfterMinute = advanceOvercastState(challenge, 60_000, {});
+
+    expect(standardAfterMinute.phase).toBe("playing");
+    expect(standardAfterMinute.warmth).toBeGreaterThan(50);
+    expect(challengeAfterMinute.warmth).toBeLessThan(standardAfterMinute.warmth);
   });
 
   test("normalizes steering and action controls", () => {

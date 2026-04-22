@@ -127,8 +127,8 @@ function EntropyApp() {
           description="Hold a collapsing resonance field together at the edge of failure."
           kicker="Resonance Cartridge"
           motif="entropy"
-          onStart={() => {
-            writeState(startGame(readState()));
+          onStart={(mode) => {
+            writeState(startGame(readState(), mode));
             entropyEntity.set(PhaseTrait, { phase: "playing" });
           }}
           rules={[
@@ -177,7 +177,7 @@ function EntropyApp() {
             <OverlayButton
               type="button"
               onClick={() => {
-                writeState(restartGame());
+                writeState(restartGame(readState().sessionMode));
                 entropyEntity.set(PhaseTrait, { phase: "playing" });
               }}
             >

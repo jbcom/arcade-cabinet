@@ -6,8 +6,17 @@ describe("otterly simulation", () => {
     const state = createInitialState();
     const next = tick(state, 250, { x: 1, y: 0 }, false);
 
+    expect(state.sessionMode).toBe("standard");
     expect(next.otter.x).toBeGreaterThan(state.otter.x);
     expect(next.elapsedMs).toBe(250);
+  });
+
+  test("session modes tune goat pressure without changing deterministic setup", () => {
+    const cozy = createInitialState("cozy");
+    const challenge = createInitialState("challenge");
+
+    expect(challenge.goats[0].speed).toBeGreaterThan(cozy.goats[0].speed);
+    expect(challenge.goats.map((goat) => goat.id)).toEqual(cozy.goats.map((goat) => goat.id));
   });
 
   test("simulation is deterministic for the same input sequence", () => {
@@ -89,15 +98,15 @@ describe("otterly simulation", () => {
     expect(protectedNext.ballHealth).toBe(protectedState.ballHealth);
   });
 
-  test("fresh runs keep a playable opening window without immediate input", () => {
+  test("fresh standard runs keep a playable first minute without immediate input", () => {
     let state = createInitialState();
 
-    for (let elapsed = 0; elapsed < 12_000; elapsed += 250) {
+    for (let elapsed = 0; elapsed < 60_000; elapsed += 250) {
       state = tick(state, 250, { x: 0, y: 0 }, false);
     }
 
     expect(didLose(state)).toBe(false);
-    expect(state.ballHealth).toBeGreaterThan(30);
+    expect(state.ballHealth).toBeGreaterThan(20);
   });
 
   test("detects win and loss terminal conditions", () => {

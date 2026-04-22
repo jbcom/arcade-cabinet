@@ -20,11 +20,22 @@ describe("entropy simulation", () => {
     const state = startGame({} as never);
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.targetNode).not.toBeNull();
     expect(state.anchorsRequired).toBe(3);
     expect(state.blockedCells.length).toBeGreaterThan(0);
     expect(state.fallingBlocks.length).toBeGreaterThan(0);
     expect(startGame({} as never)).toEqual(state);
+  });
+
+  test("uses couch-friendly standard reserves and opt-in challenge pressure", () => {
+    const standard = startGame({} as never, "standard");
+    const challenge = startGame({} as never, "challenge");
+    const afterMinute = tick(standard, 60_000, { x: 0, y: 0 });
+
+    expect(standard.timeMs).toBeGreaterThan(60_000);
+    expect(challenge.timeMs).toBeLessThan(standard.timeMs);
+    expect(didLose(afterMinute)).toBe(false);
   });
 
   test("secures an anchor when the player reaches the target cell", () => {
