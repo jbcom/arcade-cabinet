@@ -7,7 +7,7 @@ description: Project-specific directives for Claude models.
 
 ## Codebase Context
 - **Stack**: React 19, Vite, Vitest (Browser), Tailwind 4, Koota ECS, React Three Fiber, Rapier.
-- **Structure**: `pnpm` workspace (`apps/` for shells, `packages/` for logic).
+- **Structure**: single Capacitor/Vite app using `app/` for presentation, `src/` for logic, and `public/` for assets.
 
 ## Directives
 - **Verification**: Never assume a port is successful. Always use the Vitest browser testing suite to capture and verify a screenshot of the Canvas before moving on.

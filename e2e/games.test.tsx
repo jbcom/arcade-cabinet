@@ -1,25 +1,25 @@
-import BioluminescentSea from "@arcade-cabinet/bioluminescent-sea";
-import CosmicGardener from "@arcade-cabinet/cosmic-gardener";
-import EnchantedForest from "@arcade-cabinet/enchanted-forest";
-import EntropyEdge from "@arcade-cabinet/entropy-edge";
-import Gridizen from "@arcade-cabinet/gridizen";
-import MegaTrack from "@arcade-cabinet/mega-track";
-import OtterlyChaotic from "@arcade-cabinet/otterly-chaotic";
-import PrimordialAscent from "@arcade-cabinet/primordial-ascent";
-import ProtocolSnw from "@arcade-cabinet/protocol-snw";
-import ReachForTheSky from "@arcade-cabinet/reach-for-the-sky";
-import Realmwalker from "@arcade-cabinet/realmwalker";
-import SimSoviet from "@arcade-cabinet/sim-soviet";
-import TitanMech from "@arcade-cabinet/titan-mech";
-import VoxelRealms from "@arcade-cabinet/voxel-realms";
-import { cleanup, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import BioluminescentSea from "@app/games/bioluminescent-sea";
+import CosmicGardener from "@app/games/cosmic-gardener";
+import EnchantedForest from "@app/games/enchanted-forest";
+import EntropyEdge from "@app/games/entropy-edge";
+import Gridizen from "@app/games/gridizen";
+import MegaTrack from "@app/games/mega-track";
+import OtterlyChaotic from "@app/games/otterly-chaotic";
+import PrimordialAscent from "@app/games/primordial-ascent";
+import ProtocolSnw from "@app/games/protocol-snw";
+import ReachForTheSky from "@app/games/reach-for-the-sky";
+import Realmwalker from "@app/games/realmwalker";
+import SimSoviet from "@app/games/sim-soviet";
+import TitanMech from "@app/games/titan-mech";
+import VoxelRealms from "@app/games/voxel-realms";
 import {
   type BrowserGameStartFlow,
   type BrowserGameViewport,
   captureBrowserGameScreenshot,
   verifyBrowserGameStartFlow,
-} from "../src/test/browserGameHarness";
+} from "@app/test/browserGameHarness";
+import { cleanup, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, test } from "vitest";
 
 const gameCases: (BrowserGameStartFlow & {
   name: string;
@@ -175,6 +175,10 @@ describe("browser game e2e flows and visual captures", () => {
   )("$name reaches gameplay and captures responsive screenshots", async (game) => {
     const { host, rootElement } = await verifyBrowserGameStartFlow(game);
 
+    if (game.expectsJoystick) {
+      await verifyFloatingJoystick(rootElement);
+    }
+
     for (const viewport of screenshotViewports) {
       await captureBrowserGameScreenshot(
         host,
@@ -182,10 +186,6 @@ describe("browser game e2e flows and visual captures", () => {
         viewport,
         `test-screenshots/games/${game.slug}-${viewport.name}.png`
       );
-    }
-
-    if (game.expectsJoystick) {
-      await verifyFloatingJoystick(rootElement);
     }
   }, 90_000);
 });

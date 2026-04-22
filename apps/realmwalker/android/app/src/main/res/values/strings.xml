@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Realmwalker</string>
-    <string name="title_activity_main">Realmwalker</string>
-    <string name="package_name">com.arcade.realmwalker</string>
-    <string name="custom_url_scheme">com.arcade.realmwalker</string>
-</resources>

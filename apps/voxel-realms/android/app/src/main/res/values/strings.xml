@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Voxel Realms</string>
-    <string name="title_activity_main">Voxel Realms</string>
-    <string name="package_name">com.arcade.voxelrealms</string>
-    <string name="custom_url_scheme">com.arcade.voxelrealms</string>
-</resources>
