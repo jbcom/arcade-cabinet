@@ -21,7 +21,13 @@ function PrimordialApp() {
       <Canvas gl={browserTestCanvasGlOptions}>{state.phase === "playing" && <World />}</Canvas>
 
       {state.phase === "menu" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020608]/90 backdrop-blur-md z-20 text-white">
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white backdrop-blur-md"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(2,6,8,0.68), rgba(2,6,8,0.94)), linear-gradient(135deg, rgba(0,238,255,0.18), rgba(255,51,51,0.2)), repeating-linear-gradient(0deg, rgba(255,116,72,0.18) 0 2px, transparent 2px 18px)",
+          }}
+        >
           <h1
             className="text-5xl md:text-7xl font-black uppercase tracking-[5px] mb-4 text-center text-white"
             style={{ textShadow: "0 0 20px #00eeff, 2px 2px 0px #000" }}
@@ -42,8 +48,8 @@ function PrimordialApp() {
             Land on the <span className="font-bold text-[#00ff66]">GREEN MOSS</span> to rest and
             press <b>[SPACE]</b> to leap.
             <br />
-            <b>[WASD] / [ARROWS]</b> to shift momentum mid-air. Touch controls are available in the
-            lower right on mobile.
+            <b>[WASD] / [ARROWS]</b> to shift momentum mid-air. On touch screens, press anywhere in
+            the cavern to spawn the movement joystick.
             <br />
           </div>
           <button
@@ -67,7 +73,13 @@ function PrimordialApp() {
       )}
 
       {state.phase === "gameover" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020608]/90 backdrop-blur-md z-20 text-white">
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white backdrop-blur-md"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,2,2,0.74), rgba(2,6,8,0.94)), repeating-linear-gradient(0deg, rgba(255,51,51,0.22) 0 2px, transparent 2px 16px)",
+          }}
+        >
           <h1
             className="text-5xl md:text-7xl font-black uppercase tracking-[5px] mb-12 text-center text-white"
             style={{ textShadow: "0 0 20px #ff3333, 2px 2px 0px #000" }}

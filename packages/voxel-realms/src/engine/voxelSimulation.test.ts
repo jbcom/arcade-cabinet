@@ -50,7 +50,7 @@ describe("voxel simulation", () => {
     expect(new Set(chunk.blocks.map((block) => block.type)).size).toBeGreaterThan(2);
     expect(distant).not.toEqual(chunk);
     expect(getProceduralHeight(0, 0)).toBe(-1);
-    expect(getProceduralHeight(10, 0)).toBe(-1);
+    expect(getProceduralHeight(10, 0)).toBeGreaterThanOrEqual(1);
     expect(classifyBiome(getProceduralHeight(0, 0))).toBeTruthy();
   });
 

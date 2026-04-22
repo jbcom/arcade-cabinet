@@ -240,8 +240,14 @@ export function classifyBiome(height: number): string {
 export function getProceduralHeight(x: number, z: number): number {
   const spawnDistance = Math.hypot(x, z);
   if (spawnDistance < CONFIG.SPAWN_CLEAR_RADIUS) {
-    const shorelineRamp = Math.max(0, spawnDistance - 9) * 0.08;
-    return Math.floor(-1 + shorelineRamp);
+    if (spawnDistance < 5) return -1;
+
+    const ringProgress = (spawnDistance - 5) / Math.max(1, CONFIG.SPAWN_CLEAR_RADIUS - 5);
+    const islandRise = Math.sin(ringProgress * Math.PI) * 2.4;
+    const shorelineBias = z < -5 ? -1.2 : z < -1 ? -0.35 : 0.15;
+    const detail = Math.sin(x * 0.34) * 0.45 + Math.cos(z * 0.29) * 0.38;
+
+    return Math.floor(shorelineBias + islandRise + detail);
   }
 
   const ridge = valueNoise(x * 0.025, z * 0.025, 11) * 19;
@@ -336,7 +342,7 @@ function pickSurfaceBlock(height: number): BlockType {
 function shouldPlaceTree(x: number, z: number, height: number): boolean {
   if (height <= 0 || height > 7) return false;
 
-  return hash2d(x, z, 101) > 0.982;
+  return hash2d(x, z, 101) > 0.955;
 }
 
 function shouldPlaceOre(x: number, z: number, height: number): boolean {
@@ -349,13 +355,30 @@ function createTreeBlocks(x: number, surfaceY: number, z: number, chunkSize: num
   const blocks: BlockData[] = [
     { x, y: surfaceY + 1, z, type: "wood" },
     { x, y: surfaceY + 2, z, type: "wood" },
-    { x, y: surfaceY + 3, z, type: "leaves" },
+    { x, y: surfaceY + 3, z, type: "wood" },
+    { x, y: surfaceY + 4, z, type: "leaves" },
   ];
 
-  if (x > 0) blocks.push({ x: x - 1, y: surfaceY + 2, z, type: "leaves" });
-  if (x < chunkSize - 1) blocks.push({ x: x + 1, y: surfaceY + 2, z, type: "leaves" });
-  if (z > 0) blocks.push({ x, y: surfaceY + 2, z: z - 1, type: "leaves" });
-  if (z < chunkSize - 1) blocks.push({ x, y: surfaceY + 2, z: z + 1, type: "leaves" });
+  const crownOffsets = [
+    [-1, 3, 0],
+    [1, 3, 0],
+    [0, 3, -1],
+    [0, 3, 1],
+    [-1, 4, 0],
+    [1, 4, 0],
+    [0, 4, -1],
+    [0, 4, 1],
+    [0, 5, 0],
+  ] as const;
+
+  for (const [dx, dy, dz] of crownOffsets) {
+    const lx = x + dx;
+    const lz = z + dz;
+
+    if (lx >= 0 && lx < chunkSize && lz >= 0 && lz < chunkSize) {
+      blocks.push({ x: lx, y: surfaceY + dy, z: lz, type: "leaves" });
+    }
+  }
 
   return blocks;
 }

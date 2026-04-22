@@ -1,5 +1,5 @@
 import { type ComponentType, type LazyExoticComponent, lazy, Suspense } from "react";
-import type { GameSlug } from "../games/catalog";
+import { type GameSlug, gamesBySlug } from "../games/catalog";
 
 type GameComponent = LazyExoticComponent<ComponentType>;
 
@@ -28,6 +28,7 @@ interface GameIslandProps {
 
 export default function GameIsland({ slug }: GameIslandProps) {
   const Component = gameComponents[slug];
+  const game = gamesBySlug[slug];
 
   return (
     <div style={{ width: "100%", height: "100%", minHeight: 0 }}>
@@ -40,13 +41,23 @@ export default function GameIsland({ slug }: GameIslandProps) {
               minHeight: 320,
               display: "grid",
               placeItems: "center",
-              background: "#020617",
+              background: `${game.gradient}, #020617`,
               color: "#e2e8f0",
               fontFamily: "var(--font-mono), monospace",
               textTransform: "uppercase",
+              border: `1px solid ${game.color}66`,
             }}
           >
-            Booting cabinet slot
+            <span
+              style={{
+                background: "rgba(2,6,23,0.72)",
+                border: `1px solid ${game.color}99`,
+                padding: "0.75rem 1rem",
+                boxShadow: `0 0 24px ${game.color}4d`,
+              }}
+            >
+              Booting {game.title}
+            </span>
           </div>
         }
       >

@@ -1,4 +1,4 @@
-import { HUDOverlay } from "@arcade-cabinet/shared";
+import { FloatingJoystick, HUDOverlay } from "@arcade-cabinet/shared";
 import { useTrait } from "koota/react";
 import type { PointerEvent } from "react";
 import type { TitanControls } from "../engine/types";
@@ -61,8 +61,14 @@ export function HUD() {
           <Gauge label="PYLON LOCK" value={state.objectiveProgress} max={100} color={warning} />
         </div>
       }
-      bottomRight={<ControlPad />}
-    />
+      bottomRight={<ActionCluster />}
+    >
+      <FloatingJoystick
+        accent={accent}
+        label="Titan drive joystick"
+        onChange={(vector) => updateControls({ throttle: -vector.y, turn: vector.x })}
+      />
+    </HUDOverlay>
   );
 }
 
@@ -115,24 +121,18 @@ function Gauge({
   );
 }
 
-function ControlPad() {
+function ActionCluster() {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 44px)",
-        gridTemplateRows: "repeat(2, 44px)",
+        display: "flex",
         gap: 8,
         justifyContent: "end",
         touchAction: "none",
       }}
     >
-      <ControlButton label="Turn left" symbol="◀" controls={{ turn: -1 }} />
-      <ControlButton label="Forward" symbol="▲" controls={{ throttle: 1 }} />
-      <ControlButton label="Turn right" symbol="▶" controls={{ turn: 1 }} />
-      <ControlButton label="Brace" symbol="◆" controls={{ brace: true }} />
-      <ControlButton label="Reverse" symbol="▼" controls={{ throttle: -1 }} />
-      <ControlButton label="Fire" symbol="●" controls={{ fire: true }} hot />
+      <ControlButton label="Brace coolant" symbol="BRACE" controls={{ brace: true }} />
+      <ControlButton label="Fire ordnance" symbol="FIRE" controls={{ fire: true }} hot />
     </div>
   );
 }
@@ -171,12 +171,14 @@ function ControlButton({
       style={{
         width: 44,
         height: 44,
+        minWidth: hot ? 64 : 74,
         border: `1px solid ${hot ? danger : "rgba(45,212,191,0.65)"}`,
         background: hot ? "rgba(244,63,94,0.22)" : "rgba(13,148,136,0.18)",
         color: hot ? "#ffe4e6" : "#d8fff8",
-        fontSize: 19,
+        fontSize: 11,
         fontWeight: 900,
-        lineHeight: "42px",
+        letterSpacing: "0.08em",
+        lineHeight: 1,
         textAlign: "center",
         cursor: "pointer",
         boxShadow: hot ? "0 0 16px rgba(244,63,94,0.22)" : "0 0 16px rgba(45,212,191,0.16)",

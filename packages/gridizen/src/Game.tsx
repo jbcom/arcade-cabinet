@@ -94,6 +94,7 @@ function GridizenApp() {
       <GridScene state={state} onInteraction={handleTileInteraction} />
       {phase.phase === "menu" ? (
         <StartScreen
+          accent="#22c55e"
           title="Gridizen"
           subtitle="A model-table city builder. Place roads, zones, and utilities to grow a river settlement from a Camp to a City."
           primaryAction={

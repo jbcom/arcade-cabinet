@@ -118,6 +118,7 @@ function SimSovietApp() {
       <CityScene state={state} onCellClick={(x, y) => eventBus.emit("grid:click", { x, y })} />
       {phase.phase === "menu" ? (
         <StartScreen
+          accent="#ef4444"
           title="Sim Soviet 3000"
           subtitle="A 3D command-table take on the city-builder: place sectors, balance utilities, and hit the quota before the commissariat loses patience."
           primaryAction={

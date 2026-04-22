@@ -30,7 +30,13 @@ function TitanApp() {
       </Canvas>
 
       {phase === "menu" && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#090d12]/92 px-4 text-[#c8fff3] backdrop-blur-md">
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-[#c8fff3] backdrop-blur-md"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(9,13,18,0.7), rgba(9,13,18,0.96)), linear-gradient(135deg, rgba(45,212,191,0.16), rgba(244,63,94,0.12)), repeating-linear-gradient(90deg, rgba(45,212,191,0.12) 0 1px, transparent 1px 48px)",
+          }}
+        >
           <h1
             className="mb-5 text-center font-black uppercase leading-none"
             style={{

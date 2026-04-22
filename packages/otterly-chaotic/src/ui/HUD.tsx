@@ -1,4 +1,4 @@
-import { OverlayButton, useResponsive } from "@arcade-cabinet/shared";
+import { FloatingJoystick, OverlayButton, useResponsive } from "@arcade-cabinet/shared";
 import type { OtterlyState, Vec2 } from "../engine/types";
 
 interface HUDProps {
@@ -33,6 +33,11 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
         fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
+      <FloatingJoystick
+        accent="#38bdf8"
+        label="Otter movement joystick"
+        onChange={(vector) => onMove({ x: vector.x, y: vector.y })}
+      />
       <div
         style={{
           display: "flex",
@@ -78,7 +83,7 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           gap: "0.75rem",
         }}
       >
-        <div style={{ ...panelStyle, width: isMobile ? 128 : 152 }}>
+        <div style={{ ...panelStyle, width: isMobile ? 148 : 176 }}>
           <div
             style={{
               height: 10,
@@ -96,7 +101,9 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
               }}
             />
           </div>
-          <MovePad onMove={onMove} />
+          <div style={{ color: "#bae6fd", fontSize: 12, fontWeight: 800 }}>
+            Touch the arena to steer
+          </div>
         </div>
         <OverlayButton
           onClick={onBark}
@@ -109,58 +116,6 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           Bark Pulse
         </OverlayButton>
       </div>
-    </div>
-  );
-}
-
-function MovePad({ onMove }: { onMove: (movement: Vec2) => void }) {
-  const buttons: Array<{
-    label: string;
-    x: number;
-    y: number;
-    gridColumn: number;
-    gridRow: number;
-  }> = [
-    { label: "^", x: 0, y: -1, gridColumn: 2, gridRow: 1 },
-    { label: "<", x: -1, y: 0, gridColumn: 1, gridRow: 2 },
-    { label: ">", x: 1, y: 0, gridColumn: 3, gridRow: 2 },
-    { label: "v", x: 0, y: 1, gridColumn: 2, gridRow: 3 },
-  ];
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 2.25rem)",
-        gridTemplateRows: "repeat(3, 2.25rem)",
-        gap: "0.25rem",
-        justifyContent: "center",
-      }}
-    >
-      {buttons.map((button) => (
-        <button
-          key={button.label}
-          type="button"
-          onPointerDown={() => onMove({ x: button.x, y: button.y })}
-          onPointerUp={() => onMove({ x: 0, y: 0 })}
-          onPointerCancel={() => onMove({ x: 0, y: 0 })}
-          onPointerLeave={() => onMove({ x: 0, y: 0 })}
-          style={{
-            gridColumn: button.gridColumn,
-            gridRow: button.gridRow,
-            border: "1px solid rgba(148,163,184,0.45)",
-            borderRadius: 8,
-            background: "rgba(15,23,42,0.76)",
-            color: "#e2e8f0",
-            fontWeight: 900,
-            cursor: "pointer",
-            pointerEvents: "auto",
-            touchAction: "none",
-          }}
-        >
-          {button.label}
-        </button>
-      ))}
     </div>
   );
 }

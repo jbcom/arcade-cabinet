@@ -1,4 +1,5 @@
 import {
+  FloatingJoystick,
   GameOverScreen,
   GameViewport,
   OverlayButton,
@@ -10,7 +11,7 @@ import {
   useGameLoop,
 } from "@arcade-cabinet/shared";
 import { useTrait, WorldProvider } from "koota/react";
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createInitialState,
   didLose,
@@ -58,106 +59,6 @@ function useKeyboardMovementInput(): Vec2 {
   }, []);
 
   return input;
-}
-
-function DirectionIcon({ direction }: { direction: "up" | "right" | "down" | "left" }) {
-  const rotations = {
-    down: 90,
-    left: 180,
-    right: 0,
-    up: -90,
-  };
-
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 32 32"
-      style={{
-        height: 24,
-        transform: `rotate(${rotations[direction]}deg)`,
-        width: 24,
-      }}
-    >
-      <path
-        d="M10 6 L23 16 L10 26"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="4"
-      />
-    </svg>
-  );
-}
-
-function TouchMoveControls({ onChange }: { onChange: (next: Vec2) => void }) {
-  const buttonStyle = {
-    alignItems: "center",
-    background: "rgba(6, 18, 30, 0.72)",
-    border: "1px solid rgba(103, 232, 249, 0.28)",
-    borderRadius: 999,
-    color: "#67e8f9",
-    display: "flex",
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  };
-  const directions: Array<{
-    label: string;
-    direction: "up" | "right" | "down" | "left";
-    value: Vec2;
-    style: CSSProperties;
-  }> = [
-    {
-      direction: "up",
-      label: "Move north",
-      style: { gridColumn: 2, gridRow: 1 },
-      value: { x: 0, y: -1 },
-    },
-    {
-      direction: "left",
-      label: "Move west",
-      style: { gridColumn: 1, gridRow: 2 },
-      value: { x: -1, y: 0 },
-    },
-    {
-      direction: "right",
-      label: "Move east",
-      style: { gridColumn: 3, gridRow: 2 },
-      value: { x: 1, y: 0 },
-    },
-    {
-      direction: "down",
-      label: "Move south",
-      style: { gridColumn: 2, gridRow: 3 },
-      value: { x: 0, y: 1 },
-    },
-  ];
-
-  return (
-    <div
-      className="absolute bottom-20 left-1/2 z-[80] grid -translate-x-1/2 grid-cols-3 grid-rows-3 gap-2 sm:hidden"
-      style={{ touchAction: "none" }}
-    >
-      {directions.map((item) => (
-        <button
-          aria-label={item.label}
-          key={item.direction}
-          onPointerCancel={() => onChange({ x: 0, y: 0 })}
-          onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            onChange(item.value);
-          }}
-          onPointerLeave={() => onChange({ x: 0, y: 0 })}
-          onPointerUp={() => onChange({ x: 0, y: 0 })}
-          style={{ ...buttonStyle, ...item.style }}
-          type="button"
-        >
-          <DirectionIcon direction={item.direction} />
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function EntropyApp() {
@@ -221,6 +122,7 @@ function EntropyApp() {
 
       {phase === "menu" ? (
         <StartScreen
+          accent="#38bdf8"
           title="Entropy's Edge"
           subtitle="Reality is fracturing. Navigate the grid to reach glowing anchors before sector stability collapses. Secure anchors quickly to build Resonance for bonus points."
           primaryAction={
@@ -237,7 +139,13 @@ function EntropyApp() {
       ) : null}
 
       {phase === "playing" ? <HUD state={state} /> : null}
-      {phase === "playing" ? <TouchMoveControls onChange={setTouchMovement} /> : null}
+      {phase === "playing" ? (
+        <FloatingJoystick
+          accent="#67e8f9"
+          label="Entropy movement joystick"
+          onChange={(vector) => setTouchMovement({ x: vector.x, y: vector.y })}
+        />
+      ) : null}
 
       {phase === "win" ? (
         <GameOverScreen

@@ -1,4 +1,4 @@
-import { useResponsive } from "@arcade-cabinet/shared";
+import { FloatingJoystick, useResponsive } from "@arcade-cabinet/shared";
 import type { MegaTrackState } from "../engine/types";
 
 interface HUDProps {
@@ -37,6 +37,14 @@ export function HUD({ state, onLaneControl }: HUDProps) {
         fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
+      <FloatingJoystick
+        accent="#facc15"
+        label="Mega Track lane joystick"
+        onChange={(vector) => {
+          const direction = Math.abs(vector.x) > 0.22 ? Math.sign(vector.x) : 0;
+          onLaneControl(direction);
+        }}
+      />
       <div
         style={{
           display: "flex",
@@ -82,46 +90,19 @@ export function HUD({ state, onLaneControl }: HUDProps) {
           alignItems: "flex-end",
         }}
       >
-        <LaneButton direction={-1} label="Left" onLaneControl={onLaneControl} />
-        <LaneButton direction={1} label="Right" onLaneControl={onLaneControl} />
+        <div
+          style={{
+            ...panelStyle,
+            maxWidth: 260,
+            color: "#fde68a",
+            fontSize: 12,
+            fontWeight: 800,
+            textTransform: "uppercase",
+          }}
+        >
+          Touch the track and drag left or right to change lanes.
+        </div>
       </div>
     </div>
-  );
-}
-
-interface LaneButtonProps {
-  direction: -1 | 1;
-  label: string;
-  onLaneControl: (direction: number) => void;
-}
-
-function LaneButton({ direction, label, onLaneControl }: LaneButtonProps) {
-  return (
-    <button
-      type="button"
-      onPointerDown={() => onLaneControl(direction)}
-      onPointerUp={() => onLaneControl(0)}
-      onPointerCancel={() => onLaneControl(0)}
-      onPointerLeave={() => onLaneControl(0)}
-      style={{
-        width: "min(9rem, 38vw)",
-        minHeight: "3rem",
-        border: "1px solid rgba(148,163,184,0.45)",
-        borderRadius: 8,
-        background: "rgba(15,23,42,0.74)",
-        color: "#e2e8f0",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.5rem",
-        fontWeight: 800,
-        pointerEvents: "auto",
-        touchAction: "none",
-      }}
-    >
-      <span style={{ fontSize: "1.25rem" }}>{direction < 0 ? "<" : ">"}</span>
-      <span>{label}</span>
-    </button>
   );
 }

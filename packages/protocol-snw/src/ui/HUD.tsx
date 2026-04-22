@@ -1,4 +1,4 @@
-import { HUDOverlay } from "@arcade-cabinet/shared";
+import { FloatingJoystick, HUDOverlay } from "@arcade-cabinet/shared";
 import { useTrait } from "koota/react";
 import type { PointerEvent } from "react";
 import type { SNWControls } from "../engine/types";
@@ -63,8 +63,14 @@ export function HUD() {
           ) : null}
         </div>
       }
-      bottomRight={<ControlPad />}
-    />
+      bottomRight={<ActionCluster />}
+    >
+      <FloatingJoystick
+        accent={cyan}
+        label="Protocol movement joystick"
+        onChange={(vector) => updateControls({ x: vector.x, z: vector.y })}
+      />
+    </HUDOverlay>
   );
 }
 
@@ -120,23 +126,18 @@ function Gauge({
   );
 }
 
-function ControlPad() {
+function ActionCluster() {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 42px)",
-        gridTemplateRows: "repeat(2, 42px)",
+        display: "flex",
         gap: 8,
+        justifyContent: "flex-end",
         touchAction: "none",
       }}
     >
-      <ControlButton label="Strafe left" symbol="◀" controls={{ x: -1 }} />
-      <ControlButton label="Forward" symbol="▲" controls={{ z: -1 }} />
-      <ControlButton label="Strafe right" symbol="▶" controls={{ x: 1 }} />
-      <ControlButton label="Dash" symbol="◆" controls={{ dash: true }} hot />
-      <ControlButton label="Reverse" symbol="▼" controls={{ z: 1 }} />
-      <ControlButton label="Fire" symbol="●" controls={{ fire: true }} hot />
+      <ControlButton label="Dash" symbol="DASH" controls={{ dash: true }} />
+      <ControlButton label="Firewall pulse" symbol="FIRE" controls={{ fire: true }} hot />
     </div>
   );
 }
@@ -175,12 +176,14 @@ function ControlButton({
       style={{
         width: 42,
         height: 42,
+        minWidth: hot ? 64 : 58,
         border: `1px solid ${hot ? red : "rgba(45,212,191,0.68)"}`,
         background: hot ? "rgba(244,63,94,0.18)" : "rgba(13,148,136,0.18)",
         color: hot ? "#ffe4e6" : "#d8fff8",
-        fontSize: 18,
+        fontSize: 11,
         fontWeight: 900,
-        lineHeight: "40px",
+        letterSpacing: "0.08em",
+        lineHeight: 1,
         textAlign: "center",
         cursor: "pointer",
       }}

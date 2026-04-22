@@ -22,7 +22,10 @@ const { game } = Astro.props;
   title={`${game.title} | Arcade Cabinet`}
   description={`${game.description} Play ${game.title} as a React island inside the Astro arcade cabinet.`}
 >
-  <main class="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black touch-none select-none">
+  <main
+    class="fixed inset-0 w-full h-[100svh] overflow-hidden touch-none select-none"
+    style={`background: ${game.gradient};`}
+  >
     <a
       class="fixed left-4 top-4 z-50 border border-slate-700 bg-slate-950/80 px-4 py-2 font-mono text-[0.7rem] uppercase text-slate-200 backdrop-blur transition hover:border-cyan-400 hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300"
       href={withBasePath("/#games")}

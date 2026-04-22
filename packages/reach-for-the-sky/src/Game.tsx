@@ -82,6 +82,7 @@ function SkyApp() {
 
       {phase === "menu" && (
         <StartScreen
+          accent="#1e88e5"
           title="REACH FOR THE SKY"
           subtitle="Architect, manage, and evolve your vertical empire."
           primaryAction={<OverlayButton onClick={handleStart}>Break Ground</OverlayButton>}

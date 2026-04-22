@@ -1,3 +1,4 @@
+import { FloatingJoystick } from "@arcade-cabinet/shared";
 import { motion } from "framer-motion";
 import { useTrait } from "koota/react";
 import { PrimordialTrait } from "../store/traits";
@@ -21,9 +22,17 @@ export function HUD() {
   ) => {
     window.dispatchEvent(new Event(name));
   };
+  const dispatchMove = (x: number, y: number) => {
+    window.dispatchEvent(new CustomEvent("primordial:move", { detail: { x, y } }));
+  };
 
   return (
     <>
+      <FloatingJoystick
+        accent="#00e5ff"
+        label="Primordial air-control joystick"
+        onChange={(vector) => dispatchMove(vector.x, vector.y)}
+      />
       <motion.div
         className="fixed inset-0 pointer-events-none z-[5]"
         animate={{

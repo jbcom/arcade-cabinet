@@ -31,6 +31,14 @@ export function Player() {
     grapple: false,
   });
   const tetherLineGeometry = useMemo(() => new THREE.BufferGeometry(), []);
+  const tetherLine = useMemo(
+    () =>
+      new THREE.Line(
+        tetherLineGeometry,
+        new THREE.LineBasicMaterial({ color: "#00eeff", linewidth: 2 })
+      ),
+    [tetherLineGeometry]
+  );
 
   useEffect(() => {
     camera.position.set(
@@ -139,6 +147,17 @@ export function Player() {
     const handleMobileJump = () => {
       movement.current.jump = true;
     };
+    const handleJoystickMove = (event: Event) => {
+      const detail = (event as CustomEvent<{ x?: number; y?: number }>).detail ?? {};
+      const x = detail.x ?? 0;
+      const y = detail.y ?? 0;
+      const deadZone = 0.08;
+
+      movement.current.forward = y < -deadZone;
+      movement.current.back = y > deadZone;
+      movement.current.left = x < -deadZone;
+      movement.current.right = x > deadZone;
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -147,6 +166,7 @@ export function Player() {
     window.addEventListener("primordial:grapple-start", handleMobileGrappleStart);
     window.addEventListener("primordial:grapple-end", handleMobileGrappleEnd);
     window.addEventListener("primordial:jump", handleMobileJump);
+    window.addEventListener("primordial:move", handleJoystickMove);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -156,6 +176,7 @@ export function Player() {
       window.removeEventListener("primordial:grapple-start", handleMobileGrappleStart);
       window.removeEventListener("primordial:grapple-end", handleMobileGrappleEnd);
       window.removeEventListener("primordial:jump", handleMobileJump);
+      window.removeEventListener("primordial:move", handleJoystickMove);
     };
   }, [camera, raycaster, scene]);
 
@@ -235,11 +256,7 @@ export function Player() {
           <meshStandardMaterial color="white" />
         </mesh>
       </RigidBody>
-      {isGrappling && (
-        <threeLine geometry={tetherLineGeometry}>
-          <lineBasicMaterial color="#00eeff" linewidth={2} />
-        </threeLine>
-      )}
+      {isGrappling && <primitive object={tetherLine} />}
       <FirstPersonHarness isGrappling={isGrappling} />
     </>
   );

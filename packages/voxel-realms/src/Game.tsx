@@ -23,11 +23,14 @@ function VoxelApp() {
   return (
     <GameViewport background="#9fd7e8">
       <Canvas shadows camera={{ fov: 72, position: [0, 4.6, 0] }} gl={browserTestCanvasGlOptions}>
-        {state.phase === "playing" && <World />}
+        {state.phase !== "gameover" && (
+          <World key={state.phase === "playing" ? "playing" : "preview"} />
+        )}
       </Canvas>
 
       {state.phase === "menu" && (
         <StartScreen
+          accent="#84cc16"
           title="Voxel Realms"
           subtitle="Step out from a surveyed shoreline camp, read the beacon chain, and map the living terrain before nightfall."
           primaryAction={<OverlayButton onClick={handleStart}>Enter Realm</OverlayButton>}

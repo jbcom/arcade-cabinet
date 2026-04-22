@@ -12,8 +12,8 @@ import Realmwalker from "@arcade-cabinet/realmwalker";
 import SimSoviet from "@arcade-cabinet/sim-soviet";
 import TitanMech from "@arcade-cabinet/titan-mech";
 import VoxelRealms from "@arcade-cabinet/voxel-realms";
-import { cleanup } from "@testing-library/react";
-import { afterEach, describe, test } from "vitest";
+import { cleanup, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, test } from "vitest";
 import {
   type BrowserGameStartFlow,
   type BrowserGameViewport,
@@ -21,7 +21,11 @@ import {
   verifyBrowserGameStartFlow,
 } from "../src/test/browserGameHarness";
 
-const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
+const gameCases: (BrowserGameStartFlow & {
+  name: string;
+  slug: string;
+  expectsJoystick?: boolean;
+})[] = [
   {
     name: "Bioluminescent Sea",
     slug: "bioluminescent-sea",
@@ -55,6 +59,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Initialize Link"],
     ready: /RESONANCE/,
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Gridizen",
@@ -73,6 +78,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Start Race"],
     ready: /Speed:/,
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Otterly Chaotic",
@@ -82,6 +88,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Start Sprint"],
     ready: "Bark Pulse",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Primordial Ascent",
@@ -91,6 +98,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Initiate Sequence"],
     ready: "Altitude",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Protocol SNW",
@@ -100,6 +108,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Engage"],
     ready: "INTEGRITY",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Reach for the Sky",
@@ -118,6 +127,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Enter the Shifting Realm"],
     ready: "VITALITY",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Sim Soviet",
@@ -136,6 +146,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Engage Chassis"],
     ready: "SYSTEM INTEGRITY",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
   {
     name: "Voxel Realms",
@@ -145,6 +156,7 @@ const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
     startFlow: ["Enter Realm"],
     ready: "HP",
     expectsCanvas: true,
+    expectsJoystick: true,
   },
 ];
 
@@ -171,6 +183,10 @@ describe("browser game e2e flows and visual captures", () => {
         `test-screenshots/games/${game.slug}-${viewport.name}.png`
       );
     }
+
+    if (game.expectsJoystick) {
+      await verifyFloatingJoystick(rootElement);
+    }
   }, 90_000);
 });
 
@@ -181,4 +197,45 @@ function cleanupBrowserRender() {
   }
 
   cleanup();
+}
+
+async function verifyFloatingJoystick(rootElement: Element) {
+  const rect = rootElement.getBoundingClientRect();
+  const pointerId = 41;
+  const originX = rect.left + Math.min(180, rect.width * 0.42);
+  const originY = rect.top + Math.min(360, rect.height * 0.58);
+
+  rootElement.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      bubbles: true,
+      clientX: originX,
+      clientY: originY,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
+  window.dispatchEvent(
+    new PointerEvent("pointermove", {
+      clientX: originX + 44,
+      clientY: originY - 30,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
+
+  await waitFor(() => {
+    expect(document.querySelector('[data-testid="floating-joystick"]')).not.toBeNull();
+  });
+
+  window.dispatchEvent(
+    new PointerEvent("pointerup", {
+      clientX: originX + 44,
+      clientY: originY - 30,
+      isPrimary: true,
+      pointerId,
+      pointerType: "touch",
+    })
+  );
 }

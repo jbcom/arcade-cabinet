@@ -126,8 +126,9 @@ function OtterlyApp() {
       <OtterScene state={state} />
       {phase.phase === "menu" ? (
         <StartScreen
+          accent="#0ea5e9"
           title="Otterly Chaotic"
-          subtitle="A 3D chase arena: steer the otter with keys or the on-screen D-pad, bark to stun goats, and roll the Kudzu ball into the crater."
+          subtitle="A 3D chase arena: steer the otter with keys or a touch-anywhere joystick, bark to stun goats, and roll the Kudzu ball into the crater."
           primaryAction={
             <OverlayButton
               onClick={() => {

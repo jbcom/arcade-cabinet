@@ -29,7 +29,7 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
 
   useEffect(() => {
     camera.position.set(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.y + 0.75, CONFIG.PLAYER_START.z);
-    camera.lookAt(1.2, 0.8, -10);
+    camera.lookAt(5.5, 1.8, 13);
   }, [camera]);
 
   useEffect(() => {
@@ -87,6 +87,17 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
     const handleJump = () => {
       movement.current.jump = true;
     };
+    const handleJoystickMove = (event: Event) => {
+      const detail = (event as CustomEvent<{ x?: number; y?: number }>).detail ?? {};
+      const x = detail.x ?? 0;
+      const y = detail.y ?? 0;
+      const deadZone = 0.08;
+
+      movement.current.forward = y < -deadZone;
+      movement.current.backward = y > deadZone;
+      movement.current.left = x < -deadZone;
+      movement.current.right = x > deadZone;
+    };
     const handleForwardStart = () => setMobileControl("forward", true);
     const handleForwardEnd = () => setMobileControl("forward", false);
     const handleLeftStart = () => setMobileControl("left", true);
@@ -103,6 +114,7 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
     window.addEventListener("voxel:right-start", handleRightStart);
     window.addEventListener("voxel:right-end", handleRightEnd);
     window.addEventListener("voxel:jump", handleJump);
+    window.addEventListener("voxel:move", handleJoystickMove);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -114,6 +126,7 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
       window.removeEventListener("voxel:right-start", handleRightStart);
       window.removeEventListener("voxel:right-end", handleRightEnd);
       window.removeEventListener("voxel:jump", handleJump);
+      window.removeEventListener("voxel:move", handleJoystickMove);
     };
   }, []);
 

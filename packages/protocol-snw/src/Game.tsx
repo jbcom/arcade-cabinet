@@ -30,6 +30,7 @@ function SNWApp() {
 
       {state.phase === "menu" && (
         <StartScreen
+          accent="#2dd4bf"
           title="PROTOCOL: SILENT NIGHT"
           subtitle="Hold the signal ring, read the threat lanes, and erase hostile constructs before they breach."
           primaryAction={<OverlayButton onClick={handleStart}>Engage</OverlayButton>}

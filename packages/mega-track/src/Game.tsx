@@ -91,8 +91,9 @@ function MegaTrackApp() {
 
       {phase.phase === "menu" ? (
         <StartScreen
+          accent="#fb7185"
           title="Mega Track"
-          subtitle="Arcade racing on a deterministic hazard ribbon. Use A/D, Arrow keys, or the lane controls to thread the safe line."
+          subtitle="Arcade racing on a deterministic hazard ribbon. Use A/D, Arrow keys, or a touch-anywhere lane joystick to thread the safe line."
           primaryAction={<OverlayButton onClick={handleStart}>Start Race</OverlayButton>}
         />
       ) : null}

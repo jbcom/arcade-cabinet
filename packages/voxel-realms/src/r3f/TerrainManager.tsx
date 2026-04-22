@@ -1,20 +1,42 @@
 import { InstancedRigidBodies } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { BlockData, ChunkData } from "../engine/TerrainWorker";
 import TerrainWorker from "../engine/TerrainWorker?worker";
 import { CONFIG } from "../engine/types";
+import { type BlockData, type ChunkData, generateChunkData } from "../engine/voxelSimulation";
 
-const COLORS: Record<string, string> = {
-  grass: "#4caf50",
-  dirt: "#795548",
-  stone: "#9e9e9e",
-  sand: "#ffe082",
-  water: "#2196f3",
-  snow: "#ffffff",
-  wood: "#5d4037",
-  leaves: "#2e7d32",
-  ore: "#b45309",
+const MATERIALS: Record<
+  string,
+  {
+    color: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    opacity?: number;
+    roughness?: number;
+    metalness?: number;
+  }
+> = {
+  grass: { color: "#5f9f3a", roughness: 0.92 },
+  dirt: { color: "#7c5a3a", roughness: 0.96 },
+  stone: { color: "#8b98a6", roughness: 0.84 },
+  sand: { color: "#e7c86e", roughness: 0.9 },
+  water: {
+    color: "#2aa8f2",
+    emissive: "#075985",
+    emissiveIntensity: 0.18,
+    opacity: 0.62,
+    roughness: 0.38,
+  },
+  snow: { color: "#f8fafc", roughness: 0.74 },
+  wood: { color: "#6b4423", roughness: 0.88 },
+  leaves: { color: "#2f8f3a", roughness: 0.96 },
+  ore: {
+    color: "#c56a28",
+    emissive: "#f59e0b",
+    emissiveIntensity: 0.22,
+    metalness: 0.18,
+    roughness: 0.58,
+  },
 };
 
 const isVitest =
@@ -33,6 +55,7 @@ function InstancedBlocks({
   cz: number;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const material = MATERIALS[type] ?? { color: "#ffffff", roughness: 0.8 };
 
   const instances = useMemo(
     () =>
@@ -48,7 +71,7 @@ function InstancedBlocks({
   );
 
   useEffect(() => {
-    if (isVitest && meshRef.current) {
+    if ((isVitest || type === "water") && meshRef.current) {
       const dummy = new THREE.Object3D();
       blocks.forEach((block, i) => {
         dummy.position.set(
@@ -61,30 +84,44 @@ function InstancedBlocks({
       });
       meshRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [blocks, cx, cz]);
+  }, [blocks, cx, cz, type]);
 
   return (
     <>
-      {!isVitest && (
+      {!isVitest && type !== "water" && (
         <InstancedRigidBodies instances={instances} colliders="cuboid" type="fixed">
           <instancedMesh args={[undefined, undefined, blocks.length]} castShadow receiveShadow>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={COLORS[type] || "#ffffff"} />
+            <VoxelBlockMaterial material={material} />
           </instancedMesh>
         </InstancedRigidBodies>
       )}
-      {isVitest && (
+      {(isVitest || type === "water") && (
         <instancedMesh
           ref={meshRef}
           args={[undefined, undefined, blocks.length]}
-          castShadow
+          castShadow={type !== "water"}
           receiveShadow
         >
           <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={COLORS[type] || "#ffffff"} />
+          <VoxelBlockMaterial material={material} />
         </instancedMesh>
       )}
     </>
+  );
+}
+
+function VoxelBlockMaterial({ material }: { material: (typeof MATERIALS)[string] }) {
+  return (
+    <meshStandardMaterial
+      color={material.color}
+      emissive={material.emissive}
+      emissiveIntensity={material.emissiveIntensity ?? 0}
+      metalness={material.metalness ?? 0}
+      roughness={material.roughness ?? 0.82}
+      transparent={material.opacity !== undefined}
+      opacity={material.opacity ?? 1}
+    />
   );
 }
 
@@ -109,9 +146,10 @@ function Chunk({ data }: { data: ChunkData }) {
 }
 
 export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
-  const [chunks, setChunks] = useState<Map<string, ChunkData>>(new Map());
+  const initialChunks = useMemo(() => createInitialChunkRing(), []);
+  const [chunks, setChunks] = useState<Map<string, ChunkData>>(initialChunks);
   const workerRef = useRef<Worker>(null);
-  const requestedChunks = useRef<Set<string>>(new Set());
+  const requestedChunks = useRef<Set<string>>(new Set(initialChunks.keys()));
 
   useEffect(() => {
     workerRef.current = new TerrainWorker();
@@ -170,4 +208,19 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
       ))}
     </>
   );
+}
+
+function createInitialChunkRing() {
+  const chunks = new Map<string, ChunkData>();
+  const pCx = Math.floor(CONFIG.PLAYER_START.x / CONFIG.CHUNK_SIZE);
+  const pCz = Math.floor(CONFIG.PLAYER_START.z / CONFIG.CHUNK_SIZE);
+  const radius = CONFIG.RENDER_DISTANCE;
+
+  for (let cx = pCx - radius; cx <= pCx + radius; cx++) {
+    for (let cz = pCz - radius; cz <= pCz + radius; cz++) {
+      chunks.set(`${cx},${cz}`, generateChunkData(cx, cz, CONFIG));
+    }
+  }
+
+  return chunks;
 }
