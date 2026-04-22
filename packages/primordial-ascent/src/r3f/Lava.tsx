@@ -1,6 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { advanceLavaHeight, calculateDistanceToLava } from "../engine/primordialSimulation";
 import { CONFIG } from "../engine/types";
 import { PrimordialTrait } from "../store/traits";
 import { primordialEntity } from "../store/world";
@@ -13,7 +14,7 @@ export function Lava() {
     () => ({
       time: { value: 0 },
       colorA: { value: new THREE.Color("#ff3300") },
-      colorB: { value: new THREE.Color("#aa0000") },
+      colorB: { value: new THREE.Color("#3a0500") },
     }),
     []
   );
@@ -25,14 +26,16 @@ export function Lava() {
     if (meshRef.current) {
       const pState = primordialEntity.get(PrimordialTrait);
       if (pState?.phase === "playing") {
-        const newY =
-          meshRef.current.position.y +
-          (CONFIG.lavaBaseSpeed + (pState.timeSurvived / 1000) * CONFIG.lavaAccel) * delta * 0.1;
+        const newY = advanceLavaHeight(pState.lavaHeight, pState.timeSurvived, delta * 1000);
         meshRef.current.position.y = newY;
+        const distToLava = calculateDistanceToLava(pState.altitude, newY);
 
-        if (pState.altitude < newY) {
-          primordialEntity.set(PrimordialTrait, { ...pState, phase: "gameover" });
-        }
+        primordialEntity.set(PrimordialTrait, {
+          ...pState,
+          phase: pState.altitude <= newY + CONFIG.lavaContactMargin ? "gameover" : pState.phase,
+          lavaHeight: newY,
+          distToLava,
+        });
       }
     }
   });
@@ -92,7 +95,8 @@ export function Lava() {
     void main() {
       float mixValue = sin(vPosition.y * 0.5 + time) * 0.5 + 0.5;
       vec3 color = mix(colorA, colorB, mixValue);
-      gl_FragColor = vec4(color, 0.9);
+      float rim = smoothstep(0.15, 0.9, vUv.y) * 0.18;
+      gl_FragColor = vec4(color + vec3(rim, rim * 0.35, 0.0), 0.94);
     }
   `;
 

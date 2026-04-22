@@ -1,6 +1,7 @@
 import { browserTestCanvasGlOptions, GameViewport, PhaseTrait } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { createInitialPrimordialState } from "./engine/primordialSimulation";
 import { World } from "./r3f/World";
 import { PrimordialTrait } from "./store/traits";
 import { primordialEntity, primordialWorld } from "./store/world";
@@ -12,15 +13,7 @@ function PrimordialApp() {
 
   const handleStart = () => {
     primordialEntity.set(PhaseTrait, { phase: "playing" });
-    primordialEntity.set(PrimordialTrait, {
-      phase: "playing",
-      altitude: 0,
-      maxAltitude: 0,
-      timeSurvived: 0,
-      velocity: 0,
-      distToLava: 100,
-      isInGrappleRange: false,
-    });
+    primordialEntity.set(PrimordialTrait, createInitialPrimordialState("playing"));
   };
 
   return (
@@ -36,7 +29,8 @@ function PrimordialApp() {
             PRIMORDIAL ASCENT
           </h1>
           <div className="bg-black/40 p-6 rounded-lg border border-slate-800 max-w-2xl text-center text-slate-300 leading-relaxed mb-10 text-lg">
-            The magma is rising. Keep moving upwards.
+            The magma wake is climbing through a basalt lung. Read the anchor chain and keep your
+            swing above the red line.
             <br />
             <br />
             Aim at the{" "}
@@ -48,7 +42,8 @@ function PrimordialApp() {
             Land on the <span className="font-bold text-[#00ff66]">GREEN MOSS</span> to rest and
             press <b>[SPACE]</b> to leap.
             <br />
-            <b>[WASD] / [ARROWS]</b> to shift momentum mid-air.
+            <b>[WASD] / [ARROWS]</b> to shift momentum mid-air. Touch controls are available in the
+            lower right on mobile.
             <br />
           </div>
           <button

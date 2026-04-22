@@ -1,11 +1,4 @@
 import { trait } from "koota";
+import { createInitialPrimordialState } from "../engine/primordialSimulation";
 
-export const PrimordialTrait = trait(() => ({
-  phase: "menu",
-  altitude: 0,
-  maxAltitude: 0,
-  timeSurvived: 0,
-  velocity: 0,
-  distToLava: 100,
-  isInGrappleRange: false,
-}));
+export const PrimordialTrait = trait(() => createInitialPrimordialState());

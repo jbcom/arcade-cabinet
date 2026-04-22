@@ -2,9 +2,17 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { CONFIG } from "../engine/types";
+import {
+  advancePrimordialState,
+  calculateAirControlImpulse,
+  calculateJumpImpulse,
+  calculateTetherImpulse,
+} from "../engine/primordialSimulation";
+import { CONFIG, type PrimordialControls } from "../engine/types";
 import { PrimordialTrait } from "../store/traits";
 import { primordialEntity } from "../store/world";
+
+const CAMERA_PITCH = 0.18;
 
 export function Player() {
   const { camera, raycaster, scene } = useThree();
@@ -13,95 +21,140 @@ export function Player() {
 
   const [isGrappling, setIsGrappling] = useState(false);
   const [grapplePoint, setGrapplePoint] = useState<THREE.Vector3 | null>(null);
-  const movement = useRef({ w: false, a: false, s: false, d: false, space: false });
+  const movement = useRef<PrimordialControls>({
+    forward: false,
+    back: false,
+    left: false,
+    right: false,
+    jump: false,
+    grapple: false,
+  });
   const tetherLineGeometry = useMemo(() => new THREE.BufferGeometry(), []);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case "KeyW":
-          movement.current.w = true;
-          break;
-        case "KeyS":
-          movement.current.s = true;
-          break;
-        case "KeyA":
-          movement.current.a = true;
-          break;
-        case "KeyD":
-          movement.current.d = true;
-          break;
-        case "Space":
-          movement.current.space = true;
-          break;
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      switch (e.code) {
-        case "KeyW":
-          movement.current.w = false;
-          break;
-        case "KeyS":
-          movement.current.s = false;
-          break;
-        case "KeyA":
-          movement.current.a = false;
-          break;
-        case "KeyD":
-          movement.current.d = false;
-          break;
-        case "Space":
-          movement.current.space = false;
-          break;
-      }
-    };
+    camera.position.set(
+      CONFIG.playerStartPosition.x,
+      CONFIG.playerStartPosition.y,
+      CONFIG.playerStartPosition.z
+    );
+    camera.rotation.set(CAMERA_PITCH, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [camera]);
 
-    const handlePointerDown = (e: MouseEvent) => {
-      if (e.button !== 0) return;
-
+  useEffect(() => {
+    const acquireGrapple = () => {
       const state = primordialEntity.get(PrimordialTrait);
       if (state?.phase !== "playing") return;
 
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
-
       const hit = intersects.find(
         (i) => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist
       );
 
-      if (hit) {
-        setIsGrappling(true);
-        setGrapplePoint(hit.point);
+      if (!hit) return;
 
-        if (rbRef.current) {
-          const currentPos = rbRef.current.translation();
-          const posVec = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
-          const impulseDir = hit.point
-            .clone()
-            .sub(posVec)
-            .normalize()
-            .multiplyScalar(15 * CONFIG.playerMass);
-          rbRef.current.applyImpulse(impulseDir, true);
-        }
+      movement.current.grapple = true;
+      setIsGrappling(true);
+      setGrapplePoint(hit.point);
+
+      if (rbRef.current) {
+        const currentPos = rbRef.current.translation();
+        const initialImpulse = calculateTetherImpulse(
+          { x: currentPos.x, y: currentPos.y, z: currentPos.z },
+          { x: 0, y: 0, z: 0 },
+          hit.point,
+          0.014
+        ).impulse;
+
+        rbRef.current.applyImpulse(initialImpulse, true);
       }
     };
 
-    const handlePointerUp = (e: MouseEvent) => {
-      if (e.button === 0) {
-        setIsGrappling(false);
-        setGrapplePoint(null);
+    const releaseGrapple = () => {
+      movement.current.grapple = false;
+      setIsGrappling(false);
+      setGrapplePoint(null);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.code) {
+        case "KeyW":
+        case "ArrowUp":
+          movement.current.forward = true;
+          break;
+        case "KeyS":
+        case "ArrowDown":
+          movement.current.back = true;
+          break;
+        case "KeyA":
+        case "ArrowLeft":
+          movement.current.left = true;
+          break;
+        case "KeyD":
+        case "ArrowRight":
+          movement.current.right = true;
+          break;
+        case "Space":
+          movement.current.jump = true;
+          break;
       }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      switch (e.code) {
+        case "KeyW":
+        case "ArrowUp":
+          movement.current.forward = false;
+          break;
+        case "KeyS":
+        case "ArrowDown":
+          movement.current.back = false;
+          break;
+        case "KeyA":
+        case "ArrowLeft":
+          movement.current.left = false;
+          break;
+        case "KeyD":
+        case "ArrowRight":
+          movement.current.right = false;
+          break;
+        case "Space":
+          movement.current.jump = false;
+          break;
+      }
+    };
+
+    const handlePointerDown = (e: MouseEvent) => {
+      if (e.button === 0) acquireGrapple();
+    };
+
+    const handlePointerUp = (e: MouseEvent) => {
+      if (e.button === 0) releaseGrapple();
+    };
+
+    const handleMobileGrappleStart = () => acquireGrapple();
+    const handleMobileGrappleEnd = () => releaseGrapple();
+    const handleMobileJump = () => {
+      movement.current.jump = true;
     };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("primordial:grapple-start", handleMobileGrappleStart);
+    window.addEventListener("primordial:grapple-end", handleMobileGrappleEnd);
+    window.addEventListener("primordial:jump", handleMobileJump);
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("primordial:grapple-start", handleMobileGrappleStart);
+      window.removeEventListener("primordial:grapple-end", handleMobileGrappleEnd);
+      window.removeEventListener("primordial:jump", handleMobileJump);
     };
   }, [camera, raycaster, scene]);
 
@@ -113,90 +166,49 @@ export function Player() {
     const currentVel = rbRef.current.linvel();
     position.current.set(currentTrans.x, currentTrans.y, currentTrans.z);
 
-    // Continuous raycasting for crosshair
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     const intersects = raycaster.intersectObjects(scene.children, true);
     const hit = intersects.find(
       (i) => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist
     );
 
-    if (!!hit !== pState.isInGrappleRange) {
-      primordialEntity.set(PrimordialTrait, { ...pState, isInGrappleRange: !!hit });
-    }
-
-    // Apply tether physics
     if (isGrappling && grapplePoint) {
-      const dist = position.current.distanceTo(grapplePoint);
-      if (dist > CONFIG.tetherRestLength) {
-        const forceDir = grapplePoint.clone().sub(position.current).normalize();
-        const forceMag = (dist - CONFIG.tetherRestLength) * CONFIG.tetherStrength * delta;
-        const dampingX = currentVel.x * CONFIG.tetherDamping * delta;
-        const dampingY = currentVel.y * CONFIG.tetherDamping * delta;
-        const dampingZ = currentVel.z * CONFIG.tetherDamping * delta;
+      const tether = calculateTetherImpulse(position.current, currentVel, grapplePoint, delta);
+      rbRef.current.applyImpulse(tether.impulse, true);
 
-        rbRef.current.applyImpulse(
-          {
-            x: forceDir.x * forceMag - dampingX,
-            y: forceDir.y * forceMag - dampingY,
-            z: forceDir.z * forceMag - dampingZ,
-          },
-          true
-        );
-      }
-
-      // Update tether line visual (from camera slightly lower to look like it comes from hand)
       tetherLineGeometry.setFromPoints([
         new THREE.Vector3(position.current.x, position.current.y - 0.5, position.current.z),
         grapplePoint,
       ]);
     }
 
-    // Air control (relative to camera view)
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
-    cameraDirection.y = 0; // Move horizontally relative to view
+    cameraDirection.y = 0;
     cameraDirection.normalize();
 
-    const right = new THREE.Vector3()
-      .crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0))
-      .normalize();
-
-    const moveDir = new THREE.Vector3();
-    if (movement.current.w) moveDir.add(cameraDirection);
-    if (movement.current.s) moveDir.sub(cameraDirection);
-    if (movement.current.d) moveDir.sub(right);
-    if (movement.current.a) moveDir.add(right);
-
-    if (moveDir.lengthSq() > 0) {
-      moveDir.normalize().multiplyScalar(CONFIG.airControl * delta);
-      rbRef.current.applyImpulse(moveDir, true);
+    const moveImpulse = calculateAirControlImpulse(movement.current, cameraDirection, delta);
+    if (moveImpulse.x !== 0 || moveImpulse.z !== 0) {
+      rbRef.current.applyImpulse(moveImpulse, true);
     }
 
-    if (movement.current.space) {
-      rbRef.current.applyImpulse({ x: 0, y: CONFIG.jumpForce * CONFIG.playerMass, z: 0 }, true);
-      movement.current.space = false;
+    if (movement.current.jump) {
+      rbRef.current.applyImpulse(calculateJumpImpulse(), true);
+      movement.current.jump = false;
     }
 
-    // First-person camera: lock to player position
     camera.position.copy(position.current);
+    camera.rotation.x = CAMERA_PITCH;
 
-    // Update state altitude and time
-    const currentAltitude = Math.floor(position.current.y);
-    let maxAlt = pState.maxAltitude;
-    if (currentAltitude > pState.maxAltitude) {
-      maxAlt = currentAltitude;
-    }
-
-    const speed = Math.sqrt(currentVel.x ** 2 + currentVel.y ** 2 + currentVel.z ** 2);
-
-    // Combine all high-frequency state updates into one set call
-    primordialEntity.set(PrimordialTrait, {
-      ...pState,
-      altitude: currentAltitude,
-      maxAltitude: maxAlt,
-      velocity: Math.floor(speed),
-      timeSurvived: pState.timeSurvived + delta * 1000,
-    });
+    primordialEntity.set(
+      PrimordialTrait,
+      advancePrimordialState(pState, delta * 1000, {
+        position: currentTrans,
+        velocity: currentVel,
+        lavaHeight: pState.lavaHeight,
+        grappleDistance: hit?.distance ?? null,
+      })
+    );
   });
 
   return (
@@ -204,7 +216,11 @@ export function Player() {
       <RigidBody
         ref={rbRef}
         mass={CONFIG.playerMass}
-        position={[0, 10, 0]}
+        position={[
+          CONFIG.playerStartPosition.x,
+          CONFIG.playerStartPosition.y,
+          CONFIG.playerStartPosition.z,
+        ]}
         enabledRotations={[false, false, false]}
         colliders="ball"
       >
@@ -218,6 +234,53 @@ export function Player() {
           <lineBasicMaterial color="#00eeff" linewidth={2} />
         </threeLine>
       )}
+      <FirstPersonHarness isGrappling={isGrappling} />
     </>
+  );
+}
+
+function FirstPersonHarness({ isGrappling }: { isGrappling: boolean }) {
+  const { camera } = useThree();
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    const offset = new THREE.Vector3(0.44, -0.42, -0.92).applyQuaternion(camera.quaternion);
+    groupRef.current.position.copy(camera.position).add(offset);
+    groupRef.current.quaternion.copy(camera.quaternion);
+  });
+
+  return (
+    <group ref={groupRef} scale={0.9}>
+      <mesh position={[0.05, -0.05, 0.12]} rotation={[Math.PI / 2, 0, 0.18]}>
+        <cylinderGeometry args={[0.13, 0.18, 0.58, 8]} />
+        <meshStandardMaterial color="#202a35" metalness={0.55} roughness={0.38} />
+      </mesh>
+      <mesh position={[0.02, 0.09, -0.16]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.18, 0.025, 8, 18]} />
+        <meshStandardMaterial
+          color="#c9fbff"
+          emissive={isGrappling ? "#00ff66" : "#00e5ff"}
+          emissiveIntensity={isGrappling ? 1.6 : 0.85}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh position={[0.02, 0.09, -0.42]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.085, 0.32, 6]} />
+        <meshStandardMaterial
+          color="#e6feff"
+          emissive={isGrappling ? "#00ff66" : "#00e5ff"}
+          emissiveIntensity={isGrappling ? 1.3 : 0.65}
+          metalness={0.4}
+          roughness={0.25}
+        />
+      </mesh>
+      <pointLight
+        color={isGrappling ? "#00ff66" : "#00e5ff"}
+        intensity={isGrappling ? 5 : 2.4}
+        distance={4}
+      />
+    </group>
   );
 }
