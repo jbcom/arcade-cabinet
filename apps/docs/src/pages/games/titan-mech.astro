@@ -1,0 +1,9 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/titan-mech";
+---
+<BaseLayout title="Titan Mech | Arcade Cabinet">
+  <main class="w-screen h-screen overflow-hidden bg-black">
+    <Game client:only="react" />
+  </main>
+</BaseLayout>

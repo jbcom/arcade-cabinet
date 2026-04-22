@@ -1,0 +1,9 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/realmwalker";
+---
+<BaseLayout title="Realmwalker | Arcade Cabinet">
+  <main class="w-screen h-screen overflow-hidden bg-black">
+    <Game client:only="react" />
+  </main>
+</BaseLayout>

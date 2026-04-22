@@ -1,0 +1,9 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Game from "@arcade-cabinet/voxel-realms";
+---
+<BaseLayout title="Voxel Realms | Arcade Cabinet">
+  <main class="w-screen h-screen overflow-hidden bg-black">
+    <Game client:only="react" />
+  </main>
+</BaseLayout>
