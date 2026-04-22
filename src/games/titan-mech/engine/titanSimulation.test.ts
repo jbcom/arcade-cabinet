@@ -16,12 +16,21 @@ describe("titan simulation", () => {
     expect(state.phase).toBe("playing");
     expect(state.hp).toBe(state.maxHp);
     expect(state.energy).toBe(state.maxEnergy);
-    expect(state.controls).toEqual({ throttle: 0, turn: 0, fire: false, brace: false });
+    expect(state.controls).toEqual({
+      throttle: 0,
+      turn: 0,
+      fire: false,
+      brace: false,
+      extract: false,
+    });
     expect(state.pose.position.y).toBeGreaterThan(0);
     expect(state.systems.reactor).toBe(100);
     expect(state.coolantCharge).toBe(100);
     expect(state.coolantBurstMs).toBe(0);
     expect(state.weaponFeedback).toBe("idle");
+    expect(state.extraction.hopperLoad).toBe(0);
+    expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
+    expect(state.extraction.feedback).toBe("idle");
   });
 
   test("normalizes analog and binary control input", () => {
@@ -30,12 +39,13 @@ describe("titan simulation", () => {
       turn: -1,
       fire: true,
       brace: false,
+      extract: false,
     });
   });
 
   test("calculates heading-aware heavy chassis forces", () => {
     const forces = calculateDriveForces(
-      { throttle: 1, turn: 1, fire: false, brace: false },
+      { throttle: 1, turn: 1, fire: false, brace: false, extract: false },
       Math.PI / 2,
       0.5
     );
@@ -123,5 +133,48 @@ describe("titan simulation", () => {
         requestedFire: true,
       })
     ).toBe("overheated");
+  });
+
+  test("grinds pylon ore into the hopper and converts a full hopper into credits", () => {
+    const state = createInitialTitanState("playing");
+    const grinding = advanceTitanSystems(
+      state,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(grinding.extraction.feedback).toBe("grinding");
+    expect(grinding.extraction.hopperLoad).toBeGreaterThan(0);
+    expect(grinding.energy).toBeLessThan(state.energy);
+    expect(grinding.heat).toBeGreaterThan(state.heat);
+    expect(grinding.objective).toContain("Pylon vein");
+
+    const nearlyFull = {
+      ...grinding,
+      extraction: {
+        ...grinding.extraction,
+        hopperLoad: grinding.extraction.hopperCapacity - 2,
+      },
+    };
+    const sold = advanceTitanSystems(
+      nearlyFull,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(sold.extraction.feedback).toBe("ejecting");
+    expect(sold.extraction.hopperLoad).toBe(0);
+    expect(sold.extraction.credits).toBeGreaterThan(grinding.extraction.credits);
+    expect(sold.scrap).toBeGreaterThan(grinding.scrap);
   });
 });

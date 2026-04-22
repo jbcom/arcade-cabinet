@@ -40,7 +40,7 @@ Merge tracks to evaluate or implement in destination repos:
 
 The local set is not mostly dead by recent push date. It is mostly over-scoped: RPGs, 4X games, city sims, education tools, Godot products, and long-form simulation projects are living beside short arcade loops. The central cabinet should not absorb those projects wholesale. It should use strict cartridge criteria: short-to-medium runs, immediate readable rules, mobile/touch-friendly input, web/Android viability, and a strong one-label identity.
 
-Voxel Realms is the clearest current mismatch inside the cabinet. It wants survival sandbox expectations: world scale, block material variety, biome discovery, persistence, and long-session exploration. That is a standalone promise, not a cabinet cartridge promise.
+Voxel Realms was the clearest mismatch inside the cabinet at audit time. It wants survival sandbox expectations: world scale, block material variety, biome discovery, persistence, and long-session exploration. That is a standalone promise, not a cabinet cartridge promise, so it has since been extracted.
 
 ## Highest-Confidence Next Actions With Owner Overrides
 
@@ -128,7 +128,7 @@ Voxel Realms is the clearest current mismatch inside the cabinet. It wants survi
 
 | Game | Current Source | Recommendation | Rationale | Next Action |
 | --- | --- | --- | --- | --- |
-| voxel-realms | /Users/jbogaty/src/jbcom/arcade-cabinet/app/games/voxel-realms and /Users/jbogaty/src/jbcom/arcade-cabinet/src/games/voxel-realms | standalone | Voxel survival expects broad world fidelity, content pipelines, and long-session discovery; it stands out from the cabinet because it wants to be a full standalone sandbox. | After this audit, extract to /Users/jbogaty/src/arcade-cabinet/voxel-realms and create a public arcade-cabinet/voxel-realms repo before further cabinet polish. |
+| voxel-realms | /Users/jbogaty/src/arcade-cabinet/voxel-realms | standalone | Voxel survival expects broad world fidelity, content pipelines, and long-session discovery; it stands out from the cabinet because it wants to be a full standalone sandbox. | Extracted to the public `arcade-cabinet/voxel-realms` repo; Bok should evaluate useful techniques later. |
 
 ## Per-Repo Manifest Summary
 

@@ -63,7 +63,7 @@ Pond Warfare is a special case: standalone product ownership remains, but engine
 
 Destination: `bok`
 
-Source: current cabinet `voxel-realms`
+Source: standalone `arcade-cabinet/voxel-realms`
 
 Local evidence:
 

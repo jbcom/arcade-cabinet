@@ -27,12 +27,17 @@ export function HUD() {
       topLeft={
         <div style={{ color: "#e6fffb", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>
           <div style={{ color: accent, fontSize: 12, textTransform: "uppercase" }}>
-            TITAN MECH OS v5.1
+            TITAN MECH OVERHEAT v5.1
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>SCRAP {state.scrap}</div>
-          <div style={{ color: "#94a3b8", fontSize: 12 }}>RANGE SCORE {state.score}</div>
+          <div style={{ fontSize: 24, fontWeight: 900 }}>CREDITS {state.extraction.credits}</div>
+          <div style={{ color: "#94a3b8", fontSize: 12 }}>
+            SCRAP {state.scrap} / ISOTOPES {state.extraction.rareIsotopes}
+          </div>
           <div style={{ color: weaponColor, fontSize: 12, marginTop: 6 }}>
             WEAPON {state.weaponFeedback.toUpperCase()}
+          </div>
+          <div style={{ color: warning, fontSize: 12, marginTop: 3 }}>
+            EXTRACTOR {state.extraction.feedback.toUpperCase()}
           </div>
         </div>
       }
@@ -47,6 +52,12 @@ export function HUD() {
           <Gauge label="SYSTEM INTEGRITY" value={state.hp} max={state.maxHp} color={accent} />
           <Gauge label="ENERGY" value={state.energy} max={state.maxEnergy} color="#38bdf8" />
           <Gauge label="COOLANT" value={state.coolantCharge} max={100} color="#67e8f9" />
+          <Gauge
+            label="HOPPER"
+            value={state.extraction.hopperLoad}
+            max={state.extraction.hopperCapacity}
+            color="#f59e0b"
+          />
           <Gauge
             label="HEAT"
             value={state.heat}
@@ -164,11 +175,13 @@ function ActionCluster() {
     <div
       style={{
         display: "flex",
+        flexWrap: "wrap",
         gap: 8,
         justifyContent: "end",
         touchAction: "none",
       }}
     >
+      <ControlButton label="Run extractor" symbol="MINE" controls={{ extract: true }} />
       <ControlButton label="Brace coolant" symbol="BRACE" controls={{ brace: true }} />
       <ControlButton label="Fire ordnance" symbol="FIRE" controls={{ fire: true }} hot />
     </div>

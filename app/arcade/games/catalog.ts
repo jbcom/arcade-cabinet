@@ -79,6 +79,21 @@ export const games = [
       "Controls reduce to left/right lane choice with keyboard and page-mode touch buttons, so the same deterministic run works in a narrow Android shell or wide cabinet viewport.",
   },
   {
+    slug: "overcast-glacier",
+    title: "OVERCAST: GLACIER",
+    description: "Ski a corrupted glacier as a kung-fu kitten fighting snowmen and glitches.",
+    tags: ["react", "lane-runner", "action"],
+    color: "#7dd3fc",
+    gradient: "linear-gradient(135deg, #7dd3fc, #0f172a 48%, #10b981)",
+    pillars: ["Downhill clarity", "Kung-fu interruption", "Warmth survival"],
+    presentation:
+      "The player should immediately read Kicks, three downhill lanes, cocoa warmth pickups, snowman threats, and glitch photo targets without needing the original larger Overcast scope.",
+    sceneDirection:
+      "Midnight arctic blue, scanline snow, matrix green glitches, cocoa warmth, and bright white snowmen give the reduced loop a strong label identity while staying mobile-readable.",
+    responsiveDirection:
+      "The lane surface and HUD use parent-relative geometry, and touch-anywhere joystick steering shares the same deterministic controls as keyboard play.",
+  },
+  {
     slug: "otterly-chaotic",
     title: "OTTERLY CHAOTIC",
     description: "Navigate a chaotic otter through a series of wild challenges.",
@@ -110,33 +125,18 @@ export const games = [
   },
   {
     slug: "titan-mech",
-    title: "TITAN MECH",
-    description: "Pilot a giant mechanical titan through a field of hazardous obstacles.",
+    title: "TITAN MECH: OVERHEAT",
+    description: "Pilot a heat-stressed extraction titan through ore pylons and reactor pressure.",
     tags: ["r3f", "cockpit", "action"],
     color: "#f43f5e",
     gradient: "linear-gradient(135deg, #f43f5e, #4c0519)",
-    pillars: ["Heavy chassis control", "Arena navigation", "Systems-first combat"],
+    pillars: ["Heavy chassis control", "Heat economy", "Industrial extraction"],
     presentation:
-      "Titan Mech should feel like piloting mass through an industrial test arena, with obstacles arranged as deliberate cover and navigation challenges.",
+      "Titan Mech should feel like piloting mass through a hostile extraction yard: ore pylons, heat pressure, weapons, coolant, and hopper ejection all compete for attention.",
     sceneDirection:
-      "Dark metal ground, cyan telemetry lights, ring markings, and hard directional shadows sell scale without cluttering the combat field.",
+      "Dark metal ground, orange ore rigs, cyan telemetry lights, ring markings, and hard directional shadows sell scale without cluttering the combat field.",
     responsiveDirection:
       "The camera follows the mech, and the arena layout is deterministic so desktop, mobile web, and Android builds render the same authored space.",
-  },
-  {
-    slug: "voxel-realms",
-    title: "VOXEL REALMS",
-    description: "Explore and survive in an infinite, procedurally generated voxel world.",
-    tags: ["r3f", "procedural", "survival"],
-    color: "#84cc16",
-    gradient: "linear-gradient(135deg, #84cc16, #064e3b)",
-    pillars: ["Procedural wonder", "Safe spawn readability", "First-person survival"],
-    presentation:
-      "The world should begin from a designed spawn pad that proves scale and orientation while terrain streams in around the player.",
-    sceneDirection:
-      "Natural voxel greens, dirt, stone, sky, and a blue horizon beacon replace debug cubes with a readable survival starting point.",
-    responsiveDirection:
-      "Pointer-lock exploration fills the parent viewport and the Android shell uses dynamic viewport units so the horizon stays stable under mobile browser chrome.",
   },
 ] as const;
 

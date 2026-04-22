@@ -2,6 +2,7 @@ import type {
   ArenaLayout,
   ArenaObstacleData,
   DriveForces,
+  ExtractionFeedbackState,
   TitanControls,
   TitanState,
   Vec3,
@@ -13,6 +14,7 @@ const DEFAULT_CONTROLS: TitanControls = {
   turn: 0,
   fire: false,
   brace: false,
+  extract: false,
 };
 
 export function createInitialTitanState(phase: TitanState["phase"] = "menu"): TitanState {
@@ -29,7 +31,7 @@ export function createInitialTitanState(phase: TitanState["phase"] = "menu"): Ti
     scrap: 0,
     score: 0,
     lastWeaponEventMs: 0,
-    objective: "Secure reactor pylons and keep the chassis inside thermal limits.",
+    objective: "Survey ore pylons, grind the vein, and keep the chassis inside thermal limits.",
     objectiveProgress: 0,
     controls: { ...DEFAULT_CONTROLS },
     pose: {
@@ -43,6 +45,14 @@ export function createInitialTitanState(phase: TitanState["phase"] = "menu"): Ti
       targeting: 100,
     },
     weaponFeedback: "idle",
+    extraction: {
+      hopperLoad: 0,
+      hopperCapacity: CONFIG.HOPPER_CAPACITY,
+      credits: 0,
+      rareIsotopes: 0,
+      lastExtractionEventMs: 0,
+      feedback: "idle",
+    },
   };
 }
 
@@ -52,6 +62,7 @@ export function normalizeTitanControls(input: Partial<TitanControls> = {}): Tita
     turn: clamp(input.turn ?? 0, -1, 1),
     fire: input.fire ?? false,
     brace: input.brace ?? false,
+    extract: input.extract ?? false,
   };
 }
 
@@ -120,8 +131,9 @@ export function advanceTitanSystems(
   const heatGain =
     drive.heatGain + (firingAllowed ? CONFIG.FIRE_HEAT_PER_SECOND * deltaSeconds : 0);
   const cooling =
-    (controls.throttle === 0 && !firingAllowed ? CONFIG.COOLING_PER_SECOND * deltaSeconds : 0) +
-    (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
+    (controls.throttle === 0 && !firingAllowed && !controls.extract
+      ? CONFIG.COOLING_PER_SECOND * deltaSeconds
+      : 0) + (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
 
   const position = telemetry.position ?? state.pose.position;
   const velocity = telemetry.velocity ?? state.pose.velocity;
@@ -129,6 +141,15 @@ export function advanceTitanSystems(
   const distanceScore = Math.floor(Math.hypot(position.x, position.z));
   const objectiveProgress = calculateObjectiveProgress(position, createArenaLayout());
   const stressed = state.heat + heatGain > CONFIG.OVERHEAT_THRESHOLD;
+  const extraction = advanceExtractionState({
+    deltaMs,
+    deltaSeconds,
+    energy: state.energy,
+    heat: state.heat,
+    input: controls,
+    objectiveProgress,
+    previous: state.extraction,
+  });
 
   return {
     ...state,
@@ -137,20 +158,31 @@ export function advanceTitanSystems(
     coolantCharge: coolantRequested
       ? 0
       : clamp(state.coolantCharge + (controls.brace ? 18 : 8) * deltaSeconds, 0, 100),
-    energy: clamp(state.energy - energySpend + energyRegen, 0, state.maxEnergy),
-    heat: clamp(state.heat + heatGain - cooling, 0, state.maxHeat),
+    energy: clamp(
+      state.energy - energySpend - extraction.energyCost + energyRegen,
+      0,
+      state.maxEnergy
+    ),
+    heat: clamp(state.heat + heatGain + extraction.heatGain - cooling, 0, state.maxHeat),
     lastWeaponEventMs:
       finalWeaponFeedback !== "idle" ? state.lastWeaponEventMs + deltaMs : state.lastWeaponEventMs,
-    score: Math.max(state.score, distanceScore),
+    scrap: state.scrap + extraction.scrapGain,
+    score: Math.max(state.score, distanceScore + extraction.next.credits),
     objectiveProgress,
     objective:
       objectiveProgress >= 100
-        ? "Reactor pylon secured. Sweep the outer ring for scrap caches."
+        ? extraction.next.feedback === "ejecting"
+          ? "Ore cube ejected to silo. Sweep the next pylon vein."
+          : "Pylon vein aligned. Hold extractor to fill the hopper."
         : coolantActive
           ? "Coolant burst venting. Keep braced until the thermal spike breaks."
-          : stressed
-            ? "Thermal pressure rising. Brace and let coolant cycles recover."
-            : "Secure reactor pylons and keep the chassis inside thermal limits.",
+          : extraction.next.feedback === "grinding"
+            ? "Extractor grinding. Heat climbs while the hopper fills."
+            : extraction.next.feedback === "blocked"
+              ? "Extractor blocked. Move into a pylon ring and manage heat."
+              : stressed
+                ? "Thermal pressure rising. Brace and let coolant cycles recover."
+                : "Survey ore pylons, grind the vein, and keep the chassis inside thermal limits.",
     pose: {
       position: { ...position },
       heading,
@@ -166,6 +198,67 @@ export function advanceTitanSystems(
       ),
     },
     weaponFeedback: finalWeaponFeedback,
+    extraction: extraction.next,
+  };
+}
+
+export function advanceExtractionState({
+  deltaMs,
+  deltaSeconds,
+  energy,
+  heat,
+  input,
+  objectiveProgress,
+  previous,
+}: {
+  deltaMs: number;
+  deltaSeconds: number;
+  energy: number;
+  heat: number;
+  input: TitanControls;
+  objectiveProgress: number;
+  previous: TitanState["extraction"];
+}) {
+  const inOreRing = objectiveProgress > 0;
+  const canExtract =
+    input.extract &&
+    inOreRing &&
+    energy > CONFIG.EXTRACT_ENERGY_PER_SECOND * 0.22 &&
+    heat < CONFIG.OVERHEAT_THRESHOLD;
+  const extractionScale = objectiveProgress / 100;
+  const oreGain = canExtract
+    ? CONFIG.ORE_PER_SECOND * deltaSeconds * Math.max(0.25, extractionScale)
+    : 0;
+  const loaded = clamp(previous.hopperLoad + oreGain, 0, previous.hopperCapacity);
+  const hopperFull = loaded >= previous.hopperCapacity;
+  const scrapGain = hopperFull ? Math.round(previous.hopperCapacity * 0.24) : 0;
+  const rareGain = hopperFull && previous.credits % 4 === 0 ? 1 : 0;
+  const credits = hopperFull
+    ? previous.credits + Math.round(previous.hopperCapacity * CONFIG.ORE_CREDIT_VALUE)
+    : previous.credits;
+  const feedback: ExtractionFeedbackState = hopperFull
+    ? "ejecting"
+    : canExtract
+      ? "grinding"
+      : input.extract
+        ? "blocked"
+        : "idle";
+
+  return {
+    energyCost: canExtract ? CONFIG.EXTRACT_ENERGY_PER_SECOND * deltaSeconds : 0,
+    heatGain: canExtract ? CONFIG.EXTRACT_HEAT_PER_SECOND * deltaSeconds : 0,
+    scrapGain,
+    next: {
+      ...previous,
+      hopperLoad: hopperFull ? 0 : loaded,
+      credits,
+      rareIsotopes: previous.rareIsotopes + rareGain,
+      lastExtractionEventMs:
+        canExtract || hopperFull
+          ? previous.lastExtractionEventMs + deltaMs
+          : previous.lastExtractionEventMs,
+      feedback,
+    },
   };
 }
 

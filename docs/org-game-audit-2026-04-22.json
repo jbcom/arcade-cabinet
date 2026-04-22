@@ -23,7 +23,7 @@
     "protocol-silent-night-prodmod has a .git file and was excluded as a linked worktree rather than counted as a clone directory.",
     "poki-soweli is represented locally by /Users/jbogaty/src/arcade-cabinet/toki-pona-tutor.",
     "overheat-titan-extraction is represented locally but its origin still points at overheat-titan-extract.",
-    "Voxel Realms is not one of the 49 local org clones; it is audited as a current cabinet-only game."
+    "Voxel Realms was not one of the 49 local org clones at audit time; it has since been extracted to /Users/jbogaty/src/arcade-cabinet/voxel-realms."
   ],
   "ownerDecisionUpdate": {
     "date": "2026-04-22",
@@ -6385,12 +6385,12 @@
     {
       "name": "voxel-realms",
       "source": "current-cabinet-only",
-      "path": "/Users/jbogaty/src/jbcom/arcade-cabinet/app/games/voxel-realms and /Users/jbogaty/src/jbcom/arcade-cabinet/src/games/voxel-realms",
+      "path": "/Users/jbogaty/src/arcade-cabinet/voxel-realms",
       "recommendation": "standalone",
       "statedPurpose": "Current cabinet survival/exploration voxel world with procedural terrain, inventory, biome discovery, pickup telemetry, and survey progression.",
       "coreLoop": "Explore first-person voxel terrain, gather resources, discover biomes, survey world, survive/return to spawn.",
       "rationale": "Voxel survival expects broad world fidelity, content pipelines, and long-session discovery; it stands out from the cabinet because it wants to be a full standalone sandbox.",
-      "nextAction": "After this audit, extract to /Users/jbogaty/src/arcade-cabinet/voxel-realms and create a public arcade-cabinet/voxel-realms repo before further cabinet polish."
+      "nextAction": "Extracted to the public arcade-cabinet/voxel-realms repo; Bok should evaluate useful techniques later."
     }
   ],
   "orgReposNotDetailed": [

@@ -4,9 +4,9 @@ import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
 import MegaTrack from "@app/games/mega-track";
 import OtterlyChaotic from "@app/games/otterly-chaotic";
+import OvercastGlacier from "@app/games/overcast-glacier";
 import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
-import VoxelRealms from "@app/games/voxel-realms";
 import type { TextMatcher } from "@app/test/browserGameHarness";
 import { cleanup, render } from "@testing-library/react";
 import type { ComponentType } from "react";
@@ -44,6 +44,11 @@ const landingCases: {
     title: "Mega Track",
   },
   {
+    Component: OvercastGlacier,
+    slug: "overcast-glacier",
+    title: "OVERCAST: GLACIER",
+  },
+  {
     Component: OtterlyChaotic,
     slug: "otterly-chaotic",
     title: "Otterly Chaotic",
@@ -56,12 +61,7 @@ const landingCases: {
   {
     Component: TitanMech,
     slug: "titan-mech",
-    title: "TITAN MECH OS",
-  },
-  {
-    Component: VoxelRealms,
-    slug: "voxel-realms",
-    title: "Voxel Realms",
+    title: "TITAN MECH: OVERHEAT",
   },
 ];
 

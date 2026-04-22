@@ -8,10 +8,10 @@ const expectedSlugs = [
   "enchanted-forest",
   "entropy-edge",
   "mega-track",
+  "overcast-glacier",
   "otterly-chaotic",
   "primordial-ascent",
   "titan-mech",
-  "voxel-realms",
 ];
 
 describe("arcade cabinet game catalog", () => {

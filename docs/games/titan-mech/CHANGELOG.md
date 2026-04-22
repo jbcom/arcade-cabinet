@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Merged the first Overheat extraction layer into Titan Mech: hopper load, credits, rare isotopes, extractor feedback, ore grinding, and full-hopper payout.
+- Updated the cartridge label and HUD language from pure combat OS to Titan Mech: Overheat extraction.
 - Added weapon fire gating, heat/coolant feedback, and target reticle state.
 - Added muzzle flash, overheat feedback, objective rings, damage vignette, and shared cartridge landing identity.
 

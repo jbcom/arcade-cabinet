@@ -20,10 +20,14 @@ shared cartridge frame before gameplay starts.
 | Enchanted Forest | Landing, grove stage, and mobile rune scale now feel coherent. | Added harmony surge documentation, shadow path metadata, visible target telegraphs, and larger rune affordances. | Add richer per-spell sound/visual cadence once audio verification is easier. |
 | Entropy Edge | Landing label and gameplay both read as the same failing-grid identity. | Added resonance surge payoff, resonance bands, corrected Three opacity usage, and clearer anchor/blocked/falling contrast. | Add a more dramatic sector-stabilized win transition. |
 | Mega Track | Landing and gameplay now share the lane-racing motif. | Added overdrive/impact/clean-pass telemetry, lane strips, speed markings, collision sparks, hazard bases, and HUD feedback. | Add authored track-side scenery variation by distance band. |
+| Overcast: Glacier | Added as a reduced cabinet cartridge with a strong arctic glitch label and readable three-lane play. | Added warmth/cocoa survival, snowman kick timing, glitch photo charges, combo scoring, touch joystick steering, and responsive lane presentation. | Capture fresh desktop/mobile screenshots and decide whether enemy density or cocoa pacing needs tuning. |
 | Otterly Chaotic | Landing now matches the pasture-chase identity; gameplay desktop and mobile stay active during capture. | Added goat intent indicators, bark shockwave, stun stars, goal pull line, salad feedback, and a longer playable opening window. | Add more expressive otter/goat composite poses without hurting CI startup. |
 | Primordial Ascent | Landing label and portrait gameplay emphasize upward escape. | Added grapple target state, tether/reticle feedback, lava heat shimmer, HUD state color, and stronger route framing. | Add better first-contact tutorialization for missed grapples. |
-| Titan Mech | Landing label gives the game a stronger cartridge identity; gameplay has brighter combat hierarchy. | Added weapon feedback state, fire/heat/coolant gating, muzzle flash, overheat ring, objective rings, reticle, and damage vignette. | Add enemy attack readability and a clearer victory state. |
-| Voxel Realms | Landing label and gameplay now present survey progression instead of debug terrain. | Added biome discovery, pickup telemetry, pickup pulses, biome silhouettes, survey HUD notices, and richer camp composition. | Add material-face variety for common blocks and more shoreline dressing. |
+| Titan Mech: Overheat | Landing label now frames the game as an extraction cartridge; gameplay has brighter combat and ore-loop hierarchy. | Added weapon feedback state, fire/heat/coolant gating, extractor/hopper/credit state, ore rigs, muzzle flash, overheat ring, objective rings, reticle, and damage vignette. | Add enemy attack readability, visible cube delivery timing, and a clearer victory state. |
+
+## Extracted From Active Cabinet
+
+- Voxel Realms was extracted to the public standalone repo `arcade-cabinet/voxel-realms`. Its voxel rendering, spawn-camp, pickup telemetry, and biome discovery techniques should be evaluated by Bok later rather than kept as an active cabinet cartridge.
 
 ## Cabinet Identity Pass
 

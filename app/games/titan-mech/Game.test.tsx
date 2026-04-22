@@ -10,7 +10,7 @@ afterEach(() => {
 test("Titan Mech reaches gameplay from the start screen", async () => {
   await verifyBrowserGameStartFlow({
     Component: Game,
-    title: "TITAN MECH OS",
+    title: "TITAN MECH: OVERHEAT",
     startFlow: ["Engage Chassis"],
     ready: "SYSTEM INTEGRITY",
     expectsCanvas: true,

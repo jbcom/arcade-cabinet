@@ -34,18 +34,18 @@ function TitanApp() {
         <CartridgeStartScreen
           accent="#f43f5e"
           cartridgeId="Slot 08"
-          description="Pilot a heavy chassis through an industrial arena and secure the pylons."
-          kicker="Mech Cartridge"
+          description="Pilot a heat-stressed extraction titan through ore pylons and reactor pressure."
+          kicker="Overheat Cartridge"
           motif="mech"
           onStart={handleStart}
           rules={[
-            "Fire only while energy and heat allow the weapon loop to stay stable.",
-            "Read pylon objective rings and enemy threats before committing.",
-            "Use coolant, movement, and reactor timing to keep the chassis alive.",
+            "Enter pylon rings and hold extractor to grind ore into the hopper.",
+            "Full hoppers eject into credits and scrap while heat spikes climb.",
+            "Use coolant, movement, and weapons to keep the chassis online.",
           ]}
           secondaryAccent="#f59e0b"
           startLabel="Engage Chassis"
-          title="TITAN MECH OS"
+          title="TITAN MECH: OVERHEAT"
         />
       )}
 

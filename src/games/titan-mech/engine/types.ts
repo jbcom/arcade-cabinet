@@ -9,6 +9,7 @@ export interface TitanControls {
   turn: number;
   fire: boolean;
   brace: boolean;
+  extract: boolean;
 }
 
 export interface TitanPose {
@@ -24,6 +25,16 @@ export interface TitanSystems {
 }
 
 export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "cooling";
+export type ExtractionFeedbackState = "idle" | "grinding" | "ejecting" | "blocked";
+
+export interface TitanExtractionState {
+  hopperLoad: number;
+  hopperCapacity: number;
+  credits: number;
+  rareIsotopes: number;
+  lastExtractionEventMs: number;
+  feedback: ExtractionFeedbackState;
+}
 
 export interface TitanState {
   phase: "menu" | "playing" | "gameover" | "upgrade";
@@ -44,6 +55,7 @@ export interface TitanState {
   pose: TitanPose;
   systems: TitanSystems;
   weaponFeedback: WeaponFeedbackState;
+  extraction: TitanExtractionState;
 }
 
 export type ArenaObstacleKind = "barricade" | "cover" | "gantry" | "pylon" | "reactor";
@@ -88,6 +100,11 @@ export const CONFIG = {
   TURN_ENERGY_PER_SECOND: 4,
   FIRE_ENERGY_PER_SECOND: 26,
   FIRE_HEAT_PER_SECOND: 34,
+  EXTRACT_ENERGY_PER_SECOND: 18,
+  EXTRACT_HEAT_PER_SECOND: 22,
+  ORE_PER_SECOND: 28,
+  ORE_CREDIT_VALUE: 6,
+  HOPPER_CAPACITY: 100,
   COOLING_PER_SECOND: 24,
   OVERHEAT_THRESHOLD: 92,
 };
