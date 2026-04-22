@@ -1,3 +1,4 @@
+import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import { fbm, noise2D } from "../lib/perlin";
 
 export type CreatureType = "jellyfish" | "plankton" | "fish";
@@ -104,6 +105,13 @@ export interface SceneAdvanceResult {
   telemetry: DiveTelemetry;
 }
 
+export interface DiveModeTuning {
+  durationSeconds: number;
+  pirateSpeedScale: number;
+  predatorSpeedScale: number;
+  threatRadiusScale: number;
+}
+
 export const GAME_DURATION = 600;
 export const MAX_CHAIN_MULTIPLIER = 5;
 export const STREAK_WINDOW_SECONDS = 2;
@@ -117,6 +125,27 @@ export const CREATURE_POINTS: Record<CreatureType, number> = {
   fish: 50,
   jellyfish: 30,
   plankton: 10,
+};
+
+const DIVE_MODE_TUNING: Record<SessionMode, DiveModeTuning> = {
+  challenge: {
+    durationSeconds: 480,
+    pirateSpeedScale: 1.1,
+    predatorSpeedScale: 1.16,
+    threatRadiusScale: 1.22,
+  },
+  cozy: {
+    durationSeconds: 780,
+    pirateSpeedScale: 0.8,
+    predatorSpeedScale: 0.78,
+    threatRadiusScale: 0.72,
+  },
+  standard: {
+    durationSeconds: GAME_DURATION,
+    pirateSpeedScale: 1,
+    predatorSpeedScale: 1,
+    threatRadiusScale: 1,
+  },
 };
 
 interface CreatureAnchor {
@@ -279,17 +308,19 @@ export function advanceScene(
   deltaTime: number,
   lastCollectTime: number,
   multiplier: number,
-  timeLeft = GAME_DURATION
+  timeLeft = GAME_DURATION,
+  mode: string | null | undefined = "standard"
 ): SceneAdvanceResult {
+  const tuning = getDiveModeTuning(mode);
   const player = advancePlayer(scene.player, input, dimensions, totalTime, deltaTime);
   const creatures = scene.creatures.map((creature) =>
     advanceCreature(creature, dimensions, totalTime, deltaTime)
   );
   const predators = scene.predators.map((predator) =>
-    advancePredator(predator, player, dimensions, totalTime, deltaTime)
+    advancePredator(predator, player, dimensions, totalTime, deltaTime, tuning.predatorSpeedScale)
   );
   const pirates = scene.pirates.map((pirate) =>
-    advancePirate(pirate, player, dimensions, totalTime, deltaTime)
+    advancePirate(pirate, player, dimensions, totalTime, deltaTime, tuning.pirateSpeedScale)
   );
   const particles = scene.particles.map((particle) =>
     advanceParticle(particle, dimensions, totalTime, deltaTime)
@@ -305,9 +336,9 @@ export function advanceScene(
 
   return {
     collection,
-    collidedWithPredator: hasPredatorCollision(player, predators),
+    collidedWithPredator: hasPredatorCollision(player, predators, tuning.threatRadiusScale),
     scene: nextScene,
-    telemetry: getDiveTelemetry(nextScene, timeLeft),
+    telemetry: getDiveTelemetry(nextScene, timeLeft, tuning.durationSeconds),
   };
 }
 
@@ -371,7 +402,8 @@ export function advancePredator(
   player: Player,
   { width, height }: ViewportDimensions,
   totalTime: number,
-  deltaTime: number
+  deltaTime: number,
+  speedScale = 1
 ): Predator {
   const dx = player.x - predator.x;
   const dy = player.y - predator.y;
@@ -384,7 +416,7 @@ export function advancePredator(
 
   const noiseAngle = fbm(predator.noiseOffset + totalTime * 0.3, totalTime * 0.2);
   const closingBoost = distance < 150 ? 1.52 : 0.88;
-  const speed = predator.speed * closingBoost * frameScale;
+  const speed = predator.speed * closingBoost * frameScale * speedScale;
   const drift = distance < 150 ? 0 : 0.5 * frameScale;
 
   return {
@@ -408,7 +440,8 @@ export function advancePirate(
   player: Player,
   { width, height }: ViewportDimensions,
   totalTime: number,
-  deltaTime: number
+  deltaTime: number,
+  speedScale = 1
 ): Pirate {
   const dx = player.x - pirate.x;
   const dy = player.y - pirate.y;
@@ -422,10 +455,10 @@ export function advancePirate(
   if (distance < 300 && distance > 0) {
     const targetAngle = Math.atan2(dy, dx);
     angle = interpolateAngle(pirate.angle, targetAngle, 0.05 * frameScale);
-    x += Math.cos(angle) * pirate.speed * 1.2 * frameScale;
-    y += Math.sin(angle) * pirate.speed * 1.2 * frameScale + noiseY * 0.5;
+    x += Math.cos(angle) * pirate.speed * 1.2 * frameScale * speedScale;
+    y += Math.sin(angle) * pirate.speed * 1.2 * frameScale * speedScale + noiseY * 0.5;
   } else {
-    x += Math.cos(angle) * pirate.speed * 0.5 * frameScale;
+    x += Math.cos(angle) * pirate.speed * 0.5 * frameScale * speedScale;
     y += noiseY;
   }
 
@@ -520,10 +553,14 @@ export function calculateMultiplier(
   return Math.min(currentMultiplier + 1, MAX_CHAIN_MULTIPLIER);
 }
 
-export function hasPredatorCollision(player: Player, predators: Predator[]): boolean {
+export function hasPredatorCollision(
+  player: Player,
+  predators: Predator[],
+  radiusScale = 1
+): boolean {
   return predators.some((predator) => {
     const distance = Math.hypot(predator.x - player.x, predator.y - player.y);
-    return distance < predator.size * 0.4 + 25;
+    return distance < (predator.size * 0.4 + 25) * radiusScale;
   });
 }
 
@@ -567,7 +604,11 @@ export function findNearestBeaconVector(
   };
 }
 
-export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelemetry {
+export function getDiveTelemetry(
+  scene: SceneState,
+  timeLeft: number,
+  durationSeconds = GAME_DURATION
+): DiveTelemetry {
   const nearestThreatDistance = findNearestThreatDistance(
     scene.player,
     scene.predators,
@@ -575,7 +616,7 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
   );
   const nearestBeacon = findNearestBeaconVector(scene.player, scene.creatures);
   const collectionRatio = clamp((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS, 0, 1);
-  const oxygenRatio = clamp(timeLeft / GAME_DURATION, 0, 1);
+  const oxygenRatio = clamp(timeLeft / durationSeconds, 0, 1);
   const routeLandmark = getDiveRouteLandmark(collectionRatio, nearestBeacon);
 
   return {
@@ -602,16 +643,29 @@ export function isDiveComplete(scene: SceneState): boolean {
   return scene.creatures.length === 0;
 }
 
-export function getDiveRunSummary(scene: SceneState, score: number, timeLeft: number) {
+export function getDiveRunSummary(
+  scene: SceneState,
+  score: number,
+  timeLeft: number,
+  durationSeconds = GAME_DURATION
+) {
   return {
     beaconsRemaining: scene.creatures.length,
     completionPercent: Math.round(((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS) * 100),
-    depthMeters: getDiveTelemetry(scene, timeLeft).depthMeters,
-    elapsedSeconds: GAME_DURATION - timeLeft,
+    depthMeters: getDiveTelemetry(scene, timeLeft, durationSeconds).depthMeters,
+    elapsedSeconds: durationSeconds - timeLeft,
     score,
     timeLeft,
     totalBeacons: TOTAL_BEACONS,
   };
+}
+
+export function getDiveModeTuning(mode: string | null | undefined): DiveModeTuning {
+  return DIVE_MODE_TUNING[normalizeSessionMode(mode)];
+}
+
+export function getDiveDurationSeconds(mode: string | null | undefined): number {
+  return getDiveModeTuning(mode).durationSeconds;
 }
 
 export function getDiveRouteLandmark(

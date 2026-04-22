@@ -68,11 +68,29 @@ export interface SpawnWaveResult {
   nextShadowId: number;
 }
 
+export interface ForestModeTuning {
+  manaRegenPerSecond: number;
+  shadowSpeedScale: number;
+  targetMinutes: number;
+}
+
 export const MAX_WAVES = 8;
-const FOREST_SESSION_TARGET_MINUTES: Record<SessionMode, number> = {
-  challenge: 8,
-  cozy: 12,
-  standard: 10,
+const FOREST_MODE_TUNING: Record<SessionMode, ForestModeTuning> = {
+  challenge: {
+    manaRegenPerSecond: 0.72,
+    shadowSpeedScale: 1.26,
+    targetMinutes: 8,
+  },
+  cozy: {
+    manaRegenPerSecond: 1.55,
+    shadowSpeedScale: 0.78,
+    targetMinutes: 12,
+  },
+  standard: {
+    manaRegenPerSecond: 1,
+    shadowSpeedScale: 1,
+    targetMinutes: 10,
+  },
 };
 export const TREE_POSITIONS: TreePosition[] = [
   { id: "left-grove", x: 30, y: 73, canopyScale: 1.02 },
@@ -130,7 +148,12 @@ export function createGroveLayout() {
   };
 }
 
-export function spawnCorruptionWave(wave: number, startingShadowId = 0): SpawnWaveResult {
+export function spawnCorruptionWave(
+  wave: number,
+  startingShadowId = 0,
+  mode: string | null | undefined = "standard"
+): SpawnWaveResult {
+  const tuning = getForestModeTuning(mode);
   const count = wave * 3;
   const shadows = Array.from({ length: count }, (_, index): CorruptionShadow => {
     const targetTreeIndex = (index + wave) % TREE_POSITIONS.length;
@@ -145,7 +168,7 @@ export function spawnCorruptionWave(wave: number, startingShadowId = 0): SpawnWa
       targetTreeIndex,
       health: 20 + wave * 2,
       maxHealth: 20 + wave * 2,
-      speed: round(0.5 + wave * 0.065 + (index % 2) * 0.04, 3),
+      speed: round((0.5 + wave * 0.065 + (index % 2) * 0.04) * tuning.shadowSpeedScale, 3),
       size: 30 + ((wave * 7 + index * 5) % 18),
     };
   });
@@ -331,7 +354,11 @@ export function getForestTransition(
 }
 
 export function getForestSessionTargetMinutes(mode: string | null | undefined = "standard") {
-  return FOREST_SESSION_TARGET_MINUTES[normalizeSessionMode(mode)];
+  return getForestModeTuning(mode).targetMinutes;
+}
+
+export function getForestModeTuning(mode: string | null | undefined): ForestModeTuning {
+  return FOREST_MODE_TUNING[normalizeSessionMode(mode)];
 }
 
 export function getForestRunSummary(state: ForestState) {

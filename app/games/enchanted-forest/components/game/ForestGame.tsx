@@ -9,6 +9,7 @@ import {
   clearRuneFeedback,
   clearShield,
   createInitialForestState,
+  getForestModeTuning,
   getForestRunSummary,
   getForestTransition,
   getShadowIntentPath,
@@ -37,23 +38,26 @@ export function ForestGame() {
   const [spiritPos, setSpiritPos] = useState({ x: 0, y: 0 });
   const shadowIdRef = useRef(0);
 
-  const spawnWave = useCallback((waveNum: number) => {
-    const wave = spawnCorruptionWave(waveNum, shadowIdRef.current);
-    shadowIdRef.current = wave.nextShadowId;
-    forestAudio.playWaveStart(waveNum);
-    setForestState((prev) => ({
-      ...prev,
-      wave: waveNum,
-      shadows: wave.shadows,
-      objective: `Wave ${waveNum} is entering the ward line. Draw before it reaches the roots.`,
-      threatLevel: Math.min(100, wave.shadows.length * 7),
-    }));
-  }, []);
+  const spawnWave = useCallback(
+    (waveNum: number, mode: SessionMode = forestState.sessionMode) => {
+      const wave = spawnCorruptionWave(waveNum, shadowIdRef.current, mode);
+      shadowIdRef.current = wave.nextShadowId;
+      forestAudio.playWaveStart(waveNum);
+      setForestState((prev) => ({
+        ...prev,
+        wave: waveNum,
+        shadows: wave.shadows,
+        objective: `Wave ${waveNum} is entering the ward line. Draw before it reaches the roots.`,
+        threatLevel: Math.min(100, wave.shadows.length * 7),
+      }));
+    },
+    [forestState.sessionMode]
+  );
 
   const startGame = async (mode: SessionMode) => {
     await forestAudio.initialize();
     forestAudio.startAmbient();
-    const wave = spawnCorruptionWave(1, 0);
+    const wave = spawnCorruptionWave(1, 0, mode);
     shadowIdRef.current = wave.nextShadowId;
     forestAudio.playWaveStart(1);
     setForestState({
@@ -73,7 +77,9 @@ export function ForestGame() {
     if (forestState.phase !== "playing") return undefined;
 
     const manaRegen = setInterval(() => {
-      setForestState((prev) => regenerateMana(prev));
+      setForestState((prev) =>
+        regenerateMana(prev, getForestModeTuning(prev.sessionMode).manaRegenPerSecond)
+      );
     }, 1000);
 
     return () => clearInterval(manaRegen);
@@ -116,7 +122,7 @@ export function ForestGame() {
     const transition = getForestTransition(forestState, MAX_WAVES);
 
     if (transition.type === "next-wave" && transition.nextWave) {
-      spawnWave(transition.nextWave);
+      spawnWave(transition.nextWave, forestState.sessionMode);
     } else if (transition.type === "victory") {
       forestAudio.playSpellEffect("victory");
       setForestState((prev) => ({ ...prev, phase: "victory", objective: "The grove is sealed." }));

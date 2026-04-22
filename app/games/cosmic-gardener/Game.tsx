@@ -1,4 +1,4 @@
-import { CartridgeStartScreen, GameViewport, useResponsive } from "@app/shared";
+import { CartridgeStartScreen, GameViewport, type SessionMode, useResponsive } from "@app/shared";
 import {
   findMatchedPointId,
   getNextConstellationPreview,
@@ -17,6 +17,10 @@ import {
   calculateStarHitScore,
   createStarterGarden,
 } from "@logic/games/cosmic-gardener/engine/cosmicGardenSimulation";
+import {
+  getCosmicModeTuning,
+  tuneVoidZonesForMode,
+} from "@logic/games/cosmic-gardener/engine/cosmicSession";
 import { useEnergyRouting } from "@logic/games/cosmic-gardener/engine/useEnergyRouting";
 import { usePinballPhysics } from "@logic/games/cosmic-gardener/engine/usePinballPhysics";
 import { cn } from "@logic/games/cosmic-gardener/lib/utils";
@@ -112,6 +116,7 @@ function CosmicTableDeck() {
 export default function Game({ className }: { className?: string }) {
   const _viewport = useResponsive();
   const [gameState, setGameState] = useState<GameState>("intro");
+  const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
   const [level, setLevel] = useState(1);
   const [constellationsCompleted, setConstellationsCompleted] = useState(0);
   const [voidZones, setVoidZones] = useState<VoidZoneType[]>([]);
@@ -242,9 +247,9 @@ export default function Game({ className }: { className?: string }) {
 
   useEffect(() => {
     if (gameState === "playing") {
-      setVoidZones(generateVoidZones(level));
+      setVoidZones(tuneVoidZonesForMode(generateVoidZones(level), sessionMode));
     }
-  }, [level, gameState]);
+  }, [level, gameState, sessionMode]);
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -395,7 +400,9 @@ export default function Game({ className }: { className?: string }) {
     [orbs.size, launchOrb]
   );
 
-  const startGame = () => {
+  const startGame = (mode: SessionMode = sessionMode) => {
+    const tuning = getCosmicModeTuning(mode);
+    setSessionMode(mode);
     resetGame();
     setLevel(1);
     setConstellationsCompleted(0);
@@ -403,7 +410,7 @@ export default function Game({ className }: { className?: string }) {
     setCompletedConnections(new Set());
     setStarPointMatches(new Map());
     setScore(0);
-    setBallsRemaining(3);
+    setBallsRemaining(tuning.startingBalls);
     setComboMultiplier(1);
     setGameState("tutorial");
   };
@@ -420,9 +427,10 @@ export default function Game({ className }: { className?: string }) {
     }
 
     const targetLevel = level + 1;
+    const tuning = getCosmicModeTuning(sessionMode);
     setLevel(targetLevel);
     loadLevel(targetLevel);
-    setBallsRemaining((prev) => Math.min(prev + 1, 5));
+    setBallsRemaining((prev) => Math.min(prev + 1, tuning.maxBalls));
     setGameState("playing");
   };
 
@@ -596,7 +604,7 @@ export default function Game({ className }: { className?: string }) {
             isPaused={gameState === "paused"}
             onPause={() => setGameState("paused")}
             onResume={() => setGameState("playing")}
-            onRestart={startGame}
+            onRestart={() => startGame()}
           />
 
           <motion.div
@@ -832,7 +840,7 @@ export default function Game({ className }: { className?: string }) {
               <p className="text-white/60 mb-2">Final Score</p>
               <motion.button
                 className="px-8 py-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
-                onClick={startGame}
+                onClick={() => startGame()}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

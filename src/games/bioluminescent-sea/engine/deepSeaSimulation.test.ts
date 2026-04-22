@@ -12,6 +12,8 @@ import {
   findNearestThreatDistance,
   GAME_DURATION,
   getDeterministicWrapX,
+  getDiveDurationSeconds,
+  getDiveModeTuning,
   getDiveRouteLandmark,
   getDiveRunSummary,
   getDiveTelemetry,
@@ -108,6 +110,20 @@ describe("deep sea simulation", () => {
     expect(findNearestThreatDistance(player, [predator])).toBeGreaterThan(90);
   });
 
+  test("maps session modes to recoverable dive pressure", () => {
+    expect(getDiveDurationSeconds("standard")).toBe(GAME_DURATION);
+    expect(getDiveDurationSeconds("standard")).toBeGreaterThanOrEqual(8 * 60);
+    expect(getDiveDurationSeconds("standard")).toBeLessThanOrEqual(15 * 60);
+    expect(getDiveDurationSeconds("cozy")).toBeGreaterThan(getDiveDurationSeconds("standard"));
+    expect(getDiveDurationSeconds("challenge")).toBeLessThan(getDiveDurationSeconds("standard"));
+    expect(getDiveModeTuning("challenge").threatRadiusScale).toBeGreaterThan(
+      getDiveModeTuning("standard").threatRadiusScale
+    );
+    expect(getDiveModeTuning("cozy").predatorSpeedScale).toBeLessThan(
+      getDiveModeTuning("standard").predatorSpeedScale
+    );
+  });
+
   test("wraps particles deterministically instead of using runtime randomness", () => {
     const particle = {
       drift: 1,
@@ -155,6 +171,11 @@ describe("deep sea simulation", () => {
   test("describes oxygen, depth, and collection telemetry", () => {
     const scene = createInitialScene(desktop);
     const telemetry = getDiveTelemetry({ ...scene, creatures: scene.creatures.slice(0, 3) }, 10);
+    const cozyTelemetry = getDiveTelemetry(
+      { ...scene, creatures: scene.creatures.slice(0, 3) },
+      10,
+      getDiveDurationSeconds("cozy")
+    );
 
     expect(telemetry.collectionRatio).toBeGreaterThan(0.8);
     expect(telemetry.depthMeters).toBeGreaterThan(2_800);
@@ -163,6 +184,7 @@ describe("deep sea simulation", () => {
     expect(telemetry.routeLandmarkLabel).toBe("Trench Choir");
     expect(telemetry.routeLandmarkDistance).toBeGreaterThan(0);
     expect(telemetry.oxygenRatio).toBeCloseTo(1 / 60);
+    expect(cozyTelemetry.oxygenRatio).toBeLessThan(telemetry.oxygenRatio);
     expect(["Ascent", "Hunted", "Critical", "Calm"]).toContain(telemetry.pressureLabel);
   });
 

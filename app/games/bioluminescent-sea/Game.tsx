@@ -1,10 +1,16 @@
-import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  GameOverScreen,
+  GameViewport,
+  OverlayButton,
+  type SessionMode,
+} from "@app/shared";
 import {
   advanceScene,
   type Creature,
   createInitialScene,
   type DiveTelemetry,
-  GAME_DURATION,
+  getDiveDurationSeconds,
   getDiveRunSummary,
   getDiveTelemetry,
   isDiveComplete,
@@ -575,12 +581,15 @@ function formatThreatDistance(distance: number) {
 }
 
 function DeepSeaGame({
+  mode,
   onComplete,
   onGameOver,
 }: {
+  mode: SessionMode;
   onComplete: (score: number) => void;
   onGameOver: (score: number) => void;
 }) {
+  const durationSeconds = getDiveDurationSeconds(mode);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const initialSceneRef = useRef<SceneState | null>(null);
@@ -590,12 +599,12 @@ function DeepSeaGame({
 
   const initialScene = initialSceneRef.current;
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  const [timeLeft, setTimeLeft] = useState(durationSeconds);
   const [multiplier, setMultiplier] = useState(1);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [isGameOver, setIsGameOver] = useState(false);
   const [telemetry, setTelemetry] = useState<DiveTelemetry>(() =>
-    getDiveTelemetry(initialScene, GAME_DURATION)
+    getDiveTelemetry(initialScene, durationSeconds, durationSeconds)
   );
 
   const playerRef = useRef<Player>(initialScene.player);
@@ -634,8 +643,8 @@ function DeepSeaGame({
     predatorsRef.current = nextScene.predators;
     piratesRef.current = nextScene.pirates;
     particlesRef.current = nextScene.particles;
-    setTelemetry(getDiveTelemetry(nextScene, GAME_DURATION));
-  }, [dimensions]);
+    setTelemetry(getDiveTelemetry(nextScene, durationSeconds, durationSeconds));
+  }, [dimensions, durationSeconds]);
 
   const gameLoop = useCallback(
     (deltaTime: number, totalTime: number) => {
@@ -647,7 +656,7 @@ function DeepSeaGame({
 
       const { width, height } = dimensions;
 
-      const newTimeLeft = Math.max(0, GAME_DURATION - Math.floor(totalTime));
+      const newTimeLeft = Math.max(0, durationSeconds - Math.floor(totalTime));
       if (newTimeLeft !== timeLeft) {
         setTimeLeft(newTimeLeft);
         if (newTimeLeft === 0) {
@@ -671,7 +680,8 @@ function DeepSeaGame({
         deltaTime,
         lastCollectTimeRef.current,
         multiplierRef.current,
-        newTimeLeft
+        newTimeLeft,
+        mode
       );
 
       playerRef.current = result.scene.player;
@@ -720,7 +730,7 @@ function DeepSeaGame({
 
       renderScene(ctx, width, height, result.scene, totalTime, collectionBurstsRef.current);
     },
-    [dimensions, input, timeLeft, isGameOver, onGameOver, onComplete]
+    [dimensions, input, timeLeft, isGameOver, onGameOver, onComplete, durationSeconds, mode]
   );
 
   useGameLoop(gameLoop, !isGameOver);
@@ -844,6 +854,7 @@ export default function Game() {
   const [gameState, setGameState] = useState<"landing" | "playing" | "gameover" | "complete">(
     "landing"
   );
+  const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
   const [finalScore, setFinalScore] = useState(0);
   const finalSummary = getDiveRunSummary(
     createInitialScene({ height: 600, width: 800 }),
@@ -863,7 +874,10 @@ export default function Game() {
               gameSlug="bioluminescent-sea"
               kicker="Deep Sea Cartridge"
               motif="sea"
-              onStart={() => setGameState("playing")}
+              onStart={(mode) => {
+                setSessionMode(mode);
+                setGameState("playing");
+              }}
               rules={[
                 "Collect bioluminescent chains to stay oriented in the trench.",
                 "Use the route beacon and headlamp cone to read the next safe direction.",
@@ -883,6 +897,7 @@ export default function Game() {
             animate={{ opacity: 1 }}
           >
             <DeepSeaGame
+              mode={sessionMode}
               onComplete={(s) => {
                 setFinalScore(s);
                 setGameState("complete");

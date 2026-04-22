@@ -7,6 +7,7 @@ import {
   applySpellCast,
   createGroveLayout,
   createInitialForestState,
+  getForestModeTuning,
   getForestRunSummary,
   getForestSessionTargetMinutes,
   getForestTransition,
@@ -45,6 +46,21 @@ describe("forest simulation", () => {
     expect(wave.nextShadowId).toBe(19);
     expect(wave.shadows[0]?.id).toBe(10);
     expect(wave.shadows.every((shadow) => shadow.targetTreeIndex >= 0)).toBe(true);
+  });
+
+  test("uses session modes for shadow pressure and mana recovery", () => {
+    const cozy = spawnCorruptionWave(3, 10, "cozy");
+    const standard = spawnCorruptionWave(3, 10, "standard");
+    const challenge = spawnCorruptionWave(3, 10, "challenge");
+
+    expect(cozy.shadows[0]?.speed).toBeLessThan(standard.shadows[0]?.speed ?? 0);
+    expect(challenge.shadows[0]?.speed).toBeGreaterThan(standard.shadows[0]?.speed ?? 0);
+    expect(getForestModeTuning("cozy").manaRegenPerSecond).toBeGreaterThan(
+      getForestModeTuning("standard").manaRegenPerSecond
+    );
+    expect(getForestModeTuning("challenge").targetMinutes).toBeLessThan(
+      getForestModeTuning("standard").targetMinutes
+    );
   });
 
   test("exposes deterministic shadow intent paths for target telegraphs", () => {
