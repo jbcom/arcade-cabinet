@@ -21,10 +21,13 @@ export interface OtterlyState {
   ballHealth: number;
   goats: GoatState[];
   goalRadius: number;
+  rescuesCompleted: number;
+  targetRescues: number;
   elapsedMs: number;
   barkCooldownMs: number;
   lastBarkMs: number;
   lastBarkStunned: number;
+  lastRescueMs: number;
   rallyMs: number;
   rescueStreak: number;
   objective: string;

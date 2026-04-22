@@ -1,3 +1,4 @@
+import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type { RunePattern } from "../lib/runePatterns";
 
 export type ForestPhase = "intro" | "tutorial" | "playing" | "victory" | "defeat";
@@ -45,6 +46,8 @@ export interface ShadowIntentPath {
 
 export interface ForestState {
   phase: ForestPhase;
+  sessionMode: SessionMode;
+  elapsedMs: number;
   wave: number;
   mana: number;
   maxMana: number;
@@ -65,7 +68,12 @@ export interface SpawnWaveResult {
   nextShadowId: number;
 }
 
-export const MAX_WAVES = 5;
+export const MAX_WAVES = 8;
+const FOREST_SESSION_TARGET_MINUTES: Record<SessionMode, number> = {
+  challenge: 8,
+  cozy: 12,
+  standard: 10,
+};
 export const TREE_POSITIONS: TreePosition[] = [
   { id: "left-grove", x: 30, y: 73, canopyScale: 1.02 },
   { id: "heart-tree", x: 50, y: 77, canopyScale: 1.18 },
@@ -74,9 +82,14 @@ export const TREE_POSITIONS: TreePosition[] = [
 
 const DEFAULT_OBJECTIVE = "Draw musical runes over the grove before corruption reaches the roots.";
 
-export function createInitialForestState(phase: ForestPhase = "intro"): ForestState {
+export function createInitialForestState(
+  phase: ForestPhase = "intro",
+  mode: string | null | undefined = "standard"
+): ForestState {
   return {
+    elapsedMs: 0,
     phase,
+    sessionMode: normalizeSessionMode(mode),
     wave: 1,
     mana: 100,
     maxMana: 100,
@@ -132,7 +145,7 @@ export function spawnCorruptionWave(wave: number, startingShadowId = 0): SpawnWa
       targetTreeIndex,
       health: 20 + wave * 2,
       maxHealth: 20 + wave * 2,
-      speed: round(0.56 + wave * 0.08 + (index % 2) * 0.04, 3),
+      speed: round(0.5 + wave * 0.065 + (index % 2) * 0.04, 3),
       size: 30 + ((wave * 7 + index * 5) % 18),
     };
   });
@@ -143,11 +156,12 @@ export function spawnCorruptionWave(wave: number, startingShadowId = 0): SpawnWa
   };
 }
 
-export function regenerateMana(state: ForestState, amount = 1): ForestState {
+export function regenerateMana(state: ForestState, amount = 1, deltaMs = 1000): ForestState {
   if (state.phase !== "playing") return state;
 
   return {
     ...state,
+    elapsedMs: state.elapsedMs + Math.max(0, deltaMs),
     mana: clamp(state.mana + amount, 0, state.maxMana),
   };
 }
@@ -314,6 +328,23 @@ export function getForestTransition(
   }
 
   return { type: "none" };
+}
+
+export function getForestSessionTargetMinutes(mode: string | null | undefined = "standard") {
+  return FOREST_SESSION_TARGET_MINUTES[normalizeSessionMode(mode)];
+}
+
+export function getForestRunSummary(state: ForestState) {
+  const healthyTrees = state.trees.filter((tree) => tree.health > 0).length;
+
+  return {
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    healthyTrees,
+    harmonyLevel: state.harmonyLevel,
+    targetMinutes: getForestSessionTargetMinutes(state.sessionMode),
+    totalWaves: MAX_WAVES,
+    wave: state.wave,
+  };
 }
 
 export function analyzeRuneGesture(points: { x: number; y: number }[]): RuneType | null {

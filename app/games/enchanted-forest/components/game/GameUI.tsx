@@ -1,5 +1,6 @@
 import { CartridgeStartScreen } from "@app/shared";
 import { RUNE_PATTERNS } from "@logic/games/enchanted-forest/lib/runePatterns";
+import type { SessionMode } from "@logic/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -23,13 +24,21 @@ interface GameUIProps {
   maxMana: number;
   isPaused: boolean;
   gameState: "intro" | "tutorial" | "playing" | "victory" | "defeat";
-  onStart: () => void;
+  onStart: (mode: SessionMode) => void;
   onRestart: () => void;
   lastRune?: string | null;
   objective: string;
   threatLevel: number;
   harmonyLevel: number;
   harmonySurgeActive: boolean;
+  runSummary: {
+    elapsedSeconds: number;
+    healthyTrees: number;
+    harmonyLevel: number;
+    targetMinutes: number;
+    totalWaves: number;
+    wave: number;
+  };
 }
 
 function SpeedLines({ direction = "radial" }: { direction?: "radial" | "horizontal" }) {
@@ -206,6 +215,7 @@ export function GameUI({
   threatLevel,
   harmonyLevel,
   harmonySurgeActive,
+  runSummary,
 }: GameUIProps) {
   const [showRuneEffect, setShowRuneEffect] = useState<(typeof RUNE_PATTERNS)[0] | null>(null);
 
@@ -344,6 +354,15 @@ export function GameUI({
       )}
 
       {gameState === "victory" && <DramaticFlash text="勝利" subtext="VICTORY" color="#fbbf24" />}
+      {gameState === "victory" && (
+        <button
+          type="button"
+          className="fixed bottom-8 left-1/2 z-[60] -translate-x-1/2 rounded-lg border border-amber-300/40 bg-amber-900/80 px-8 py-3 text-white font-black"
+          onClick={onRestart}
+        >
+          SEALED {runSummary.totalWaves} WAVES / RESTART
+        </button>
+      )}
       {gameState === "defeat" && (
         <>
           <DramaticFlash text="敗北" subtext="DEFEAT" color="#ef4444" />

@@ -2,6 +2,7 @@ import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } fro
 import {
   advanceCognitiveState,
   createInitialCognitiveState,
+  getCognitiveRunSummary,
 } from "@logic/games/cognitive-dissonance/engine/cognitiveSimulation";
 import type {
   CognitivePattern,
@@ -65,6 +66,7 @@ export default function Game() {
   const restart = () => {
     setState(createInitialCognitiveState(state.sessionMode, "menu"));
   };
+  const summary = getCognitiveRunSummary(state);
 
   return (
     <GameViewport background="#060712" data-browser-screenshot-mode="page">
@@ -109,7 +111,7 @@ export default function Game() {
         <GameOverScreen
           accent="#67e8f9"
           title="Shift Stable"
-          subtitle={`The cabinet held ${Math.round(state.coherence)} coherence through the shift.`}
+          subtitle={`${summary.targetSeconds}s shift held at ${summary.coherence}% coherence with ${summary.tension}% tension.`}
           actions={<OverlayButton onClick={restart}>Run Another Shift</OverlayButton>}
         />
       ) : null}
@@ -118,7 +120,7 @@ export default function Game() {
         <GameOverScreen
           accent="#a78bfa"
           title="Glass Shattered"
-          subtitle="Coherence dropped to zero. Match earlier and use the rim controls as recovery."
+          subtitle={`Coherence dropped to zero after ${summary.elapsedSeconds}s (${summary.progressPercent}% of the shift). Match earlier and use rim controls as recovery.`}
           actions={<OverlayButton onClick={restart}>Reboot</OverlayButton>}
         />
       ) : null}
@@ -253,11 +255,16 @@ function Hud({ state }: { state: CognitiveState }) {
       <Metric label="Coherence" value={`${Math.round(state.coherence)}%`} accent="#67e8f9" />
       <Metric label="Tension" value={`${Math.round(state.tension)}%`} accent="#f87171" />
       <Metric
+        label="Shift"
+        value={`${getCognitiveRunSummary(state).progressPercent}%`}
+        accent="#facc15"
+      />
+      <Metric
         label="Pattern"
         value={state.currentPattern}
         accent={PATTERN_COLORS[state.currentPattern]}
       />
-      <Metric label="Mode" value={state.sessionMode} accent="#facc15" />
+      <Metric label="Mode" value={state.sessionMode} accent="#c4b5fd" />
       <div className="rounded-md border border-violet-200/16 bg-black/50 p-3 sm:col-span-4">
         <div className="font-mono text-[0.6rem] font-black uppercase tracking-[0.22em] text-violet-100/52">
           Objective

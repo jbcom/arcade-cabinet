@@ -9,6 +9,7 @@ import {
   clearRuneFeedback,
   clearShield,
   createInitialForestState,
+  getForestRunSummary,
   getForestTransition,
   getShadowIntentPath,
   MAX_WAVES,
@@ -19,6 +20,7 @@ import {
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { forestAudio } from "@logic/games/enchanted-forest/lib/forestAudio";
 import type { RunePattern } from "@logic/games/enchanted-forest/lib/runePatterns";
+import type { SessionMode } from "@logic/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CorruptionWave } from "./CorruptionWave";
 import { FireflyParticles } from "./FireflyParticles";
@@ -48,14 +50,14 @@ export function ForestGame() {
     }));
   }, []);
 
-  const startGame = async () => {
+  const startGame = async (mode: SessionMode) => {
     await forestAudio.initialize();
     forestAudio.startAmbient();
     const wave = spawnCorruptionWave(1, 0);
     shadowIdRef.current = wave.nextShadowId;
     forestAudio.playWaveStart(1);
     setForestState({
-      ...createInitialForestState("playing"),
+      ...createInitialForestState("playing", mode),
       shadows: wave.shadows,
       threatLevel: wave.shadows.length * 7,
     });
@@ -182,6 +184,7 @@ export function ForestGame() {
         threatLevel={forestState.threatLevel}
         harmonyLevel={forestState.harmonyLevel}
         harmonySurgeActive={forestState.harmonySurgeActive}
+        runSummary={getForestRunSummary(forestState)}
       />
     </GameViewport>
   );

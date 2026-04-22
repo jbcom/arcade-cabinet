@@ -7,6 +7,9 @@ import type { OtterlyState, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
+const BALL_START = { x: -1.2, y: -0.3 };
+const OTTER_START = { x: -3.8, y: -3.2 };
+export const TARGET_RESCUES = 5;
 const GOAT_DAMAGE_PER_MS = {
   billy: 0.002,
   elder: 0.003,
@@ -19,26 +22,27 @@ export function createInitialState(mode: string | null | undefined = "standard")
     cozy: 0.72,
     standard: 0.88,
   });
+  const goats = createGoats(speedScale, 0);
 
   return {
     sessionMode,
-    otter: { x: -3.8, y: -3.2 },
+    otter: { ...OTTER_START },
     otterVelocity: { x: 0, y: 0 },
-    ball: { x: -1.2, y: -0.3 },
+    ball: { ...BALL_START },
     ballVelocity: { x: 0, y: 0 },
     ballHealth: 100,
-    goats: [
-      { id: "billy", position: { x: 1.4, y: -1 }, speed: 0.00125 * speedScale, stunnedMs: 0 },
-      { id: "elder", position: { x: 2.4, y: 1.8 }, speed: 0.001 * speedScale, stunnedMs: 0 },
-    ],
+    goats,
     goalRadius: 0.9,
+    rescuesCompleted: 0,
+    targetRescues: TARGET_RESCUES,
     elapsedMs: 0,
     barkCooldownMs: 0,
     lastBarkMs: -Infinity,
     lastBarkStunned: 0,
+    lastRescueMs: -Infinity,
     rallyMs: 2500,
     rescueStreak: 0,
-    objective: "Push the Kudzu ball into Elder Bleat's crater before the goats eat it.",
+    objective: `Push ${TARGET_RESCUES} salad pieces into Elder Bleat's crater before the goats eat them.`,
   };
 }
 
@@ -120,17 +124,29 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
     }
   }
 
-  if (distance(next.ball, GOAL) < next.goalRadius) {
-    next.objective = "The salad reached the crater.";
+  if (distance(next.ball, GOAL) < next.goalRadius && next.ballHealth > 20) {
+    next.rescuesCompleted = Math.min(next.targetRescues, next.rescuesCompleted + 1);
+    next.lastRescueMs = next.elapsedMs;
+    next.ballHealth = Math.min(100, next.ballHealth + 10);
+    next.rescueStreak += 1;
+    next.rallyMs = Math.max(next.rallyMs, 2200);
+    if (next.rescuesCompleted < next.targetRescues) {
+      resetRescueRound(next);
+      next.objective = `Salad ${next.rescuesCompleted}/${next.targetRescues} saved. New piece launched; bark before goats converge.`;
+    } else {
+      next.ball = { ...GOAL };
+      next.ballVelocity = { x: 0, y: 0 };
+      next.objective = "All salad pieces reached the crater.";
+    }
   } else if (next.ballHealth > 35) {
-    next.objective = "Move the otter, then bark to keep the goats away.";
+    next.objective = `Rescue ${next.rescuesCompleted + 1}/${next.targetRescues}: move the otter, then bark to keep the goats away.`;
   }
 
   return next;
 }
 
 export function didWin(state: OtterlyState) {
-  return distance(state.ball, GOAL) < state.goalRadius && state.ballHealth > 20;
+  return state.rescuesCompleted >= state.targetRescues && state.ballHealth > 20;
 }
 
 export function didLose(state: OtterlyState) {
@@ -147,6 +163,51 @@ export function getGoatIntent(state: OtterlyState, goat: OtterlyState["goats"][n
     state: stateLabel,
     targetDistance: Math.round(targetDistance * 100) / 100,
   };
+}
+
+export function getOtterlyRunSummary(state: OtterlyState) {
+  return {
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    health: Math.round(state.ballHealth),
+    rescueProgressPercent: Math.round((state.rescuesCompleted / state.targetRescues) * 100),
+    rescuesCompleted: state.rescuesCompleted,
+    rescueStreak: state.rescueStreak,
+    targetRescues: state.targetRescues,
+  };
+}
+
+function createGoats(speedScale: number, roundIndex: number) {
+  const roundOffset = Math.min(0.36, roundIndex * 0.08);
+
+  return [
+    {
+      id: "billy",
+      position: { x: 1.4 + roundOffset, y: -1 - roundOffset },
+      speed: 0.00125 * speedScale,
+      stunnedMs: 0,
+    },
+    {
+      id: "elder",
+      position: { x: 2.4 - roundOffset, y: 1.8 + roundOffset },
+      speed: 0.001 * speedScale,
+      stunnedMs: 0,
+    },
+  ];
+}
+
+function resetRescueRound(state: OtterlyState): void {
+  const speedScale = getSessionPressureScale(state.sessionMode, {
+    challenge: 1.25,
+    cozy: 0.72,
+    standard: 0.88,
+  });
+
+  state.ball = {
+    x: BALL_START.x - Math.min(0.45, state.rescuesCompleted * 0.08),
+    y: BALL_START.y + ((state.rescuesCompleted % 3) - 1) * 0.36,
+  };
+  state.ballVelocity = { x: 0, y: 0 };
+  state.goats = createGoats(speedScale, state.rescuesCompleted);
 }
 
 function add(a: Vec2, b: Vec2): Vec2 {

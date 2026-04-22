@@ -1,5 +1,14 @@
 import { describe, expect, test } from "vitest";
-import { createInitialState, didLose, didWin, GOAL, getGoatIntent, tick } from "./simulation";
+import {
+  createInitialState,
+  didLose,
+  didWin,
+  GOAL,
+  getGoatIntent,
+  getOtterlyRunSummary,
+  TARGET_RESCUES,
+  tick,
+} from "./simulation";
 
 describe("otterly simulation", () => {
   test("moves the otter from player input", () => {
@@ -7,6 +16,7 @@ describe("otterly simulation", () => {
     const next = tick(state, 250, { x: 1, y: 0 }, false);
 
     expect(state.sessionMode).toBe("standard");
+    expect(state.targetRescues).toBe(TARGET_RESCUES);
     expect(next.otter.x).toBeGreaterThan(state.otter.x);
     expect(next.elapsedMs).toBe(250);
   });
@@ -109,10 +119,20 @@ describe("otterly simulation", () => {
     expect(state.ballHealth).toBeGreaterThan(20);
   });
 
-  test("detects win and loss terminal conditions", () => {
-    const won = createInitialState();
-    won.ball = { ...GOAL };
+  test("requires a full five-piece rescue run instead of one fast crater touch", () => {
+    let state = createInitialState();
+    for (let rescue = 0; rescue < TARGET_RESCUES - 1; rescue += 1) {
+      state = tick({ ...state, ball: { ...GOAL } }, 16, { x: 0, y: 0 }, false);
+      expect(didWin(state)).toBe(false);
+      expect(state.ball).not.toEqual(GOAL);
+    }
+
+    const won = tick({ ...state, ball: { ...GOAL } }, 16, { x: 0, y: 0 }, false);
+    const summary = getOtterlyRunSummary(won);
+
     expect(didWin(won)).toBe(true);
+    expect(summary.rescuesCompleted).toBe(TARGET_RESCUES);
+    expect(summary.rescueProgressPercent).toBe(100);
 
     const lost = createInitialState();
     lost.ballHealth = 0;

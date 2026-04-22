@@ -82,6 +82,9 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           }}
         >
           <div>Ball health: {Math.round(state.ballHealth)}%</div>
+          <div>
+            Rescues: {state.rescuesCompleted}/{state.targetRescues}
+          </div>
           <div>Time: {(state.elapsedMs / 1000).toFixed(1)}s</div>
           <div>
             Bark:{" "}

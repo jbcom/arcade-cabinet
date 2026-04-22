@@ -112,6 +112,19 @@ export function recoverCognitiveAfterMistake(state: CognitiveState): CognitiveSt
   };
 }
 
+export function getCognitiveRunSummary(state: CognitiveState) {
+  const tuning = getCognitiveModeTuning(state.sessionMode);
+
+  return {
+    coherence: Math.round(state.coherence),
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    progressPercent: Math.min(100, Math.round((state.elapsedMs / tuning.shiftDurationMs) * 100)),
+    stableMatches: state.stableMatches,
+    targetSeconds: Math.round(tuning.shiftDurationMs / 1000),
+    tension: Math.round(state.tension),
+  };
+}
+
 function createPatterns(sequenceIndex: number, tension = 18) {
   return PATTERN_SEQUENCE.slice(0, 4).map((color, index) => ({
     color,

@@ -7,9 +7,12 @@ import {
   applySpellCast,
   createGroveLayout,
   createInitialForestState,
+  getForestRunSummary,
+  getForestSessionTargetMinutes,
   getForestTransition,
   getShadowIntentPath,
   MAX_WAVES,
+  regenerateMana,
   removePurifiedShadow,
   spawnCorruptionWave,
   TREE_POSITIONS,
@@ -21,6 +24,7 @@ describe("forest simulation", () => {
     const layout = createGroveLayout();
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.mana).toBe(state.maxMana);
     expect(state.trees).toHaveLength(3);
     expect(layout.trees).toEqual(TREE_POSITIONS);
@@ -122,6 +126,22 @@ describe("forest simulation", () => {
     });
     expect(getForestTransition({ ...state, wave: MAX_WAVES, shadows: [] }, MAX_WAVES)).toEqual({
       type: "victory",
+    });
+  });
+
+  test("targets a longer couch ritual with summary telemetry", () => {
+    const state = regenerateMana(createInitialForestState("playing", "standard"), 2, 125_000);
+    const summary = getForestRunSummary({ ...state, wave: MAX_WAVES });
+
+    expect(MAX_WAVES).toBeGreaterThanOrEqual(8);
+    expect(getForestSessionTargetMinutes("standard")).toBeGreaterThanOrEqual(8);
+    expect(getForestSessionTargetMinutes("standard")).toBeLessThanOrEqual(15);
+    expect(summary).toMatchObject({
+      elapsedSeconds: 125,
+      healthyTrees: 3,
+      targetMinutes: 10,
+      totalWaves: MAX_WAVES,
+      wave: MAX_WAVES,
     });
   });
 

@@ -3,6 +3,7 @@ import {
   advanceCognitiveState,
   createInitialCognitiveState,
   getCognitiveModeTuning,
+  getCognitiveRunSummary,
   recoverCognitiveAfterMistake,
 } from "./cognitiveSimulation";
 
@@ -22,6 +23,24 @@ describe("Cognitive Dissonance coherence loop", () => {
 
     expect(afterMinute.phase).toBe("playing");
     expect(afterMinute.coherence).toBeGreaterThan(70);
+  });
+
+  test("standard shift target is a 12 minute couch loop with run summary", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "playing"),
+      elapsedMs: getCognitiveModeTuning("standard").shiftDurationMs / 2,
+      stableMatches: 42,
+      tension: 34.4,
+    };
+    const summary = getCognitiveRunSummary(state);
+
+    expect(summary.targetSeconds / 60).toBeGreaterThanOrEqual(8);
+    expect(summary.targetSeconds / 60).toBeLessThanOrEqual(15);
+    expect(summary).toMatchObject({
+      progressPercent: 50,
+      stableMatches: 42,
+      tension: 34,
+    });
   });
 
   test("matching the active pattern lowers tension and restores coherence", () => {

@@ -14,6 +14,7 @@ import {
   createInitialState,
   didLose,
   didWin,
+  getOtterlyRunSummary,
   tick,
 } from "@logic/games/otterly-chaotic/engine/simulation";
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
@@ -70,9 +71,6 @@ function OtterlyApp() {
     phase: "menu",
   };
   const state = (useTrait(otterlyEntity, OtterlyTrait) as OtterlyState | undefined) ?? initialState;
-  const score = (useTrait(otterlyEntity, ScoreTrait) as
-    | { value: number; label: string }
-    | undefined) ?? { value: 100, label: "SALAD" };
   const timer = (useTrait(otterlyEntity, TimerTrait) as
     | { elapsedMs: number; remainingMs: number; label: string }
     | undefined) ?? { elapsedMs: 0, remainingMs: 0, label: "TIMER" };
@@ -96,6 +94,16 @@ function OtterlyApp() {
   const writeState = useCallback((next: OtterlyState) => {
     otterlyEntity.set(OtterlyTrait, next as never);
   }, []);
+  const startRun = useCallback(
+    (mode: SessionMode = state.sessionMode) => {
+      writeState(createInitialState(mode));
+      otterlyEntity.set(PhaseTrait, { phase: "playing" });
+      otterlyEntity.set(ScoreTrait, { value: 100, label: "SALAD" });
+      otterlyEntity.set(TimerTrait, { elapsedMs: 0, remainingMs: 0, label: "BARK" });
+    },
+    [state.sessionMode, writeState]
+  );
+  const summary = getOtterlyRunSummary(state);
 
   useEffect(() => {
     const handleBark = () => setBarkQueued(true);
@@ -138,14 +146,12 @@ function OtterlyApp() {
           gameSlug="otterly-chaotic"
           kicker="Pasture Panic Cartridge"
           motif="otter"
-          onStart={(mode: SessionMode) => {
-            writeState(createInitialState(mode));
-            otterlyEntity.set(PhaseTrait, { phase: "playing" });
-          }}
+          onStart={startRun}
           rules={[
+            "Save five salad pieces, not just one fast delivery.",
             "Stay between goats and the salad to protect its health.",
             "Bark to stun nearby goats and open a rescue window.",
-            "Push the salad toward the crater before the chase collapses.",
+            "Each crater rescue launches a new piece with goats reset for the next round.",
           ]}
           secondaryAccent="#84cc16"
           startLabel="Start Sprint"
@@ -162,17 +168,17 @@ function OtterlyApp() {
       {phase.phase === "win" ? (
         <GameOverScreen
           title="Salad Saved"
-          subtitle={`You delivered the Kudzu ball with ${score.value}% integrity after ${(state.elapsedMs / 1000).toFixed(1)} seconds.`}
+          subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued with ${summary.health}% integrity after ${summary.elapsedSeconds}s.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>
+            <OverlayButton onClick={() => startRun(state.sessionMode)}>Play Again</OverlayButton>
           }
         />
       ) : null}
       {phase.phase === "gameover" ? (
         <GameOverScreen
           title="Munched"
-          subtitle="The goats ate the entire ball. Bark earlier and keep the otter between them and the salad next run."
-          actions={<OverlayButton onClick={() => window.location.reload()}>Retry</OverlayButton>}
+          subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued. Bark earlier and keep the otter between goats and salad next run.`}
+          actions={<OverlayButton onClick={() => startRun(state.sessionMode)}>Retry</OverlayButton>}
         />
       ) : null}
     </GameViewport>
