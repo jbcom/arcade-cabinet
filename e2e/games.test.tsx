@@ -17,7 +17,7 @@ import {
   verifyBrowserGameStartFlow,
 } from "@app/test/browserGameHarness";
 import { cleanup, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 const gameCases: (BrowserGameStartFlow & {
   name: string;
@@ -139,6 +139,10 @@ const screenshotViewports: BrowserGameViewport[] = [
   { name: "desktop", width: 1280, height: 720 },
   { name: "mobile", width: 390, height: 844 },
 ];
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 afterEach(() => {
   cleanupBrowserRender();

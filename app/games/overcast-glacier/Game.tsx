@@ -51,6 +51,7 @@ export default function Game() {
           accent="#7dd3fc"
           cartridgeId="Slot 09"
           description="A kung-fu kitten skis a corrupted glacier, kicks snowmen, and snaps glitches."
+          gameSlug="overcast-glacier"
           kicker="Glacier Cartridge"
           motif="track"
           onStart={start}

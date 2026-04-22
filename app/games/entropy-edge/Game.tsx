@@ -125,6 +125,7 @@ function EntropyApp() {
           accent="#38bdf8"
           cartridgeId="Slot 04"
           description="Hold a collapsing resonance field together at the edge of failure."
+          gameSlug="entropy-edge"
           kicker="Resonance Cartridge"
           motif="entropy"
           onStart={(mode) => {

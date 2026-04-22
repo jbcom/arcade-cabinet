@@ -24,6 +24,17 @@ shared cartridge frame before gameplay starts.
 | Otterly Chaotic | Landing now matches the pasture-chase identity; gameplay desktop and mobile stay active during capture. | Added goat intent indicators, bark shockwave, stun stars, goal pull line, salad feedback, and a longer playable opening window. | Add more expressive otter/goat composite poses without hurting CI startup. |
 | Primordial Ascent | Landing label and portrait gameplay emphasize upward escape. | Added grapple target state, tether/reticle feedback, lava heat shimmer, HUD state color, and stronger route framing. | Add better first-contact tutorialization for missed grapples. |
 | Titan Mech: Overheat | Landing label now frames the game as an extraction cartridge; gameplay has brighter combat and ore-loop hierarchy. | Added weapon feedback state, fire/heat/coolant gating, extractor/hopper/credit state, ore rigs, muzzle flash, overheat ring, objective rings, reticle, and damage vignette. | Add enemy attack readability, visible cube delivery timing, and a clearer victory state. |
+| Beppo Laughs | Landing reads as a circus cartridge and gameplay presents junction choices without hiding the route state. | Imported as a reduced maze loop with composure/despair pressure, item-gated rooms, route memory, and shared start/runtime persistence. | Add more ending variety, lighting beats, and late-maze room identity. |
+| Cognitive Dissonance | Landing and gameplay retain the diegetic AI-cabinet identity without a second app shell. | Imported as a raw Three adapter with pattern matching, reversible coherence, tension waves, rim controls, and shared runtime persistence. | Add richer shift escalation and more visible stable/shatter endings. |
+| Farm Follies | Landing label has the strongest cartridge readability of the new imports; gameplay reads as a lane stacker. | Imported as a deterministic stack-and-bank loop with merge tiers, recovery lives, banking, and shared runtime persistence. | Add more animal tier silhouettes, ability feedback, and collapse warning animation. |
+
+## 1.0 Runtime Pass
+
+- The home path now opens with a compact cabinet marquee and keeps the cartridge gallery as the main selection surface.
+- Every launch cartridge is wired to local-only runtime persistence for last selected mode and one active run.
+- Game routes now expose the shared cabinet menu: Resume, Restart, Rules, Settings, Cabinet, and Quit Run.
+- Shared settings cover sound, haptics, reduced motion, graphics quality, handedness, joystick sensitivity, and text scale.
+- Vitest Browser screenshots were regenerated for cabinet desktop/mobile/tablet, every landing desktop/mobile, and every gameplay route desktop/mobile.
 
 ## Extracted From Active Cabinet
 

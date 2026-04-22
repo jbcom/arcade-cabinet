@@ -839,6 +839,7 @@ export default function Game() {
               accent="#4ecdc4"
               cartridgeId="Slot 01"
               description="Descend through a glowing ocean route, collect light, and avoid the dark silhouettes."
+              gameSlug="bioluminescent-sea"
               kicker="Deep Sea Cartridge"
               motif="sea"
               onStart={() => setGameState("playing")}

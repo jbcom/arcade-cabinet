@@ -30,6 +30,7 @@ function PrimordialApp() {
           accent="#00ff66"
           cartridgeId="Slot 07"
           description="Grapple out of a rising lava cavern before the magma wake catches you."
+          gameSlug="primordial-ascent"
           kicker="Escape Cartridge"
           motif="primordial"
           onStart={handleStart}

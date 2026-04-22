@@ -72,6 +72,7 @@ export default function Game() {
           accent="#84cc16"
           cartridgeId="Slot 12"
           description="Drop animal blocks, merge matching farm tiers, and bank before the wobble eats the run."
+          gameSlug="farm-follies"
           kicker="Farm Stacker Cartridge"
           motif="farm"
           onStart={start}

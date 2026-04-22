@@ -2,11 +2,13 @@ import {
   DEFAULT_DIFFICULTY_VARIANTS,
   DEFAULT_SESSION_MODE,
   type DifficultyVariant,
+  type LaunchGameSlug,
   type SessionMode,
 } from "@logic/shared";
 import { BookOpen, FolderOpen, Play } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useCabinetRuntime } from "../hooks/useCabinetRuntime";
 
 export type CartridgeMotif =
   | "sea"
@@ -162,6 +164,7 @@ interface CartridgeStartScreenProps
   extends Omit<CartridgeLabelProps, "compact" | "showRules" | "style" | "className"> {
   startLabel: string;
   onStart: (mode: SessionMode) => void;
+  gameSlug?: LaunchGameSlug;
   defaultSessionMode?: SessionMode;
   difficultyVariants?: readonly DifficultyVariant[];
   loadLabel?: string;
@@ -173,6 +176,7 @@ interface CartridgeStartScreenProps
 export function CartridgeStartScreen({
   startLabel,
   onStart,
+  gameSlug,
   defaultSessionMode = DEFAULT_SESSION_MODE,
   difficultyVariants = DEFAULT_DIFFICULTY_VARIANTS,
   loadLabel = "Load",
@@ -185,7 +189,29 @@ export function CartridgeStartScreen({
 }: CartridgeStartScreenProps) {
   const [showRules, setShowRules] = useState(false);
   const [sessionMode, setSessionMode] = useState<SessionMode>(defaultSessionMode);
+  const { beginRun, progress, saveSlot } = useCabinetRuntime(gameSlug);
   const hasRules = rules.length > 0;
+  const hasLoad = Boolean(onLoad || saveSlot);
+
+  useEffect(() => {
+    setSessionMode(progress?.lastSelectedMode ?? defaultSessionMode);
+  }, [defaultSessionMode, progress?.lastSelectedMode]);
+
+  const handleStart = () => {
+    beginRun(sessionMode, {
+      progressSummary: `${labelProps.title} ${sessionMode}`,
+    });
+    onStart(sessionMode);
+  };
+
+  const handleLoad = () => {
+    if (onLoad) {
+      onLoad();
+      return;
+    }
+
+    onStart(saveSlot?.mode ?? sessionMode);
+  };
 
   return (
     <div
@@ -239,14 +265,14 @@ export function CartridgeStartScreen({
                 command="Play"
                 icon={<Play size={17} />}
                 label={startLabel}
-                onClick={() => onStart(sessionMode)}
+                onClick={handleStart}
               />
-              {onLoad ? (
+              {hasLoad ? (
                 <CabinetActionButton
                   command="Load"
                   icon={<FolderOpen size={17} />}
-                  label={loadLabel}
-                  onClick={onLoad}
+                  label={saveSlot?.label ?? loadLabel}
+                  onClick={handleLoad}
                 />
               ) : null}
               {hasRules ? (

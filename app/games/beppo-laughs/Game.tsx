@@ -73,6 +73,7 @@ export default function Game() {
           accent="#f97316"
           cartridgeId="Slot 10"
           description="Make junction choices, collect blockade items, and keep composure until the exit flap opens."
+          gameSlug="beppo-laughs"
           kicker="Nightmare Circus Cartridge"
           motif="circus"
           onStart={start}

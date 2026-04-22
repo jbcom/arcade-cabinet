@@ -135,6 +135,7 @@ function OtterlyApp() {
           accent="#0ea5e9"
           cartridgeId="Slot 06"
           description="Keep the salad rolling while goats try to turn the rescue into lunch."
+          gameSlug="otterly-chaotic"
           kicker="Pasture Panic Cartridge"
           motif="otter"
           onStart={(mode: SessionMode) => {

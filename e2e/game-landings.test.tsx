@@ -13,7 +13,7 @@ import TitanMech from "@app/games/titan-mech";
 import type { TextMatcher } from "@app/test/browserGameHarness";
 import { cleanup, render } from "@testing-library/react";
 import type { ComponentType } from "react";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 
 const landingCases: {
@@ -87,6 +87,10 @@ const landingViewports = [
   { name: "desktop", width: 1280, height: 720 },
   { name: "mobile", width: 390, height: 844 },
 ];
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 afterEach(() => {
   cleanupBrowserRender();

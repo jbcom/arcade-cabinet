@@ -75,6 +75,7 @@ export default function Game() {
           accent="#a78bfa"
           cartridgeId="Slot 11"
           description="Match escaping patterns with rim controls and keep the AI cabinet coherent."
+          gameSlug="cognitive-dissonance"
           kicker="Diegetic Mind Cartridge"
           motif="mind"
           onStart={start}

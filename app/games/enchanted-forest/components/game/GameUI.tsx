@@ -327,6 +327,7 @@ export function GameUI({
             accent="#10b981"
             cartridgeId="Slot 03"
             description="Conduct the ward line with gesture runes and keep the grove alive."
+            gameSlug="enchanted-forest"
             kicker="Spell Grove Cartridge"
             motif="forest"
             onStart={onStart}

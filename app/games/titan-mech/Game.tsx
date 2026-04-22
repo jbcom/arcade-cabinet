@@ -35,6 +35,7 @@ function TitanApp() {
           accent="#f43f5e"
           cartridgeId="Slot 08"
           description="Pilot a heat-stressed extraction titan through ore pylons and reactor pressure."
+          gameSlug="titan-mech"
           kicker="Overheat Cartridge"
           motif="mech"
           onStart={handleStart}

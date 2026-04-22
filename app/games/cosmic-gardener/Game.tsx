@@ -678,6 +678,7 @@ export default function Game({ className }: { className?: string }) {
               accent="#fbbf24"
               cartridgeId="Slot 02"
               description="Plant star seeds, keep the orb alive, and bloom constellations across a living pinball sky."
+              gameSlug="cosmic-gardener"
               kicker="Pinball Garden Cartridge"
               motif="cosmic"
               onStart={startGame}

@@ -373,8 +373,9 @@ export function FloatingJoystick({
       const knobX = unitX * clampedDistance;
       const knobY = unitY * clampedDistance;
       const rawMagnitude = clampedDistance / radius;
-      const magnitude =
+      const magnitudeBase =
         rawMagnitude <= deadZone ? 0 : (rawMagnitude - deadZone) / Math.max(0.01, 1 - deadZone);
+      const magnitude = Math.min(1, magnitudeBase * readJoystickSensitivity());
 
       setVisual({
         active: true,
@@ -481,4 +482,15 @@ export function FloatingJoystick({
       ) : null}
     </div>
   );
+}
+
+function readJoystickSensitivity() {
+  if (typeof window === "undefined") return 1;
+
+  const raw = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue("--cabinet-joystick-sensitivity");
+  const value = Number(raw);
+
+  return Number.isFinite(value) ? Math.min(1.6, Math.max(0.65, value)) : 1;
 }

@@ -95,6 +95,7 @@ function MegaTrackApp() {
           accent="#fb7185"
           cartridgeId="Slot 05"
           description="Thread a high-speed machine through a deterministic hazard ribbon."
+          gameSlug="mega-track"
           kicker="Race Cartridge"
           motif="track"
           onStart={handleStart}
