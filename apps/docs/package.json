@@ -17,8 +17,12 @@
     "@arcade-cabinet/gridizen": "workspace:*",
     "@arcade-cabinet/otterly-chaotic": "workspace:*",
     "@arcade-cabinet/primordial-ascent": "workspace:*",
+    "@arcade-cabinet/protocol-snw": "workspace:*",
     "@arcade-cabinet/reach-for-the-sky": "workspace:*",
+    "@arcade-cabinet/realmwalker": "workspace:*",
     "@arcade-cabinet/sim-soviet": "workspace:*",
+    "@arcade-cabinet/titan-mech": "workspace:*",
+    "@arcade-cabinet/voxel-realms": "workspace:*",
     "@astrojs/react": "^5.0.3",
     "@astrojs/sitemap": "^3.7.2",
     "@capacitor/core": "^8.3.1",
@@ -34,6 +38,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^7.3.2"
   }
 }

@@ -214,9 +214,9 @@ export function Player() {
         </mesh>
       </RigidBody>
       {isGrappling && (
-        <line geometry={tetherLineGeometry}>
+        <threeLine geometry={tetherLineGeometry}>
           <lineBasicMaterial color="#00eeff" linewidth={2} />
-        </line>
+        </threeLine>
       )}
     </>
   );

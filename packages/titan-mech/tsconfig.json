@@ -6,7 +6,9 @@
     "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "strict": false
+    "strict": false,
+    "exactOptionalPropertyTypes": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["dist", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }

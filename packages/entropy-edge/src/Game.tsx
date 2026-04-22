@@ -83,7 +83,7 @@ function EntropyApp() {
   );
 
   const writeState = useCallback((next: EntropyState) => {
-    entropyEntity.set(EntropyTrait, next as never);
+    entropyEntity.set(EntropyTrait, next);
   }, []);
 
   useGameLoop(

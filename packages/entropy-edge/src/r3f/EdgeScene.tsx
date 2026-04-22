@@ -1,5 +1,6 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
+import type { ReactElement } from "react";
 import { useRef } from "react";
 import * as THREE from "three";
 import { GRID_HALF } from "../engine/simulation";
@@ -9,7 +10,7 @@ const TILE_SIZE = 1;
 const GRID_SIZE = GRID_HALF * 2 + 1;
 
 function GridFloor() {
-  const tiles: JSX.Element[] = [];
+  const tiles: ReactElement[] = [];
   for (let x = -GRID_HALF; x <= GRID_HALF; x++) {
     for (let z = -GRID_HALF; z <= GRID_HALF; z++) {
       const isDark = (x + z) % 2 === 0;

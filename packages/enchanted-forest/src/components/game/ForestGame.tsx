@@ -62,6 +62,7 @@ export function ForestGame() {
       const manaRegen = setInterval(() => setMana((m) => Math.min(100, m + 1)), 1000);
       return () => clearInterval(manaRegen);
     }
+    return undefined;
   }, [gameState]);
 
   const handleSpellCast = (spell: RunePattern) => {

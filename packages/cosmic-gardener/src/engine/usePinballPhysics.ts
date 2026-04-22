@@ -18,7 +18,7 @@ interface UsePinballPhysicsProps {
   bounds: { width: number; height: number };
 }
 
-export function usePinballPhysics({ stars, onStarHit, bounds }: UsePinballPhysicsProps) {
+export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinballPhysicsProps) {
   const [orbs, setOrbs] = useState<Map<string, PinballOrb>>(new Map());
   const [leftFlipper, setLeftFlipper] = useState(false);
   const [rightFlipper, setRightFlipper] = useState(false);
@@ -65,7 +65,7 @@ export function usePinballPhysics({ stars, onStarHit, bounds }: UsePinballPhysic
   const deactivateRightFlipper = useCallback(() => setRightFlipper(false), []);
 
   useEffect(() => {
-    if (orbs.size === 0) return;
+    if (orbs.size === 0) return undefined;
 
     const simulate = (time: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = time;
@@ -179,7 +179,7 @@ export function usePinballPhysics({ stars, onStarHit, bounds }: UsePinballPhysic
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [orbs.size, stars, leftFlipper, rightFlipper, onStarHit]);
+  }, [orbs.size, stars, leftFlipper, rightFlipper, onStarHit, onDrain]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

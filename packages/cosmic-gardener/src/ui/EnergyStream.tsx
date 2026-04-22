@@ -16,13 +16,13 @@ export function EnergyStream({ fromX, fromY, toX, toY, flowRate, active }: Energ
   const particlesRef = useRef<Array<{ t: number; speed: number; size: number }>>([]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) return undefined;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     const resizeCanvas = () => {
       const parent = canvas.parentElement;

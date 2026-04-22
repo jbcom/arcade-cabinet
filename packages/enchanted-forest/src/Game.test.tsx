@@ -1,25 +1,17 @@
-import { expect, test } from "vitest";
-import { page } from "vitest/browser";
-import { render } from "vitest-browser-react";
+import { cleanup } from "@testing-library/react";
+import { afterEach, test } from "vitest";
+import { verifyBrowserGameStartFlow } from "../../../src/test/browserGameHarness";
 import Game from "./Game";
 
-test("Enchanted Forest renders and is playable", async () => {
-  const { getByText } = render(
-    <div style={{ width: "100vw", height: "100vh" }}>
-      <Game />
-    </div>
-  );
+afterEach(() => {
+  cleanup();
+});
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  await page.screenshot({ path: "test-screenshots/forest-start.png" });
-
-  const startButton = getByText("START");
-  await expect.element(startButton).toBeVisible();
-  await startButton.click();
-
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  await page.screenshot({ path: "test-screenshots/forest-gameplay.png" });
-
-  const waveLabel = getByText("WAVE", { exact: false });
-  await expect.element(waveLabel).toBeVisible();
+test("Enchanted Forest reaches gameplay from the start screen", async () => {
+  await verifyBrowserGameStartFlow({
+    Component: Game,
+    title: "START",
+    startFlow: ["START"],
+    ready: /WAVE/,
+  });
 });

@@ -1,7 +1,6 @@
 import { trait } from "koota";
-import type { RealmState } from "../engine/types";
 
-export const RealmTrait = trait<RealmState>(() => ({
+export const RealmTrait = trait(() => ({
   phase: "menu",
   hp: 100,
   maxHp: 100,

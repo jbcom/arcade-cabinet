@@ -60,7 +60,7 @@ function SimSovietApp() {
     [initialState]
   );
   const writeState = useCallback((next: SimSovietState) => {
-    simSovietEntity.set(SimSovietTrait, next as never);
+    simSovietEntity.set(SimSovietTrait, next);
   }, []);
 
   useEffect(() => {

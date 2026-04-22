@@ -26,10 +26,10 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     const colors = [
       "rgba(255, 255, 255,",

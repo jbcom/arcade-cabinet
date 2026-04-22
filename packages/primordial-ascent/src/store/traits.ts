@@ -1,7 +1,6 @@
 import { trait } from "koota";
-import type { PrimordialState } from "../engine/types";
 
-export const PrimordialTrait = trait<PrimordialState>(() => ({
+export const PrimordialTrait = trait(() => ({
   phase: "menu",
   altitude: 0,
   maxAltitude: 0,

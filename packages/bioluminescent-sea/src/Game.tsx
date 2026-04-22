@@ -111,11 +111,25 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
 
   useEffect(() => {
     const { width, height } = dimensions;
+    const center = { x: width / 2, y: height / 2 };
+    const spawnAwayFromCenter = (minDistance: number) => {
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const position = { x: Math.random() * width, y: Math.random() * height };
+        const dx = position.x - center.x;
+        const dy = position.y - center.y;
+        if (Math.sqrt(dx * dx + dy * dy) >= minDistance) {
+          return position;
+        }
+      }
+
+      return { x: width * 0.12, y: height * 0.12 };
+    };
+
     playerRef.current = {
-      x: width / 2,
-      y: height / 2,
-      targetX: width / 2,
-      targetY: height / 2,
+      x: center.x,
+      y: center.y,
+      targetX: center.x,
+      targetY: center.y,
       angle: 0,
       glowIntensity: 1,
     };
@@ -138,14 +152,17 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
       };
     });
 
-    predatorsRef.current = Array.from({ length: 2 }, (_, i) => ({
-      id: `predator-${i}`,
-      x: Math.random() * width,
-      y: Math.random() * height,
-      size: 60 + Math.random() * 40,
-      speed: 0.5 + Math.random() * 0.3,
-      noiseOffset: Math.random() * 1000,
-    }));
+    predatorsRef.current = Array.from({ length: 2 }, (_, i) => {
+      const position = spawnAwayFromCenter(Math.min(width, height) * 0.35);
+      return {
+        id: `predator-${i}`,
+        x: position.x,
+        y: position.y,
+        size: 60 + Math.random() * 40,
+        speed: 0.5 + Math.random() * 0.3,
+        noiseOffset: Math.random() * 1000,
+      };
+    });
 
     piratesRef.current = Array.from({ length: 2 }, (_, i) => ({
       id: `pirate-${i}`,
@@ -308,12 +325,12 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         }
       }
 
-      render(ctx, width, height, totalTime);
+      renderScene(ctx, width, height, totalTime);
     },
-    [dimensions, input, timeLeft, multiplier, isGameOver, onGameOver, render]
+    [dimensions, input, timeLeft, multiplier, isGameOver, onGameOver]
   );
 
-  const render = (ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
+  function renderScene(ctx: CanvasRenderingContext2D, width: number, height: number, time: number) {
     ctx.clearRect(0, 0, width, height);
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, "#0c1929");
@@ -338,7 +355,7 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
       drawPirate(ctx, p, time);
     });
     drawPlayer(ctx, playerRef.current, time);
-  };
+  }
 
   const drawCreature = (ctx: CanvasRenderingContext2D, c: Creature, _time: number) => {
     ctx.save();
@@ -429,7 +446,12 @@ export default function Game() {
           </motion.div>
         )}
         {gameState === "playing" && (
-          <motion.div key="playing" className="absolute inset-0" initial={{ opacity: 0 }}>
+          <motion.div
+            key="playing"
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <DeepSeaGame
               onGameOver={(s) => {
                 setFinalScore(s);

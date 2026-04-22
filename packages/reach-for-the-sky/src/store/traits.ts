@@ -1,7 +1,7 @@
 import { trait } from "koota";
-import { CONFIG, type SkyState } from "../engine/types";
+import { CONFIG } from "../engine/types";
 
-export const SkyTrait = trait<SkyState>(() => ({
+export const SkyTrait = trait(() => ({
   funds: CONFIG.STARTING_FUNDS,
   tick: 500,
   day: 1,
@@ -20,6 +20,6 @@ export interface BuildingData {
   dirt: number;
 }
 
-export const TowerTrait = trait<{ buildings: BuildingData[] }>(() => ({
+export const TowerTrait = trait(() => ({
   buildings: [],
 }));

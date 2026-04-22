@@ -29,7 +29,7 @@ export function useTouchInput(containerRef: React.RefObject<HTMLElement | null>)
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) return undefined;
 
     const handlePointerDown = (e: PointerEvent) => {
       const pos = getRelativePosition(e.clientX, e.clientY);

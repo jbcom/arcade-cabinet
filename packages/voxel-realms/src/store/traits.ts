@@ -1,7 +1,6 @@
 import { trait } from "koota";
-import type { VoxelState } from "../engine/types";
 
-export const VoxelTrait = trait<VoxelState>(() => ({
+export const VoxelTrait = trait(() => ({
   phase: "menu",
   score: 0,
   hp: 20,

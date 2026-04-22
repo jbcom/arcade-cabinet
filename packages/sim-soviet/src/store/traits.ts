@@ -1,4 +1,4 @@
 import { trait } from "koota";
-import { createInitialState, type SimSovietState } from "../engine/Simulation";
+import { createInitialState } from "../engine/Simulation";
 
-export const SimSovietTrait = trait<SimSovietState>(() => createInitialState());
+export const SimSovietTrait = trait(() => createInitialState());

@@ -357,6 +357,18 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
         Click any creature to begin your descent...
       </motion.p>
 
+      <motion.button
+        type="button"
+        className="absolute top-[32%] left-1/2 -translate-x-1/2 z-30 rounded-full border border-cyan-200/50 bg-cyan-400/15 px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)] backdrop-blur-sm transition-colors hover:bg-cyan-300/25"
+        onClick={() => handleElementClick("start")}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.7 }}
+        whileTap={{ scale: 0.96 }}
+      >
+        Start Descent
+      </motion.button>
+
       <FloatingElement
         className="top-[35%] left-1/2 -translate-x-1/2 w-48 md:w-64"
         delay={0.3}

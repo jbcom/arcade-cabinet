@@ -7,12 +7,12 @@ afterEach(() => {
   cleanup();
 });
 
-test("Otterly Chaotic reaches gameplay from the start screen", async () => {
+test("Bioluminescent Sea reaches gameplay from the landing screen", async () => {
   await verifyBrowserGameStartFlow({
     Component: Game,
-    title: "Otterly Chaotic",
-    startFlow: ["Start Sprint"],
-    ready: "Bark Pulse",
+    title: "COLLECTOR",
+    startFlow: ["Start Descent"],
+    ready: "Time",
     expectsCanvas: true,
   });
 });

@@ -10,7 +10,7 @@ The UI layer is designed to be lightweight, modular, and non-intrusive to the We
 ## Standards
 
 1. **Styling**: **Tailwind CSS v4** is the absolute standard. No CSS Modules, no styled-components.
-2. **Container Layout**: Every game's outermost container MUST use `height: 100svh`, `width: 100%`, and `overflow: hidden`. This prevents iOS/Android navigation bar collapsing and guarantees that Playwright/Vitest browser interactions trigger correctly without scrolling.
+2. **Container Layout**: Every game's outermost container MUST use `height: 100svh`, `width: 100%`, and `overflow: hidden`. This prevents iOS/Android navigation bar collapsing and guarantees that Vitest Browser interactions trigger correctly without scrolling.
 3. **Shared Components**: The `@arcade-cabinet/shared` package provides standardized generic components:
    - `<HUDOverlay>`: A 4-corner flexbox layout for game scores and timers.
    - `<StartScreen>` & `<GameOverScreen>`: Unified menu states.

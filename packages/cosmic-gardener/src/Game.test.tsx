@@ -7,12 +7,11 @@ afterEach(() => {
   cleanup();
 });
 
-test("Otterly Chaotic reaches gameplay from the start screen", async () => {
+test("Cosmic Gardener reaches gameplay after onboarding", async () => {
   await verifyBrowserGameStartFlow({
     Component: Game,
-    title: "Otterly Chaotic",
-    startFlow: ["Start Sprint"],
-    ready: "Bark Pulse",
-    expectsCanvas: true,
+    title: "Cosmic Gardener",
+    startFlow: ["Begin the Journey", "Play Ball"],
+    ready: "Cosmic Energy",
   });
 });

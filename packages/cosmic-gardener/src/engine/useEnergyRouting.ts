@@ -24,7 +24,10 @@ interface UseEnergyRoutingProps {
   onEnergyDepleted?: () => void;
 }
 
-export function useEnergyRouting({ onConstellationComplete }: UseEnergyRoutingProps = {}) {
+export function useEnergyRouting({
+  onConstellationComplete,
+  onEnergyDepleted,
+}: UseEnergyRoutingProps = {}) {
   const [stars, setStars] = useState<Map<string, StarSeed>>(new Map());
   const [streams, setStreams] = useState<Map<string, EnergyStream>>(new Map());
   const [totalEnergy, setTotalEnergy] = useState(500);
@@ -213,7 +216,7 @@ export function useEnergyRouting({ onConstellationComplete }: UseEnergyRoutingPr
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [streams, getGrowthStage]);
+  }, [streams, getGrowthStage, onEnergyDepleted]);
 
   const resetGame = useCallback(() => {
     setStars(new Map());

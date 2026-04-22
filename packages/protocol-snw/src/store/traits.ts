@@ -1,7 +1,6 @@
 import { trait } from "koota";
-import type { SNWState } from "../engine/types";
 
-export const SNWTrait = trait<SNWState>(() => ({
+export const SNWTrait = trait(() => ({
   phase: "menu",
   score: 0,
   level: 1,

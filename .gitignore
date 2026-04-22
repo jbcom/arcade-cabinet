@@ -151,8 +151,11 @@ packages/*/dist/
 
 # Vitest
 coverage/
+.vitest-attachments/
+**/__screenshots__/
+packages/*/src/test-screenshots/
 
-# Playwright
+# Browser test artifacts
 playwright-report/
 test-results/
 
@@ -169,7 +172,10 @@ packages/*/dist/
 
 # Vitest
 coverage/
+.vitest-attachments/
+**/__screenshots__/
+packages/*/src/test-screenshots/
 
-# Playwright
+# Browser test artifacts
 playwright-report/
 test-results/

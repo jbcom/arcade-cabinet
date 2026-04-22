@@ -9,9 +9,9 @@ export function NoiseBackground({ className = "" }: NoiseBackgroundProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
     const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    if (!ctx) return undefined;
     let frameCount = 0;
     let animationId = 0;
     const S = 512;

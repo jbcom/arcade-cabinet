@@ -6,8 +6,6 @@ import type { ChunkData } from "../engine/TerrainWorker";
 import TerrainWorker from "../engine/TerrainWorker?worker";
 import { CONFIG } from "../engine/types";
 
-const _isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
 function Chunk({ data }: { data: ChunkData }) {
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();

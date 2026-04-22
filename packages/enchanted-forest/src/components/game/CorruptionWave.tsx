@@ -69,7 +69,7 @@ function CorruptionShadowEntity({
   }, [purifyZone, position]);
 
   useEffect(() => {
-    if (isVaporizing) return;
+    if (isVaporizing) return undefined;
     const interval = setInterval(() => {
       setPosition((prev) => {
         const dx = treePosition.x - prev.x;

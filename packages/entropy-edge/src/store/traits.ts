@@ -1,4 +1,4 @@
 import { trait } from "koota";
 import { createInitialState } from "../engine/simulation";
 
-export const EntropyTrait = trait(() => createInitialState() as never);
+export const EntropyTrait = trait(() => createInitialState());

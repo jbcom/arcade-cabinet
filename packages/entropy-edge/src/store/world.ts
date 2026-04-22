@@ -8,5 +8,5 @@ export const entropyEntity = entropyWorld.spawn(
   PhaseTrait({ phase: "menu" }),
   ScoreTrait({ value: 0, label: "SCORE" }),
   TimerTrait({ elapsedMs: 0, remainingMs: 20_000, label: "STABILITY" }),
-  EntropyTrait(createInitialState() as never)
+  EntropyTrait(createInitialState())
 );

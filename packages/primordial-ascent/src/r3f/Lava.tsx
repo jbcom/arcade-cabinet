@@ -30,7 +30,7 @@ export function Lava() {
           (CONFIG.lavaBaseSpeed + (pState.timeSurvived / 1000) * CONFIG.lavaAccel) * delta * 0.1;
         meshRef.current.position.y = newY;
 
-        if (pState.altitude < newY && pState.phase !== "gameover") {
+        if (pState.altitude < newY) {
           primordialEntity.set(PrimordialTrait, { ...pState, phase: "gameover" });
         }
       }

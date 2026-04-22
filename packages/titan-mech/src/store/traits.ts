@@ -1,7 +1,6 @@
 import { trait } from "koota";
-import type { TitanState } from "../engine/types";
 
-export const TitanTrait = trait<TitanState>(() => ({
+export const TitanTrait = trait(() => ({
   phase: "menu",
   hp: 200,
   maxHp: 200,
