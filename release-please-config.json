@@ -3,6 +3,102 @@
     "apps/docs": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
+    },
+    "apps/cosmic-gardener": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/bioluminescent-sea": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/protocol-snw": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/titan-mech": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/enchanted-forest": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/voxel-realms": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/realmwalker": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/reach-for-the-sky": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/primordial-ascent": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/cosmic-gardener": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/bioluminescent-sea": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/gridizen": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/protocol-snw": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/entropy-edge": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/titan-mech": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/enchanted-forest": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/otterly-chaotic": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/voxel-realms": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/shared": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/sim-soviet": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/realmwalker": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/reach-for-the-sky": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/mega-track": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/primordial-ascent": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }
