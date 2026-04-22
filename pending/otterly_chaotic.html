@@ -195,14 +195,14 @@ const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft
 let barkTriggered = false;
 
 // Virtual Joystick State
-let joy = { active: false, originX: 0, originY: 0, currX: 0, currY: 0, dx: 0, dy: 0, maxR: 60 };
+const joy = { active: false, originX: 0, originY: 0, currX: 0, currY: 0, dx: 0, dy: 0, maxR: 60 };
 
 // --- INPUT LISTENERS ---
 window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    if (Object.hasOwn(keys, e.key)) keys[e.key] = true;
     if (e.key === " " && (gameState === 'PLAYING' || gameState === 'TUTORIAL')) { barkTriggered = true; e.preventDefault(); }
 });
-window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+window.addEventListener('keyup', (e) => { if (Object.hasOwn(keys, e.key)) keys[e.key] = false; });
 
 // Joystick Listeners
 function handleJoyStart(x, y) {
@@ -219,7 +219,7 @@ function handleJoyMove(x, y) {
     if (!joy.active) return;
     let dx = x - joy.originX;
     let dy = y - joy.originY;
-    let dist = Math.hypot(dx, dy);
+    const dist = Math.hypot(dx, dy);
     
     // Cap visual knob
     if (dist > joy.maxR) { dx = (dx / dist) * joy.maxR; dy = (dy / dist) * joy.maxR; }
@@ -319,7 +319,7 @@ function initEntities(mode) {
         for (let i = 0; i < 20; i++) waterZones.push({ x: 300 + Math.random() * (WORLD_WIDTH - 600), y: 300 + Math.random() * (WORLD_HEIGHT - 600), r: 80 + Math.random() * 140 });
 
         for (let i = 0; i < 40; i++) {
-            let rx = Math.random() * WORLD_WIDTH; let ry = Math.random() * WORLD_HEIGHT;
+            const rx = Math.random() * WORLD_WIDTH; const ry = Math.random() * WORLD_HEIGHT;
             if (Math.hypot(rx - otter.x, ry - otter.y) > 250 && Math.hypot(rx - ball.x, ry - ball.y) > 250 && Math.hypot(rx - targetZone.x, ry - targetZone.y) > 350) {
                 rocks.push({ x: rx, y: ry, radius: 30 + Math.random() * 50, offsets: Array(8).fill(1).map(()=>Math.random()*0.4 + 0.8) });
             }
@@ -345,10 +345,10 @@ function update(deltaTime) {
     if (gameState === 'PLAYING') timeElapsed += deltaTime; 
 
     // --- DIEGETIC TUTORIAL LOGIC ---
-    let elder = goats.find(g => g.id === 'elder');
+    const elder = goats.find(g => g.id === 'elder');
     if (gameState === 'TUTORIAL') {
         tutTimer += deltaTime;
-        let distToElder = Math.hypot(otter.x - elder.x, otter.y - elder.y);
+        const distToElder = Math.hypot(otter.x - elder.x, otter.y - elder.y);
         
         if (tutPhase === 'MOVE' && distToElder < 400) {
             tutPhase = 'PUSH';
@@ -365,7 +365,7 @@ function update(deltaTime) {
             createParticles(200, 200, '#e2e8f0', 20);
         }
         else if (tutPhase === 'STUN') {
-            let billy = goats.find(g => g.id === 'billy');
+            const billy = goats.find(g => g.id === 'billy');
             if (billy && billy.state === 'FAINTED') {
                 tutPhase = 'DONE'; tutTimer = 0;
                 elder.dialogue = "Excellent work! Now, prepare for the real Chaos Sprint!";
@@ -378,7 +378,7 @@ function update(deltaTime) {
 
     // --- OTTER MOVEMENT ---
     let inWater = false;
-    for (let w of waterZones) { if (Math.hypot(otter.x - w.x, otter.y - w.y) < w.r) { inWater = true; break; } }
+    for (const w of waterZones) { if (Math.hypot(otter.x - w.x, otter.y - w.y) < w.r) { inWater = true; break; } }
 
     let moveX = 0; let moveY = 0;
     
@@ -388,7 +388,7 @@ function update(deltaTime) {
     if (keys.a || keys.ArrowLeft) moveX -= 1; 
     if (keys.d || keys.ArrowRight) moveX += 1;
     if (moveX !== 0 || moveY !== 0) {
-        let len = Math.hypot(moveX, moveY); moveX /= len; moveY /= len;
+        const len = Math.hypot(moveX, moveY); moveX /= len; moveY /= len;
     }
 
     // Joystick Override (already normalized)
@@ -397,16 +397,16 @@ function update(deltaTime) {
     }
 
     // Apply Physics
-    let currentAccel = inWater ? 2.5 : otter.baseAccel;
-    let currentFriction = inWater ? 0.90 : otter.friction; // Less punishing water physics
-    let maxS = inWater ? 13 : otter.maxSpeed;
+    const currentAccel = inWater ? 2.5 : otter.baseAccel;
+    const currentFriction = inWater ? 0.90 : otter.friction; // Less punishing water physics
+    const maxS = inWater ? 13 : otter.maxSpeed;
 
     otter.vx += moveX * currentAccel;
     otter.vy += moveY * currentAccel;
     otter.vx *= currentFriction; 
     otter.vy *= currentFriction;
     
-    let speed = Math.hypot(otter.vx, otter.vy);
+    const speed = Math.hypot(otter.vx, otter.vy);
     if (speed > maxS) { otter.vx = (otter.vx / speed) * maxS; otter.vy = (otter.vy / speed) * maxS; }
 
     otter.x += otter.vx; otter.y += otter.vy;
@@ -437,9 +437,9 @@ function update(deltaTime) {
         ball.radius = Math.max(25, ball.baseRadius * (ball.health / ball.maxHealth));
         ball.vx *= ball.friction; ball.vy *= ball.friction;
         
-        let distToGoal = Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y);
+        const distToGoal = Math.hypot(ball.x - targetZone.x, ball.y - targetZone.y);
         if (distToGoal < targetZone.radius) {
-            let pull = 1 - (distToGoal / targetZone.radius); 
+            const pull = 1 - (distToGoal / targetZone.radius); 
             ball.vx += ((targetZone.x - ball.x) / distToGoal) * (0.6 + pull * 0.8); 
             ball.vy += ((targetZone.y - ball.y) / distToGoal) * (0.6 + pull * 0.8);
         }
@@ -450,13 +450,13 @@ function update(deltaTime) {
         if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.vy *= -0.8; }
         if (ball.y + ball.radius > WORLD_HEIGHT) { ball.y = WORLD_HEIGHT - ball.radius; ball.vy *= -0.8; }
 
-        let distOB = Math.hypot(ball.x - otter.x, ball.y - otter.y);
+        const distOB = Math.hypot(ball.x - otter.x, ball.y - otter.y);
         if (distOB < otter.radius + ball.radius) {
-            let nx = (ball.x - otter.x) / distOB; let ny = (ball.y - otter.y) / distOB;
+            const nx = (ball.x - otter.x) / distOB; const ny = (ball.y - otter.y) / distOB;
             // Move ball out of collision
             ball.x += nx * ((otter.radius + ball.radius) - distOB); ball.y += ny * ((otter.radius + ball.radius) - distOB);
             // Transfer momentum naturally without killing otter speed abruptly
-            let pushForce = (speed * 0.8) / ball.mass; 
+            const pushForce = (speed * 0.8) / ball.mass; 
             ball.vx += nx * pushForce; ball.vy += ny * pushForce;
             otter.vx *= 0.95; otter.vy *= 0.95; // Smoother push feel
         }
@@ -464,7 +464,7 @@ function update(deltaTime) {
 
     // --- COLLISIONS (ROCKS) ---
     rocks.forEach(rock => {
-        let distOR = Math.hypot(otter.x - rock.x, otter.y - rock.y);
+        const distOR = Math.hypot(otter.x - rock.x, otter.y - rock.y);
         if (distOR < otter.radius + rock.radius * 0.8) { 
             otter.x += (otter.x - rock.x) / distOR * ((otter.radius + rock.radius * 0.8) - distOR);
             otter.y += (otter.y - rock.y) / distOR * ((otter.radius + rock.radius * 0.8) - distOR);
@@ -472,11 +472,11 @@ function update(deltaTime) {
         }
 
         if (ball.radius > 0) {
-            let distBR = Math.hypot(ball.x - rock.x, ball.y - rock.y);
+            const distBR = Math.hypot(ball.x - rock.x, ball.y - rock.y);
             if (distBR < ball.radius + rock.radius * 0.9) {
-                let nx = (ball.x - rock.x) / distBR; let ny = (ball.y - rock.y) / distBR;
+                const nx = (ball.x - rock.x) / distBR; const ny = (ball.y - rock.y) / distBR;
                 ball.x += nx * ((ball.radius + rock.radius * 0.9) - distBR); ball.y += ny * ((ball.radius + rock.radius * 0.9) - distBR);
-                let dot = (ball.vx * nx + ball.vy * ny);
+                const dot = (ball.vx * nx + ball.vy * ny);
                 ball.vx -= 2 * dot * nx * 0.8; ball.vy -= 2 * dot * ny * 0.8;
                 if (Math.random() < 0.2) createParticles(ball.x, ball.y, '#94a3b8', 3);
             }
@@ -513,7 +513,7 @@ function update(deltaTime) {
         }
 
         if ((goat.state === 'CHASING' || goat.state === 'EATING') && ball.radius > 0) {
-            let distToBall = Math.hypot(ball.x - goat.x, ball.y - goat.y);
+            const distToBall = Math.hypot(ball.x - goat.x, ball.y - goat.y);
             if (distToBall < goat.radius + ball.radius + 10) {
                 goat.state = 'EATING'; goat.vx = 0; goat.vy = 0;
                 ball.health -= (goat.id === 'elder' ? 15 : 10) * (deltaTime / 1000); 
@@ -523,7 +523,7 @@ function update(deltaTime) {
                 goat.state = 'CHASING';
                 let nx = (ball.x - goat.x) / distToBall; let ny = (ball.y - goat.y) / distToBall;
                 nx += (Math.random() - 0.5) * 0.5; ny += (Math.random() - 0.5) * 0.5;
-                let len = Math.hypot(nx, ny); nx /= len; ny /= len;
+                const len = Math.hypot(nx, ny); nx /= len; ny /= len;
                 goat.vx = nx * goat.speed; goat.vy = ny * goat.speed;
                 goat.x += goat.vx; goat.y += goat.vy;
             }
@@ -532,7 +532,7 @@ function update(deltaTime) {
         goat.x = Math.max(goat.radius, Math.min(WORLD_WIDTH - goat.radius, goat.x)); goat.y = Math.max(goat.radius, Math.min(WORLD_HEIGHT - goat.radius, goat.y));
 
         rocks.forEach(rock => {
-            let distGR = Math.hypot(goat.x - rock.x, goat.y - rock.y);
+            const distGR = Math.hypot(goat.x - rock.x, goat.y - rock.y);
             if (distGR < goat.radius + rock.radius * 0.8) {
                 goat.x += (goat.x - rock.x) / distGR * ((goat.radius + rock.radius * 0.8) - distGR); 
                 goat.y += (goat.y - rock.y) / distGR * ((goat.radius + rock.radius * 0.8) - distGR);
@@ -540,9 +540,9 @@ function update(deltaTime) {
         });
 
         // Combat vs Goats
-        let distOG = Math.hypot(goat.x - otter.x, goat.y - otter.y);
+        const distOG = Math.hypot(goat.x - otter.x, goat.y - otter.y);
         if (distOG < otter.radius + goat.radius) {
-            let nx = (otter.x - goat.x) / distOG; let ny = (otter.y - goat.y) / distOG;
+            const nx = (otter.x - goat.x) / distOG; const ny = (otter.y - goat.y) / distOG;
             if (speed > 5) { 
                 goat.state = 'FAINTED'; goat.faintTimer = 2500; goat.vx = -nx * speed * 0.8; goat.vy = -ny * speed * 0.8;
                 createParticles(goat.x, goat.y, '#ef4444', 10); cameraShake = 8; otter.vx *= 0.5; otter.vy *= 0.5;
@@ -572,7 +572,7 @@ function update(deltaTime) {
 
 function updateParticles(deltaTime) {
     for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= deltaTime;
+        const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= deltaTime;
         if (p.life <= 0) particles.splice(i, 1);
     }
 }
@@ -581,7 +581,7 @@ function triggerWinAnimation() {
     gameState = 'WIN_ANIMATION'; winDelayTimer = 2000; cameraShake = 25; 
     uiHUD.classList.add('hidden'); uiFloating.classList.add('hidden'); btnBark.classList.add('hidden'); joystickZone.classList.add('hidden');
     for (let i = 0; i < 150; i++) {
-        let isLeaf = Math.random() > 0.5;
+        const isLeaf = Math.random() > 0.5;
         particles.push({
             x: ball.x, y: ball.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30,
             life: 1000 + Math.random() * 1500, size: isLeaf ? 6 + Math.random() * 8 : 4 + Math.random() * 6, color: isLeaf ? '#22c55e' : '#fbbf24'
@@ -631,7 +631,7 @@ function draw() {
     rocks.forEach(rock => {
         ctx.save(); ctx.translate(rock.x, rock.y); ctx.beginPath();
         for (let i = 0; i < 8; i++) {
-            let angle = (i / 8) * Math.PI * 2; let r = rock.radius * rock.offsets[i];
+            const angle = (i / 8) * Math.PI * 2; const r = rock.radius * rock.offsets[i];
             if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r); else ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
         }
         ctx.closePath(); ctx.fillStyle = '#475569'; ctx.fill(); ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.stroke();
@@ -644,7 +644,7 @@ function draw() {
     if (ball.radius > 0) {
         ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(timeElapsed * 0.002 * (ball.vx + ball.vy)); ctx.beginPath();
         for (let i = 0; i < 12; i++) {
-            let angle = (i / 12) * Math.PI * 2; let r = ball.radius + (i % 2 === 0 ? 5 : -5);
+            const angle = (i / 12) * Math.PI * 2; const r = ball.radius + (i % 2 === 0 ? 5 : -5);
             if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r); else ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
         }
         ctx.closePath(); ctx.fillStyle = '#22c55e'; ctx.fill(); ctx.strokeStyle = '#166534'; ctx.lineWidth = 4; ctx.stroke();
@@ -673,9 +673,9 @@ function draw() {
         // Draw Diegetic Dialogue Bubble
         if (goat.dialogue) {
             ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            let textWidth = ctx.measureText(goat.dialogue).width;
-            let bubbleW = Math.min(350, textWidth + 30); let bubbleH = 40;
-            let bubbleY = -goat.radius - 40 + Math.sin(timeElapsed * 0.005) * 5;
+            const textWidth = ctx.measureText(goat.dialogue).width;
+            const bubbleW = Math.min(350, textWidth + 30); const bubbleH = 40;
+            const bubbleY = -goat.radius - 40 + Math.sin(timeElapsed * 0.005) * 5;
             
             ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(-bubbleW/2, bubbleY - bubbleH/2, bubbleW, bubbleH, 10); ctx.fill();
             ctx.beginPath(); ctx.moveTo(0, bubbleY + bubbleH/2); ctx.lineTo(-10, bubbleY + bubbleH/2 + 10); ctx.lineTo(10, bubbleY + bubbleH/2); ctx.fill();
@@ -696,7 +696,7 @@ function draw() {
     if (otter.trail.length > 1) {
         ctx.beginPath();
         for (let i = 0; i < otter.trail.length; i++) {
-            let t = otter.trail[i]; ctx.lineWidth = otter.radius * 1.5 * t.life;
+            const t = otter.trail[i]; ctx.lineWidth = otter.radius * 1.5 * t.life;
             ctx.strokeStyle = t.water ? `rgba(14, 165, 233, ${t.life * 0.5})` : `rgba(120, 113, 108, ${t.life * 0.3})`;
             if (i === 0) ctx.moveTo(t.x, t.y); else ctx.lineTo(t.x, t.y);
         }
@@ -704,7 +704,7 @@ function draw() {
     }
 
     ctx.translate(otter.x, otter.y);
-    let speed = Math.hypot(otter.vx, otter.vy);
+    const speed = Math.hypot(otter.vx, otter.vy);
     if (speed > 0.1) ctx.rotate(Math.atan2(otter.vy, otter.vx));
 
     ctx.fillStyle = '#57534e'; ctx.beginPath(); ctx.ellipse(-otter.radius*0.75 - (speed*0.5), 0, otter.radius*0.75, otter.radius*0.3, 0, 0, Math.PI * 2); ctx.fill();
@@ -714,7 +714,7 @@ function draw() {
     ctx.restore();
 
     if (otter.isBarking) {
-        let radius = otter.barkRadius * (1 - (otter.barkTimer / 300));
+        const radius = otter.barkRadius * (1 - (otter.barkTimer / 300));
         ctx.beginPath(); ctx.arc(otter.x, otter.y, radius, 0, Math.PI * 2); ctx.strokeStyle = `rgba(59, 130, 246, ${otter.barkTimer / 300})`; ctx.lineWidth = 10; ctx.stroke();
     }
 
@@ -722,7 +722,7 @@ function draw() {
         ctx.beginPath(); ctx.arc(otter.x, otter.y, otter.radius + 15, -Math.PI/2, -Math.PI/2 + (Math.PI * 2 * (1 - otter.barkCooldown / otter.barkMaxCooldown)));
         ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.stroke();
     } else {
-        let pulse = 1 + Math.sin(timeElapsed * 0.01) * 0.1;
+        const pulse = 1 + Math.sin(timeElapsed * 0.01) * 0.1;
         ctx.beginPath(); ctx.arc(otter.x, otter.y, (otter.radius + 15) * pulse, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)'; ctx.lineWidth = 3; ctx.stroke();
     }
 
@@ -735,12 +735,12 @@ function draw() {
 
 function drawPointers() {
     let targetX, targetY, color, label;
-    let distToBall = Math.hypot(ball.x - otter.x, ball.y - otter.y);
+    const distToBall = Math.hypot(ball.x - otter.x, ball.y - otter.y);
     if (distToBall > 400 && ball.radius > 0) { targetX = ball.x; targetY = ball.y; color = '#22c55e'; label = "BALL"; } 
     else if (ball.radius > 0) { targetX = targetZone.x; targetY = targetZone.y; color = '#fbbf24'; label = "GOAL"; } 
     else { return; }
 
-    let angle = Math.atan2(targetY - otter.y, targetX - otter.x);
+    const angle = Math.atan2(targetY - otter.y, targetX - otter.x);
     ctx.save(); ctx.translate(otter.x, otter.y); ctx.rotate(angle);
     ctx.translate(otter.radius + 50, 0);
     ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, -12); ctx.lineTo(-5, 0); ctx.lineTo(-10, 12); ctx.closePath();
@@ -757,14 +757,14 @@ function createParticles(x, y, color, count) {
 
 function updateUI(isEating) {
     if (gameState === 'PLAYING') {
-        let ms = Math.floor((timeElapsed % 1000) / 10); let s = Math.floor((timeElapsed / 1000) % 60); let m = Math.floor(timeElapsed / 60000);
+        const ms = Math.floor((timeElapsed % 1000) / 10); const s = Math.floor((timeElapsed / 1000) % 60); const m = Math.floor(timeElapsed / 60000);
         uiChronometer.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
     }
 
     if (ball && ball.radius > 0 && (gameState === 'PLAYING' || tutPhase !== 'MOVE')) {
         uiBallHealthContainer.classList.remove('hidden');
         uiBallHealthContainer.style.left = `${ball.x - camera.x}px`; uiBallHealthContainer.style.top = `${ball.y - camera.y - ball.radius - 15}px`;
-        let pct = (ball.health / ball.maxHealth) * 100; uiBallHealthFill.style.width = `${Math.max(0, pct)}%`;
+        const pct = (ball.health / ball.maxHealth) * 100; uiBallHealthFill.style.width = `${Math.max(0, pct)}%`;
         if (isEating) { uiBallHealthFill.style.backgroundColor = (Math.floor(timeElapsed / 100) % 2 === 0) ? '#ffffff' : '#ef4444'; cameraShake = Math.max(cameraShake, 2); } 
         else { uiBallHealthFill.style.backgroundColor = pct > 50 ? '#22c55e' : (pct > 25 ? '#eab308' : '#ef4444'); }
     } else {

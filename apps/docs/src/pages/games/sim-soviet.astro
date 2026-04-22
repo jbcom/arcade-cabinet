@@ -1,10 +1,8 @@
 ---
-import Game from "@arcade-cabinet/sim-soviet";
-import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Sim Soviet 3000">
   <main style="padding: 2rem; min-height: 100vh; background: #020617;">
-    <div style="height: 80vh;"><Game client:visible /></div>
+    <div style="height: 80vh;"><Game client:only="react" /></div>
   </main>
 </BaseLayout>

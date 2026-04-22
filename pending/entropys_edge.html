@@ -248,7 +248,7 @@
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         const isometricOffset = new THREE.Vector3(15, 14, 15);
-        let cameraTarget = new THREE.Vector3(0, 0, 0);
+        const cameraTarget = new THREE.Vector3(0, 0, 0);
         
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -280,7 +280,7 @@
         hologram.add(cursorLight);
 
         let targetNode = null, targetPillar = null;
-        let targetLight = new THREE.PointLight(0xff0055, 4.0, 20);
+        const targetLight = new THREE.PointLight(0xff0055, 4.0, 20);
         scene.add(targetLight);
 
         const raycaster = new THREE.Raycaster();
@@ -388,7 +388,7 @@
             scene.add(wave);
             state.shockwaves.push({ mesh: wave, life: 1.0 });
 
-            for (let [key, mesh] of state.grid.entries()) {
+            for (const [key, mesh] of state.grid.entries()) {
                 if (mesh.position.distanceTo(targetNode.position) > SAFE_ZONE_RADIUS) {
                     state.grid.delete(key);
                     state.fallingBlocks.push({ mesh, velocity: Math.random() * 2 });
@@ -460,7 +460,7 @@
 
             if (state.phase === 'SWOOPING') {
                 state.swoopProgress += dt * 0.8; 
-                const easeOutCub = 1 - Math.pow(1 - state.swoopProgress, 3);
+                const easeOutCub = 1 - (1 - state.swoopProgress) ** 3;
                 
                 const currentOrbitPos = new THREE.Vector3(Math.sin(elapsed * 0.2) * 12, 2 + Math.sin(elapsed * 0.5), Math.cos(elapsed * 0.2) * 12);
                 const targetPos = new THREE.Vector3().copy(cameraTarget).add(isometricOffset);

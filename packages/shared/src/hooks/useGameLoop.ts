@@ -29,5 +29,6 @@ export function useGameLoop(
 
     frame = window.requestAnimationFrame(loop);
     return () => window.cancelAnimationFrame(frame);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: deps is intentionally passed as a forwarded dependency array, matching the useEffect API
   }, deps);
 }

@@ -1,15 +1,15 @@
 import {
+  createEventBus,
   GameOverScreen,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
   StartScreen,
   TimerTrait,
-  createEventBus,
   useContainerSize,
   useGameLoop,
 } from "@arcade-cabinet/shared";
-import { WorldProvider, useTrait } from "koota/react";
+import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createInitialState, didLose, didWin, tick } from "./engine/simulation";
 import type { OtterlyState } from "./engine/types";

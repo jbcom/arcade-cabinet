@@ -17,6 +17,8 @@ export default defineConfig({
   use: {
     baseURL: appBaseUrl,
     trace: "on-first-retry",
+    // R3F games hydrate client-only; give the JS bundle time to load
+    actionTimeout: 15_000,
   },
   projects: [
     {

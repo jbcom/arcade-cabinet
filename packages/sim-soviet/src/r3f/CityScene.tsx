@@ -25,6 +25,7 @@ function CityCellMesh({
   return (
     <group position={[x - 4.5, elevation / 2, y - 4.5]}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: three.js meshes are not keyboard-focusable DOM nodes. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: three.js mesh — not a DOM element. */}
       <mesh receiveShadow castShadow onClick={onClick}>
         <boxGeometry args={[0.92, 0.08 + elevation, 0.92]} />
         <meshStandardMaterial color={building ? "#1e293b" : "#334155"} />

@@ -40,7 +40,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; z-index: 100;
         }
-        .hidden { display: none !important; }
+        .hidden { display: none; }
         
         .overlay h1 {
             font-size: clamp(50px, 12vw, 80px); color: #ff3e3e;
@@ -199,7 +199,7 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        window.onload = function() {
+        window.onload = () => {
             // === GAME STATE ===
             let isPlaying = false; // Starts false until engine starts
             let speed = 0;
@@ -392,7 +392,7 @@
             function createHonkEffect(x, y) {
                 const honkText = document.createElement('div');
                 honkText.className = 'honk-popup'; honkText.innerText = 'HONK!';
-                honkText.style.left = x + 'px'; honkText.style.top = y + 'px';
+                honkText.style.left = `${x}px`; honkText.style.top = `${y}px`;
                 document.body.appendChild(honkText);
                 setTimeout(() => { if(honkText.parentNode) honkText.parentNode.removeChild(honkText); }, 600);
             }
@@ -420,7 +420,7 @@
 
             function handleMove(x) {
                 if (!isDragging || !isPlaying) return;
-                let deltaX = x - startX;
+                const deltaX = x - startX;
                 if (deltaX > swipeThreshold) {
                     if (currentLane < 1) currentLane++;
                     carTargetX = currentLane * laneWidth; startX = x; 
@@ -446,7 +446,7 @@
 
             // === MAIN LOOP ===
             const clock = new THREE.Clock();
-            let baseRigPos = new THREE.Vector3(0,0,0);
+            const baseRigPos = new THREE.Vector3(0,0,0);
 
             function animate() {
                 requestAnimationFrame(animate);

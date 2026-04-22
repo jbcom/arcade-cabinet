@@ -87,7 +87,7 @@
             70% { box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); border-color: #fff; }
             100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); border-color: var(--term-green); }
         }
-        .tutorial-highlight { animation: tutorial-pulse 1.5s infinite !important; border: 2px solid var(--term-green) !important; z-index: 100; }
+        .tutorial-highlight { animation: tutorial-pulse 1.5s infinite; border: 2px solid var(--term-green); z-index: 100; }
 
         #game-container { position: relative; flex: 1; overflow: hidden; background: #080808; cursor: crosshair; }
 
@@ -403,7 +403,7 @@ const Game = {
     keys: { w: false, a: false, s: false, d: false }
 };
 
-let hoverPt = {x:-1, y:-1}; let rawMouse = {x:-1, y:-1}; 
+let hoverPt = {x:-1, y:-1}; const rawMouse = {x:-1, y:-1}; 
 
 function getSeason(month) {
     if (month === 12 || month <= 3) return 'WINTER';
@@ -419,28 +419,28 @@ function updateWeatherSystem(season) {
     Game.particles = []; 
     if (season === 'WINTER') Game.currentWeather = 'snow';
     else if (season === 'MUD (SPRING)') Game.currentWeather = Math.random() > 0.4 ? 'rain' : 'clear';
-    else { let r = Math.random(); if (r < 0.3) Game.currentWeather = 'storm'; else if (r < 0.6) Game.currentWeather = 'rain'; else Game.currentWeather = 'clear'; }
+    else { const r = Math.random(); if (r < 0.3) Game.currentWeather = 'storm'; else if (r < 0.6) Game.currentWeather = 'rain'; else Game.currentWeather = 'clear'; }
 }
 function setSpeed(sp) {
-    Game.speed = sp; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-speed-' + sp).classList.add('active');
+    Game.speed = sp; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-speed-${sp}`).classList.add('active');
 }
-function setLens(l) {
-    Game.activeLens = l; document.querySelectorAll('.lens-btn').forEach(b => b.classList.remove('active')); document.getElementById('lens-' + l).classList.add('active');
+function _setLens(l) {
+    Game.activeLens = l; document.querySelectorAll('.lens-btn').forEach(b => b.classList.remove('active')); document.getElementById(`lens-${l}`).classList.add('active');
 }
 function addFloatingText(gridX, gridY, text, color) {
     Game.floatingTexts.push({ x: gridX + (Math.random()-0.5)*0.5, y: gridY + (Math.random()-0.5)*0.5, text: text, color: color, life: 60, maxLife: 60 });
 }
 function pushTickerMsg() {
     const t = document.getElementById('ticker-content');
-    let msg = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
-    t.innerText = t.innerText + " *** " + msg;
+    const msg = TICKER_MESSAGES[Math.floor(Math.random() * TICKER_MESSAGES.length)];
+    t.innerText = `${t.innerText} *** ${msg}`;
     if(t.innerText.length > 500) t.innerText = t.innerText.substring(200);
 }
 
-function setTab(tab) {
+function _setTab(tab) {
     Game.activeTab = tab;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
     
     // Default tool selection when switching tabs
     Game.selectedTool = 'none';
@@ -452,7 +452,7 @@ function renderToolbar() {
     tb.innerHTML = '';
     
     // Always append Inspect
-    const insp = BUILDING_TYPES['none'];
+    const insp = BUILDING_TYPES.none;
     const inspBtn = document.createElement('button');
     inspBtn.className = `btn-retro min-w-[80px] h-full flex flex-col items-center justify-center shrink-0 rounded-sm relative ${Game.selectedTool==='none'?'active':''}`;
     inspBtn.innerHTML = `<span class="text-2xl mb-1">${insp.icon}</span><span class="text-sm font-bold leading-none">${insp.name}</span><span class="text-[11px] mt-1 font-bold tracking-wider">&nbsp;</span>`;
@@ -464,10 +464,10 @@ function renderToolbar() {
         if (key === 'none' || b.hidden || b.category !== Game.activeTab) return;
         
         const btn = document.createElement('button');
-        btn.id = 'btn-tool-' + key;
+        btn.id = `btn-tool-${key}`;
         btn.className = `btn-retro min-w-[80px] h-full flex flex-col items-center justify-center shrink-0 rounded-sm relative ${Game.selectedTool===key?'active':''}`;
         if (b.type !== 'tool') btn.style.borderTopColor = b.color;
-        btn.innerHTML = `<span class="text-2xl mb-1">${b.icon}</span><span class="text-sm font-bold leading-none">${b.name}</span><span class="text-[11px] text-[var(--soviet-gold)] mt-1 font-bold tracking-wider">${b.cost > 0 ? b.cost+'₽' : ''}</span>`;
+        btn.innerHTML = `<span class="text-2xl mb-1">${b.icon}</span><span class="text-sm font-bold leading-none">${b.name}</span><span class="text-[11px] text-[var(--soviet-gold)] mt-1 font-bold tracking-wider">${b.cost > 0 ? `${b.cost}₽` : ''}</span>`;
         btn.onclick = () => selectTool(key, btn);
         tb.appendChild(btn);
     });
@@ -481,17 +481,17 @@ function init() {
     resizeCanvas(); window.addEventListener('resize', resizeCanvas);
     
     for(let y=0; y<GRID_SIZE; y++) {
-        let row = []; let riverX = Math.floor(GRID_SIZE/2 + Math.sin(y/3) * 4); let isRailY = y === Game.train.y; 
+        const row = []; const riverX = Math.floor(GRID_SIZE/2 + Math.sin(y/3) * 4); const isRailY = y === Game.train.y; 
         for(let x=0; x<GRID_SIZE; x++) {
-            let isWater = Math.abs(x - riverX) <= 1; 
-            let isTree = !isWater && !isRailY && Math.random() < 0.2; 
+            const isWater = Math.abs(x - riverX) <= 1; 
+            const isTree = !isWater && !isRailY && Math.random() < 0.2; 
             let elev = 0;
             if (!isWater && !isRailY) {
-                let noise = Math.sin(x/3) * Math.cos(y/3);
+                const noise = Math.sin(x/3) * Math.cos(y/3);
                 if (noise > 0.4) elev = 1;
                 if (noise > 0.8) elev = 2;
             }
-            let terrainType = isWater ? 'water' : (isRailY ? 'rail' : (isTree ? 'tree' : 'grass'));
+            const terrainType = isWater ? 'water' : (isRailY ? 'rail' : (isTree ? 'tree' : 'grass'));
             row.push({ 
                 type: null, zone: null, z: elev, 
                 terrain: terrainType, isRail: isRailY, bridge: isRailY && isWater, 
@@ -519,7 +519,7 @@ function init() {
     Game.lastTime = performance.now(); requestAnimationFrame(mainLoop);
 }
 
-function startGame() {
+function _startGame() {
     document.getElementById('intro-modal').style.display = 'none';
     showAdvisor("Director. You may click and drag to rapidly place roads and zones. Use the Time Controls to pause.");
     updateUI();
@@ -533,9 +533,9 @@ function resizeCanvas() {
 function mainLoop(time) {
     let rawDt = time - Game.lastTime; Game.lastTime = time;
     if (rawDt > 100) rawDt = 16; 
-    let dt = rawDt * Game.speed;
+    const dt = rawDt * Game.speed;
     
-    let camSpeed = 1.0 * rawDt;
+    const camSpeed = 1.0 * rawDt;
     if (Game.keys.w) Game.camera.y -= camSpeed; if (Game.keys.s) Game.camera.y += camSpeed;
     if (Game.keys.a) Game.camera.x -= camSpeed; if (Game.keys.d) Game.camera.x += camSpeed;
     
@@ -552,13 +552,13 @@ function mainLoop(time) {
             if (Game.meteor.z <= 0) {
                 Game.meteor.active = false; Game.meteor.struck = true;
                 Game.activeLightning = { x: Game.meteor.tx, y: Game.meteor.ty, life: 40 }; Game.meteorShake = 50;
-                let cx = Math.floor(Game.meteor.tx), cy = Math.floor(Game.meteor.ty);
+                const cx = Math.floor(Game.meteor.tx), cy = Math.floor(Game.meteor.ty);
                 for(let dy=-2; dy<=2; dy++) {
                     for(let dx=-2; dx<=2; dx++) {
                         if(Math.hypot(dx, dy) <= 2.5) {
-                            let nx = cx + dx, ny = cy + dy;
+                            const nx = cx + dx, ny = cy + dy;
                             if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE) {
-                                let cell = Game.grid[ny][nx];
+                                const cell = Game.grid[ny][nx];
                                 if (dx===0 && dy===0) { cell.terrain = 'crater'; cell.type = null; cell.zone = null; cell.onFire = 0; cell.bridge = false; cell.z = 0;} 
                                 else { if (cell.type && cell.type !== 'road') cell.onFire = 1; }
                                 Game.buildings = Game.buildings.filter(ob => !(ob.x === nx && ob.y === ny && dx===0 && dy===0));
@@ -580,30 +580,30 @@ function mainLoop(time) {
 // --- WATER NETWORK BFS ---
 function updateWaterNetwork() {
     for(let y=0; y<GRID_SIZE; y++) for(let x=0; x<GRID_SIZE; x++) Game.grid[y][x].watered = false;
-    let pumps = Game.buildings.filter(b => b.type === 'pump' && Game.grid[b.y][b.x].onFire === 0);
-    let queue = [];
+    const pumps = Game.buildings.filter(b => b.type === 'pump' && Game.grid[b.y][b.x].onFire === 0);
+    const queue = [];
     pumps.forEach(p => { queue.push({x: p.x, y: p.y, dist: 0}); Game.grid[p.y][p.x].watered = true; });
 
     while(queue.length > 0) {
-        let curr = queue.shift();
-        let dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+        const curr = queue.shift();
+        const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
         dirs.forEach(d => {
-            let nx = curr.x + d.x, ny = curr.y + d.y;
+            const nx = curr.x + d.x, ny = curr.y + d.y;
             if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE) {
-                let cell = Game.grid[ny][nx];
+                const cell = Game.grid[ny][nx];
                 if (cell.hasPipe && !cell.watered) { cell.watered = true; queue.push({x: nx, y: ny, dist: curr.dist + 1}); }
             }
         });
     }
 
-    let waterGridCopy = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
+    const waterGridCopy = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
     for(let y=0; y<GRID_SIZE; y++) {
         for(let x=0; x<GRID_SIZE; x++) {
             if (Game.grid[y][x].watered) {
                 for(let dy=-3; dy<=3; dy++) {
                     for(let dx=-3; dx<=3; dx++) {
                         if(Math.hypot(dx, dy) <= 3) {
-                            let nx = x + dx, ny = y + dy;
+                            const nx = x + dx, ny = y + dy;
                             if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE) waterGridCopy[ny][nx] = true;
                         }
                     }
@@ -618,21 +618,21 @@ function updateWaterNetwork() {
 function simTick() {
     Game.date.tick++; let isMonthPassed = false;
 
-    let currentDir = DIRECTIVES[Game.directiveIndex];
-    if (currentDir && currentDir.check()) {
+    const currentDir = DIRECTIVES[Game.directiveIndex];
+    if (currentDir?.check()) {
         Game.money += currentDir.reward; showToast(`DIRECTIVE COMPLETE: +${currentDir.reward}₽`);
         addFloatingText(GRID_SIZE/2, GRID_SIZE/2, `DIRECTIVE: +${currentDir.reward}₽`, '#cfaa48');
         Game.directiveIndex++; 
-        if (DIRECTIVES[Game.directiveIndex]) showAdvisor("New Directive Issued: " + DIRECTIVES[Game.directiveIndex].text);
+        if (DIRECTIVES[Game.directiveIndex]) showAdvisor(`New Directive Issued: ${DIRECTIVES[Game.directiveIndex].text}`);
         updateUI();
     }
     
     if (Game.currentWeather === 'storm' && Math.random() < 0.15) {
-        let lx = Math.floor(Math.random() * GRID_SIZE), ly = Math.floor(Math.random() * GRID_SIZE);
+        const lx = Math.floor(Math.random() * GRID_SIZE), ly = Math.floor(Math.random() * GRID_SIZE);
         Game.activeLightning = { x: lx, y: ly, life: 15 }; 
-        let cell = Game.grid[ly][lx];
-        let activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0 && b.powered !== false);
-        let isPacified = activeGulags.some(g => Math.hypot(g.x - lx, g.y - ly) <= 7);
+        const cell = Game.grid[ly][lx];
+        const activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0 && b.powered !== false);
+        const isPacified = activeGulags.some(g => Math.hypot(g.x - lx, g.y - ly) <= 7);
 
         if (cell.type && cell.type !== 'road' && cell.type !== 'pipe' && !isPacified && cell.onFire === 0) { cell.onFire = 1; showToast("LIGHTNING STRUCK A BUILDING!"); } 
         else if (cell.terrain === 'tree' && !cell.type && !isPacified) cell.terrain = 'grass';
@@ -646,21 +646,21 @@ function simTick() {
     }
 
     if(Game.date.tick >= TICKS_PER_MONTH) { 
-        Game.date.tick = 0; isMonthPassed = true; let oldSeason = getSeason(Game.date.month);
+        Game.date.tick = 0; isMonthPassed = true; const oldSeason = getSeason(Game.date.month);
         Game.date.month++;
         if(Game.date.month > 12) { Game.date.month = 1; Game.date.year++; if (Game.quota.target > 0) checkQuota(); }
 
-        let newSeason = getSeason(Game.date.month); updateWeatherSystem(newSeason); 
+        const newSeason = getSeason(Game.date.month); updateWeatherSystem(newSeason); 
 
-        let tax = Math.floor(Game.pop * 0.2) + 5; Game.money += tax; Game.lastIncome = tax;
-        let houses = Game.buildings.filter(b=>b.type==='housing');
+        const tax = Math.floor(Game.pop * 0.2) + 5; Game.money += tax; Game.lastIncome = tax;
+        const houses = Game.buildings.filter(b=>b.type==='housing');
         if(houses.length > 0) addFloatingText(houses[Math.floor(Math.random()*houses.length)].x, houses[Math.floor(Math.random()*houses.length)].y, `+${tax}₽ TAX`, '#ffca28');
         else addFloatingText(GRID_SIZE/2, GRID_SIZE/2, `+${tax}₽ TAX`, '#ffca28');
 
         if (oldSeason === 'WINTER' && newSeason !== 'WINTER') {
             let sunkRoads = 0;
             for(let y=0; y<GRID_SIZE; y++) for(let x=0; x<GRID_SIZE; x++) {
-                let cell = Game.grid[y][x];
+                const cell = Game.grid[y][x];
                 if (cell.terrain === 'water' && cell.type === 'road' && !cell.bridge && !cell.isRail) {
                     cell.type = null; sunkRoads++; Game.traffic = Game.traffic.filter(v => Math.round(v.x) !== x || Math.round(v.y) !== y);
                 }
@@ -668,33 +668,33 @@ function simTick() {
             if (sunkRoads > 0) showToast(`SPRING THAW: ${sunkRoads} ICE ROADS SUNK`);
         }
         
-        let activeTowers = Game.buildings.filter(b => b.type === 'tower' && Game.grid[b.y][b.x].onFire === 0 && b.powered);
-        let activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0 && b.powered);
+        const activeTowers = Game.buildings.filter(b => b.type === 'tower' && Game.grid[b.y][b.x].onFire === 0 && b.powered);
+        const activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0 && b.powered);
 
         // ZONING GROWTH LOGIC
         for(let y=0; y<GRID_SIZE; y++) {
             for(let x=0; x<GRID_SIZE; x++) {
-                let cell = Game.grid[y][x];
+                const cell = Game.grid[y][x];
                 if (cell.zone && cell.onFire === 0) {
                     if (!cell.type) {
                         // Empty -> Lvl 0
                         if (cell.watered && Math.random() < 0.15) {
-                            let newType = cell.zone === 'res' ? 'housing' : (cell.zone === 'farm' ? 'farm' : (Math.random() > 0.5 ? 'factory' : 'distillery'));
+                            const newType = cell.zone === 'res' ? 'housing' : (cell.zone === 'farm' ? 'farm' : (Math.random() > 0.5 ? 'factory' : 'distillery'));
                             cell.type = newType; Game.buildings.push({x,y,type:newType,powered:false,level:0}); 
                             addFloatingText(x, y, "BUILT", "#00e676");
                         }
                     } else if (GROWN_TYPES[cell.type]) {
                         // Upgrade Logic
-                        let b = Game.buildings.find(bl=>bl.x===x && bl.y===y);
-                        if (b && b.powered && cell.watered) {
-                            let maxLevel = GROWN_TYPES[b.type].length - 1;
+                        const b = Game.buildings.find(bl=>bl.x===x && bl.y===y);
+                        if (b?.powered && cell.watered) {
+                            const maxLevel = GROWN_TYPES[b.type].length - 1;
                             if (b.level < maxLevel && Math.random() < 0.08) {
                                 // Specific requirements
                                 let canUpgrade = false;
                                 if (b.level === 0) canUpgrade = true; // Just need power/water which is checked above
                                 else if (b.level === 1) {
                                     // Level 2 -> Level 3 needs Aura and Low Smog
-                                    let hasAura = activeTowers.some(t => Math.hypot(t.x-x, t.y-y)<=5) || activeGulags.some(g => Math.hypot(g.x-x, g.y-y)<=7);
+                                    const hasAura = activeTowers.some(t => Math.hypot(t.x-x, t.y-y)<=5) || activeGulags.some(g => Math.hypot(g.x-x, g.y-y)<=7);
                                     if (hasAura && cell.smog < 25) canUpgrade = true;
                                 }
 
@@ -714,41 +714,41 @@ function simTick() {
     let prodFood = 0, prodVodka = 0, prodPower = 0, reqPower = 0, prodWater = 0, reqWater = 0;
     
     Game.buildings.forEach(b => { 
-        let baseStats = BUILDING_TYPES[b.type] || (GROWN_TYPES[b.type] ? GROWN_TYPES[b.type][b.level||0] : null);
+        const baseStats = BUILDING_TYPES[b.type] || (GROWN_TYPES[b.type] ? GROWN_TYPES[b.type][b.level||0] : null);
         if(!baseStats) return;
         if((b.type === 'power' || b.type === 'nuke' || b.type === 'tap') && Game.grid[b.y][b.x].onFire === 0) prodPower += baseStats.power || 0; 
         if(b.type === 'pump' && Game.grid[b.y][b.x].onFire === 0) prodWater += baseStats.water || 0;
     });
     Game.powerGen = prodPower; Game.waterGen = prodWater;
 
-    let nextSmog = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+    const nextSmog = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
     for(let y=0; y<GRID_SIZE; y++) for(let x=0; x<GRID_SIZE; x++) {
         if (Game.grid[y][x].terrain === 'irradiated') nextSmog[y][x] += 30; 
-        let s = Game.grid[y][x].smog;
+        const s = Game.grid[y][x].smog;
         if(s > 0) {
-            let decay = Game.currentWeather === 'rain' || Game.currentWeather === 'storm' ? 0.25 : 0.35;
-            let spread = s * 0.15, kept = s * decay;   
+            const decay = Game.currentWeather === 'rain' || Game.currentWeather === 'storm' ? 0.25 : 0.35;
+            const spread = s * 0.15, kept = s * decay;   
             nextSmog[y][x] += kept;
             if(x>0) nextSmog[y][x-1] += spread; if(x<GRID_SIZE-1) nextSmog[y][x+1] += spread;
             if(y>0) nextSmog[y-1][x] += spread; if(y<GRID_SIZE-1) nextSmog[y+1][x] += spread;
         }
     }
 
-    let activeTowers = Game.buildings.filter(b => b.type === 'tower' && Game.grid[b.y][b.x].onFire === 0); 
-    let activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0); 
-    let activeMasts = Game.buildings.filter(b => b.type === 'mast' && b.powered !== false && Game.grid[b.y][b.x].onFire === 0).length;
+    const activeTowers = Game.buildings.filter(b => b.type === 'tower' && Game.grid[b.y][b.x].onFire === 0); 
+    const activeGulags = Game.buildings.filter(b => b.type === 'gulag' && Game.grid[b.y][b.x].onFire === 0); 
+    const activeMasts = Game.buildings.filter(b => b.type === 'mast' && b.powered !== false && Game.grid[b.y][b.x].onFire === 0).length;
     while (Game.zeppelins.length < activeMasts) Game.zeppelins.push({x: Math.random()*GRID_SIZE, y: Math.random()*GRID_SIZE, tx: 15, ty: 15, lx: 15, ly: 15});
     while (Game.zeppelins.length > activeMasts) Game.zeppelins.pop();
 
-    let starvation = Game.food < Math.ceil(Game.pop / 10), sobering = Game.vodka < Math.ceil(Game.pop / 20);
+    const starvation = Game.food < Math.ceil(Game.pop / 10), sobering = Game.vodka < Math.ceil(Game.pop / 20);
     let destroyedThisTurn = [], meltdownTriggered = false, meltdownCoords = [];
 
     // Combine manual builds and grown buildings for simulation
     Game.buildings.forEach(b => {
-        let stats = BUILDING_TYPES[b.type] || (GROWN_TYPES[b.type] ? GROWN_TYPES[b.type][b.level||0] : null); 
+        const stats = BUILDING_TYPES[b.type] || (GROWN_TYPES[b.type] ? GROWN_TYPES[b.type][b.level||0] : null); 
         if(!stats) return;
-        b.powered = true; let cell = Game.grid[b.y][b.x];
-        let isPacified = activeGulags.some(g => Math.hypot(g.x - b.x, g.y - b.y) <= 7 && g.powered !== false);
+        b.powered = true; const cell = Game.grid[b.y][b.x];
+        const isPacified = activeGulags.some(g => Math.hypot(g.x - b.x, g.y - b.y) <= 7 && g.powered !== false);
 
         if (isPacified) cell.onFire = 0; 
         if (cell.onFire > 0) {
@@ -756,10 +756,10 @@ function simTick() {
             if (isMonthPassed) {
                 cell.onFire++;
                 if (cell.onFire > 2 && Math.random() < 0.2) {
-                    let neighbors = [{x:b.x+1,y:b.y}, {x:b.x-1,y:b.y}, {x:b.x,y:b.y+1}, {x:b.x,y:b.y-1}];
+                    const neighbors = [{x:b.x+1,y:b.y}, {x:b.x-1,y:b.y}, {x:b.x,y:b.y+1}, {x:b.x,y:b.y-1}];
                     neighbors.forEach(n => {
                         if(n.x>=0 && n.x<GRID_SIZE && n.y>=0 && n.y<GRID_SIZE) {
-                            let nCell = Game.grid[n.y][n.x];
+                            const nCell = Game.grid[n.y][n.x];
                             if(nCell.type && nCell.type !== 'road' && nCell.onFire === 0 && !activeGulags.some(g => Math.hypot(g.x - n.x, g.y - n.y) <= 7)) nCell.onFire = 1;
                         }
                     });
@@ -782,7 +782,7 @@ function simTick() {
 
             let multiplier = 1; if (stats.prod && activeTowers.some(t => Math.hypot(t.x - b.x, t.y - b.y) <= 5 && t.powered !== false)) multiplier = 2;
             if (isMonthPassed && stats.prod) {
-                let amount = stats.amt * multiplier;
+                const amount = stats.amt * multiplier;
                 if(stats.prod === 'food') { prodFood += amount; addFloatingText(b.x, b.y, `+${amount}🥔`, '#00e676'); }
                 if(stats.prod === 'vodka') { prodVodka += amount; addFloatingText(b.x, b.y, `+${amount}🍾`, '#00e5ff'); }
                 if(stats.prod === 'money') { Game.money += amount; addFloatingText(b.x, b.y, `+${amount}₽`, '#fbc02d'); }
@@ -809,7 +809,7 @@ function simTick() {
     Game.powerUsed = reqPower; Game.waterUsed = reqWater;
 
     destroyedThisTurn.forEach(b => { 
-        let c = Game.grid[b.y][b.x]; c.type = null; c.onFire = 0; 
+        const c = Game.grid[b.y][b.x]; c.type = null; c.onFire = 0; 
         Game.buildings = Game.buildings.filter(ob => !(ob.x === b.x && ob.y === b.y)); 
     });
 
@@ -817,7 +817,7 @@ function simTick() {
         showToast("☢️ CATASTROPHIC MELTDOWN ☢️"); 
         meltdownCoords.forEach(mc => {
             for(let dy=-3; dy<=3; dy++) for(let dx=-3; dx<=3; dx++) if(Math.hypot(dx, dy) <= 3.5) {
-                let nx = mc.x + dx, ny = mc.y + dy;
+                const nx = mc.x + dx, ny = mc.y + dy;
                 if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE) {
                     Game.grid[ny][nx].terrain = 'irradiated'; Game.grid[ny][nx].type = null; Game.grid[ny][nx].zone = null; Game.grid[ny][nx].onFire = 0;
                     if (!Game.grid[ny][nx].isRail) Game.grid[ny][nx].bridge = false;
@@ -829,11 +829,11 @@ function simTick() {
 
     for(let y=0; y<GRID_SIZE; y++) for(let x=0; x<GRID_SIZE; x++) Game.grid[y][x].smog = nextSmog[y][x];
 
-    let foodNeed = Math.ceil(Game.pop / 10);
+    const foodNeed = Math.ceil(Game.pop / 10);
     if(Game.food >= foodNeed) Game.food += (prodFood - foodNeed);
     else { Game.pop = Math.max(0, Game.pop - 5); if(isMonthPassed) showToast("STARVATION"); }
 
-    Game.vodka += prodVodka; let vodkaDrink = Math.ceil(Game.pop / 20);
+    Game.vodka += prodVodka; const vodkaDrink = Math.ceil(Game.pop / 20);
     if(Game.vodka >= vodkaDrink) Game.vodka -= vodkaDrink;
 
     let housingCap = 0, smogDeaths = 0;
@@ -869,35 +869,35 @@ function checkQuota() {
 
 // --- TRAFFIC, ZEPPELINS, & TRAIN ---
 function updateTraffic(dt) {
-    let season = getSeason(Game.date.month);
-    let speedMult = season === 'MUD (SPRING)' ? 0.015 : (season === 'WINTER' ? 0.025 : 0.04);
+    const season = getSeason(Game.date.month);
+    const speedMult = season === 'MUD (SPRING)' ? 0.015 : (season === 'WINTER' ? 0.025 : 0.04);
     const SPEED = speedMult * (dt / 16); 
     
     if(Math.random() < 0.05 * (dt/16) && Game.traffic.length < 20) {
-        let roads = [];
+        const roads = [];
         for(let y=0; y<GRID_SIZE; y++) for(let x=0; x<GRID_SIZE; x++) if(Game.grid[y][x].type === 'road') roads.push({x,y});
         if(roads.length > 0) {
-            let start = roads[Math.floor(Math.random()*roads.length)];
+            const start = roads[Math.floor(Math.random()*roads.length)];
             Game.traffic.push({ x: start.x, y: start.y, tx: start.x, ty: start.y, lx: start.x, ly: start.y, state: 'idle', color: Math.random() > 0.3 ? '#555' : '#a00' });
         }
     }
     
     for(let i=Game.traffic.length-1; i>=0; i--) {
-        let v = Game.traffic[i];
+        const v = Game.traffic[i];
         if(v.state === 'idle') {
-            let dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
-            let valid = dirs.map(d => ({x: v.x+d.x, y: v.y+d.y})).filter(n => n.x>=0 && n.x<GRID_SIZE && n.y>=0 && n.y<GRID_SIZE && Game.grid[n.y][n.x].type === 'road');
+            const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+            const valid = dirs.map(d => ({x: v.x+d.x, y: v.y+d.y})).filter(n => n.x>=0 && n.x<GRID_SIZE && n.y>=0 && n.y<GRID_SIZE && Game.grid[n.y][n.x].type === 'road');
             let forward = valid.filter(n => !(n.x === v.lx && n.y === v.ly));
             if(forward.length === 0) forward = valid; 
             
             if(forward.length > 0) {
-                let next = forward[Math.floor(Math.random()*forward.length)];
+                const next = forward[Math.floor(Math.random()*forward.length)];
                 v.lx = v.x; v.ly = v.y; v.tx = next.x; v.ty = next.y; v.state = 'moving';
             } else { Game.traffic.splice(i, 1); continue; }
         }
         
         if(v.state === 'moving') {
-            let dx = v.tx - v.x, dy = v.ty - v.y, dist = Math.sqrt(dx*dx + dy*dy);
+            const dx = v.tx - v.x, dy = v.ty - v.y, dist = Math.sqrt(dx*dx + dy*dy);
             if(dist <= SPEED) { v.x = v.tx; v.y = v.ty; v.state = 'idle'; } else { v.x += (dx/dist) * SPEED; v.y += (dy/dist) * SPEED; }
         }
     }
@@ -913,7 +913,7 @@ function updateZeppelins(dt) {
         if (fireFound) { z.tx = fireFound.x; z.ty = fireFound.y; } 
         else if (Math.hypot(z.tx - z.x, z.ty - z.y) < 1) { z.tx = Math.random() * GRID_SIZE; z.ty = Math.random() * GRID_SIZE; }
 
-        let dx = z.tx - z.x, dy = z.ty - z.y, dist = Math.hypot(dx, dy);
+        const dx = z.tx - z.x, dy = z.ty - z.y, dist = Math.hypot(dx, dy);
         if (dist > SPEED) { z.x += (dx/dist) * SPEED; z.y += (dy/dist) * SPEED; } 
         else {
             if (fireFound && Math.round(z.x) === fireFound.x && Math.round(z.y) === fireFound.y) {
@@ -930,10 +930,10 @@ function updateTrain(dt) {
     }
 
     if (Game.train.active) {
-        let oldX = Math.floor(Game.train.x); Game.train.x += 0.12 * (dt/16); let newX = Math.floor(Game.train.x);
+        const oldX = Math.floor(Game.train.x); Game.train.x += 0.12 * (dt/16); const newX = Math.floor(Game.train.x);
 
         if (newX > oldX && newX >= 0 && newX < GRID_SIZE) {
-            let adjacentStations = Game.buildings.filter(b => b.type === 'station' && b.powered && Math.abs(b.x - newX) <= 1 && Math.abs(b.y - Game.train.y) <= 1);
+            const adjacentStations = Game.buildings.filter(b => b.type === 'station' && b.powered && Math.abs(b.x - newX) <= 1 && Math.abs(b.y - Game.train.y) <= 1);
             if (adjacentStations.length > 0) {
                 Game.money += 200; Game.vodka += 25;
                 addFloatingText(newX, Game.train.y, "+200₽ +25🍾", "#fbc02d");
@@ -948,11 +948,11 @@ function updateTrain(dt) {
 
 // --- MINIMAP RADAR ---
 function drawMinimap() {
-    mCtx.fillStyle = '#000'; mCtx.fillRect(0, 0, 140, 140); let ts = 140 / GRID_SIZE;
+    mCtx.fillStyle = '#000'; mCtx.fillRect(0, 0, 140, 140); const ts = 140 / GRID_SIZE;
     
     for(let y=0; y<GRID_SIZE; y++) {
         for(let x=0; x<GRID_SIZE; x++) {
-            let c = Game.grid[y][x]; let color = '#1a1a1a'; 
+            const c = Game.grid[y][x]; let color = '#1a1a1a'; 
             if (c.terrain === 'water') color = '#2b4b5e';
             else if (c.terrain === 'rail') color = '#333';
             else if (c.terrain === 'tree') color = '#1b5e20';
@@ -973,7 +973,7 @@ function drawMinimap() {
     
     if (Game.train.active) { mCtx.fillStyle = '#fbc02d'; mCtx.fillRect(Game.train.x*ts, Game.train.y*ts, ts*2, ts); }
     
-    let centerPt = screenToIso(canvas.width/2, canvas.height/2);
+    const centerPt = screenToIso(canvas.width/2, canvas.height/2);
     mCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; mCtx.lineWidth = 1.5;
     mCtx.strokeRect(centerPt.x*ts - 12, centerPt.y*ts - 12, 24, 24);
 }
@@ -981,29 +981,29 @@ function drawMinimap() {
 // --- RENDERING PIPELINE ---
 function isoToScreen(x, y, z) { return { x: (x - y) * (TILE_WIDTH / 2) + canvas.width / 2 - Game.camera.x, y: (x + y) * (TILE_HEIGHT / 2) + canvas.height / 2 - Game.camera.y - (z * TILE_HEIGHT / 2) }; }
 function screenToIso(screenX, screenY) {
-    let adjX = screenX - (canvas.width / 2) + Game.camera.x, adjY = screenY - (canvas.height / 2) + Game.camera.y;
-    let isoY = (adjY / TILE_HEIGHT) - (adjX / TILE_WIDTH), isoX = (adjY / TILE_HEIGHT) + (adjX / TILE_WIDTH);
+    const adjX = screenX - (canvas.width / 2) + Game.camera.x, adjY = screenY - (canvas.height / 2) + Game.camera.y;
+    const isoY = (adjY / TILE_HEIGHT) - (adjX / TILE_WIDTH), isoX = (adjY / TILE_HEIGHT) + (adjX / TILE_WIDTH);
     return { x: Math.floor(isoX), y: Math.floor(isoY) };
 }
 
 function renderAll() {
-    let currentSeason = getSeason(Game.date.month);
+    const currentSeason = getSeason(Game.date.month);
     ctx.fillStyle = '#080808'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    if (Game.activeLaunch) { let shake = Math.max(0, 15 - Game.activeLaunch.alt/10); if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); }
+    if (Game.activeLaunch) { const shake = Math.max(0, 15 - Game.activeLaunch.alt/10); if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); }
     if (Game.meteorShake && Game.meteorShake > 0) { ctx.translate((Math.random()-0.5)*Game.meteorShake, (Math.random()-0.5)*Game.meteorShake); if (Game.speed > 0) Game.meteorShake -= 0.5; }
-    if (Game.activeLightning && !Game.meteorShake) { let shake = Math.random() * 4; ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); }
+    if (Game.activeLightning && !Game.meteorShake) { const shake = Math.random() * 4; ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); }
     if (Game.train.active && Game.train.x > 0 && Game.train.x < GRID_SIZE && !Game.meteorShake) { ctx.translate((Math.random()-0.5)*2, (Math.random()-0.5)*2); }
 
     for(let y = 0; y < GRID_SIZE; y++) for(let x = 0; x < GRID_SIZE; x++) drawGround(x, y, currentSeason);
 
-    let isNight = Game.timeOfDay > 0.5 && Game.timeOfDay < 1.0;
+    const isNight = Game.timeOfDay > 0.5 && Game.timeOfDay < 1.0;
     if (Game.activeLens === 'default' && !isNight) {
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        let angle = Math.PI + (Game.timeOfDay * 2) * Math.PI; 
-        let shadowLen = Math.abs(Math.cos(Game.timeOfDay * 2 * Math.PI)) * 1.5 + 0.4; 
-        let sx = Math.cos(angle) * 30 * shadowLen, sy = Math.sin(angle) * 15 * shadowLen;
+        const angle = Math.PI + (Game.timeOfDay * 2) * Math.PI; 
+        const shadowLen = Math.abs(Math.cos(Game.timeOfDay * 2 * Math.PI)) * 1.5 + 0.4; 
+        const sx = Math.cos(angle) * 30 * shadowLen, sy = Math.sin(angle) * 15 * shadowLen;
         for(let y = 0; y < GRID_SIZE; y++) for(let x = 0; x < GRID_SIZE; x++) drawShadow(x, y, sx, sy);
     }
 
@@ -1013,7 +1013,7 @@ function renderAll() {
             if (Game.activeLens !== 'water') {
                 Game.traffic.forEach(v => { if(Math.round(v.x) === x && Math.round(v.y) === y) drawVehicle(v, currentSeason); });
                 if (Game.train.active && y === Game.train.y) {
-                    for(let i=0; i<=4; i++) { let carX = Game.train.x - i * 1.1; if (Math.round(carX) === x) drawTrainCar(carX, y, i); }
+                    for(let i=0; i<=4; i++) { const carX = Game.train.x - i * 1.1; if (Math.round(carX) === x) drawTrainCar(carX, y, i); }
                 }
             }
             if(Game.activeLens === 'default' || Game.activeLens === 'smog') drawSmog(x, y);
@@ -1024,9 +1024,9 @@ function renderAll() {
     if(Game.activeLens === 'aura' || Game.activeLens === 'default') drawAuras(); 
     if(Game.activeLens === 'default') drawZeppelinShadows();
 
-    let nightAlpha = Math.max(0, -Math.cos(Game.timeOfDay * Math.PI * 2));
-    let stormAlpha = (Game.currentWeather === 'storm') ? 0.6 : (Game.currentWeather === 'rain' ? 0.3 : 0);
-    let combinedAlpha = Math.min(0.9, nightAlpha + stormAlpha);
+    const nightAlpha = Math.max(0, -Math.cos(Game.timeOfDay * Math.PI * 2));
+    const stormAlpha = (Game.currentWeather === 'storm') ? 0.6 : (Game.currentWeather === 'rain' ? 0.3 : 0);
+    const combinedAlpha = Math.min(0.9, nightAlpha + stormAlpha);
 
     if (Game.activeLens === 'default' && combinedAlpha > 0) {
         ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = `rgba(15, 20, 30, ${combinedAlpha * 0.85})`; 
@@ -1064,11 +1064,11 @@ function drawGround(x, y, season) {
     ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.lineTo(pos.x + TILE_WIDTH / 2, pos.y + TILE_HEIGHT / 2); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT); ctx.lineTo(pos.x - TILE_WIDTH / 2, pos.y + TILE_HEIGHT / 2); ctx.closePath();
     
     if(Game.activeLens === 'smog') {
-        let sAlpha = Math.min(1.0, cell.smog / 100); ctx.fillStyle = `rgba(${sAlpha*255}, ${255 - sAlpha*255}, 0, 1)`; ctx.fill(); ctx.strokeStyle = '#222'; ctx.stroke();
+        const sAlpha = Math.min(1.0, cell.smog / 100); ctx.fillStyle = `rgba(${sAlpha*255}, ${255 - sAlpha*255}, 0, 1)`; ctx.fill(); ctx.strokeStyle = '#222'; ctx.stroke();
     } else {
         if (cell.terrain === 'water') {
             if (season === 'WINTER') { ctx.fillStyle = '#a8b8c8'; ctx.fill(); ctx.strokeStyle = '#8a9aa8'; ctx.stroke(); } 
-            else { let wave = Math.sin(Game.animTime/500 + x + y) * 10; ctx.fillStyle = `rgb(30, ${50 + wave}, ${80 + wave})`; ctx.fill(); ctx.strokeStyle = '#1a2a3a'; ctx.stroke(); }
+            else { const wave = Math.sin(Game.animTime/500 + x + y) * 10; ctx.fillStyle = `rgb(30, ${50 + wave}, ${80 + wave})`; ctx.fill(); ctx.strokeStyle = '#1a2a3a'; ctx.stroke(); }
         } else if (cell.terrain === 'rail') { ctx.fillStyle = '#222'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.stroke(); drawTrackLines(x, y, cell.z);
         } else if (cell.terrain === 'irradiated') {
             ctx.fillStyle = '#2a332a'; ctx.fill(); ctx.strokeStyle = '#112211'; ctx.stroke();
@@ -1089,11 +1089,11 @@ function drawGround(x, y, season) {
 
         if (cell.terrain !== 'water') {
             if (x < GRID_SIZE-1 && Game.grid[y][x+1].z < cell.z) {
-                let diff = (cell.z - Game.grid[y][x+1].z) * TILE_HEIGHT/2;
+                const diff = (cell.z - Game.grid[y][x+1].z) * TILE_HEIGHT/2;
                 ctx.fillStyle = '#4e342e'; ctx.beginPath(); ctx.moveTo(pos.x + TILE_WIDTH/2, pos.y + TILE_HEIGHT/2); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT + diff); ctx.lineTo(pos.x + TILE_WIDTH/2, pos.y + TILE_HEIGHT/2 + diff); ctx.fill(); ctx.stroke();
             }
             if (y < GRID_SIZE-1 && Game.grid[y+1][x].z < cell.z) {
-                let diff = (cell.z - Game.grid[y+1][x].z) * TILE_HEIGHT/2;
+                const diff = (cell.z - Game.grid[y+1][x].z) * TILE_HEIGHT/2;
                 ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.moveTo(pos.x - TILE_WIDTH/2, pos.y + TILE_HEIGHT/2); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT + diff); ctx.lineTo(pos.x - TILE_WIDTH/2, pos.y + TILE_HEIGHT/2 + diff); ctx.fill(); ctx.stroke();
             }
         }
@@ -1103,8 +1103,8 @@ function drawGround(x, y, season) {
             if (cell.watered) { ctx.fillStyle = 'rgba(0, 150, 255, 0.3)'; ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.lineTo(pos.x + TILE_WIDTH / 2, pos.y + TILE_HEIGHT / 2); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT); ctx.lineTo(pos.x - TILE_WIDTH / 2, pos.y + TILE_HEIGHT / 2); ctx.fill(); }
             if (cell.hasPipe) {
                 ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.lineTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.stroke();
-                if (x < GRID_SIZE-1 && Game.grid[y][x+1].hasPipe) { let p2 = isoToScreen(x+1, y, Game.grid[y][x+1].z); ctx.beginPath(); ctx.moveTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.lineTo(p2.x, p2.y + TILE_HEIGHT/2); ctx.stroke(); }
-                if (y < GRID_SIZE-1 && Game.grid[y+1][x].hasPipe) { let p2 = isoToScreen(x, y+1, Game.grid[y+1][x].z); ctx.beginPath(); ctx.moveTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.lineTo(p2.x, p2.y + TILE_HEIGHT/2); ctx.stroke(); }
+                if (x < GRID_SIZE-1 && Game.grid[y][x+1].hasPipe) { const p2 = isoToScreen(x+1, y, Game.grid[y][x+1].z); ctx.beginPath(); ctx.moveTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.lineTo(p2.x, p2.y + TILE_HEIGHT/2); ctx.stroke(); }
+                if (y < GRID_SIZE-1 && Game.grid[y+1][x].hasPipe) { const p2 = isoToScreen(x, y+1, Game.grid[y+1][x].z); ctx.beginPath(); ctx.moveTo(pos.x, pos.y + TILE_HEIGHT/2); ctx.lineTo(p2.x, p2.y + TILE_HEIGHT/2); ctx.stroke(); }
             }
         }
     }
@@ -1113,13 +1113,13 @@ function drawGround(x, y, season) {
 function drawShadow(x, y, sx, sy) {
     const cell = Game.grid[y][x];
     const buildingRef = Game.buildings.find(b => b.x === x && b.y === y);
-    let level = buildingRef ? (buildingRef.level || 0) : 0;
+    const level = buildingRef ? (buildingRef.level || 0) : 0;
     
     let h = 0;
     if (cell.type) h = getBuildingHeight(cell.type, level); else if (cell.terrain === 'tree') h = 25;
     if (h === 0) return;
     
-    const pos = isoToScreen(x, y, cell.z); let cx = pos.x, cy = pos.y + TILE_HEIGHT/2, w = TILE_WIDTH/2 - 4; 
+    const pos = isoToScreen(x, y, cell.z); const cx = pos.x, cy = pos.y + TILE_HEIGHT/2, w = TILE_WIDTH/2 - 4; 
     ctx.beginPath(); ctx.moveTo(cx - w + 10, cy - 5); ctx.lineTo(cx + w - 10, cy - 5); 
     ctx.lineTo(cx + w - 10 + sx * (h/20), cy - 5 + sy * (h/20)); ctx.lineTo(cx - w + 10 + sx * (h/20), cy - 5 + sy * (h/20)); ctx.closePath(); ctx.fill();
 }
@@ -1164,8 +1164,8 @@ function drawBuilding(x, y, type, season, isGhost = false, isValid = true) {
     
     let height = info?.h || getBuildingHeight(type, level), color = info?.color || '#aaa', topColor = '#9e9e9e', sideColor = '#616161';
     
-    let hex = color.replace('#', '');
-    let r = parseInt(hex.substring(0,2), 16), g = parseInt(hex.substring(2,4), 16), b = parseInt(hex.substring(4,6), 16);
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0,2), 16), g = parseInt(hex.substring(2,4), 16), b = parseInt(hex.substring(4,6), 16);
     topColor = `rgb(${Math.min(255, r+40)}, ${Math.min(255, g+40)}, ${Math.min(255, b+40)})`;
     sideColor = `rgb(${Math.max(0, r-30)}, ${Math.max(0, g-30)}, ${Math.max(0, b-30)})`;
 
@@ -1199,7 +1199,7 @@ function drawBuilding(x, y, type, season, isGhost = false, isValid = true) {
 
         if (type === 'housing' && !isGhost) {
             if (level > 0) {
-                ctx.fillStyle = (buildingRef && buildingRef.powered) ? '#fff9c4' : '#111';
+                ctx.fillStyle = (buildingRef?.powered) ? '#fff9c4' : '#111';
                 for(let wy=10; wy<height-5; wy+=10) {
                     ctx.fillRect(cx - w/2, cy - wy - TILE_HEIGHT/8, 3, 4); ctx.fillRect(cx - w/2 + 8, cy - wy - TILE_HEIGHT/8 + 4, 3, 4);
                     ctx.fillRect(cx + w/2 - 5, cy - wy - TILE_HEIGHT/8 - 2, 3, 4); ctx.fillRect(cx + w/2 - 12, cy - wy - TILE_HEIGHT/8 + 2, 3, 4);
@@ -1216,44 +1216,44 @@ function drawBuilding(x, y, type, season, isGhost = false, isValid = true) {
         } else if(type === 'tower') {
             ctx.fillStyle = sideColor; ctx.beginPath(); ctx.moveTo(cx, cy - height); ctx.lineTo(cx - 4, cy - height - 40); ctx.lineTo(cx, cy - height - 40); ctx.fill();
             ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(cx, cy - height); ctx.lineTo(cx + 4, cy - height - 40); ctx.lineTo(cx, cy - height - 40); ctx.fill();
-            let pulse = (buildingRef && buildingRef.powered) ? (Math.sin(Game.animTime / 150) * 0.5 + 0.5) : 0;
-            ctx.fillStyle = (buildingRef && buildingRef.powered && !isGhost) ? `rgba(255, ${50 - pulse*50}, 0, ${pulse + 0.2})` : (isGhost?color:'#111'); 
+            const pulse = (buildingRef?.powered) ? (Math.sin(Game.animTime / 150) * 0.5 + 0.5) : 0;
+            ctx.fillStyle = (buildingRef?.powered && !isGhost) ? `rgba(255, ${50 - pulse*50}, 0, ${pulse + 0.2})` : (isGhost?color:'#111'); 
             ctx.beginPath(); ctx.arc(cx, cy - height - 42, 3 + pulse*2, 0, Math.PI*2); ctx.fill();
         } else if (type === 'mast') {
             ctx.strokeStyle = isGhost ? color : '#555'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy-height); ctx.lineTo(cx, cy-height-30); ctx.stroke();
-            let pulse = (buildingRef && buildingRef.powered) ? (Math.sin(Game.animTime / 200) * 0.5 + 0.5) : 0;
-            ctx.fillStyle = (buildingRef && buildingRef.powered && !isGhost) ? `rgba(255, 0, 0, ${pulse + 0.5})` : (isGhost?color:'#222'); 
+            const pulse = (buildingRef?.powered) ? (Math.sin(Game.animTime / 200) * 0.5 + 0.5) : 0;
+            ctx.fillStyle = (buildingRef?.powered && !isGhost) ? `rgba(255, 0, 0, ${pulse + 0.5})` : (isGhost?color:'#222'); 
             ctx.beginPath(); ctx.arc(cx, cy - height - 30, 4, 0, Math.PI*2); ctx.fill();
         } else if (type === 'pump') {
             ctx.fillStyle = '#0277bd'; ctx.beginPath(); ctx.arc(cx, cy - height, 6, 0, Math.PI*2); ctx.fill(); 
         } else if (type === 'nuke') {
-            let t1x = cx - 12, t1y = cy - height, t2x = cx + 12, t2y = cy - height;
-            ctx.fillStyle = (buildingRef && buildingRef.powered && !isGhost) ? '#cfd8dc' : (isGhost?color:'#555');
+            const t1x = cx - 12, t1y = cy - height, t2x = cx + 12, t2y = cy - height;
+            ctx.fillStyle = (buildingRef?.powered && !isGhost) ? '#cfd8dc' : (isGhost?color:'#555');
             ctx.beginPath(); ctx.moveTo(t1x-6, t1y); ctx.lineTo(t1x-4, t1y-25); ctx.lineTo(t1x+4, t1y-25); ctx.lineTo(t1x+6, t1y); ctx.fill();
             ctx.beginPath(); ctx.moveTo(t2x-6, t2y); ctx.lineTo(t2x-4, t2y-25); ctx.lineTo(t2x+4, t2y-25); ctx.lineTo(t2x+6, t2y); ctx.fill();
-            if (buildingRef && buildingRef.powered && !isGhost) {
+            if (buildingRef?.powered && !isGhost) {
                 ctx.fillStyle = 'rgba(0, 229, 255, 0.4)'; ctx.beginPath(); ctx.ellipse(cx, cy - height, 20, 10, 0, 0, Math.PI*2); ctx.fill();
-                let steamY = t1y - 30 - (Game.animTime % 1000)/30;
+                const steamY = t1y - 30 - (Game.animTime % 1000)/30;
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.beginPath(); ctx.arc(t1x, steamY, 6 + (Game.animTime%1000)/150, 0, Math.PI*2); ctx.fill();
                 ctx.beginPath(); ctx.arc(t2x, steamY, 6 + (Game.animTime%1000)/150, 0, Math.PI*2); ctx.fill();
             }
         } else if (type === 'space') {
             ctx.fillStyle = isGhost?color:'#b71c1c'; ctx.fillRect(cx - 15, cy - height - 60, 6, 60);
-            let rAlt = 0; let isLaunching = Game.activeLaunch && Game.activeLaunch.x === x && Game.activeLaunch.y === y;
+            let rAlt = 0; const isLaunching = Game.activeLaunch && Game.activeLaunch.x === x && Game.activeLaunch.y === y;
             if (isLaunching) {
                 rAlt = Game.activeLaunch.alt; ctx.fillStyle = Math.random() > 0.5 ? '#ffeb3b' : '#ff9800';
                 ctx.beginPath(); ctx.moveTo(cx, cy - height - rAlt + 10);
                 ctx.lineTo(cx - 15, cy - height - rAlt + 50 + Math.random()*30); ctx.lineTo(cx + 15, cy - height - rAlt + 50 + Math.random()*30); ctx.fill();
             }
             if (!buildingRef || (!buildingRef.launched && !isLaunching) || isLaunching) {
-                let ry = cy - height - rAlt; ctx.fillStyle = isGhost?color:'#eceff1'; ctx.fillRect(cx - 8, ry - 50, 16, 50);
+                const ry = cy - height - rAlt; ctx.fillStyle = isGhost?color:'#eceff1'; ctx.fillRect(cx - 8, ry - 50, 16, 50);
                 ctx.fillStyle = isGhost?topColor:'#d32f2f'; ctx.beginPath(); ctx.moveTo(cx-8, ry-50); ctx.lineTo(cx, ry-70); ctx.lineTo(cx+8, ry-50); ctx.fill();
                 ctx.beginPath(); ctx.moveTo(cx-8, ry-10); ctx.lineTo(cx-14, ry); ctx.lineTo(cx-8, ry); ctx.fill();
                 ctx.beginPath(); ctx.moveTo(cx+8, ry-10); ctx.lineTo(cx+14, ry); ctx.lineTo(cx+8, ry); ctx.fill();
             }
             if (buildingRef && !buildingRef.launched && !isLaunching && buildingRef.powered && Game.grid[y][x].onFire === 0 && !isGhost) {
-                let pct = (buildingRef.progress || 0) / 60; ctx.fillStyle = '#000'; ctx.fillRect(cx - 20, cy - 100, 40, 6);
+                const pct = (buildingRef.progress || 0) / 60; ctx.fillStyle = '#000'; ctx.fillRect(cx - 20, cy - 100, 40, 6);
                 ctx.fillStyle = '#00e676'; ctx.fillRect(cx - 19, cy - 99, 38 * pct, 4);
             }
         } else if (type === 'station') {
@@ -1269,18 +1269,18 @@ function drawBuilding(x, y, type, season, isGhost = false, isValid = true) {
 function drawAuras() {
     Game.buildings.forEach(b => {
         if (b.powered !== false) {
-            let cell = Game.grid[b.y][b.x];
+            const cell = Game.grid[b.y][b.x];
             const pos = isoToScreen(b.x, b.y, cell.z); const cx = pos.x, cy = pos.y + TILE_HEIGHT/2;
             if (b.type === 'tower') {
                 const maxRadius = 5 * TILE_WIDTH; 
                 for(let i=0; i<3; i++) {
-                    let t = ((Game.animTime / 2000) + (i * 0.333)) % 1; let r = t * maxRadius; let alpha = (1 - t) * 0.6; 
+                    const t = ((Game.animTime / 2000) + (i * 0.333)) % 1; const r = t * maxRadius; const alpha = (1 - t) * 0.6; 
                     ctx.beginPath(); ctx.ellipse(cx, cy, r, r/2, 0, 0, Math.PI*2);
                     ctx.strokeStyle = `rgba(255, 30, 30, ${alpha})`; ctx.lineWidth = 3; ctx.stroke();
                 }
             } else if (b.type === 'gulag') {
-                const maxRadius = 7 * TILE_WIDTH; let angle = (Game.animTime / 800) % (Math.PI * 2);
-                ctx.beginPath(); ctx.moveTo(cx, cy); let spread = 0.4;
+                const maxRadius = 7 * TILE_WIDTH; const angle = (Game.animTime / 800) % (Math.PI * 2);
+                ctx.beginPath(); ctx.moveTo(cx, cy); const spread = 0.4;
                 ctx.lineTo(cx + Math.cos(angle - spread) * maxRadius, cy + Math.sin(angle - spread) * (maxRadius/2));
                 ctx.lineTo(cx + Math.cos(angle + spread) * maxRadius, cy + Math.sin(angle + spread) * (maxRadius/2));
                 ctx.closePath(); ctx.fillStyle = 'rgba(255, 255, 200, 0.15)'; ctx.fill();
@@ -1297,7 +1297,7 @@ function drawZeppelinShadows() {
 }
 
 function drawHighlight(x, y) {
-    let cell = Game.grid[y][x];
+    const cell = Game.grid[y][x];
     const pos = isoToScreen(x, y, cell.z);
     let valid = true; let hColor = 'rgba(255, 255, 255, 0.3)';
     
@@ -1315,7 +1315,7 @@ function drawHighlight(x, y) {
         hColor = valid ? 'rgba(0, 230, 118, 0.5)' : 'rgba(211, 47, 47, 0.5)';
         
         if (valid && Game.selectedTool !== 'road' && Game.selectedTool !== 'pipe') {
-            let fakeType = Game.selectedTool.startsWith('zone-') ? Game.selectedTool.split('-')[1] === 'res' ? 'housing' : (Game.selectedTool.split('-')[1] === 'ind' ? 'factory' : 'farm') : Game.selectedTool;
+            const fakeType = Game.selectedTool.startsWith('zone-') ? Game.selectedTool.split('-')[1] === 'res' ? 'housing' : (Game.selectedTool.split('-')[1] === 'ind' ? 'factory' : 'farm') : Game.selectedTool;
             drawBuilding(x, y, fakeType, getSeason(Game.date.month), true, valid);
         }
         if (valid && Game.selectedTool.startsWith('zone')) {
@@ -1350,30 +1350,30 @@ function onMouseMove(e) {
 }
 
 function updateOracleTooltip() {
-    let tt = document.getElementById('cursor-tooltip');
+    const tt = document.getElementById('cursor-tooltip');
     if(Game.dragging || hoverPt.x < 0 || hoverPt.x >= GRID_SIZE || hoverPt.y < 0 || hoverPt.y >= GRID_SIZE) { tt.style.display = 'none'; return; }
     
-    let cell = Game.grid[hoverPt.y][hoverPt.x];
-    tt.style.display = 'flex'; tt.style.left = (rawMouse.x + 15) + 'px'; tt.style.top = (rawMouse.y + 15) + 'px';
+    const cell = Game.grid[hoverPt.y][hoverPt.x];
+    tt.style.display = 'flex'; tt.style.left = `${rawMouse.x + 15}px`; tt.style.top = `${rawMouse.y + 15}px`;
     
     let tName = "Wasteland";
     if (cell.type) {
-        let base = BUILDING_TYPES[cell.type];
+        const base = BUILDING_TYPES[cell.type];
         if (base) tName = base.name;
         else {
-            let bRef = Game.buildings.find(b=>b.x===hoverPt.x && b.y===hoverPt.y);
-            let lvl = bRef ? (bRef.level || 0) : 0;
-            tName = GROWN_TYPES[cell.type][lvl].name + ` (LVL ${lvl+1})`;
+            const bRef = Game.buildings.find(b=>b.x===hoverPt.x && b.y===hoverPt.y);
+            const lvl = bRef ? (bRef.level || 0) : 0;
+            tName = `${GROWN_TYPES[cell.type][lvl].name} (LVL ${lvl+1})`;
         }
     } else if (cell.zone) {
-        tName = BUILDING_TYPES['zone-'+cell.zone].name + " (Empty)";
+        tName = `${BUILDING_TYPES[`zone-${cell.zone}`].name} (Empty)`;
     } else if (cell.terrain === 'rail') tName = "Vanguard Rail";
     else if (cell.terrain === 'crater') tName = "Cosmic Crater";
     else if (cell.terrain === 'irradiated') tName = "Irradiated Zone";
     
     document.getElementById('tt-title').innerText = tName.toUpperCase();
-    document.getElementById('tt-terrain').innerText = "TERRAIN: " + cell.terrain.toUpperCase();
-    document.getElementById('tt-smog').innerText = "SMOG: " + Math.floor(cell.smog);
+    document.getElementById('tt-terrain').innerText = `TERRAIN: ${cell.terrain.toUpperCase()}`;
+    document.getElementById('tt-smog').innerText = `SMOG: ${Math.floor(cell.smog)}`;
     document.getElementById('tt-smog').className = cell.smog > 40 ? 'text-[var(--soviet-red)] font-bold' : 'text-[var(--term-green)]';
     
     document.getElementById('tt-water').innerText = cell.watered ? "WATER: CONNECTED" : "WATER: UNCONNECTED";
@@ -1383,9 +1383,9 @@ function updateOracleTooltip() {
     if(cell.onFire > 0) { status = "RIOT/FIRE"; statusColor = "text-red-500 font-bold animate-pulse"; }
     else if(cell.type && !Game.buildings.find(b=>b.x===hoverPt.x && b.y===hoverPt.y)?.powered && cell.type !== 'road' && cell.type !== 'pipe') { status = "UNPOWERED"; statusColor = "text-[var(--soviet-gold)]"; }
     
-    document.getElementById('tt-status').innerText = "STATUS: " + status; document.getElementById('tt-status').className = statusColor;
+    document.getElementById('tt-status').innerText = `STATUS: ${status}`; document.getElementById('tt-status').className = statusColor;
     
-    let warn = document.getElementById('tt-build-warn');
+    const warn = document.getElementById('tt-build-warn');
     if(Game.selectedTool !== 'none' && Game.selectedTool !== 'bulldoze') {
         if(cell.type && Game.selectedTool !== 'pipe') { warn.innerText = "OBSTRUCTED"; warn.style.display = 'block'; }
         else if(cell.terrain === 'water' && Game.selectedTool !== 'road' && Game.selectedTool !== 'pump') { warn.innerText = "CANNOT BUILD ON RIVER"; warn.style.display = 'block'; }

@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
-import { useRef, useEffect } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 export default function Game() {
   const mountRef = useRef(null);
@@ -11,7 +11,7 @@ export default function Game() {
     if (!container) return;
 
     // --- Inject CSS ---
-    const styleEl = document.createElement('style');
+    const styleEl = document.createElement("style");
     styleEl.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
@@ -85,8 +85,8 @@ export default function Game() {
     document.head.appendChild(styleEl);
 
     // --- Inject HTML ---
-    const root = document.createElement('div');
-    root.id = 'snw-root';
+    const root = document.createElement("div");
+    root.id = "snw-root";
     root.innerHTML = `
       <div id="ui-layer">
         <div id="achievement-overlay">ACHIEVEMENT UNLOCKED</div>
@@ -158,29 +158,43 @@ export default function Game() {
     container.appendChild(root);
 
     // Restart button reloads the page
-    root.querySelector('#restart-btn').addEventListener('click', () => location.reload());
+    root.querySelector("#restart-btn").addEventListener("click", () => location.reload());
 
     // --- META PROGRESSION (Local Storage) ---
     let saveState = { unlockedElf: true, unlockedSanta: false, unlockedBumble: false };
     try {
-      const saved = localStorage.getItem('protocolSaveData');
+      const saved = localStorage.getItem("protocolSaveData");
       if (saved) saveState = { ...saveState, ...JSON.parse(saved) };
-    } catch (e) { console.warn("Local storage disabled or unavailable."); }
+    } catch (_e) {
+      console.warn("Local storage disabled or unavailable.");
+    }
 
     function saveGame() {
-      try { localStorage.setItem('protocolSaveData', JSON.stringify(saveState)); }
-      catch (e) {}
+      try {
+        localStorage.setItem("protocolSaveData", JSON.stringify(saveState));
+      } catch (_e) {}
     }
 
     // --- HOLIDAY PIXEL ART ENGINE ---
     const PALETTE = {
-      '.': null, 'W': '#ffffff', 'k': '#000000', 'R': '#ff0044', 'G': '#00ffcc',
-      'Y': '#ffd700', 'B': '#0044ff', 'O': '#ff8800', 'D': '#333333', 'P': '#9900ff',
-      'N': '#8B4513', 'E': '#00cc44', 'C': '#FFD700', 'U': '#00aaff'
+      ".": null,
+      W: "#ffffff",
+      k: "#000000",
+      R: "#ff0044",
+      G: "#00ffcc",
+      Y: "#ffd700",
+      B: "#0044ff",
+      O: "#ff8800",
+      D: "#333333",
+      P: "#9900ff",
+      N: "#8B4513",
+      E: "#00cc44",
+      C: "#FFD700",
+      U: "#00aaff",
     };
 
     const ART = {
-      'elf': `
+      elf: `
 ....E....
 ...EEE...
 ..EEEEE..
@@ -191,7 +205,7 @@ export default function Game() {
 ...DDDD..
 ...D..D..
 `,
-      'santa': `
+      santa: `
 ....R....
 ...RRR...
 ..WWWWW..
@@ -202,7 +216,7 @@ export default function Game() {
 .RRRRRRR.
 ...DDD...
 `,
-      'bumble': `
+      bumble: `
 ..WWWWW..
 .WWWWWWW.
 .WkBkWWW.
@@ -212,7 +226,7 @@ WWWWWWWWW
 .WWWWWWW.
 ..WW.WW..
 `,
-      'grunt': `
+      grunt: `
 ...kkk...
 ...kkk...
 ..WkWkW..
@@ -223,7 +237,7 @@ WWWWWWWWW
 .WWWWWWW.
 ..WWWWW..
 `,
-      'rusher': `
+      rusher: `
 N......N
 N......N
 NN....NN
@@ -234,7 +248,7 @@ NN....NN
 ..NNNN..
 .NN..NN.
 `,
-      'tank': `
+      tank: `
 ...NNN...
 ..NkNkN..
 ..NNNNN..
@@ -244,7 +258,7 @@ N.NNNNN.N
 ..N.N.N..
 ..N...N..
 `,
-      'caller': `
+      caller: `
 ...UUU...
 ..UUUUU..
 ..UkUkU..
@@ -255,7 +269,7 @@ UU.UUU.UU
 ..UU.UU..
 ..DD.DD..
 `,
-      'boss': `
+      boss: `
 Y......Y
 YY....YY
 .RRYYRR.
@@ -266,22 +280,24 @@ RRRRRRRR
 ..RRRR..
 .DD..DD.
 `,
-      'xp': `
+      xp: `
 WWWWWWW
 WRRWRRW
 WWWWWWW
 WRRWRRW
 WWWWWWW
-`
+`,
     };
 
     function createPixelTexture(artString) {
-      const rows = artString.trim().split('\n');
-      const h = rows.length; const w = rows[0].length;
+      const rows = artString.trim().split("\n");
+      const h = rows.length;
+      const w = rows[0].length;
       const scale = 8;
-      const canvas = document.createElement('canvas');
-      canvas.width = w * scale; canvas.height = h * scale;
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext("2d");
 
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
@@ -293,42 +309,93 @@ WWWWWWW
         }
       }
       const tex = new THREE.CanvasTexture(canvas);
-      tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
       return tex;
     }
 
     const TEXTURES = {};
-    for (let key in ART) TEXTURES[key] = createPixelTexture(ART[key]);
+    for (const key in ART) TEXTURES[key] = createPixelTexture(ART[key]);
 
     // --- CONFIG & SHADERS ---
     const CONFIG = {
-      WORLD_SIZE: 120, ARENA_RADIUS: 40, DASH_COOLDOWN: 1.5, DASH_DURATION: 0.2, MAGNET_RADIUS: 15,
+      WORLD_SIZE: 120,
+      ARENA_RADIUS: 40,
+      DASH_COOLDOWN: 1.5,
+      DASH_DURATION: 0.2,
+      MAGNET_RADIUS: 15,
       COLORS: {
-        SANTA: 0xff0044, ELF: 0x00ffcc, BUMBLE: 0xffd700,
-        GRUNT: 0xffffff, RUSHER: 0x8B4513, TANK: 0xffa500, CALLER: 0x00aaff, BOSS: 0xff0044,
-        BULLET_PLAYER: 0x00ffcc, BULLET_ENEMY: 0xff0044, BULLET_CALLER: 0xff00ff,
-        XP: 0x00ff44, DMG_TEXT: 0xffffff, CRIT_TEXT: 0xffd700
+        SANTA: 0xff0044,
+        ELF: 0x00ffcc,
+        BUMBLE: 0xffd700,
+        GRUNT: 0xffffff,
+        RUSHER: 0x8b4513,
+        TANK: 0xffa500,
+        CALLER: 0x00aaff,
+        BOSS: 0xff0044,
+        BULLET_PLAYER: 0x00ffcc,
+        BULLET_ENEMY: 0xff0044,
+        BULLET_CALLER: 0xff00ff,
+        XP: 0x00ff44,
+        DMG_TEXT: 0xffffff,
+        CRIT_TEXT: 0xffd700,
       },
       UPGRADES: [
-        { id: 'dmg', name: "HIGH CALIBER", desc: "+25% Damage Output", apply: (game, p) => p.dmg *= 1.25 },
-        { id: 'rof', name: "OVERCLOCK CPU", desc: "+20% Fire Rate", apply: (game, p) => p.rof *= 0.8 },
-        { id: 'hp', name: "FESTIVE PLATING", desc: "+50 Max HP & Restore", apply: (game, p) => { p.maxHp += 50; game.heal(50); } },
-        { id: 'spd', name: "KINETIC BOOTS", desc: "+15% Movement Speed", apply: (game, p) => p.spd *= 1.15 },
-        { id: 'rng', name: "ADVANCED OPTICS", desc: "+20% Targeting Range", apply: (game, p) => { p.range *= 1.2; game.updateRangeRing(); } },
-        { id: 'aura', name: "TESLA WREATH", desc: "Shock field around Operator (Stackable)", apply: (game, p) => game.upgradeAura() }
+        {
+          id: "dmg",
+          name: "HIGH CALIBER",
+          desc: "+25% Damage Output",
+          apply: (_game, p) => (p.dmg *= 1.25),
+        },
+        {
+          id: "rof",
+          name: "OVERCLOCK CPU",
+          desc: "+20% Fire Rate",
+          apply: (_game, p) => (p.rof *= 0.8),
+        },
+        {
+          id: "hp",
+          name: "FESTIVE PLATING",
+          desc: "+50 Max HP & Restore",
+          apply: (game, p) => {
+            p.maxHp += 50;
+            game.heal(50);
+          },
+        },
+        {
+          id: "spd",
+          name: "KINETIC BOOTS",
+          desc: "+15% Movement Speed",
+          apply: (_game, p) => (p.spd *= 1.15),
+        },
+        {
+          id: "rng",
+          name: "ADVANCED OPTICS",
+          desc: "+20% Targeting Range",
+          apply: (game, p) => {
+            p.range *= 1.2;
+            game.updateRangeRing();
+          },
+        },
+        {
+          id: "aura",
+          name: "TESLA WREATH",
+          desc: "Shock field around Operator (Stackable)",
+          apply: (game, _p) => game.upgradeAura(),
+        },
       ],
       WAVES: [
-        { id: 1, duration: 30, spawnInt: 1.5, types: ['grunt'], hpScale: 1.0 },
-        { id: 2, duration: 30, spawnInt: 1.2, types: ['grunt'], hpScale: 1.2 },
-        { id: 3, duration: 35, spawnInt: 1.0, types: ['grunt', 'rusher'], hpScale: 1.5 },
-        { id: 4, duration: 35, spawnInt: 0.8, types: ['rusher'], hpScale: 1.8 },
-        { id: 5, duration: 40, spawnInt: 1.2, types: ['grunt', 'tank'], hpScale: 2.2 },
-        { id: 6, duration: 40, spawnInt: 1.0, types: ['rusher', 'caller'], hpScale: 2.5 },
-        { id: 7, duration: 45, spawnInt: 0.7, types: ['grunt', 'rusher', 'caller'], hpScale: 3.0 },
-        { id: 8, duration: 45, spawnInt: 0.6, types: ['rusher', 'caller'], hpScale: 3.5 },
-        { id: 9, duration: 50, spawnInt: 0.8, types: ['tank', 'caller'], hpScale: 4.0 },
-        { id: 10, duration: 9999, spawnInt: 1.5, types: ['grunt', 'caller', 'boss'], hpScale: 5.0 }
-      ]
+        { id: 1, duration: 30, spawnInt: 1.5, types: ["grunt"], hpScale: 1.0 },
+        { id: 2, duration: 30, spawnInt: 1.2, types: ["grunt"], hpScale: 1.2 },
+        { id: 3, duration: 35, spawnInt: 1.0, types: ["grunt", "rusher"], hpScale: 1.5 },
+        { id: 4, duration: 35, spawnInt: 0.8, types: ["rusher"], hpScale: 1.8 },
+        { id: 5, duration: 40, spawnInt: 1.2, types: ["grunt", "tank"], hpScale: 2.2 },
+        { id: 6, duration: 40, spawnInt: 1.0, types: ["rusher", "caller"], hpScale: 2.5 },
+        { id: 7, duration: 45, spawnInt: 0.7, types: ["grunt", "rusher", "caller"], hpScale: 3.0 },
+        { id: 8, duration: 45, spawnInt: 0.6, types: ["rusher", "caller"], hpScale: 3.5 },
+        { id: 9, duration: 50, spawnInt: 0.8, types: ["tank", "caller"], hpScale: 4.0 },
+        { id: 10, duration: 9999, spawnInt: 1.5, types: ["grunt", "caller", "boss"], hpScale: 5.0 },
+      ],
     };
 
     const terrainVert = `varying float vHeight; varying vec3 vWorldPos; void main() { vHeight = instanceMatrix[3][1]; vec4 worldPos = instanceMatrix * vec4(position, 1.0); vWorldPos = worldPos.xyz; gl_Position = projectionMatrix * modelViewMatrix * worldPos; }`;
@@ -349,10 +416,23 @@ WWWWWWW
       }
     `;
 
-    const jsSmoothstep = (min, max, value) => { const x = Math.max(0, Math.min(1, (value - min) / (max - min))); return x * x * (3 - 2 * x); };
+    const jsSmoothstep = (min, max, value) => {
+      const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+      return x * x * (3 - 2 * x);
+    };
     function fbm(x, z) {
-      let v = 0.0; let amp = 3.5; let freq = 0.08;
-      for (let i = 0; i < 4; i++) { v += amp * (Math.sin(x * freq) * Math.cos(z * freq)); let nx = x * 0.8 - z * 0.6; let nz = x * 0.6 + z * 0.8; x = nx; z = nz; freq *= 2.1; amp *= 0.45; }
+      let v = 0.0;
+      let amp = 3.5;
+      let freq = 0.08;
+      for (let i = 0; i < 4; i++) {
+        v += amp * (Math.sin(x * freq) * Math.cos(z * freq));
+        const nx = x * 0.8 - z * 0.6;
+        const nz = x * 0.6 + z * 0.8;
+        x = nx;
+        z = nz;
+        freq *= 2.1;
+        amp *= 0.45;
+      }
       return v;
     }
 
@@ -372,14 +452,14 @@ WWWWWWW
     let EffectComposer, RenderPass, UnrealBloomPass;
     async function loadPostProcessing() {
       try {
-        const ecMod = await import('three/addons/postprocessing/EffectComposer.js');
-        const rpMod = await import('three/addons/postprocessing/RenderPass.js');
-        const ubMod = await import('three/addons/postprocessing/UnrealBloomPass.js');
+        const ecMod = await import("three/addons/postprocessing/EffectComposer.js");
+        const rpMod = await import("three/addons/postprocessing/RenderPass.js");
+        const ubMod = await import("three/addons/postprocessing/UnrealBloomPass.js");
         EffectComposer = ecMod.EffectComposer;
         RenderPass = rpMod.RenderPass;
         UnrealBloomPass = ubMod.UnrealBloomPass;
       } catch (e) {
-        console.warn('PostProcessing addons not available, using plain renderer:', e);
+        console.warn("PostProcessing addons not available, using plain renderer:", e);
       }
     }
 
@@ -391,7 +471,7 @@ WWWWWWW
         this.setupInputs();
         this.renderClassMenu();
 
-        this.state = 'MENU';
+        this.state = "MENU";
         this.entities = { bullets: [], enemies: [], particles: [], drops: [] };
         this.stats = { kills: 0 };
         this.shake = 0;
@@ -412,12 +492,12 @@ WWWWWWW
         this.auraTimer = 0;
         this.auraMesh = null;
 
-        addWindowListener('resize', () => this.onResize());
+        addWindowListener("resize", () => this.onResize());
         this.animate();
       }
 
       renderClassMenu() {
-        const classContainer = container.querySelector('#class-select-container');
+        const classContainer = container.querySelector("#class-select-container");
         classContainer.innerHTML = `
           <div class="class-card" id="card-elf" style="border-color: #00ffcc;">
             <div class="card-title" style="color:#00ffcc">CYBER-ELF</div>
@@ -425,15 +505,15 @@ WWWWWWW
             <div class="card-stat">STYLE: <span class="stat-val">RAPID STREAM</span></div>
             <div class="card-stat">DMG: <span class="stat-val">LOW</span> | ROF: <span class="stat-val">INSANE</span></div>
           </div>
-          <div class="class-card ${saveState.unlockedSanta ? '' : 'locked'}" id="card-santa" style="border-color: #ff0044;">
-            ${!saveState.unlockedSanta ? '<div class="locked-overlay">🔒 UNLOCK: REACH WAVE 5</div>' : ''}
+          <div class="class-card ${saveState.unlockedSanta ? "" : "locked"}" id="card-santa" style="border-color: #ff0044;">
+            ${!saveState.unlockedSanta ? '<div class="locked-overlay">🔒 UNLOCK: REACH WAVE 5</div>' : ""}
             <div class="card-title" style="color:#ff0044">MECHA-SANTA</div>
             <div class="card-stat">WEAPON: <span class="stat-val" style="color:#ff0044">FLAK SHOTGUN</span></div>
             <div class="card-stat">STYLE: <span class="stat-val">5-SHOT SPREAD</span></div>
             <div class="card-stat">DMG: <span class="stat-val">HIGH</span> | RANGE: <span class="stat-val">SHORT</span></div>
           </div>
-          <div class="class-card ${saveState.unlockedBumble ? '' : 'locked'}" id="card-bumble" style="border-color: #ffd700;">
-            ${!saveState.unlockedBumble ? '<div class="locked-overlay">🔒 UNLOCK: CLEAR WAVE 10</div>' : ''}
+          <div class="class-card ${saveState.unlockedBumble ? "" : "locked"}" id="card-bumble" style="border-color: #ffd700;">
+            ${!saveState.unlockedBumble ? '<div class="locked-overlay">🔒 UNLOCK: CLEAR WAVE 10</div>' : ""}
             <div class="card-title" style="color:#ffd700">THE BUMBLE</div>
             <div class="card-stat">WEAPON: <span class="stat-val" style="color:#ffd700">GRAVITY ORB</span></div>
             <div class="card-stat">STYLE: <span class="stat-val">MASSIVE PROJECTILE</span></div>
@@ -441,9 +521,17 @@ WWWWWWW
           </div>
         `;
 
-        container.querySelector('#card-elf').addEventListener('click', () => this.selectClass('elf'));
-        if (saveState.unlockedSanta) container.querySelector('#card-santa').addEventListener('click', () => this.selectClass('santa'));
-        if (saveState.unlockedBumble) container.querySelector('#card-bumble').addEventListener('click', () => this.selectClass('bumble'));
+        container
+          .querySelector("#card-elf")
+          .addEventListener("click", () => this.selectClass("elf"));
+        if (saveState.unlockedSanta)
+          container
+            .querySelector("#card-santa")
+            .addEventListener("click", () => this.selectClass("santa"));
+        if (saveState.unlockedBumble)
+          container
+            .querySelector("#card-bumble")
+            .addEventListener("click", () => this.selectClass("bumble"));
       }
 
       initEngine() {
@@ -459,11 +547,15 @@ WWWWWWW
         this.camera.position.copy(this.cameraOffset);
         this.camera.lookAt(0, 0, 0);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          powerPreference: "high-performance",
+        });
         this.renderer.setSize(w, h);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
-        this.renderer.domElement.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+        this.renderer.domElement.style.cssText =
+          "position:absolute;top:0;left:0;width:100%;height:100%;";
         container.insertBefore(this.renderer.domElement, root);
         this.clock = new THREE.Clock();
       }
@@ -475,25 +567,36 @@ WWWWWWW
           const renderScene = new RenderPass(this.scene, this.camera);
           const bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), 1.5, 0.4, 0.85);
           bloomPass.threshold = 0.9;
-          bloomPass.strength = 1.6; bloomPass.radius = 0.5;
+          bloomPass.strength = 1.6;
+          bloomPass.radius = 0.5;
           this.composer = new EffectComposer(this.renderer);
-          this.composer.addPass(renderScene); this.composer.addPass(bloomPass);
+          this.composer.addPass(renderScene);
+          this.composer.addPass(bloomPass);
         } else {
           this.composer = null;
         }
       }
 
       initProceduralWorld() {
-        const amb = new THREE.AmbientLight(0xffffff, 0.7); this.scene.add(amb);
+        const amb = new THREE.AmbientLight(0xffffff, 0.7);
+        this.scene.add(amb);
         const dir = new THREE.DirectionalLight(0xffffff, 0.6);
         dir.position.set(-20, 50, -20);
         dir.castShadow = true;
-        dir.shadow.mapSize.width = 1024; dir.shadow.camera.near = 10; dir.shadow.camera.far = 100;
-        dir.shadow.camera.left = -50; dir.shadow.camera.right = 50; dir.shadow.camera.top = 50; dir.shadow.camera.bottom = -50;
+        dir.shadow.mapSize.width = 1024;
+        dir.shadow.camera.near = 10;
+        dir.shadow.camera.far = 100;
+        dir.shadow.camera.left = -50;
+        dir.shadow.camera.right = 50;
+        dir.shadow.camera.top = 50;
+        dir.shadow.camera.bottom = -50;
         this.scene.add(dir);
 
         const geo = new THREE.BoxGeometry(2.0, 8, 2.0);
-        const mat = new THREE.ShaderMaterial({ vertexShader: terrainVert, fragmentShader: terrainFrag });
+        const mat = new THREE.ShaderMaterial({
+          vertexShader: terrainVert,
+          fragmentShader: terrainFrag,
+        });
         const count = CONFIG.WORLD_SIZE * CONFIG.WORLD_SIZE;
         this.terrain = new THREE.InstancedMesh(geo, mat, count);
         this.terrain.receiveShadow = true;
@@ -503,12 +606,16 @@ WWWWWWW
 
         for (let x = -CONFIG.WORLD_SIZE / 2; x < CONFIG.WORLD_SIZE / 2; x++) {
           for (let z = -CONFIG.WORLD_SIZE / 2; z < CONFIG.WORLD_SIZE / 2; z++) {
-            let distFromCenter = Math.sqrt(x * 2 * x * 2 + z * 2 * z * 2);
+            const distFromCenter = Math.sqrt(x * 2 * x * 2 + z * 2 * z * 2);
             let h = -4.0;
             if (distFromCenter >= CONFIG.ARENA_RADIUS) {
-              let rawFbm = fbm(x * 1.2, z * 1.2);
-              let blend = jsSmoothstep(CONFIG.ARENA_RADIUS, CONFIG.ARENA_RADIUS + 10, distFromCenter);
-              h = (-4.0 * (1 - blend)) + (rawFbm * blend);
+              const rawFbm = fbm(x * 1.2, z * 1.2);
+              const blend = jsSmoothstep(
+                CONFIG.ARENA_RADIUS,
+                CONFIG.ARENA_RADIUS + 10,
+                distFromCenter
+              );
+              h = -4.0 * (1 - blend) + rawFbm * blend;
             }
             dummy.position.set(x * 2, h, z * 2);
             dummy.updateMatrix();
@@ -519,9 +626,20 @@ WWWWWWW
 
         const snowGeo = new THREE.BufferGeometry();
         const snowPos = [];
-        for (let i = 0; i < 1500; i++) { snowPos.push((Math.random() - 0.5) * 120, Math.random() * 50, (Math.random() - 0.5) * 120); }
-        snowGeo.setAttribute('position', new THREE.Float32BufferAttribute(snowPos, 3));
-        const snowMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true, opacity: 0.6 });
+        for (let i = 0; i < 1500; i++) {
+          snowPos.push(
+            (Math.random() - 0.5) * 120,
+            Math.random() * 50,
+            (Math.random() - 0.5) * 120
+          );
+        }
+        snowGeo.setAttribute("position", new THREE.Float32BufferAttribute(snowPos, 3));
+        const snowMat = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 0.4,
+          transparent: true,
+          opacity: 0.6,
+        });
         this.snowSystem = new THREE.Points(snowGeo, snowMat);
         this.scene.add(this.snowSystem);
       }
@@ -529,25 +647,59 @@ WWWWWWW
       createBillboardSprite(textureKey, scale, emissiveColor) {
         const geo = new THREE.PlaneGeometry(3 * scale, 3 * scale);
         const mat = new THREE.MeshStandardMaterial({
-          map: TEXTURES[textureKey], transparent: true, alphaTest: 0.1,
-          side: THREE.DoubleSide, emissive: emissiveColor || 0x000000, emissiveIntensity: emissiveColor ? 0.3 : 0
+          map: TEXTURES[textureKey],
+          transparent: true,
+          alphaTest: 0.1,
+          side: THREE.DoubleSide,
+          emissive: emissiveColor || 0x000000,
+          emissiveIntensity: emissiveColor ? 0.3 : 0,
         });
         const mesh = new THREE.Mesh(geo, mat);
-        mesh.castShadow = true; mesh.receiveShadow = true; mesh.position.y = 1.5 * scale;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.position.y = 1.5 * scale;
         return mesh;
       }
 
       selectClass(type) {
         const classes = {
-          'santa': { hp: 300, spd: 10, rof: 0.8, dmg: 30, range: 25, col: CONFIG.COLORS.SANTA, scale: 1.2, type: 'shotgun' },
-          'elf': { hp: 100, spd: 15, rof: 0.08, dmg: 10, range: 40, col: CONFIG.COLORS.ELF, scale: 0.9, type: 'minigun' },
-          'bumble': { hp: 200, spd: 12, rof: 0.6, dmg: 60, range: 30, col: CONFIG.COLORS.BUMBLE, scale: 1.5, type: 'heavy' }
+          santa: {
+            hp: 300,
+            spd: 10,
+            rof: 0.8,
+            dmg: 30,
+            range: 25,
+            col: CONFIG.COLORS.SANTA,
+            scale: 1.2,
+            type: "shotgun",
+          },
+          elf: {
+            hp: 100,
+            spd: 15,
+            rof: 0.08,
+            dmg: 10,
+            range: 40,
+            col: CONFIG.COLORS.ELF,
+            scale: 0.9,
+            type: "minigun",
+          },
+          bumble: {
+            hp: 200,
+            spd: 12,
+            rof: 0.6,
+            dmg: 60,
+            range: 30,
+            col: CONFIG.COLORS.BUMBLE,
+            scale: 1.5,
+            type: "heavy",
+          },
         };
 
         this.class = JSON.parse(JSON.stringify(classes[type]));
         this.class.maxHp = this.class.hp;
 
-        this.auraLevel = 0; this.auraTimer = 0;
+        this.auraLevel = 0;
+        this.auraTimer = 0;
         if (this.auraMesh && this.player) this.player.remove(this.auraMesh);
         this.auraMesh = null;
 
@@ -556,19 +708,31 @@ WWWWWWW
         this.baseSpriteScale = this.playerSprite.scale.x;
         grp.add(this.playerSprite);
 
-        this.muzzleLight = new THREE.PointLight(this.class.col, 0, 20); this.muzzleLight.position.set(0, 2, -1); grp.add(this.muzzleLight);
+        this.muzzleLight = new THREE.PointLight(this.class.col, 0, 20);
+        this.muzzleLight.position.set(0, 2, -1);
+        grp.add(this.muzzleLight);
 
         const ringGeo = new THREE.RingGeometry(this.class.range - 0.2, this.class.range, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: this.class.col, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
-        this.rangeRing = new THREE.Mesh(ringGeo, ringMat); this.rangeRing.rotation.x = -Math.PI / 2; this.rangeRing.position.y = 0.2; grp.add(this.rangeRing);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: this.class.col,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide,
+        });
+        this.rangeRing = new THREE.Mesh(ringGeo, ringMat);
+        this.rangeRing.rotation.x = -Math.PI / 2;
+        this.rangeRing.position.y = 0.2;
+        grp.add(this.rangeRing);
 
         if (this.player && this.scene) this.scene.remove(this.player);
-        this.player = grp; this.player.position.set(0, 0, 0); this.scene.add(this.player);
+        this.player = grp;
+        this.player.position.set(0, 0, 0);
+        this.scene.add(this.player);
 
         this.updateHpUI();
-        container.querySelector('#start-screen').classList.add('hidden');
-        container.querySelector('#hud').style.opacity = 1;
-        container.querySelector('#dash-btn').style.opacity = 1;
+        container.querySelector("#start-screen").classList.add("hidden");
+        container.querySelector("#hud").style.opacity = 1;
+        container.querySelector("#dash-btn").style.opacity = 1;
 
         this.startWave(1);
       }
@@ -576,7 +740,11 @@ WWWWWWW
       updateRangeRing() {
         if (this.rangeRing) {
           this.rangeRing.geometry.dispose();
-          this.rangeRing.geometry = new THREE.RingGeometry(this.class.range - 0.2, this.class.range, 64);
+          this.rangeRing.geometry = new THREE.RingGeometry(
+            this.class.range - 0.2,
+            this.class.range,
+            64
+          );
         }
       }
 
@@ -584,7 +752,12 @@ WWWWWWW
         if (this.auraLevel === 0) {
           this.auraLevel = 1;
           const geo = new THREE.TorusGeometry(3.5, 0.1, 4, 32);
-          const mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.6 });
+          const mat = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.6,
+          });
           this.auraMesh = new THREE.Mesh(geo, mat);
           this.auraMesh.rotation.x = Math.PI / 2;
           this.auraMesh.position.y = 0.5;
@@ -604,69 +777,98 @@ WWWWWWW
         const waveData = CONFIG.WAVES[this.currentWave - 1];
         this.waveTimeRemaining = waveData.duration;
 
-        container.querySelector('#wave-display').innerText = `WAVE ${this.currentWave}/10`;
+        container.querySelector("#wave-display").innerText = `WAVE ${this.currentWave}/10`;
 
-        const msg = container.querySelector('#msg-overlay');
+        const msg = container.querySelector("#msg-overlay");
         msg.innerText = this.currentWave === 10 ? "KRAMPUS DETECTED" : `WAVE ${this.currentWave}`;
-        msg.style.color = this.currentWave === 10 ? '#ff0044' : '#fff';
-        msg.style.opacity = 1; msg.style.transform = "scale(1)";
-        setTimeout(() => { msg.style.opacity = 0; msg.style.transform = "scale(1.5)"; }, 2000);
+        msg.style.color = this.currentWave === 10 ? "#ff0044" : "#fff";
+        msg.style.opacity = 1;
+        msg.style.transform = "scale(1)";
+        setTimeout(() => {
+          msg.style.opacity = 0;
+          msg.style.transform = "scale(1.5)";
+        }, 2000);
 
-        this.state = 'PLAYING';
+        this.state = "PLAYING";
 
         if (this.currentWave === 5 && !saveState.unlockedSanta) {
-          saveState.unlockedSanta = true; saveGame();
+          saveState.unlockedSanta = true;
+          saveGame();
           this.showAchievement("MECHA-SANTA UNLOCKED");
         }
       }
 
       endWave() {
-        this.state = 'WAVE_CLEAR';
+        this.state = "WAVE_CLEAR";
 
         for (let j = this.entities.enemies.length - 1; j >= 0; j--) {
           const e = this.entities.enemies[j];
-          if (e.userData.type !== 'boss') {
+          if (e.userData.type !== "boss") {
             this.spawnExplosion(e.position, e.userData.coreColor, 1);
             this.scene.remove(e);
             this.entities.enemies.splice(j, 1);
           }
         }
 
-        const msg = container.querySelector('#msg-overlay');
-        msg.innerText = "WAVE CLEARED"; msg.style.color = '#00ffcc';
-        msg.style.opacity = 1; msg.style.transform = "scale(1)";
+        const msg = container.querySelector("#msg-overlay");
+        msg.innerText = "WAVE CLEARED";
+        msg.style.color = "#00ffcc";
+        msg.style.opacity = 1;
+        msg.style.transform = "scale(1)";
 
         setTimeout(() => {
-          msg.style.opacity = 0; msg.style.transform = "scale(1.5)";
+          msg.style.opacity = 0;
+          msg.style.transform = "scale(1.5)";
           this.startWave(this.currentWave + 1);
         }, 3000);
       }
 
       showAchievement(text) {
-        const el = container.querySelector('#achievement-overlay');
+        const el = container.querySelector("#achievement-overlay");
         el.innerText = `🏆 ACHIEVEMENT: ${text} 🏆`;
-        el.style.opacity = 1; el.style.transform = "translateY(0)";
-        setTimeout(() => { el.style.opacity = 0; el.style.transform = "translateY(-50px)"; }, 4000);
+        el.style.opacity = 1;
+        el.style.transform = "translateY(0)";
+        setTimeout(() => {
+          el.style.opacity = 0;
+          el.style.transform = "translateY(-50px)";
+        }, 4000);
       }
 
       // --- SPAWNING & ENTITIES ---
 
       spawnEnemy() {
-        if (this.state !== 'PLAYING') return;
+        if (this.state !== "PLAYING") return;
         const waveData = CONFIG.WAVES[this.currentWave - 1];
         const typeStr = waveData.types[Math.floor(Math.random() * waveData.types.length)];
 
-        if (typeStr === 'boss') {
+        if (typeStr === "boss") {
           if (!this.boss) this.spawnBoss(waveData.hpScale);
           return;
         }
 
-        let texKey = typeStr;
+        const texKey = typeStr;
         let col, hpMult, spdMult, scale;
-        if (typeStr === 'rusher') { col = CONFIG.COLORS.RUSHER; hpMult = 0.5; spdMult = 1.8; scale = 0.8; }
-        else if (typeStr === 'tank') { col = CONFIG.COLORS.TANK; hpMult = 4.0; spdMult = 0.5; scale = 1.5; }
-        else if (typeStr === 'caller') { col = CONFIG.COLORS.CALLER; hpMult = 1.5; spdMult = 0.8; scale = 1.1; }
-        else { col = CONFIG.COLORS.GRUNT; hpMult = 1.0; spdMult = 1.0; scale = 1.0; }
+        if (typeStr === "rusher") {
+          col = CONFIG.COLORS.RUSHER;
+          hpMult = 0.5;
+          spdMult = 1.8;
+          scale = 0.8;
+        } else if (typeStr === "tank") {
+          col = CONFIG.COLORS.TANK;
+          hpMult = 4.0;
+          spdMult = 0.5;
+          scale = 1.5;
+        } else if (typeStr === "caller") {
+          col = CONFIG.COLORS.CALLER;
+          hpMult = 1.5;
+          spdMult = 0.8;
+          scale = 1.1;
+        } else {
+          col = CONFIG.COLORS.GRUNT;
+          hpMult = 1.0;
+          spdMult = 1.0;
+          scale = 1.0;
+        }
 
         const grp = new THREE.Group();
         const sprite = this.createBillboardSprite(texKey, scale, col);
@@ -674,31 +876,64 @@ WWWWWWW
 
         const ang = Math.random() * Math.PI * 2;
         const rad = CONFIG.ARENA_RADIUS + 2;
-        grp.position.set(this.player.position.x + Math.cos(ang) * rad, 0, this.player.position.z + Math.sin(ang) * rad);
+        grp.position.set(
+          this.player.position.x + Math.cos(ang) * rad,
+          0,
+          this.player.position.z + Math.sin(ang) * rad
+        );
 
-        grp.userData = { type: typeStr, hp: 15 * waveData.hpScale * hpMult, speed: (4 + Math.random() * 2) * spdMult, coreColor: col, sprite: sprite, baseScale: sprite.scale.x, attackTimer: 0 };
+        grp.userData = {
+          type: typeStr,
+          hp: 15 * waveData.hpScale * hpMult,
+          speed: (4 + Math.random() * 2) * spdMult,
+          coreColor: col,
+          sprite: sprite,
+          baseScale: sprite.scale.x,
+          attackTimer: 0,
+        };
         this.scene.add(grp);
         this.entities.enemies.push(grp);
       }
 
       spawnBoss(hpScale) {
-        container.querySelector('#boss-hud').style.opacity = 1;
+        container.querySelector("#boss-hud").style.opacity = 1;
         const grp = new THREE.Group();
 
-        const sprite = this.createBillboardSprite('boss', 3.5, CONFIG.COLORS.BOSS);
+        const sprite = this.createBillboardSprite("boss", 3.5, CONFIG.COLORS.BOSS);
         grp.add(sprite);
 
         const ringGeo = new THREE.TorusGeometry(6, 0.4, 8, 32);
-        const ringMat = new THREE.MeshStandardMaterial({ color: CONFIG.COLORS.BOSS, emissive: CONFIG.COLORS.BOSS, emissiveIntensity: 1.0 });
+        const ringMat = new THREE.MeshStandardMaterial({
+          color: CONFIG.COLORS.BOSS,
+          emissive: CONFIG.COLORS.BOSS,
+          emissiveIntensity: 1.0,
+        });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.position.y = 5.5;
         grp.add(ring);
 
         const ang = Math.random() * Math.PI * 2;
-        grp.position.set(this.player.position.x + Math.cos(ang) * 30, 0, this.player.position.z + Math.sin(ang) * 30);
+        grp.position.set(
+          this.player.position.x + Math.cos(ang) * 30,
+          0,
+          this.player.position.z + Math.sin(ang) * 30
+        );
 
         const bossHp = 2000 * hpScale;
-        grp.userData = { type: 'boss', hp: bossHp, maxHp: bossHp, speed: 4.5, phase: 0, phaseTimer: 0, subTimer: 0, attackAngle: 0, coreColor: CONFIG.COLORS.BOSS, sprite: sprite, baseScale: sprite.scale.x, ring: ring };
+        grp.userData = {
+          type: "boss",
+          hp: bossHp,
+          maxHp: bossHp,
+          speed: 4.5,
+          phase: 0,
+          phaseTimer: 0,
+          subTimer: 0,
+          attackAngle: 0,
+          coreColor: CONFIG.COLORS.BOSS,
+          sprite: sprite,
+          baseScale: sprite.scale.x,
+          ring: ring,
+        };
         this.scene.add(grp);
         this.entities.enemies.push(grp);
         this.boss = grp;
@@ -706,41 +941,75 @@ WWWWWWW
 
       spawnDrop(pos) {
         const grp = new THREE.Group();
-        const sprite = this.createBillboardSprite('xp', 0.6, CONFIG.COLORS.XP);
+        const sprite = this.createBillboardSprite("xp", 0.6, CONFIG.COLORS.XP);
         grp.add(sprite);
-        grp.position.copy(pos); grp.position.y = 0;
-        grp.userData = { type: 'xp', value: 1, sprite: sprite };
-        this.scene.add(grp); this.entities.drops.push(grp);
+        grp.position.copy(pos);
+        grp.position.y = 0;
+        grp.userData = { type: "xp", value: 1, sprite: sprite };
+        this.scene.add(grp);
+        this.entities.drops.push(grp);
       }
 
-      spawnBullet(pos, dir, isEnemy, dmg, scale = 1, forceColor = null, isDanmaku = false, target = null) {
+      spawnBullet(
+        pos,
+        dir,
+        isEnemy,
+        dmg,
+        scale = 1,
+        forceColor = null,
+        isDanmaku = false,
+        target = null
+      ) {
         let geo, mat;
         if (isDanmaku) {
           geo = new THREE.SphereGeometry(0.5 * scale, 8, 8);
           mat = new THREE.MeshBasicMaterial({ color: forceColor || CONFIG.COLORS.BULLET_ENEMY });
         } else {
           geo = new THREE.BoxGeometry(0.3 * scale, 0.3 * scale, 1.2 * scale);
-          mat = new THREE.MeshBasicMaterial({ color: forceColor || (isEnemy ? CONFIG.COLORS.BULLET_ENEMY : this.class.col) });
+          mat = new THREE.MeshBasicMaterial({
+            color: forceColor || (isEnemy ? CONFIG.COLORS.BULLET_ENEMY : this.class.col),
+          });
         }
 
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.copy(pos);
-        if (!isDanmaku) mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
+        if (!isDanmaku)
+          mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
 
         const life = isDanmaku ? 3.0 : 1.5;
-        const speed = isDanmaku ? 12 : (isEnemy ? 18 : 60);
+        const speed = isDanmaku ? 12 : isEnemy ? 18 : 60;
 
-        mesh.userData = { dir: dir.normalize(), isEnemy: isEnemy, life: life, speed: speed, dmg: dmg, pierce: this.class.type === 'heavy' ? 4 : 1, isDanmaku: isDanmaku, target: target };
-        this.scene.add(mesh); this.entities.bullets.push(mesh);
+        mesh.userData = {
+          dir: dir.normalize(),
+          isEnemy: isEnemy,
+          life: life,
+          speed: speed,
+          dmg: dmg,
+          pierce: this.class.type === "heavy" ? 4 : 1,
+          isDanmaku: isDanmaku,
+          target: target,
+        };
+        this.scene.add(mesh);
+        this.entities.bullets.push(mesh);
       }
 
       spawnExplosion(pos, color, scale = 1) {
         for (let i = 0; i < 6 * scale; i++) {
           const geo = new THREE.BoxGeometry(0.5 * scale, 0.5 * scale, 0.5 * scale);
           const mat = new THREE.MeshBasicMaterial({ color: color });
-          const p = new THREE.Mesh(geo, mat); p.position.copy(pos); p.position.y += 1;
-          p.userData = { vel: new THREE.Vector3((Math.random() - 0.5) * 25, Math.random() * 15, (Math.random() - 0.5) * 25), life: 0.2 + Math.random() * 0.3 };
-          this.scene.add(p); this.entities.particles.push(p);
+          const p = new THREE.Mesh(geo, mat);
+          p.position.copy(pos);
+          p.position.y += 1;
+          p.userData = {
+            vel: new THREE.Vector3(
+              (Math.random() - 0.5) * 25,
+              Math.random() * 15,
+              (Math.random() - 0.5) * 25
+            ),
+            life: 0.2 + Math.random() * 0.3,
+          };
+          this.scene.add(p);
+          this.entities.particles.push(p);
         }
       }
 
@@ -748,12 +1017,18 @@ WWWWWWW
         const points = [];
         points.push(start.clone().add(new THREE.Vector3(0, 1.5, 0)));
         const mid = start.clone().lerp(end, 0.5);
-        mid.x += (Math.random() - 0.5) * 1.5; mid.y += (Math.random() - 0.5) * 1.5 + 1; mid.z += (Math.random() - 0.5) * 1.5;
+        mid.x += (Math.random() - 0.5) * 1.5;
+        mid.y += (Math.random() - 0.5) * 1.5 + 1;
+        mid.z += (Math.random() - 0.5) * 1.5;
         points.push(mid);
         points.push(end.clone().add(new THREE.Vector3(0, 1.5, 0)));
 
         const geo = new THREE.BufferGeometry().setFromPoints(points);
-        const mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.8 });
+        const mat = new THREE.LineBasicMaterial({
+          color: 0x00ffcc,
+          transparent: true,
+          opacity: 0.8,
+        });
         const line = new THREE.Line(geo, mat);
         line.userData = { life: 0.15, isLine: true };
         this.scene.add(line);
@@ -763,62 +1038,91 @@ WWWWWWW
       // --- UI & LOGIC ---
 
       createCombatText(text, position, color, isCrit = false) {
-        const layer = container.querySelector('#combat-text-layer');
-        const el = document.createElement('div'); el.className = 'dmg-text'; el.innerText = text; el.style.color = color;
-        if (isCrit) { el.style.fontSize = '1.8rem'; el.style.color = CONFIG.COLORS.CRIT_TEXT; }
+        const layer = container.querySelector("#combat-text-layer");
+        const el = document.createElement("div");
+        el.className = "dmg-text";
+        el.innerText = text;
+        el.style.color = color;
+        if (isCrit) {
+          el.style.fontSize = "1.8rem";
+          el.style.color = CONFIG.COLORS.CRIT_TEXT;
+        }
         layer.appendChild(el);
-        const pos2d = this.get2DCoords(position); el.style.left = pos2d.x + 'px'; el.style.top = pos2d.y + 'px';
+        const pos2d = this.get2DCoords(position);
+        el.style.left = `${pos2d.x}px`;
+        el.style.top = `${pos2d.y}px`;
         void el.offsetWidth;
-        el.style.top = (pos2d.y - 40) + 'px'; el.style.opacity = '0';
-        setTimeout(() => { if (layer.contains(el)) layer.removeChild(el); }, 600);
+        el.style.top = `${pos2d.y - 40}px`;
+        el.style.opacity = "0";
+        setTimeout(() => {
+          if (layer.contains(el)) layer.removeChild(el);
+        }, 600);
       }
 
       get2DCoords(position) {
         const w = container.clientWidth || window.innerWidth;
         const h = container.clientHeight || window.innerHeight;
         const v = position.clone().project(this.camera);
-        return { x: (v.x + 1) / 2 * w, y: -(v.y - 1) / 2 * h };
+        return { x: ((v.x + 1) / 2) * w, y: (-(v.y - 1) / 2) * h };
       }
 
       updateHpUI() {
-        container.querySelector('#hp-bar').style.width = Math.max(0, (this.class.hp / this.class.maxHp) * 100) + "%";
-        container.querySelector('#hp-text').innerText = `${Math.floor(this.class.hp)} / ${this.class.maxHp}`;
+        container.querySelector("#hp-bar").style.width =
+          `${Math.max(0, (this.class.hp / this.class.maxHp) * 100)}%`;
+        container.querySelector("#hp-text").innerText =
+          `${Math.floor(this.class.hp)} / ${this.class.maxHp}`;
       }
 
       updateUI() {
-        container.querySelector('#obj-text').innerText = this.stats.kills;
-        container.querySelector('#lvl-text').innerText = `LEVEL ${this.level}`;
-        container.querySelector('#xp-bar').style.width = Math.min(100, (this.xp / this.xpNeeded) * 100) + "%";
+        container.querySelector("#obj-text").innerText = this.stats.kills;
+        container.querySelector("#lvl-text").innerText = `LEVEL ${this.level}`;
+        container.querySelector("#xp-bar").style.width =
+          `${Math.min(100, (this.xp / this.xpNeeded) * 100)}%`;
       }
 
       autoFire() {
         const now = this.clock.getElapsedTime();
         if (now - (this.lastShot || 0) < this.class.rof) return;
 
-        let closestDist = Infinity; let target = null;
+        let closestDist = Infinity;
+        let target = null;
         for (let i = 0; i < this.entities.enemies.length; i++) {
           const e = this.entities.enemies[i];
-          const d = Math.hypot(this.player.position.x - e.position.x, this.player.position.z - e.position.z);
-          if (d < this.class.range && d < closestDist) { closestDist = d; target = e; }
+          const d = Math.hypot(
+            this.player.position.x - e.position.x,
+            this.player.position.z - e.position.z
+          );
+          if (d < this.class.range && d < closestDist) {
+            closestDist = d;
+            target = e;
+          }
         }
 
         if (target) {
-          this.lastShot = now; this.muzzleLight.intensity = 3; setTimeout(() => { if (this.muzzleLight) this.muzzleLight.intensity = 0; }, 50);
-          const dir = new THREE.Vector3().subVectors(target.position, this.player.position).normalize();
+          this.lastShot = now;
+          this.muzzleLight.intensity = 3;
+          setTimeout(() => {
+            if (this.muzzleLight) this.muzzleLight.intensity = 0;
+          }, 50);
+          const dir = new THREE.Vector3()
+            .subVectors(target.position, this.player.position)
+            .normalize();
 
-          this.playerSprite.scale.x = (dir.x < 0) ? -this.baseSpriteScale : this.baseSpriteScale;
+          this.playerSprite.scale.x = dir.x < 0 ? -this.baseSpriteScale : this.baseSpriteScale;
 
           const spawnPos = this.player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
 
-          if (this.class.type === 'shotgun') {
+          if (this.class.type === "shotgun") {
             for (let i = -2; i <= 2; i++) {
               const spread = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.15);
               this.spawnBullet(spawnPos, spread, false, this.class.dmg, 0.8, null, false, target);
             }
-          } else if (this.class.type === 'heavy') {
+          } else if (this.class.type === "heavy") {
             this.spawnBullet(spawnPos, dir, false, this.class.dmg, 3.0, null, false, target);
           } else {
-            const spread = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), (Math.random() - 0.5) * 0.1);
+            const spread = dir
+              .clone()
+              .applyAxisAngle(new THREE.Vector3(0, 1, 0), (Math.random() - 0.5) * 0.1);
             this.spawnBullet(spawnPos, spread, false, this.class.dmg, 1.0, null, false, target);
           }
         }
@@ -826,53 +1130,77 @@ WWWWWWW
 
       takeDamage(amt) {
         if (this.dashActive > 0) return;
-        this.class.hp -= amt; this.shake += 0.5; this.updateHpUI();
-        this.playerSprite.material.emissive.setHex(0xffffff); setTimeout(() => this.playerSprite.material.emissive.setHex(this.class.col), 100);
+        this.class.hp -= amt;
+        this.shake += 0.5;
+        this.updateHpUI();
+        this.playerSprite.material.emissive.setHex(0xffffff);
+        setTimeout(() => this.playerSprite.material.emissive.setHex(this.class.col), 100);
         if (this.class.hp <= 0) this.endGame(false);
       }
 
       heal(amt) {
-        this.class.hp = Math.min(this.class.maxHp, this.class.hp + amt); this.updateHpUI();
-        this.createCombatText(`+${amt}`, this.player.position.clone().add(new THREE.Vector3(0, 2, 0)), '#00ffcc');
+        this.class.hp = Math.min(this.class.maxHp, this.class.hp + amt);
+        this.updateHpUI();
+        this.createCombatText(
+          `+${amt}`,
+          this.player.position.clone().add(new THREE.Vector3(0, 2, 0)),
+          "#00ffcc"
+        );
       }
 
       gainXp(amt) {
         this.xp += amt;
-        if (this.xp >= this.xpNeeded) this.triggerLevelUp(); else this.updateUI();
+        if (this.xp >= this.xpNeeded) this.triggerLevelUp();
+        else this.updateUI();
       }
 
       triggerLevelUp() {
         const prevState = this.state;
-        this.state = 'LEVEL_UP';
-        this.xp -= this.xpNeeded; this.level++; this.xpNeeded = Math.floor(this.xpNeeded * 1.5);
-        container.querySelector('#new-level-text').innerText = this.level;
-        const upgradeContainer = container.querySelector('#upgrade-container'); upgradeContainer.innerHTML = '';
+        this.state = "LEVEL_UP";
+        this.xp -= this.xpNeeded;
+        this.level++;
+        this.xpNeeded = Math.floor(this.xpNeeded * 1.5);
+        container.querySelector("#new-level-text").innerText = this.level;
+        const upgradeContainer = container.querySelector("#upgrade-container");
+        upgradeContainer.innerHTML = "";
 
         const choices = [...CONFIG.UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
-        choices.forEach(upg => {
-          const el = document.createElement('div'); el.className = 'upgrade-card';
+        choices.forEach((upg) => {
+          const el = document.createElement("div");
+          el.className = "upgrade-card";
           el.innerHTML = `<div class="upg-title">${upg.name}</div><div class="upg-desc">${upg.desc}</div>`;
           el.onclick = () => {
-            upg.apply(this, this.class); if (upg.id === 'hp') this.updateHpUI();
-            container.querySelector('#level-screen').classList.add('hidden');
-            this.updateUI(); this.state = prevState;
+            upg.apply(this, this.class);
+            if (upg.id === "hp") this.updateHpUI();
+            container.querySelector("#level-screen").classList.add("hidden");
+            this.updateUI();
+            this.state = prevState;
           };
           upgradeContainer.appendChild(el);
         });
-        container.querySelector('#level-screen').classList.remove('hidden');
+        container.querySelector("#level-screen").classList.remove("hidden");
       }
 
       endGame(win) {
-        this.state = win ? 'WIN' : 'GAME_OVER';
+        this.state = win ? "WIN" : "GAME_OVER";
         if (win && !saveState.unlockedBumble) {
-          saveState.unlockedBumble = true; saveGame();
+          saveState.unlockedBumble = true;
+          saveGame();
           this.showAchievement("THE BUMBLE UNLOCKED");
         }
-        container.querySelector('#end-screen').classList.remove('hidden');
-        container.querySelector('#end-waves').innerText = `${this.currentWave}/10`;
-        const t = container.querySelector('#end-title'); const m = container.querySelector('#end-msg');
-        if (win) { t.innerText = "CAMPAIGN SECURED"; t.style.color = "#00ffcc"; m.innerText = "Target Destroyed."; }
-        else { t.innerText = "OVERWHELMED"; t.style.color = "#ff0044"; m.innerText = "Operator Down."; }
+        container.querySelector("#end-screen").classList.remove("hidden");
+        container.querySelector("#end-waves").innerText = `${this.currentWave}/10`;
+        const t = container.querySelector("#end-title");
+        const m = container.querySelector("#end-msg");
+        if (win) {
+          t.innerText = "CAMPAIGN SECURED";
+          t.style.color = "#00ffcc";
+          m.innerText = "Target Destroyed.";
+        } else {
+          t.innerText = "OVERWHELMED";
+          t.style.color = "#ff0044";
+          m.innerText = "Operator Down.";
+        }
       }
 
       // --- MAIN LOOP ---
@@ -880,26 +1208,34 @@ WWWWWWW
       animate() {
         animFrameId = requestAnimationFrame(() => this.animate());
         const dt = Math.min(0.05, this.clock.getDelta());
-        const now = this.clock.getElapsedTime();
+        const _now = this.clock.getElapsedTime();
         const camQuat = this.camera.quaternion;
 
         if (this.snowSystem) {
           const pos = this.snowSystem.geometry.attributes.position.array;
-          for (let i = 1; i < pos.length; i += 3) { pos[i] -= dt * 6; if (pos[i] < -2) pos[i] = 40; }
+          for (let i = 1; i < pos.length; i += 3) {
+            pos[i] -= dt * 6;
+            if (pos[i] < -2) pos[i] = 40;
+          }
           this.snowSystem.geometry.attributes.position.needsUpdate = true;
         }
 
-        if (this.state === 'PLAYING') {
+        if (this.state === "PLAYING") {
           if (this.currentWave < 10) {
             this.waveTimeRemaining -= dt;
-            if (this.waveTimeRemaining <= 0) { this.waveTimeRemaining = 0; this.endWave(); }
+            if (this.waveTimeRemaining <= 0) {
+              this.waveTimeRemaining = 0;
+              this.endWave();
+            }
           }
-          container.querySelector('#timer-display').innerText = this.currentWave === 10 ? "BOSS" : this.waveTimeRemaining.toFixed(1);
+          container.querySelector("#timer-display").innerText =
+            this.currentWave === 10 ? "BOSS" : this.waveTimeRemaining.toFixed(1);
 
           const waveData = CONFIG.WAVES[this.currentWave - 1];
           this.spawnTimer += dt;
           if (this.spawnTimer >= waveData.spawnInt && !this.boss) {
-            this.spawnTimer = 0; this.spawnEnemy();
+            this.spawnTimer = 0;
+            this.spawnEnemy();
           }
 
           if (this.player) {
@@ -911,28 +1247,48 @@ WWWWWWW
               if (this.auraTimer >= 0.5) {
                 this.auraTimer = 0;
                 const radius = 3.5 + this.auraLevel * 0.5;
-                const auraDmg = (15 * this.auraLevel) * (this.class.dmg / 20);
+                const auraDmg = 15 * this.auraLevel * (this.class.dmg / 20);
 
                 for (let j = this.entities.enemies.length - 1; j >= 0; j--) {
                   const e = this.entities.enemies[j];
-                  const dist2D = Math.hypot(e.position.x - this.player.position.x, e.position.z - this.player.position.z);
+                  const dist2D = Math.hypot(
+                    e.position.x - this.player.position.x,
+                    e.position.z - this.player.position.z
+                  );
                   if (dist2D <= radius) {
                     const actualDmg = auraDmg * (0.9 + Math.random() * 0.2);
                     e.userData.hp -= actualDmg;
-                    this.createCombatText(Math.floor(actualDmg), e.position.clone().add(new THREE.Vector3(0, 2, 0)), '#00ffff', false);
+                    this.createCombatText(
+                      Math.floor(actualDmg),
+                      e.position.clone().add(new THREE.Vector3(0, 2, 0)),
+                      "#00ffff",
+                      false
+                    );
 
-                    if (e.userData.type !== 'boss') {
+                    if (e.userData.type !== "boss") {
                       e.userData.sprite.material.emissive.setHex(0xffffff);
-                      setTimeout(() => e && e.userData && e.userData.sprite && e.userData.sprite.material.emissive.setHex(e.userData.coreColor), 50);
+                      setTimeout(
+                        () => e?.userData?.sprite?.material.emissive.setHex(e.userData.coreColor),
+                        50
+                      );
                     }
 
                     this.spawnLightning(this.player.position, e.position);
 
                     if (e.userData.hp <= 0) {
-                      this.spawnExplosion(e.position, e.userData.coreColor, e.userData.type === 'boss' ? 5 : (e.userData.type === 'tank' ? 2 : 1));
-                      if (e.userData.type === 'boss') this.endGame(true);
-                      else { this.stats.kills++; this.updateUI(); this.spawnDrop(e.position); }
-                      this.scene.remove(e); this.entities.enemies.splice(j, 1);
+                      this.spawnExplosion(
+                        e.position,
+                        e.userData.coreColor,
+                        e.userData.type === "boss" ? 5 : e.userData.type === "tank" ? 2 : 1
+                      );
+                      if (e.userData.type === "boss") this.endGame(true);
+                      else {
+                        this.stats.kills++;
+                        this.updateUI();
+                        this.spawnDrop(e.position);
+                      }
+                      this.scene.remove(e);
+                      this.entities.enemies.splice(j, 1);
                     }
                   }
                 }
@@ -940,35 +1296,62 @@ WWWWWWW
             }
 
             let currentSpeed = this.class.spd;
-            const dashBtnEl = container.querySelector('#dash-btn');
+            const dashBtnEl = container.querySelector("#dash-btn");
 
-            if (this.dashCd > 0) { this.dashCd -= dt; if (this.dashCd <= 0) dashBtnEl.classList.remove('cooldown'); }
-
-            if (this.input.dashing && this.dashCd <= 0) {
-              this.dashActive = CONFIG.DASH_DURATION; this.dashCd = CONFIG.DASH_COOLDOWN;
-              dashBtnEl.classList.add('cooldown'); this.shake += 0.2;
+            if (this.dashCd > 0) {
+              this.dashCd -= dt;
+              if (this.dashCd <= 0) dashBtnEl.classList.remove("cooldown");
             }
 
-            if (this.dashActive > 0) { currentSpeed *= 3.0; this.dashActive -= dt; this.spawnExplosion(this.player.position.clone(), this.class.col, 0.5); }
+            if (this.input.dashing && this.dashCd <= 0) {
+              this.dashActive = CONFIG.DASH_DURATION;
+              this.dashCd = CONFIG.DASH_COOLDOWN;
+              dashBtnEl.classList.add("cooldown");
+              this.shake += 0.2;
+            }
 
-            let moveX = 0, moveY = 0;
-            if (this.input.active) { moveX = this.input.x; moveY = this.input.y; }
-            else {
-              if (this.keys.up) moveY -= 1; if (this.keys.down) moveY += 1;
-              if (this.keys.left) moveX -= 1; if (this.keys.right) moveX += 1;
-              if (moveX !== 0 || moveY !== 0) { const length = Math.sqrt(moveX * moveX + moveY * moveY); moveX /= length; moveY /= length; }
+            if (this.dashActive > 0) {
+              currentSpeed *= 3.0;
+              this.dashActive -= dt;
+              this.spawnExplosion(this.player.position.clone(), this.class.col, 0.5);
+            }
+
+            let moveX = 0,
+              moveY = 0;
+            if (this.input.active) {
+              moveX = this.input.x;
+              moveY = this.input.y;
+            } else {
+              if (this.keys.up) moveY -= 1;
+              if (this.keys.down) moveY += 1;
+              if (this.keys.left) moveX -= 1;
+              if (this.keys.right) moveX += 1;
+              if (moveX !== 0 || moveY !== 0) {
+                const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                moveX /= length;
+                moveY /= length;
+              }
             }
 
             if (moveX !== 0 || moveY !== 0) {
               const nextX = this.player.position.x + moveX * currentSpeed * dt;
               const nextZ = this.player.position.z + moveY * currentSpeed * dt;
-              if (Math.sqrt(nextX * nextX + nextZ * nextZ) < CONFIG.ARENA_RADIUS - 1) { this.player.position.x = nextX; this.player.position.z = nextZ; }
-              if (moveX !== 0) this.playerSprite.scale.x = (moveX < 0) ? -this.baseSpriteScale : this.baseSpriteScale;
+              if (Math.sqrt(nextX * nextX + nextZ * nextZ) < CONFIG.ARENA_RADIUS - 1) {
+                this.player.position.x = nextX;
+                this.player.position.z = nextZ;
+              }
+              if (moveX !== 0)
+                this.playerSprite.scale.x =
+                  moveX < 0 ? -this.baseSpriteScale : this.baseSpriteScale;
             }
 
             this.autoFire();
 
-            const shakeOffset = new THREE.Vector3((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake, 0);
+            const shakeOffset = new THREE.Vector3(
+              (Math.random() - 0.5) * this.shake,
+              (Math.random() - 0.5) * this.shake,
+              0
+            );
             this.shake = Math.max(0, this.shake - dt * 5);
             const targetCam = this.player.position.clone().add(this.cameraOffset);
             this.camera.position.lerp(targetCam, 0.2).add(shakeOffset);
@@ -981,7 +1364,9 @@ WWWWWWW
 
             // SMART-TRACKING LOGIC
             if (!b.userData.isEnemy && b.userData.target && b.userData.target.parent) {
-              const desiredDir = new THREE.Vector3().subVectors(b.userData.target.position, b.position).normalize();
+              const desiredDir = new THREE.Vector3()
+                .subVectors(b.userData.target.position, b.position)
+                .normalize();
               b.userData.dir.lerp(desiredDir, dt * 6.0).normalize();
               if (!b.userData.isDanmaku) {
                 b.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), b.userData.dir);
@@ -993,108 +1378,192 @@ WWWWWWW
 
             let remove = false;
             if (b.userData.isEnemy) {
-              const dist2D = Math.hypot(b.position.x - this.player.position.x, b.position.z - this.player.position.z);
-              if (dist2D < 0.5) { this.takeDamage(b.userData.dmg); remove = true; }
+              const dist2D = Math.hypot(
+                b.position.x - this.player.position.x,
+                b.position.z - this.player.position.z
+              );
+              if (dist2D < 0.5) {
+                this.takeDamage(b.userData.dmg);
+                remove = true;
+              }
             } else {
               for (let j = this.entities.enemies.length - 1; j >= 0; j--) {
                 const e = this.entities.enemies[j];
-                let hitbox = e.userData.type === 'boss' ? 4.0 : (e.userData.type === 'tank' ? 2.0 : 1.2);
+                const hitbox =
+                  e.userData.type === "boss" ? 4.0 : e.userData.type === "tank" ? 2.0 : 1.2;
                 const dist2D = Math.hypot(b.position.x - e.position.x, b.position.z - e.position.z);
 
                 if (dist2D < hitbox) {
                   const isCrit = Math.random() > 0.8;
-                  const actualDmg = b.userData.dmg * (isCrit ? 2.0 : (0.9 + Math.random() * 0.2));
+                  const actualDmg = b.userData.dmg * (isCrit ? 2.0 : 0.9 + Math.random() * 0.2);
                   e.userData.hp -= actualDmg;
-                  this.createCombatText(Math.floor(actualDmg), e.position.clone().add(new THREE.Vector3(0, 2, 0)), isCrit ? CONFIG.COLORS.CRIT_TEXT : CONFIG.COLORS.DMG_TEXT, isCrit);
+                  this.createCombatText(
+                    Math.floor(actualDmg),
+                    e.position.clone().add(new THREE.Vector3(0, 2, 0)),
+                    isCrit ? CONFIG.COLORS.CRIT_TEXT : CONFIG.COLORS.DMG_TEXT,
+                    isCrit
+                  );
 
-                  b.userData.pierce--; if (b.userData.pierce <= 0) remove = true;
+                  b.userData.pierce--;
+                  if (b.userData.pierce <= 0) remove = true;
 
-                  if (e.userData.type !== 'boss') {
+                  if (e.userData.type !== "boss") {
                     e.userData.sprite.material.emissive.setHex(0xffffff);
-                    setTimeout(() => e && e.userData && e.userData.sprite && e.userData.sprite.material.emissive.setHex(e.userData.coreColor), 50);
+                    setTimeout(
+                      () => e?.userData?.sprite?.material.emissive.setHex(e.userData.coreColor),
+                      50
+                    );
                   }
 
                   if (e.userData.hp <= 0) {
-                    this.spawnExplosion(e.position, e.userData.coreColor, e.userData.type === 'boss' ? 5 : (e.userData.type === 'tank' ? 2 : 1));
-                    if (e.userData.type === 'boss') this.endGame(true);
-                    else { this.stats.kills++; this.updateUI(); this.spawnDrop(e.position); }
-                    this.scene.remove(e); this.entities.enemies.splice(j, 1);
+                    this.spawnExplosion(
+                      e.position,
+                      e.userData.coreColor,
+                      e.userData.type === "boss" ? 5 : e.userData.type === "tank" ? 2 : 1
+                    );
+                    if (e.userData.type === "boss") this.endGame(true);
+                    else {
+                      this.stats.kills++;
+                      this.updateUI();
+                      this.spawnDrop(e.position);
+                    }
+                    this.scene.remove(e);
+                    this.entities.enemies.splice(j, 1);
                   }
                   if (remove) break;
                 }
               }
             }
-            if (b.userData.life <= 0 || remove) { this.scene.remove(b); this.entities.bullets.splice(i, 1); }
+            if (b.userData.life <= 0 || remove) {
+              this.scene.remove(b);
+              this.entities.bullets.splice(i, 1);
+            }
           }
 
           // Physics - Enemies
-          this.entities.enemies.forEach(e => {
+          this.entities.enemies.forEach((e) => {
             e.userData.sprite.quaternion.copy(camQuat);
-            const dir = new THREE.Vector3().subVectors(this.player.position, e.position).normalize();
-            const distToPlayer = Math.hypot(e.position.x - this.player.position.x, e.position.z - this.player.position.z);
+            const dir = new THREE.Vector3()
+              .subVectors(this.player.position, e.position)
+              .normalize();
+            const distToPlayer = Math.hypot(
+              e.position.x - this.player.position.x,
+              e.position.z - this.player.position.z
+            );
 
-            if (e.userData.type === 'caller') {
-              e.userData.sprite.scale.x = (dir.x < 0) ? -e.userData.baseScale : e.userData.baseScale;
+            if (e.userData.type === "caller") {
+              e.userData.sprite.scale.x = dir.x < 0 ? -e.userData.baseScale : e.userData.baseScale;
               if (distToPlayer > 15) e.position.add(dir.multiplyScalar(e.userData.speed * dt));
-              else if (distToPlayer < 10) e.position.add(dir.negate().multiplyScalar(e.userData.speed * dt));
+              else if (distToPlayer < 10)
+                e.position.add(dir.negate().multiplyScalar(e.userData.speed * dt));
 
               e.userData.attackTimer += dt;
               if (e.userData.attackTimer > 3.0) {
                 e.userData.attackTimer = 0;
                 for (let i = 0; i < 12; i++) {
-                  const spread = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), (i / 12) * Math.PI * 2);
-                  this.spawnBullet(e.position, spread, true, 10, 1.2, CONFIG.COLORS.BULLET_CALLER, true);
+                  const spread = new THREE.Vector3(1, 0, 0).applyAxisAngle(
+                    new THREE.Vector3(0, 1, 0),
+                    (i / 12) * Math.PI * 2
+                  );
+                  this.spawnBullet(
+                    e.position,
+                    spread,
+                    true,
+                    10,
+                    1.2,
+                    CONFIG.COLORS.BULLET_CALLER,
+                    true
+                  );
                 }
               }
-
-            } else if (e.userData.type !== 'boss') {
+            } else if (e.userData.type !== "boss") {
               e.position.add(dir.multiplyScalar(e.userData.speed * dt));
-              e.userData.sprite.scale.x = (dir.x < 0) ? -e.userData.baseScale : e.userData.baseScale;
+              e.userData.sprite.scale.x = dir.x < 0 ? -e.userData.baseScale : e.userData.baseScale;
 
-              let dmg = e.userData.type === 'tank' ? 20 : (e.userData.type === 'rusher' ? 5 : 10);
-              let colRadius = e.userData.type === 'tank' ? 2.0 : 1.2;
+              const dmg = e.userData.type === "tank" ? 20 : e.userData.type === "rusher" ? 5 : 10;
+              const colRadius = e.userData.type === "tank" ? 2.0 : 1.2;
 
               if (distToPlayer < colRadius) {
-                this.takeDamage(dmg); e.position.add(dir.negate().multiplyScalar(4));
+                this.takeDamage(dmg);
+                e.position.add(dir.negate().multiplyScalar(4));
               }
 
-              this.entities.enemies.forEach(other => {
-                if (e !== other && other.userData.type !== 'boss') {
-                  let dist = Math.hypot(e.position.x - other.position.x, e.position.z - other.position.z);
-                  if (dist < colRadius) { e.position.add(new THREE.Vector3().subVectors(e.position, other.position).normalize().multiplyScalar(dt * 3)); }
+              this.entities.enemies.forEach((other) => {
+                if (e !== other && other.userData.type !== "boss") {
+                  const dist = Math.hypot(
+                    e.position.x - other.position.x,
+                    e.position.z - other.position.z
+                  );
+                  if (dist < colRadius) {
+                    e.position.add(
+                      new THREE.Vector3()
+                        .subVectors(e.position, other.position)
+                        .normalize()
+                        .multiplyScalar(dt * 3)
+                    );
+                  }
                 }
               });
-
-            } else if (e.userData.type === 'boss') {
-              e.userData.ring.rotation.x += dt; e.userData.ring.rotation.y += dt;
-              e.userData.sprite.scale.x = (dir.x < 0) ? -e.userData.baseScale : e.userData.baseScale;
+            } else if (e.userData.type === "boss") {
+              e.userData.ring.rotation.x += dt;
+              e.userData.ring.rotation.y += dt;
+              e.userData.sprite.scale.x = dir.x < 0 ? -e.userData.baseScale : e.userData.baseScale;
 
               e.userData.phaseTimer += dt;
               e.userData.subTimer += dt;
 
-              if (e.userData.phase === 0 && e.userData.phaseTimer > 2.0) { e.userData.phase = 1; e.userData.phaseTimer = 0; }
-              if (e.userData.phase === 1 && e.userData.phaseTimer > 3.0) { e.userData.phase = 2; e.userData.phaseTimer = 0; }
-              if (e.userData.phase === 2 && e.userData.phaseTimer > 2.5) { e.userData.phase = 3; e.userData.phaseTimer = 0; }
-              if (e.userData.phase === 3 && e.userData.phaseTimer > 2.5) { e.userData.phase = 0; e.userData.phaseTimer = 0; }
+              if (e.userData.phase === 0 && e.userData.phaseTimer > 2.0) {
+                e.userData.phase = 1;
+                e.userData.phaseTimer = 0;
+              }
+              if (e.userData.phase === 1 && e.userData.phaseTimer > 3.0) {
+                e.userData.phase = 2;
+                e.userData.phaseTimer = 0;
+              }
+              if (e.userData.phase === 2 && e.userData.phaseTimer > 2.5) {
+                e.userData.phase = 3;
+                e.userData.phaseTimer = 0;
+              }
+              if (e.userData.phase === 3 && e.userData.phaseTimer > 2.5) {
+                e.userData.phase = 0;
+                e.userData.phaseTimer = 0;
+              }
 
               switch (e.userData.phase) {
                 case 0:
-                  if (distToPlayer > 10) e.position.add(dir.clone().multiplyScalar(e.userData.speed * dt));
+                  if (distToPlayer > 10)
+                    e.position.add(dir.clone().multiplyScalar(e.userData.speed * dt));
                   break;
                 case 1:
                   if (e.userData.subTimer > 0.08) {
                     e.userData.subTimer = 0;
                     e.userData.attackAngle += 0.3;
-                    const bulletDir = new THREE.Vector3(Math.cos(e.userData.attackAngle), 0, Math.sin(e.userData.attackAngle));
-                    this.spawnBullet(e.position, bulletDir, true, 15, 1.5, CONFIG.COLORS.BOSS, true);
+                    const bulletDir = new THREE.Vector3(
+                      Math.cos(e.userData.attackAngle),
+                      0,
+                      Math.sin(e.userData.attackAngle)
+                    );
+                    this.spawnBullet(
+                      e.position,
+                      bulletDir,
+                      true,
+                      15,
+                      1.5,
+                      CONFIG.COLORS.BOSS,
+                      true
+                    );
                   }
-                  if (distToPlayer > 12) e.position.add(dir.clone().multiplyScalar(e.userData.speed * 0.5 * dt));
+                  if (distToPlayer > 12)
+                    e.position.add(dir.clone().multiplyScalar(e.userData.speed * 0.5 * dt));
                   break;
                 case 2:
                   if (e.userData.subTimer > 0.8) {
                     e.userData.subTimer = 0;
                     for (let i = 0; i < 16; i++) {
-                      const spread = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), (i / 16) * Math.PI * 2);
+                      const spread = new THREE.Vector3(1, 0, 0).applyAxisAngle(
+                        new THREE.Vector3(0, 1, 0),
+                        (i / 16) * Math.PI * 2
+                      );
                       this.spawnBullet(e.position, spread, true, 20, 1.5, CONFIG.COLORS.BOSS, true);
                     }
                   }
@@ -1103,13 +1572,16 @@ WWWWWWW
                   if (e.userData.subTimer > 0.6) {
                     e.userData.subTimer = 0;
                     for (let i = -2; i <= 2; i++) {
-                      const spread = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.1);
+                      const spread = dir
+                        .clone()
+                        .applyAxisAngle(new THREE.Vector3(0, 1, 0), i * 0.1);
                       this.spawnBullet(e.position, spread, true, 25, 2.0, null, false);
                     }
                   }
                   break;
               }
-              container.querySelector('#boss-hp-bar').style.width = ((e.userData.hp / e.userData.maxHp) * 100) + "%";
+              container.querySelector("#boss-hp-bar").style.width =
+                `${(e.userData.hp / e.userData.maxHp) * 100}%`;
             }
           });
 
@@ -1118,12 +1590,23 @@ WWWWWWW
             const d = this.entities.drops[i];
             d.userData.sprite.quaternion.copy(camQuat);
 
-            const dist2D = Math.hypot(d.position.x - this.player.position.x, d.position.z - this.player.position.z);
-            if (dist2D < CONFIG.MAGNET_RADIUS) { d.position.add(new THREE.Vector3().subVectors(this.player.position, d.position).normalize().multiplyScalar(30 * (1 - dist2D / CONFIG.MAGNET_RADIUS) * dt)); }
+            const dist2D = Math.hypot(
+              d.position.x - this.player.position.x,
+              d.position.z - this.player.position.z
+            );
+            if (dist2D < CONFIG.MAGNET_RADIUS) {
+              d.position.add(
+                new THREE.Vector3()
+                  .subVectors(this.player.position, d.position)
+                  .normalize()
+                  .multiplyScalar(30 * (1 - dist2D / CONFIG.MAGNET_RADIUS) * dt)
+              );
+            }
             if (dist2D < 1.5) {
               this.gainXp(d.userData.value);
               if (this.class.hp < this.class.maxHp && Math.random() > 0.95) this.heal(1);
-              this.scene.remove(d); this.entities.drops.splice(i, 1);
+              this.scene.remove(d);
+              this.entities.drops.splice(i, 1);
             }
           }
 
@@ -1160,44 +1643,89 @@ WWWWWWW
         this.input = { x: 0, y: 0, active: false, dashing: false };
         this.keys = { up: false, down: false, left: false, right: false };
 
-        const zone = container.querySelector('#joystick-zone');
-        const base = container.querySelector('#stick-base');
-        const knob = container.querySelector('#stick-knob');
+        const zone = container.querySelector("#joystick-zone");
+        const base = container.querySelector("#stick-base");
+        const knob = container.querySelector("#stick-knob");
         let startX, startY;
 
-        const start = (e) => { this.input.active = true; const p = e.touches ? e.touches[0] : e; startX = p.clientX; startY = p.clientY; base.style.display = 'block'; base.style.left = startX + 'px'; base.style.top = startY + 'px'; knob.style.display = 'block'; knob.style.left = startX + 'px'; knob.style.top = startY + 'px'; };
-        const move = (e) => { if (!this.input.active) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - startX; const dy = p.clientY - startY; const dist = Math.min(50, Math.sqrt(dx * dx + dy * dy)); const ang = Math.atan2(dy, dx); this.input.x = (Math.cos(ang) * dist) / 50; this.input.y = (Math.sin(ang) * dist) / 50; knob.style.left = (startX + this.input.x * 50) + 'px'; knob.style.top = (startY + this.input.y * 50) + 'px'; };
-        const end = () => { this.input.active = false; this.input.x = 0; this.input.y = 0; base.style.display = 'none'; knob.style.display = 'none'; };
+        const start = (e) => {
+          this.input.active = true;
+          const p = e.touches ? e.touches[0] : e;
+          startX = p.clientX;
+          startY = p.clientY;
+          base.style.display = "block";
+          base.style.left = `${startX}px`;
+          base.style.top = `${startY}px`;
+          knob.style.display = "block";
+          knob.style.left = `${startX}px`;
+          knob.style.top = `${startY}px`;
+        };
+        const move = (e) => {
+          if (!this.input.active) return;
+          const p = e.touches ? e.touches[0] : e;
+          const dx = p.clientX - startX;
+          const dy = p.clientY - startY;
+          const dist = Math.min(50, Math.sqrt(dx * dx + dy * dy));
+          const ang = Math.atan2(dy, dx);
+          this.input.x = (Math.cos(ang) * dist) / 50;
+          this.input.y = (Math.sin(ang) * dist) / 50;
+          knob.style.left = `${startX + this.input.x * 50}px`;
+          knob.style.top = `${startY + this.input.y * 50}px`;
+        };
+        const end = () => {
+          this.input.active = false;
+          this.input.x = 0;
+          this.input.y = 0;
+          base.style.display = "none";
+          knob.style.display = "none";
+        };
 
-        zone.addEventListener('mousedown', start);
-        addWindowListener('mousemove', move);
-        addWindowListener('mouseup', end);
-        zone.addEventListener('touchstart', start, { passive: false });
-        addWindowListener('touchmove', move, { passive: false });
-        addWindowListener('touchend', end);
+        zone.addEventListener("mousedown", start);
+        addWindowListener("mousemove", move);
+        addWindowListener("mouseup", end);
+        zone.addEventListener("touchstart", start, { passive: false });
+        addWindowListener("touchmove", move, { passive: false });
+        addWindowListener("touchend", end);
 
-        const dashBtn = container.querySelector('#dash-btn');
-        const onDash = (e) => { e.preventDefault(); this.input.dashing = true; dashBtn.classList.add('active'); };
-        const offDash = (e) => { e.preventDefault(); this.input.dashing = false; dashBtn.classList.remove('active'); };
-        dashBtn.addEventListener('mousedown', onDash); dashBtn.addEventListener('mouseup', offDash); dashBtn.addEventListener('mouseleave', offDash);
-        dashBtn.addEventListener('touchstart', onDash, { passive: false }); dashBtn.addEventListener('touchend', offDash);
+        const dashBtn = container.querySelector("#dash-btn");
+        const onDash = (e) => {
+          e.preventDefault();
+          this.input.dashing = true;
+          dashBtn.classList.add("active");
+        };
+        const offDash = (e) => {
+          e.preventDefault();
+          this.input.dashing = false;
+          dashBtn.classList.remove("active");
+        };
+        dashBtn.addEventListener("mousedown", onDash);
+        dashBtn.addEventListener("mouseup", offDash);
+        dashBtn.addEventListener("mouseleave", offDash);
+        dashBtn.addEventListener("touchstart", onDash, { passive: false });
+        dashBtn.addEventListener("touchend", offDash);
 
         const onKeydown = (e) => {
-          if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { this.input.dashing = true; dashBtn.classList.add('active'); }
-          if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.up = true;
-          if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keys.down = true;
-          if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keys.left = true;
-          if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keys.right = true;
+          if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+            this.input.dashing = true;
+            dashBtn.classList.add("active");
+          }
+          if (e.code === "KeyW" || e.code === "ArrowUp") this.keys.up = true;
+          if (e.code === "KeyS" || e.code === "ArrowDown") this.keys.down = true;
+          if (e.code === "KeyA" || e.code === "ArrowLeft") this.keys.left = true;
+          if (e.code === "KeyD" || e.code === "ArrowRight") this.keys.right = true;
         };
         const onKeyup = (e) => {
-          if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { this.input.dashing = false; dashBtn.classList.remove('active'); }
-          if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.up = false;
-          if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keys.down = false;
-          if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keys.left = false;
-          if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keys.right = false;
+          if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+            this.input.dashing = false;
+            dashBtn.classList.remove("active");
+          }
+          if (e.code === "KeyW" || e.code === "ArrowUp") this.keys.up = false;
+          if (e.code === "KeyS" || e.code === "ArrowDown") this.keys.down = false;
+          if (e.code === "KeyA" || e.code === "ArrowLeft") this.keys.left = false;
+          if (e.code === "KeyD" || e.code === "ArrowRight") this.keys.right = false;
         };
-        addWindowListener('keydown', onKeydown);
-        addWindowListener('keyup', onKeyup);
+        addWindowListener("keydown", onKeydown);
+        addWindowListener("keyup", onKeyup);
       }
 
       onResize() {
@@ -1220,7 +1748,7 @@ WWWWWWW
       for (const { event, handler, options } of windowListeners) {
         window.removeEventListener(event, handler, options);
       }
-      if (gameInstance && gameInstance.renderer) {
+      if (gameInstance?.renderer) {
         gameInstance.renderer.dispose();
       }
       if (document.head.contains(styleEl)) {
@@ -1234,7 +1762,13 @@ WWWWWWW
   return (
     <div
       ref={mountRef}
-      style={{ width: '100%', height: '100vh', overflow: 'hidden', position: 'relative', background: '#020205' }}
+      style={{
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        position: "relative",
+        background: "#020205",
+      }}
     />
   );
 }

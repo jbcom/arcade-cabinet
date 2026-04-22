@@ -136,7 +136,7 @@
         // --- 1. CORE GAME STATE & INVENTORY ---
         const STARTER_KIT = { stone: 0, wood: 0, leaves: 0, dirt: 0, sand: 0, torch: 10 };
         
-        let gameState = { 
+        const gameState = { 
             health: 5, maxHealth: 5, score: 0, dayCount: 1, isDead: false, dayTime: Math.PI / 4,
             inventory: { ...STARTER_KIT }
         };
@@ -152,7 +152,7 @@
             uiScore.innerText = gameState.score;
             
             // Sync Inventory UI
-            for (let type in gameState.inventory) {
+            for (const type in gameState.inventory) {
                 const countEl = document.getElementById(`count-${type}`);
                 if (countEl) {
                     const count = gameState.inventory[type];
@@ -182,7 +182,7 @@
 
         function addScore(amt) { gameState.score += amt; updateHUD(); }
 
-        window.respawn = function() {
+        window.respawn = () => {
             gameState.health = gameState.maxHealth; gameState.score = 0; gameState.isDead = false;
             // Death Penalty: Lose all gathered resources, reset to starter kit
             gameState.inventory = { ...STARTER_KIT }; 
@@ -269,7 +269,7 @@
             while (sy <= 0 && radius < 50) {
                 for(let i = -radius; i <= radius; i++) {
                     for(let j = -radius; j <= radius; j++) {
-                        let tempY = getProceduralHeight(i, j);
+                        const tempY = getProceduralHeight(i, j);
                         if(tempY > 0) { sx = i; sz = j; sy = tempY; break; }
                     }
                     if(sy > 0) break;
@@ -367,7 +367,7 @@
             if(e.code === 'KeyS') keys.s = true; if(e.code === 'KeyD') keys.d = true;
             if(e.code === 'Space') attemptJump();
             if(e.code === 'ShiftLeft') { inputState.isCrouching = true; }
-            if(['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6'].includes(e.code)) selectHotbarSlot(parseInt(e.key) - 1);
+            if(['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6'].includes(e.code)) selectHotbarSlot(parseInt(e.key, 10) - 1);
         });
         window.addEventListener('keyup', (e) => {
             if(e.code === 'KeyW') keys.w = false; if(e.code === 'KeyA') keys.a = false;
@@ -397,7 +397,7 @@
         leftZone.addEventListener('pointerdown', (e) => {
             if(gameState.isDead || e.pointerType === 'mouse' || leftTouchId !== null) return;
             leftTouchId = e.pointerId; leftStartX = e.clientX; leftStartY = e.clientY;
-            joyBase.style.left = leftStartX + 'px'; joyBase.style.top = leftStartY + 'px';
+            joyBase.style.left = `${leftStartX}px`; joyBase.style.top = `${leftStartY}px`;
             joyBase.style.display = 'block'; joyStick.style.transform = `translate(-50%, -50%)`;
             inputState.touchMoveX = 0; inputState.touchMoveY = 0;
         });
@@ -422,7 +422,7 @@
         });
         window.addEventListener('pointermove', (e) => {
             if(e.pointerId === rightTouchId && !gameState.isDead) {
-                let dx = e.clientX - lastLookX; let dy = e.clientY - lastLookY;
+                const dx = e.clientX - lastLookX; const dy = e.clientY - lastLookY;
                 lastLookX = e.clientX; lastLookY = e.clientY;
                 lookYaw -= dx * 0.005;
                 lookPitch -= dy * 0.005;
@@ -541,7 +541,7 @@
             }
         }
 
-        let velocityY = 0; const defaultGravity = -0.012; let currentGravity = defaultGravity; let knockbackVel = new THREE.Vector3();
+        let velocityY = 0; const defaultGravity = -0.012; let currentGravity = defaultGravity; const knockbackVel = new THREE.Vector3();
         function attemptJump() {
             if(gameState.isDead) return;
             const downRay = new THREE.Raycaster(player.position, new THREE.Vector3(0, -1, 0), 0, 2.5); 
@@ -642,7 +642,7 @@
             } else { camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.1); }
 
             for (let i = 0; i < creatures.length; i++) {
-                let c = creatures[i]; c.userData.velocityY += gravity * 0.8; c.position.y += c.userData.velocityY;
+                const c = creatures[i]; c.userData.velocityY += gravity * 0.8; c.position.y += c.userData.velocityY;
                 const slimeRay = new THREE.Raycaster(c.position.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(0,-1,0));
                 const sHits = slimeRay.intersectObjects(solidMeshes, false);
                 const distToPlayer = c.position.distanceTo(player.position);
@@ -662,7 +662,7 @@
                     
                     c.userData.jumpTimer--;
                     if (c.userData.jumpTimer <= 0) {
-                        c.userData.velocityY = 0.15 + Math.random() * 0.05; let speed = 0.04 + Math.random() * 0.04;
+                        c.userData.velocityY = 0.15 + Math.random() * 0.05; const speed = 0.04 + Math.random() * 0.04;
                         if (c.userData.isAggro) {
                             const dir = player.position.clone().sub(c.position).normalize(); c.userData.moveDir.set(dir.x * speed * 1.5, 0, dir.z * speed * 1.5);
                             c.userData.jumpTimer = 20 + Math.random() * 40; 
@@ -672,7 +672,7 @@
                         }
                     }
                 } else {
-                    c.position.add(c.userData.moveDir); let stretch = 1 + Math.abs(c.userData.velocityY) * 3; let squash = 1 - Math.abs(c.userData.velocityY) * 1.5; c.scale.set(squash, stretch, squash);
+                    c.position.add(c.userData.moveDir); const stretch = 1 + Math.abs(c.userData.velocityY) * 3; const squash = 1 - Math.abs(c.userData.velocityY) * 1.5; c.scale.set(squash, stretch, squash);
                 }
             }
 

@@ -104,12 +104,9 @@ export default function GamesGrid() {
   );
 }
 
-function GameCard({
-  game,
-}: {
-  game: (typeof GAMES)[number];
-}) {
+function GameCard({ game }: { game: (typeof GAMES)[number] }) {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: visual-only hover highlight, no interactive action
     <div
       style={{
         background: "var(--color-surface)",

@@ -158,7 +158,7 @@
     <script>
         // Silence Cannon.js normal spam to prevent crashing
         const originalError = console.error;
-        console.error = function(...args) {
+        console.error = (...args) => {
             if (typeof args[0] === 'string' && args[0].includes('looks like it points into the shape')) return;
             originalError.apply(console, args);
         };
@@ -393,7 +393,7 @@
         const pMatStd = new THREE.MeshBasicMaterial({ color: 0x00ffcc, blending: THREE.AdditiveBlending });
         const pMatRare = new THREE.MeshBasicMaterial({ color: 0xff00ff, blending: THREE.AdditiveBlending });
 
-        function spawnSpark(pos, type='spark', rare=false) {
+        function spawnSpark(pos, _type='spark', rare=false) {
             if(sparks.length > 150) return;
             const mesh = new THREE.Mesh(pGeo, rare?pMatRare:pMatStd);
             mesh.position.copy(pos); mesh.position.add(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5)));
@@ -402,7 +402,7 @@
 
         function spawnText(msg, x, y, color="#ffaa00") {
             const el = document.createElement('div'); el.className = 'float-text'; 
-            el.textContent = msg; el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.color = color;
+            el.textContent = msg; el.style.left = `${x}px`; el.style.top = `${y}px`; el.style.color = color;
             if(color==='#ff00ff') el.style.textShadow = '0 0 15px #ff00ff';
             document.body.appendChild(el); setTimeout(()=>el.remove(), 1500);
         }
@@ -555,7 +555,7 @@
 
             let mx = input.move.x + (keys.d||0) - (keys.a||0); let my = input.move.y + (keys.w||0) - (keys.s||0);
             if(mx||my) { const l=Math.sqrt(mx*mx+my*my); mx/=l; my/=l; }
-            let lx = input.look.x + (keys.arrowright||0) - (keys.arrowleft||0); let ly = input.look.y + (keys.arrowup||0) - (keys.arrowdown||0);
+            const lx = input.look.x + (keys.arrowright||0) - (keys.arrowleft||0); const ly = input.look.y + (keys.arrowup||0) - (keys.arrowdown||0);
 
             input.yaw -= lx * State.lookSpeed * dt; input.pitch += ly * State.lookSpeed * dt;
             input.pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/4, input.pitch)); 
@@ -644,7 +644,7 @@
 
             // Particles
             for(let i=sparks.length-1; i>=0; i--) {
-                let p = sparks[i];
+                const p = sparks[i];
                 p.v.y -= 40 * dt; p.m.position.add(p.v.clone().multiplyScalar(dt));
                 if(p.m.position.y < 0) { p.m.position.y = 0; p.v.y *= -0.5; p.v.x *= 0.8; p.v.z *= 0.8; }
                 p.l -= dt * 1.5; if(p.l <= 0) { scene.remove(p.m); sparks.splice(i,1); }

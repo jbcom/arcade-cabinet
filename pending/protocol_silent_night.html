@@ -44,7 +44,7 @@
         .action-btn { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; backdrop-filter: blur(5px); transition: 0.1s; pointer-events: auto; opacity: 0; user-select: none; cursor: pointer; }
         #dash-btn { width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1); border: 3px solid #fff; color: #fff; font-size: 1.1rem; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); margin-bottom: 10px; }
         #dash-btn:active, #dash-btn.active { background: #fff; color: #000; transform: scale(0.95); box-shadow: 0 0 30px #fff; }
-        #dash-btn.cooldown { opacity: 0.2 !important; pointer-events: none; }
+        #dash-btn.cooldown { opacity: 0.2; pointer-events: none; }
 
         /* Joystick Zone */
         #joystick-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: auto; }
@@ -53,7 +53,7 @@
 
         /* Screens */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 8, 15, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 20; backdrop-filter: blur(10px); }
-        .screen.hidden { display: none !important; }
+        .screen.hidden { display: none; }
         
         h1 { font-size: 4rem; color: #fff; text-shadow: 0 0 40px #00ffcc; margin: 0; letter-spacing: 5px; text-transform: uppercase; text-align: center; }
         h1 span { color: #ff0044; text-shadow: 0 0 40px #ff0044; }
@@ -318,7 +318,7 @@ WWWWWWW
         }
 
         const TEXTURES = {};
-        for(let key in ART) TEXTURES[key] = createPixelTexture(ART[key]);
+        for(const key in ART) TEXTURES[key] = createPixelTexture(ART[key]);
 
         // --- CONFIG & SHADERS ---
 
@@ -331,12 +331,12 @@ WWWWWWW
                 XP: 0x00ff44, DMG_TEXT: 0xffffff, CRIT_TEXT: 0xffd700
             },
             UPGRADES: [
-                { id: 'dmg', name: "HIGH CALIBER", desc: "+25% Damage Output", apply: (game, p) => p.dmg *= 1.25 },
-                { id: 'rof', name: "OVERCLOCK CPU", desc: "+20% Fire Rate", apply: (game, p) => p.rof *= 0.8 },
+                { id: 'dmg', name: "HIGH CALIBER", desc: "+25% Damage Output", apply: (_game, p) => p.dmg *= 1.25 },
+                { id: 'rof', name: "OVERCLOCK CPU", desc: "+20% Fire Rate", apply: (_game, p) => p.rof *= 0.8 },
                 { id: 'hp', name: "FESTIVE PLATING", desc: "+50 Max HP & Restore", apply: (game, p) => { p.maxHp += 50; game.heal(50); } },
-                { id: 'spd', name: "KINETIC BOOTS", desc: "+15% Movement Speed", apply: (game, p) => p.spd *= 1.15 },
+                { id: 'spd', name: "KINETIC BOOTS", desc: "+15% Movement Speed", apply: (_game, p) => p.spd *= 1.15 },
                 { id: 'rng', name: "ADVANCED OPTICS", desc: "+20% Targeting Range", apply: (game, p) => { p.range *= 1.2; game.updateRangeRing(); } },
-                { id: 'aura', name: "TESLA WREATH", desc: "Shock field around Operator (Stackable)", apply: (game, p) => game.upgradeAura() }
+                { id: 'aura', name: "TESLA WREATH", desc: "Shock field around Operator (Stackable)", apply: (game, _p) => game.upgradeAura() }
             ],
             WAVES: [
                 { id: 1, duration: 30, spawnInt: 1.5, types: ['grunt'], hpScale: 1.0 },
@@ -374,7 +374,7 @@ WWWWWWW
         const jsSmoothstep = (min, max, value) => { const x = Math.max(0, Math.min(1, (value - min) / (max - min))); return x * x * (3 - 2 * x); };
         function fbm(x, z) {
             let v = 0.0; let amp = 3.5; let freq = 0.08; 
-            for (let i = 0; i < 4; i++) { v += amp * (Math.sin(x * freq) * Math.cos(z * freq)); let nx = x * 0.8 - z * 0.6; let nz = x * 0.6 + z * 0.8; x = nx; z = nz; freq *= 2.1; amp *= 0.45; }
+            for (let i = 0; i < 4; i++) { v += amp * (Math.sin(x * freq) * Math.cos(z * freq)); const nx = x * 0.8 - z * 0.6; const nz = x * 0.6 + z * 0.8; x = nx; z = nz; freq *= 2.1; amp *= 0.45; }
             return v;
         }
 
@@ -488,11 +488,11 @@ WWWWWWW
 
                 for(let x = -CONFIG.WORLD_SIZE/2; x < CONFIG.WORLD_SIZE/2; x++) {
                     for(let z = -CONFIG.WORLD_SIZE/2; z < CONFIG.WORLD_SIZE/2; z++) {
-                        let distFromCenter = Math.sqrt(x*2 * x*2 + z*2 * z*2);
+                        const distFromCenter = Math.sqrt(x*2 * x*2 + z*2 * z*2);
                         let h = -4.0;
                         if (distFromCenter >= CONFIG.ARENA_RADIUS) {
-                            let rawFbm = fbm(x * 1.2, z * 1.2);
-                            let blend = jsSmoothstep(CONFIG.ARENA_RADIUS, CONFIG.ARENA_RADIUS + 10, distFromCenter);
+                            const rawFbm = fbm(x * 1.2, z * 1.2);
+                            const blend = jsSmoothstep(CONFIG.ARENA_RADIUS, CONFIG.ARENA_RADIUS + 10, distFromCenter);
                             h = (-4.0 * (1 - blend)) + (rawFbm * blend);
                         }
                         dummy.position.set(x*2, h, z*2);
@@ -646,7 +646,7 @@ WWWWWWW
                     return;
                 }
 
-                let texKey = typeStr;
+                const texKey = typeStr;
                 let col, hpMult, spdMult, scale;
                 if(typeStr === 'rusher') { col = CONFIG.COLORS.RUSHER; hpMult = 0.5; spdMult = 1.8; scale = 0.8;} 
                 else if(typeStr === 'tank') { col = CONFIG.COLORS.TANK; hpMult = 4.0; spdMult = 0.5; scale = 1.5;} 
@@ -754,9 +754,9 @@ WWWWWWW
                 const el = document.createElement('div'); el.className = 'dmg-text'; el.innerText = text; el.style.color = color;
                 if(isCrit) { el.style.fontSize = '1.8rem'; el.style.color = CONFIG.COLORS.CRIT_TEXT; }
                 layer.appendChild(el);
-                const pos2d = this.get2DCoords(position); el.style.left = pos2d.x + 'px'; el.style.top = pos2d.y + 'px';
+                const pos2d = this.get2DCoords(position); el.style.left = `${pos2d.x}px`; el.style.top = `${pos2d.y}px`;
                 void el.offsetWidth; 
-                el.style.top = (pos2d.y - 40) + 'px'; el.style.opacity = '0';
+                el.style.top = `${pos2d.y - 40}px`; el.style.opacity = '0';
                 setTimeout(() => { if(layer.contains(el)) layer.removeChild(el); }, 600);
             }
 
@@ -766,14 +766,14 @@ WWWWWWW
             }
 
             updateHpUI() {
-                document.getElementById('hp-bar').style.width = Math.max(0, (this.class.hp / this.class.maxHp)*100) + "%";
+                document.getElementById('hp-bar').style.width = `${Math.max(0, (this.class.hp / this.class.maxHp)*100)}%`;
                 document.getElementById('hp-text').innerText = `${Math.floor(this.class.hp)} / ${this.class.maxHp}`;
             }
 
             updateUI() {
                 document.getElementById('obj-text').innerText = this.stats.kills;
                 document.getElementById('lvl-text').innerText = `LEVEL ${this.level}`;
-                document.getElementById('xp-bar').style.width = Math.min(100, (this.xp / this.xpNeeded) * 100) + "%";
+                document.getElementById('xp-bar').style.width = `${Math.min(100, (this.xp / this.xpNeeded) * 100)}%`;
             }
 
             autoFire() {
@@ -909,7 +909,7 @@ WWWWWWW
 
                                         if(e.userData.type !== 'boss') {
                                             e.userData.sprite.material.emissive.setHex(0xffffff);
-                                            setTimeout(() => e && e.userData && e.userData.sprite && e.userData.sprite.material.emissive.setHex(e.userData.coreColor), 50);
+                                            setTimeout(() => e?.userData?.sprite?.material.emissive.setHex(e.userData.coreColor), 50);
                                         }
 
                                         this.spawnLightning(this.player.position, e.position);
@@ -988,7 +988,7 @@ WWWWWWW
                         } else {
                             for(let j=this.entities.enemies.length-1; j>=0; j--) {
                                 const e = this.entities.enemies[j];
-                                let hitbox = e.userData.type==='boss'? 4.0 : (e.userData.type==='tank'? 2.0 : 1.2);
+                                const hitbox = e.userData.type==='boss'? 4.0 : (e.userData.type==='tank'? 2.0 : 1.2);
                                 const dist2D = Math.hypot(b.position.x - e.position.x, b.position.z - e.position.z);
 
                                 if(dist2D < hitbox) {
@@ -1001,7 +1001,7 @@ WWWWWWW
                                     
                                     if(e.userData.type !== 'boss') {
                                         e.userData.sprite.material.emissive.setHex(0xffffff); 
-                                        setTimeout(()=>e && e.userData && e.userData.sprite && e.userData.sprite.material.emissive.setHex(e.userData.coreColor), 50);
+                                        setTimeout(()=>e?.userData?.sprite?.material.emissive.setHex(e.userData.coreColor), 50);
                                     }
 
                                     if(e.userData.hp <= 0) {
@@ -1041,8 +1041,8 @@ WWWWWWW
                             e.position.add(dir.multiplyScalar(e.userData.speed * dt));
                             e.userData.sprite.scale.x = (dir.x < 0) ? -e.userData.baseScale : e.userData.baseScale;
                             
-                            let dmg = e.userData.type === 'tank' ? 20 : (e.userData.type === 'rusher' ? 5 : 10);
-                            let colRadius = e.userData.type === 'tank' ? 2.0 : 1.2;
+                            const dmg = e.userData.type === 'tank' ? 20 : (e.userData.type === 'rusher' ? 5 : 10);
+                            const colRadius = e.userData.type === 'tank' ? 2.0 : 1.2;
 
                             if(distToPlayer < colRadius) {
                                 this.takeDamage(dmg); e.position.add(dir.negate().multiplyScalar(4)); 
@@ -1050,7 +1050,7 @@ WWWWWWW
                             
                             this.entities.enemies.forEach(other => {
                                 if(e !== other && other.userData.type !== 'boss') {
-                                    let dist = Math.hypot(e.position.x - other.position.x, e.position.z - other.position.z);
+                                    const dist = Math.hypot(e.position.x - other.position.x, e.position.z - other.position.z);
                                     if(dist < colRadius) { e.position.add(new THREE.Vector3().subVectors(e.position, other.position).normalize().multiplyScalar(dt * 3)); }
                                 }
                             });
@@ -1099,7 +1099,7 @@ WWWWWWW
                                     }
                                     break;
                             }
-                            document.getElementById('boss-hp-bar').style.width = ((e.userData.hp / e.userData.maxHp)*100) + "%";
+                            document.getElementById('boss-hp-bar').style.width = `${(e.userData.hp / e.userData.maxHp)*100}%`;
                         }
                     });
 
@@ -1149,8 +1149,8 @@ WWWWWWW
                 const zone = document.getElementById('joystick-zone'); const base = document.getElementById('stick-base'); const knob = document.getElementById('stick-knob');
                 let startX, startY;
 
-                const start = (e) => { this.input.active = true; const p = e.touches?e.touches[0]:e; startX = p.clientX; startY = p.clientY; base.style.display = 'block'; base.style.left=startX+'px'; base.style.top=startY+'px'; knob.style.display = 'block'; knob.style.left=startX+'px'; knob.style.top=startY+'px'; };
-                const move = (e) => { if(!this.input.active) return; const p = e.touches?e.touches[0]:e; const dx = p.clientX - startX; const dy = p.clientY - startY; const dist = Math.min(50, Math.sqrt(dx*dx+dy*dy)); const ang = Math.atan2(dy, dx); this.input.x = (Math.cos(ang)*dist)/50; this.input.y = (Math.sin(ang)*dist)/50; knob.style.left=(startX+this.input.x*50)+'px'; knob.style.top=(startY+this.input.y*50)+'px'; };
+                const start = (e) => { this.input.active = true; const p = e.touches?e.touches[0]:e; startX = p.clientX; startY = p.clientY; base.style.display = 'block'; base.style.left=`${startX}px`; base.style.top=`${startY}px`; knob.style.display = 'block'; knob.style.left=`${startX}px`; knob.style.top=`${startY}px`; };
+                const move = (e) => { if(!this.input.active) return; const p = e.touches?e.touches[0]:e; const dx = p.clientX - startX; const dy = p.clientY - startY; const dist = Math.min(50, Math.sqrt(dx*dx+dy*dy)); const ang = Math.atan2(dy, dx); this.input.x = (Math.cos(ang)*dist)/50; this.input.y = (Math.sin(ang)*dist)/50; knob.style.left=`${startX+this.input.x*50}px`; knob.style.top=`${startY+this.input.y*50}px`; };
                 const end = () => { this.input.active=false; this.input.x=0; this.input.y=0; base.style.display='none'; knob.style.display='none'; };
                 zone.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
                 zone.addEventListener('touchstart', start, {passive: false}); window.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', end);

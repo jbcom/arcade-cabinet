@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import type { RefObject } from "react";
+import { useEffect, useState } from "react";
 import type { ContainerSize } from "../types";
 
 const EMPTY_SIZE: ContainerSize = { width: 0, height: 0 };

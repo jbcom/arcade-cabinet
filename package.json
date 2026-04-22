@@ -20,7 +20,7 @@
     "clean": "corepack pnpm -r run clean"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.12",
     "@playwright/test": "^1.52.0",
     "typescript": "^5.8.3",
     "vitest": "^3.1.3"

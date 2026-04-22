@@ -11,7 +11,11 @@ function Character({
   position,
   color,
   scale = 1,
-}: { position: [number, number, number]; color: string; scale?: number }) {
+}: {
+  position: [number, number, number];
+  color: string;
+  scale?: number;
+}) {
   return (
     <group position={position} scale={scale}>
       <mesh castShadow position={[0, 0.28, 0]}>
@@ -78,7 +82,7 @@ export function OtterScene({ state }: OtterSceneProps) {
           [-3.3, 2.4],
           [0.8, 2.2],
         ] as Array<[number, number]>
-      ).map((rock, index) => (
+      ).map((rock, _index) => (
         <mesh
           key={`rock-${rock[0]}-${rock[1]}`}
           castShadow
