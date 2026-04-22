@@ -60,7 +60,6 @@ jobs:
           "protocol-snw",
           "reach-for-the-sky",
           "realmwalker",
-          "shared",
           "sim-soviet",
           "titan-mech",
           "voxel-realms"
@@ -81,11 +80,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers (for Vitest)
-        run: pnpm exec playwright install chromium --with-deps
-
-      - name: Run unit tests with xvfb
-        run: xvfb-run --auto-servernum pnpm --filter @arcade-cabinet/${{ matrix.package }} test
+      - name: Run Vitest Browser package tests with xvfb
+        run: xvfb-run --auto-servernum pnpm exec vitest run packages/${{ matrix.package }}/src
 
   test-e2e:
     name: E2E Tests
@@ -108,11 +104,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
       - name: Build docs
         run: pnpm --filter @arcade-cabinet/docs build
 
-      - name: Run E2E tests with xvfb
+      - name: Run Vitest Browser E2E tests with xvfb
         run: xvfb-run --auto-servernum pnpm test:e2e

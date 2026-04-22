@@ -5,11 +5,18 @@ import { createProtocolArenaLayout } from "../engine/protocolSimulation";
 const terrain = createProtocolArenaLayout().terrain;
 
 export function TerrainManager() {
-  const positions = useMemo(() => terrain.map((block) => block.position), []);
-  const scales = useMemo(() => terrain.map((block) => block.scale), []);
+  const instances = useMemo(
+    () =>
+      terrain.map((block) => ({
+        key: block.id,
+        position: block.position,
+        scale: block.scale,
+      })),
+    []
+  );
 
   return (
-    <InstancedRigidBodies positions={positions} scales={scales} colliders="cuboid" type="fixed">
+    <InstancedRigidBodies instances={instances} colliders="cuboid" type="fixed">
       <instancedMesh args={[undefined, undefined, terrain.length]} receiveShadow castShadow>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#111827" roughness={0.82} metalness={0.14} />
