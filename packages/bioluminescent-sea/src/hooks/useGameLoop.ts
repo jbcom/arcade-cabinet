@@ -1,8 +1,6 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-export interface GameLoopCallback {
-  (deltaTime: number, totalTime: number): void;
-}
+export type GameLoopCallback = (deltaTime: number, totalTime: number) => void;
 
 export function useGameLoop(callback: GameLoopCallback, isRunning: boolean) {
   const requestRef = useRef<number | null>(null);

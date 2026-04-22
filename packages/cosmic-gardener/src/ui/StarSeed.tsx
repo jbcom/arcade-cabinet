@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "../lib/utils";
 
 interface StarSeedProps {
@@ -24,14 +24,24 @@ export function StarSeed({
   onClick,
 }: StarSeedProps) {
   const energyPercent = energy / maxEnergy;
-  
+
   const sizes = [12, 18, 26, 36];
   const size = sizes[growthStage];
-  
+
   const colors = {
     core: ["#fef3c7", "#fcd34d", "#f59e0b", "#ffffff"],
-    glow: ["rgba(254, 243, 199, 0.3)", "rgba(252, 211, 77, 0.4)", "rgba(245, 158, 11, 0.5)", "rgba(255, 255, 255, 0.6)"],
-    outer: ["rgba(139, 92, 246, 0.2)", "rgba(168, 85, 247, 0.3)", "rgba(236, 72, 153, 0.4)", "rgba(255, 215, 180, 0.5)"],
+    glow: [
+      "rgba(254, 243, 199, 0.3)",
+      "rgba(252, 211, 77, 0.4)",
+      "rgba(245, 158, 11, 0.5)",
+      "rgba(255, 255, 255, 0.6)",
+    ],
+    outer: [
+      "rgba(139, 92, 246, 0.2)",
+      "rgba(168, 85, 247, 0.3)",
+      "rgba(236, 72, 153, 0.4)",
+      "rgba(255, 215, 180, 0.5)",
+    ],
   };
 
   return (
@@ -43,8 +53,8 @@ export function StarSeed({
       )}
       style={{ left: `${x}%`, top: `${y}%` }}
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ 
-        scale: 1, 
+      animate={{
+        scale: 1,
         opacity: 1,
       }}
       exit={{ scale: 0, opacity: 0 }}
@@ -149,7 +159,10 @@ export function StarSeed({
         />
       </div>
 
-      <div className="absolute flex gap-0.5" style={{ top: size + 14, left: "50%", transform: "translateX(-50%)" }}>
+      <div
+        className="absolute flex gap-0.5"
+        style={{ top: size + 14, left: "50%", transform: "translateX(-50%)" }}
+      >
         {[0, 1, 2, 3].map((stage) => (
           <div
             key={stage}

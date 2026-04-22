@@ -79,19 +79,19 @@ export function tickSimulation(state: SimSovietState, deltaMs: number) {
   for (let index = 0; index < monthsAdvanced; index += 1) {
     const derived = recomputeDerived(next);
     next = derived.next;
-    
+
     // Apply monthly changes
     const foodConsumed = Math.max(6, Math.floor(next.population / 8));
     next.food = Math.max(0, next.food + derived.foodDelta - foodConsumed);
     next.funds = Math.max(0, next.funds + derived.incomeDelta + 6); // Keep base +6 income
-    
+
     next.month += 1;
     next.quotaProgress = Math.min(100, next.quotaProgress + 4);
     if (next.month > 12) {
       next.month = 1;
       next.year += 1;
     }
-    
+
     // Starvation penalty modifies the population stored in state for the next frame
     if (next.food <= 0) {
       next.population = Math.max(0, next.population - 2);

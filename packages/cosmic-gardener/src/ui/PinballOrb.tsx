@@ -10,7 +10,7 @@ export function PinballOrb({ orb }: PinballOrbProps) {
 
   return (
     <>
-      <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+      <svg aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none z-20">
         {orb.trail.length > 1 && (
           <path
             d={`M ${orb.trail.map((t) => `${t.x}% ${t.y}%`).join(" L ")}`}
@@ -47,7 +47,8 @@ export function PinballOrb({ orb }: PinballOrbProps) {
             height: 40,
             left: -15,
             top: -15,
-            background: "radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(251, 191, 36, 0.1) 40%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(251, 191, 36, 0.1) 40%, transparent 70%)",
           }}
         />
 
@@ -58,7 +59,8 @@ export function PinballOrb({ orb }: PinballOrbProps) {
             height: 24,
             left: -7,
             top: -7,
-            background: "radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
+            background:
+              "radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
           }}
         />
 

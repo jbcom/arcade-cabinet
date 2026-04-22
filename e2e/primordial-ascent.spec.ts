@@ -1,15 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from "@playwright/test";
 
-test('Primordial Ascent Gameplay', async ({ page }) => {
+test("Primordial Ascent Gameplay", async ({ page }) => {
   // Use the default Astro port for the docs app since it hosts all games
-  await page.goto('http://localhost:4321/games/primordial-ascent');
-  
+  await page.goto("http://localhost:4321/games/primordial-ascent");
+
   // Wait for the start screen
   const startBtn = page.getByRole("button", { name: /Initiate Sequence/i });
   await expect(startBtn).toBeVisible({ timeout: 10000 });
-  
+
   // Take a screenshot of the start screen
-  await page.screenshot({ path: 'test-screenshots/primordial-start.png' });
+  await page.screenshot({ path: "test-screenshots/primordial-start.png" });
 
   // Start the game
   await startBtn.click();
@@ -19,5 +19,5 @@ test('Primordial Ascent Gameplay', async ({ page }) => {
   await page.waitForTimeout(2000);
 
   // Take a screenshot of gameplay
-  await page.screenshot({ path: 'test-screenshots/primordial-gameplay.png' });
+  await page.screenshot({ path: "test-screenshots/primordial-gameplay.png" });
 });

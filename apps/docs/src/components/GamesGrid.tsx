@@ -154,9 +154,7 @@ function GameCard({ game }: { game: (typeof GAMES)[number] }) {
       </div>
 
       <div className="p-6">
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">
-          {game.description}
-        </p>
+        <p className="text-slate-400 text-sm leading-relaxed mb-6">{game.description}</p>
 
         <div className="flex flex-wrap gap-2">
           {game.tags.map((tag) => (

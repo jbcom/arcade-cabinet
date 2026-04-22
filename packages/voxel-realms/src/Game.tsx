@@ -1,10 +1,10 @@
+import { GameOverScreen, OverlayButton, StartScreen } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
-import { WorldProvider, useTrait } from "koota/react";
-import { voxelWorld, voxelEntity } from "./store/world";
-import { VoxelTrait } from "./store/traits";
+import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
+import { VoxelTrait } from "./store/traits";
+import { voxelEntity, voxelWorld } from "./store/world";
 import { HUD } from "./ui/HUD";
-import { StartScreen, GameOverScreen, OverlayButton } from "@arcade-cabinet/shared";
 
 function VoxelApp() {
   const state = useTrait(voxelEntity, VoxelTrait);
@@ -18,28 +18,40 @@ function VoxelApp() {
       <Canvas shadows camera={{ fov: 75 }}>
         {state.phase === "playing" && <World />}
       </Canvas>
-      
+
       {state.phase === "menu" && (
-        <StartScreen 
-          title="Voxel Realms" 
-          subtitle="Explore the infinite procedural world." 
-          primaryAction={<OverlayButton onClick={handleStart}>Enter Realm</OverlayButton>} 
+        <StartScreen
+          title="Voxel Realms"
+          subtitle="Explore the infinite procedural world."
+          primaryAction={<OverlayButton onClick={handleStart}>Enter Realm</OverlayButton>}
         />
       )}
-      
+
       {state.phase === "playing" && (
         <>
           <HUD />
           {/* Simple Crosshair */}
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "white", pointerEvents: "none", textShadow: "0 0 2px black" }}>+</div>
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              color: "white",
+              pointerEvents: "none",
+              textShadow: "0 0 2px black",
+            }}
+          >
+            +
+          </div>
         </>
       )}
-      
+
       {state.phase === "gameover" && (
-        <GameOverScreen 
-          title="YOU DIED" 
-          subtitle={`Final Score: ${state.score}`} 
-          actions={<OverlayButton onClick={handleStart}>Respawn</OverlayButton>} 
+        <GameOverScreen
+          title="YOU DIED"
+          subtitle={`Final Score: ${state.score}`}
+          actions={<OverlayButton onClick={handleStart}>Respawn</OverlayButton>}
         />
       )}
     </div>

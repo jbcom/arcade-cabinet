@@ -1,9 +1,9 @@
+import { PointerLockControls, Sky } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
-import { Sky, PointerLockControls } from "@react-three/drei";
-import { Player } from "./Player";
-import { TerrainManager } from "./TerrainManager";
 import { useState } from "react";
 import * as THREE from "three";
+import { Player } from "./Player";
+import { TerrainManager } from "./TerrainManager";
 
 export function World() {
   const [playerPos, setPlayerPos] = useState(new THREE.Vector3(0, 2, 0));

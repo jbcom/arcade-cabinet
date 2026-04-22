@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "../lib/utils";
 
 interface GameUIProps {
@@ -37,7 +37,7 @@ export function GameUI({
             <span className="text-white/60 text-xs uppercase tracking-widest">Level</span>
             <span className="text-white text-2xl font-light">{level}</span>
           </div>
-          
+
           <div className="flex gap-1.5">
             {Array.from({ length: totalConstellations }).map((_, i) => (
               <motion.div
@@ -103,19 +103,22 @@ export function GameUI({
               style={{
                 background: "linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)",
               }}
-              animate={{ 
+              animate={{
                 width: `${cosmicCold}%`,
-                background: cosmicCold > 70 
-                  ? "linear-gradient(90deg, #dc2626, #ef4444, #f87171)" 
-                  : "linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)"
+                background:
+                  cosmicCold > 70
+                    ? "linear-gradient(90deg, #dc2626, #ef4444, #f87171)"
+                    : "linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)",
               }}
               transition={{ duration: 0.3 }}
             />
           </div>
-          <span className={cn(
-            "text-sm font-light transition-colors",
-            cosmicCold > 70 ? "text-red-400" : "text-white/80"
-          )}>
+          <span
+            className={cn(
+              "text-sm font-light transition-colors",
+              cosmicCold > 70 ? "text-red-400" : "text-white/80"
+            )}
+          >
             {cosmicCold > 70 ? "Danger!" : `${Math.floor(100 - cosmicCold)}% warmth`}
           </span>
         </motion.div>

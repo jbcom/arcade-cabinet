@@ -12,7 +12,7 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site ?? new URL(import.meta.env.SITE ?? Astro.url.origin);
-const ogImage = new URL("/hero.png", siteUrl).href;
+const _ogImage = new URL("/hero.png", siteUrl).href;
 ---
 
 <!doctype html>

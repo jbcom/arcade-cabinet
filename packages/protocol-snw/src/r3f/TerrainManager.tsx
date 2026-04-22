@@ -1,5 +1,5 @@
-import { RigidBody, InstancedRigidBodies } from "@react-three/rapier";
-import { useEffect, useRef, useMemo } from "react";
+import { InstancedRigidBodies } from "@react-three/rapier";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { CONFIG } from "../engine/types";
 
@@ -13,8 +13,8 @@ function fbm(x: number, z: number) {
 }
 
 export function TerrainManager() {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const _meshRef = useRef<THREE.InstancedMesh>(null);
+  const _dummy = useMemo(() => new THREE.Object3D(), []);
 
   const blocks = useMemo(() => {
     const list = [];
@@ -26,11 +26,7 @@ export function TerrainManager() {
         let h = -4.0;
         if (distFromCenter >= CONFIG.ARENA_RADIUS) {
           const rawFbm = fbm(x * 1.2, z * 1.2);
-          const blend = jsSmoothstep(
-            CONFIG.ARENA_RADIUS,
-            CONFIG.ARENA_RADIUS + 10,
-            distFromCenter
-          );
+          const blend = jsSmoothstep(CONFIG.ARENA_RADIUS, CONFIG.ARENA_RADIUS + 10, distFromCenter);
           h = -4.0 * (1 - blend) + rawFbm * blend;
         }
         list.push({ x: wx, y: h, z: wz });
@@ -39,14 +35,13 @@ export function TerrainManager() {
     return list;
   }, []);
 
-  const positions = useMemo(() => blocks.map(b => [b.x, b.y, b.z] as [number, number, number]), [blocks]);
+  const positions = useMemo(
+    () => blocks.map((b) => [b.x, b.y, b.z] as [number, number, number]),
+    [blocks]
+  );
 
   return (
-    <InstancedRigidBodies
-      positions={positions}
-      colliders="cuboid"
-      type="fixed"
-    >
+    <InstancedRigidBodies positions={positions} colliders="cuboid" type="fixed">
       <instancedMesh args={[undefined, undefined, blocks.length]} receiveShadow>
         <boxGeometry args={[1.9, 1.9, 1.9]} />
         <meshStandardMaterial color="#1a1a24" roughness={0.8} />

@@ -1,15 +1,15 @@
-import { render } from "vitest-browser-react";
 import { expect, test } from "vitest";
 import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import Game from "./Game";
 
 test("Enchanted Forest renders and is playable", async () => {
   const { getByText } = render(
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: "100vw", height: "100vh" }}>
       <Game />
     </div>
   );
-  
+
   await new Promise((resolve) => setTimeout(resolve, 500));
   await page.screenshot({ path: "test-screenshots/forest-start.png" });
 

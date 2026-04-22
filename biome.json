@@ -6,15 +6,21 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false,
+    "ignoreUnknown": true,
     "includes": [
       "**",
       "!**/node_modules",
       "!**/dist",
+      "!**/dist-app",
       "!**/.astro",
       "!**/*.tsbuildinfo",
       "!pending"
     ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
   },
   "formatter": {
     "enabled": true,
@@ -25,7 +31,11 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off"
+      }
     }
   },
   "javascript": {

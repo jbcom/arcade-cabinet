@@ -1,7 +1,7 @@
-import { defineConfig } from "vitest/config";
-import { playwright } from "@vitest/browser-playwright";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
+import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -9,9 +9,7 @@ export default defineConfig({
     browser: {
       enabled: true,
       provider: playwright(),
-      instances: [
-        { browser: "chromium" },
-      ],
+      instances: [{ browser: "chromium" }],
       headless: false,
     },
     setupFiles: "./src/test/setup.ts",
@@ -20,13 +18,32 @@ export default defineConfig({
   resolve: {
     alias: {
       "@arcade-cabinet/shared": path.resolve(__dirname, "./packages/shared/src/index.ts"),
-      "react": path.resolve(__dirname, "node_modules/react"),
+      react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      "three": path.resolve(__dirname, "node_modules/three"),
+      three: path.resolve(__dirname, "node_modules/three"),
+      "framer-motion": path.resolve(__dirname, "node_modules/framer-motion"),
     },
-    dedupe: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei", "koota", "@react-three/rapier"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "three",
+      "@react-three/fiber",
+      "@react-three/drei",
+      "koota",
+      "@react-three/rapier",
+      "framer-motion",
+    ],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "three", "@react-three/fiber", "koota", "@react-three/rapier"],
-  }
+    include: [
+      "react",
+      "react-dom",
+      "three",
+      "@react-three/fiber",
+      "koota",
+      "@react-three/rapier",
+      "framer-motion",
+      "vitest-browser-react",
+    ],
+  },
 });

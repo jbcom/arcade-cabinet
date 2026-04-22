@@ -1,10 +1,10 @@
-import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { titanEntity } from "../store/world";
-import { TitanTrait } from "../store/traits";
 import { CONFIG } from "../engine/types";
+import { TitanTrait } from "../store/traits";
+import { titanEntity } from "../store/world";
 
 export function Mech() {
   const { camera } = useThree();
@@ -15,18 +15,34 @@ export function Mech() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = true; break;
-        case "KeyS": movement.current.s = true; break;
-        case "KeyA": movement.current.a = true; break;
-        case "KeyD": movement.current.d = true; break;
+        case "KeyW":
+          movement.current.w = true;
+          break;
+        case "KeyS":
+          movement.current.s = true;
+          break;
+        case "KeyA":
+          movement.current.a = true;
+          break;
+        case "KeyD":
+          movement.current.d = true;
+          break;
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = false; break;
-        case "KeyS": movement.current.s = false; break;
-        case "KeyA": movement.current.a = false; break;
-        case "KeyD": movement.current.d = false; break;
+        case "KeyW":
+          movement.current.w = false;
+          break;
+        case "KeyS":
+          movement.current.s = false;
+          break;
+        case "KeyA":
+          movement.current.a = false;
+          break;
+        case "KeyD":
+          movement.current.d = false;
+          break;
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -46,7 +62,7 @@ export function Mech() {
     const rotation = rbRef.current.rotation();
     const quat = new THREE.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
     const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(quat);
-    
+
     // Movement
     if (movement.current.w) {
       rbRef.current.applyImpulse(forward.multiplyScalar(CONFIG.MOVE_SPEED * delta), true);
@@ -54,7 +70,7 @@ export function Mech() {
     if (movement.current.s) {
       rbRef.current.applyImpulse(forward.multiplyScalar(-CONFIG.MOVE_SPEED * 0.5 * delta), true);
     }
-    
+
     // Turning
     if (movement.current.a) {
       rbRef.current.applyTorqueImpulse({ x: 0, y: CONFIG.TURN_SPEED * delta, z: 0 }, true);
@@ -71,12 +87,19 @@ export function Mech() {
     // Update state
     const pState = titanEntity.get(TitanTrait);
     if (pState) {
-        titanEntity.set(TitanTrait, { ...pState, score: Math.floor(position.current.length()) });
+      titanEntity.set(TitanTrait, { ...pState, score: Math.floor(position.current.length()) });
     }
   });
 
   return (
-    <RigidBody ref={rbRef} mass={CONFIG.PLAYER_MASS} position={[0, 5, 0]} colliders="cuboid" linearDamping={0.5} angularDamping={0.5}>
+    <RigidBody
+      ref={rbRef}
+      mass={CONFIG.PLAYER_MASS}
+      position={[0, 5, 0]}
+      colliders="cuboid"
+      linearDamping={0.5}
+      angularDamping={0.5}
+    >
       <group>
         {/* Main Body */}
         <mesh castShadow>

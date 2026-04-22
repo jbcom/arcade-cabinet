@@ -7,6 +7,8 @@ last_updated: 2026-04-21
 
 # 🕹️ Arcade Cabinet
 
+![Arcade Cabinet Hero](apps/docs/public/hero.png)
+
 Welcome to the **Arcade Cabinet** monorepo. This repository houses a collection of modular, browser-based games engineered with React Three Fiber, Rapier, and standard web technologies.
 
 ## Architecture

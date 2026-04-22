@@ -33,11 +33,51 @@ export function NebulaBackground({ className }: NebulaBackgroundProps) {
 
     const blobs = [
       { x: 0.2, y: 0.3, radius: 0.35, color: [139, 92, 246], alpha: 0.35, speed: 0.0003, phase: 0 },
-      { x: 0.7, y: 0.2, radius: 0.4, color: [236, 72, 153], alpha: 0.3, speed: 0.0004, phase: Math.PI / 3 },
-      { x: 0.5, y: 0.7, radius: 0.45, color: [168, 85, 247], alpha: 0.25, speed: 0.0002, phase: Math.PI / 2 },
-      { x: 0.8, y: 0.6, radius: 0.3, color: [251, 191, 36], alpha: 0.2, speed: 0.0005, phase: Math.PI },
-      { x: 0.3, y: 0.8, radius: 0.35, color: [219, 39, 119], alpha: 0.25, speed: 0.0003, phase: Math.PI * 1.5 },
-      { x: 0.15, y: 0.5, radius: 0.25, color: [99, 102, 241], alpha: 0.2, speed: 0.0004, phase: Math.PI * 0.7 },
+      {
+        x: 0.7,
+        y: 0.2,
+        radius: 0.4,
+        color: [236, 72, 153],
+        alpha: 0.3,
+        speed: 0.0004,
+        phase: Math.PI / 3,
+      },
+      {
+        x: 0.5,
+        y: 0.7,
+        radius: 0.45,
+        color: [168, 85, 247],
+        alpha: 0.25,
+        speed: 0.0002,
+        phase: Math.PI / 2,
+      },
+      {
+        x: 0.8,
+        y: 0.6,
+        radius: 0.3,
+        color: [251, 191, 36],
+        alpha: 0.2,
+        speed: 0.0005,
+        phase: Math.PI,
+      },
+      {
+        x: 0.3,
+        y: 0.8,
+        radius: 0.35,
+        color: [219, 39, 119],
+        alpha: 0.25,
+        speed: 0.0003,
+        phase: Math.PI * 1.5,
+      },
+      {
+        x: 0.15,
+        y: 0.5,
+        radius: 0.25,
+        color: [99, 102, 241],
+        alpha: 0.2,
+        speed: 0.0004,
+        phase: Math.PI * 0.7,
+      },
     ];
 
     const animate = (time: number) => {

@@ -1,17 +1,20 @@
-import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useFrame, useThree } from "@react-three/fiber";
+import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useTrait } from "koota/react";
-import { voxelEntity } from "../store/world";
-import { VoxelTrait } from "../store/traits";
 
 export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vector3) => void }) {
   const { camera } = useThree();
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3(0, 2, 0));
 
-  const movement = useRef({ forward: false, backward: false, left: false, right: false, jump: false });
+  const movement = useRef({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    jump: false,
+  });
 
   useEffect(() => {
     // Initial camera setup
@@ -22,20 +25,40 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.forward = true; break;
-        case "KeyS": movement.current.backward = true; break;
-        case "KeyA": movement.current.left = true; break;
-        case "KeyD": movement.current.right = true; break;
-        case "Space": movement.current.jump = true; break;
+        case "KeyW":
+          movement.current.forward = true;
+          break;
+        case "KeyS":
+          movement.current.backward = true;
+          break;
+        case "KeyA":
+          movement.current.left = true;
+          break;
+        case "KeyD":
+          movement.current.right = true;
+          break;
+        case "Space":
+          movement.current.jump = true;
+          break;
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.forward = false; break;
-        case "KeyS": movement.current.backward = false; break;
-        case "KeyA": movement.current.left = false; break;
-        case "KeyD": movement.current.right = false; break;
-        case "Space": movement.current.jump = false; break;
+        case "KeyW":
+          movement.current.forward = false;
+          break;
+        case "KeyS":
+          movement.current.backward = false;
+          break;
+        case "KeyA":
+          movement.current.left = false;
+          break;
+        case "KeyD":
+          movement.current.right = false;
+          break;
+        case "Space":
+          movement.current.jump = false;
+          break;
       }
     };
 
@@ -47,7 +70,7 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
     };
   }, []);
 
-  useFrame((state, delta) => {
+  useFrame((_state, _delta) => {
     if (!rbRef.current) return;
 
     const currentTrans = rbRef.current.translation();
@@ -56,10 +79,22 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
 
     const speed = 5;
     const direction = new THREE.Vector3();
-    const frontVector = new THREE.Vector3(0, 0, (movement.current.backward ? 1 : 0) - (movement.current.forward ? 1 : 0));
-    const sideVector = new THREE.Vector3((movement.current.left ? 1 : 0) - (movement.current.right ? 1 : 0), 0, 0);
+    const frontVector = new THREE.Vector3(
+      0,
+      0,
+      (movement.current.backward ? 1 : 0) - (movement.current.forward ? 1 : 0)
+    );
+    const sideVector = new THREE.Vector3(
+      (movement.current.left ? 1 : 0) - (movement.current.right ? 1 : 0),
+      0,
+      0
+    );
 
-    direction.subVectors(frontVector, sideVector).normalize().multiplyScalar(speed).applyEuler(camera.quaternion);
+    direction
+      .subVectors(frontVector, sideVector)
+      .normalize()
+      .multiplyScalar(speed)
+      .applyEuler(camera.quaternion);
 
     const currentVel = rbRef.current.linvel();
     rbRef.current.setLinvel({ x: direction.x, y: currentVel.y, z: direction.z }, true);
@@ -74,7 +109,13 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
   });
 
   return (
-    <RigidBody ref={rbRef} mass={1} position={[0, 2, 0]} enabledRotations={[false, false, false]} colliders="ball">
+    <RigidBody
+      ref={rbRef}
+      mass={1}
+      position={[0, 2, 0]}
+      enabledRotations={[false, false, false]}
+      colliders="ball"
+    >
       <mesh visible={false}>
         <sphereGeometry args={[0.4]} />
         <meshBasicMaterial />

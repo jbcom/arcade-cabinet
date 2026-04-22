@@ -32,11 +32,11 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
     if (!ctx) return;
 
     const colors = [
-      "rgba(255, 255, 255,", 
-      "rgba(255, 215, 180,", 
-      "rgba(200, 180, 255,", 
-      "rgba(255, 200, 220,", 
-      "rgba(180, 220, 255,", 
+      "rgba(255, 255, 255,",
+      "rgba(255, 215, 180,",
+      "rgba(200, 180, 255,",
+      "rgba(255, 200, 220,",
+      "rgba(180, 220, 255,",
     ];
 
     const createParticle = (width: number, height: number): Particle => ({
@@ -60,7 +60,7 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
       ctx.scale(dpr, dpr);
       dimensionsRef.current = { width, height };
 
-      particlesRef.current = Array.from({ length: particleCount }, () => 
+      particlesRef.current = Array.from({ length: particleCount }, () =>
         createParticle(width, height)
       );
     };

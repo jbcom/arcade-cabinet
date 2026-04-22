@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 export interface CorruptionShadow {
@@ -33,9 +33,7 @@ export function CorruptionWave({
           key={shadow.id}
           shadow={shadow}
           treePosition={treePositions[shadow.targetTreeIndex]}
-          onReachTree={() =>
-            onShadowReachTree(shadow.id, shadow.targetTreeIndex)
-          }
+          onReachTree={() => onShadowReachTree(shadow.id, shadow.targetTreeIndex)}
           purifyZone={purifyZone}
         />
       ))}

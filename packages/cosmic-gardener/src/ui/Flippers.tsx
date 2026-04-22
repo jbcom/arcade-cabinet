@@ -19,7 +19,7 @@ export function Flippers({
 }: FlippersProps) {
   return (
     <>
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-[15%] pointer-events-none"
         style={{
           background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
@@ -47,8 +47,8 @@ export function Flippers({
           className="w-full h-full rounded-full"
           style={{
             background: "linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%)",
-            boxShadow: leftActive 
-              ? "0 0 20px rgba(251, 191, 36, 0.8), inset 0 2px 4px rgba(255,255,255,0.3)" 
+            boxShadow: leftActive
+              ? "0 0 20px rgba(251, 191, 36, 0.8), inset 0 2px 4px rgba(255,255,255,0.3)"
               : "0 0 10px rgba(251, 191, 36, 0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
           }}
         />
@@ -58,7 +58,8 @@ export function Flippers({
             left: "10%",
             top: "50%",
             transform: "translate(-50%, -50%)",
-            background: "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
           }}
         />
       </motion.div>
@@ -84,8 +85,8 @@ export function Flippers({
           className="w-full h-full rounded-full"
           style={{
             background: "linear-gradient(270deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%)",
-            boxShadow: rightActive 
-              ? "0 0 20px rgba(251, 191, 36, 0.8), inset 0 2px 4px rgba(255,255,255,0.3)" 
+            boxShadow: rightActive
+              ? "0 0 20px rgba(251, 191, 36, 0.8), inset 0 2px 4px rgba(255,255,255,0.3)"
               : "0 0 10px rgba(251, 191, 36, 0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
           }}
         />
@@ -95,12 +96,13 @@ export function Flippers({
             right: "10%",
             top: "50%",
             transform: "translate(50%, -50%)",
-            background: "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251, 191, 36, 0.6) 50%, transparent 100%)",
           }}
         />
       </motion.div>
 
-      <div 
+      <div
         className="absolute bottom-0 left-[35%] right-[35%] h-[2%] rounded-t-full"
         style={{
           background: "linear-gradient(to top, rgba(139, 69, 102, 0.6) 0%, transparent 100%)",

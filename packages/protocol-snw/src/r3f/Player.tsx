@@ -1,11 +1,9 @@
-import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useTrait } from "koota/react";
-import { snwEntity } from "../store/world";
 import { SNWTrait } from "../store/traits";
-import { CONFIG } from "../engine/types";
+import { snwEntity } from "../store/world";
 
 export function Player() {
   const { camera } = useThree();
@@ -18,22 +16,40 @@ export function Player() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = true; break;
-        case "KeyS": movement.current.s = true; break;
-        case "KeyA": movement.current.a = true; break;
-        case "KeyD": movement.current.d = true; break;
-        case "Space": movement.current.dash = true; break;
+        case "KeyW":
+          movement.current.w = true;
+          break;
+        case "KeyS":
+          movement.current.s = true;
+          break;
+        case "KeyA":
+          movement.current.a = true;
+          break;
+        case "KeyD":
+          movement.current.d = true;
+          break;
+        case "Space":
+          movement.current.dash = true;
+          break;
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = false; break;
-        case "KeyS": movement.current.s = false; break;
-        case "KeyA": movement.current.a = false; break;
-        case "KeyD": movement.current.d = false; break;
+        case "KeyW":
+          movement.current.w = false;
+          break;
+        case "KeyS":
+          movement.current.s = false;
+          break;
+        case "KeyA":
+          movement.current.a = false;
+          break;
+        case "KeyD":
+          movement.current.d = false;
+          break;
       }
     };
-    
+
     const handlePointerMove = (e: PointerEvent) => {
       pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       pointer.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -49,7 +65,7 @@ export function Player() {
     };
   }, []);
 
-  useFrame((_state, delta) => {
+  useFrame((_state, _delta) => {
     if (!rbRef.current) return;
     const state = snwEntity.get(SNWTrait);
     if (state?.phase !== "playing") return;
@@ -66,29 +82,39 @@ export function Player() {
 
     const currentVel = rbRef.current.linvel();
     const finalSpeed = movement.current.dash ? speed * 3 : speed;
-    
-    rbRef.current.setLinvel({
-      x: dir.x * finalSpeed,
-      y: currentVel.y,
-      z: dir.z * finalSpeed
-    }, true);
-    
+
+    rbRef.current.setLinvel(
+      {
+        x: dir.x * finalSpeed,
+        y: currentVel.y,
+        z: dir.z * finalSpeed,
+      },
+      true
+    );
+
     if (movement.current.dash) movement.current.dash = false;
 
     // Camera follow (Top Down)
-    camera.position.lerp(
-      new THREE.Vector3(position.current.x, 40, position.current.z + 20),
-      0.1
-    );
+    camera.position.lerp(new THREE.Vector3(position.current.x, 40, position.current.z + 20), 0.1);
     camera.lookAt(position.current);
 
     // Mesh rotation towards mouse
-    const target = new THREE.Vector3(pointer.current.x * 20 + position.current.x, position.current.y, -pointer.current.y * 20 + position.current.z);
+    const _target = new THREE.Vector3(
+      pointer.current.x * 20 + position.current.x,
+      position.current.y,
+      -pointer.current.y * 20 + position.current.z
+    );
     // Standard R3F mesh ref rotation would be cleaner, but for now we look at the virtual point
   });
 
   return (
-    <RigidBody ref={rbRef} mass={1} position={[0, 2, 0]} enabledRotations={[false, false, false]} colliders="cuboid">
+    <RigidBody
+      ref={rbRef}
+      mass={1}
+      position={[0, 2, 0]}
+      enabledRotations={[false, false, false]}
+      colliders="cuboid"
+    >
       <mesh>
         <boxGeometry args={[1, 1, 2]} />
         <meshStandardMaterial color="#00ffcc" />

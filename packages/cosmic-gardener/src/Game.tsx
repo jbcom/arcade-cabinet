@@ -1,25 +1,36 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useResponsive } from "@arcade-cabinet/shared";
-import { cn } from "./lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  generateVoidZones,
+  getConstellationForLevel,
+  type VoidZone as VoidZoneType,
+} from "./engine/constellations";
 import { useEnergyRouting } from "./engine/useEnergyRouting";
 import { usePinballPhysics } from "./engine/usePinballPhysics";
-import { getConstellationForLevel, generateVoidZones, type VoidZone as VoidZoneType } from "./engine/constellations";
-import { NebulaBackground } from "./ui/NebulaBackground";
-import { CosmicDust } from "./ui/CosmicDust";
-import { StarSeed } from "./ui/StarSeed";
-import { EnergyStream } from "./ui/EnergyStream";
-import { ConstellationPattern } from "./ui/ConstellationPattern";
-import { VoidZone } from "./ui/VoidZone";
-import { GameUI } from "./ui/GameUI";
-import { PinballOrb } from "./ui/PinballOrb";
-import { Flippers } from "./ui/Flippers";
+import { cn } from "./lib/utils";
 import { BallLauncher } from "./ui/BallLauncher";
+import { ConstellationPattern } from "./ui/ConstellationPattern";
+import { CosmicDust } from "./ui/CosmicDust";
+import { EnergyStream } from "./ui/EnergyStream";
+import { Flippers } from "./ui/Flippers";
+import { GameUI } from "./ui/GameUI";
+import { NebulaBackground } from "./ui/NebulaBackground";
+import { PinballOrb } from "./ui/PinballOrb";
+import { StarSeed } from "./ui/StarSeed";
+import { VoidZone } from "./ui/VoidZone";
 
-type GameState = "intro" | "tutorial" | "playing" | "paused" | "levelComplete" | "gameOver" | "zenMode";
+type GameState =
+  | "intro"
+  | "tutorial"
+  | "playing"
+  | "paused"
+  | "levelComplete"
+  | "gameOver"
+  | "zenMode";
 
 export default function Game({ className }: { className?: string }) {
-  const viewport = useResponsive();
+  const _viewport = useResponsive();
   const [gameState, setGameState] = useState<GameState>("intro");
   const [level, setLevel] = useState(1);
   const [constellationsCompleted, setConstellationsCompleted] = useState(0);
@@ -34,8 +45,12 @@ export default function Game({ className }: { className?: string }) {
   const [ballsRemaining, setBallsRemaining] = useState(3);
   const [comboMultiplier, setComboMultiplier] = useState(1);
   const [lastHitTime, setLastHitTime] = useState(0);
-  const [showHitEffect, setShowHitEffect] = useState<{ x: number; y: number; points: number } | null>(null);
-  
+  const [showHitEffect, setShowHitEffect] = useState<{
+    x: number;
+    y: number;
+    points: number;
+  } | null>(null);
+
   const gardenRef = useRef<HTMLDivElement>(null);
 
   const handleConstellationComplete = useCallback(() => {
@@ -74,31 +89,34 @@ export default function Game({ className }: { className?: string }) {
   const starsForPhysics = new Map(
     Array.from(stars.entries()).map(([id, star]) => [
       id,
-      { id: star.id, x: star.x, y: star.y, energy: star.energy, growthStage: star.growthStage }
+      { id: star.id, x: star.x, y: star.y, energy: star.energy, growthStage: star.growthStage },
     ])
   );
 
-  const handleStarHit = useCallback((starId: string) => {
-    const star = stars.get(starId);
-    if (!star) return;
+  const handleStarHit = useCallback(
+    (starId: string) => {
+      const star = stars.get(starId);
+      if (!star) return;
 
-    transferEnergy(starId, 5);
+      transferEnergy(starId, 5);
 
-    const now = Date.now();
-    if (now - lastHitTime < 2000) {
-      setComboMultiplier((prev) => Math.min(prev + 0.5, 5));
-    } else {
-      setComboMultiplier(1);
-    }
-    setLastHitTime(now);
+      const now = Date.now();
+      if (now - lastHitTime < 2000) {
+        setComboMultiplier((prev) => Math.min(prev + 0.5, 5));
+      } else {
+        setComboMultiplier(1);
+      }
+      setLastHitTime(now);
 
-    const basePoints = 100 * (star.growthStage + 1);
-    const points = Math.floor(basePoints * comboMultiplier);
-    setScore((prev) => prev + points);
+      const basePoints = 100 * (star.growthStage + 1);
+      const points = Math.floor(basePoints * comboMultiplier);
+      setScore((prev) => prev + points);
 
-    setShowHitEffect({ x: star.x, y: star.y, points });
-    setTimeout(() => setShowHitEffect(null), 800);
-  }, [stars, transferEnergy, lastHitTime, comboMultiplier]);
+      setShowHitEffect({ x: star.x, y: star.y, points });
+      setTimeout(() => setShowHitEffect(null), 800);
+    },
+    [stars, transferEnergy, lastHitTime, comboMultiplier]
+  );
 
   const handleDrain = useCallback(() => {
     setBallsRemaining((prev) => {
@@ -244,8 +262,10 @@ export default function Game({ className }: { className?: string }) {
       if (targetStar) {
         createStream(selectedStarId, targetStar.id);
         currentPattern.connections.forEach((conn) => {
-          if ((conn.from === selectedStarId && conn.to === targetStar.id) || 
-              (conn.from === targetStar.id && conn.to === selectedStarId)) {
+          if (
+            (conn.from === selectedStarId && conn.to === targetStar.id) ||
+            (conn.from === targetStar.id && conn.to === selectedStarId)
+          ) {
             const key = `${conn.from}-${conn.to}`;
             setCompletedConnections((prev) => new Set([...prev, key]));
           }
@@ -260,11 +280,14 @@ export default function Game({ className }: { className?: string }) {
     [isDragging, selectedStarId, stars, createStream, currentPattern]
   );
 
-  const handleLaunch = useCallback((x: number, y: number, angle: number, power: number) => {
-    if (orbs.size < 3) { 
-      launchOrb(x, y, angle, power);
-    }
-  }, [orbs.size, launchOrb]);
+  const handleLaunch = useCallback(
+    (x: number, y: number, angle: number, power: number) => {
+      if (orbs.size < 3) {
+        launchOrb(x, y, angle, power);
+      }
+    },
+    [orbs.size, launchOrb]
+  );
 
   const startGame = () => {
     resetGame();
@@ -401,10 +424,7 @@ export default function Game({ className }: { className?: string }) {
       )}
 
       {(gameState === "playing" || gameState === "zenMode") && (
-        <BallLauncher
-          onLaunch={handleLaunch}
-          disabled={orbs.size >= 3}
-        />
+        <BallLauncher onLaunch={handleLaunch} disabled={orbs.size >= 3} />
       )}
 
       {(gameState === "playing" || gameState === "paused" || gameState === "zenMode") && (
@@ -420,7 +440,7 @@ export default function Game({ className }: { className?: string }) {
             onResume={() => setGameState("playing")}
             onRestart={startGame}
           />
-          
+
           <motion.div
             className="absolute top-4 left-1/2 transform -translate-x-1/2 text-center pointer-events-none z-50"
             initial={{ opacity: 0, y: -20 }}
@@ -517,7 +537,7 @@ export default function Game({ className }: { className?: string }) {
               animate={{ scale: 1, opacity: 1 }}
             >
               <h2 className="text-3xl font-light text-white mb-8">The Amazing Journey</h2>
-              
+
               <div className="space-y-6 text-left mb-10">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -525,7 +545,9 @@ export default function Game({ className }: { className?: string }) {
                   </div>
                   <div>
                     <h3 className="text-white font-medium mb-1">Plant Your Stars</h3>
-                    <p className="text-white/60 text-sm">Tap to plant bumper stars. They're your targets and your table.</p>
+                    <p className="text-white/60 text-sm">
+                      Tap to plant bumper stars. They're your targets and your table.
+                    </p>
                   </div>
                 </div>
 
@@ -535,7 +557,9 @@ export default function Game({ className }: { className?: string }) {
                   </div>
                   <div>
                     <h3 className="text-white font-medium mb-1">Launch & Flip</h3>
-                    <p className="text-white/60 text-sm">Hold the plunger to charge, release to launch. Use Z and / for flippers.</p>
+                    <p className="text-white/60 text-sm">
+                      Hold the plunger to charge, release to launch. Use Z and / for flippers.
+                    </p>
                   </div>
                 </div>
 
@@ -545,7 +569,9 @@ export default function Game({ className }: { className?: string }) {
                   </div>
                   <div>
                     <h3 className="text-white font-medium mb-1">Grow Constellations</h3>
-                    <p className="text-white/60 text-sm">Hit stars to charge them. Connect charged stars to complete patterns.</p>
+                    <p className="text-white/60 text-sm">
+                      Hit stars to charge them. Connect charged stars to complete patterns.
+                    </p>
                   </div>
                 </div>
               </div>

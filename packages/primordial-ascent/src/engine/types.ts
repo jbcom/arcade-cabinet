@@ -22,7 +22,7 @@ export const CONFIG = {
   noiseScale: 0.04,
   renderDistanceY: 3,
   renderDistanceXZ: 2,
-  
+
   // Physics
   gravity: -22,
   playerMass: 1.2,
@@ -32,7 +32,7 @@ export const CONFIG = {
   maxTetherDist: 120,
   airControl: 20,
   jumpForce: 25,
-  
+
   // Pacing
   lavaStartHeight: -40,
   lavaBaseSpeed: 6.0,

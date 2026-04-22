@@ -1,19 +1,18 @@
 import { useTrait } from "koota/react";
-import { skyEntity } from "../store/world";
-import { TowerTrait, type BuildingData } from "../store/traits";
 import { BUILDINGS, CONFIG } from "../engine/types";
-import * as THREE from "three";
+import { type BuildingData, TowerTrait } from "../store/traits";
+import { skyEntity } from "../store/world";
 
 function Building({ data }: { data: BuildingData }) {
   const buildingInfo = BUILDINGS[data.type as keyof typeof BUILDINGS];
   const color = buildingInfo?.color || "#ffffff";
-  
+
   return (
-    <mesh 
+    <mesh
       position={[
-        data.x * CONFIG.CELL_SIZE.w + (data.w * CONFIG.CELL_SIZE.w) / 2, 
-        data.y * CONFIG.CELL_SIZE.h + (data.h * CONFIG.CELL_SIZE.h) / 2, 
-        0
+        data.x * CONFIG.CELL_SIZE.w + (data.w * CONFIG.CELL_SIZE.w) / 2,
+        data.y * CONFIG.CELL_SIZE.h + (data.h * CONFIG.CELL_SIZE.h) / 2,
+        0,
       ]}
     >
       <boxGeometry args={[data.w * CONFIG.CELL_SIZE.w, data.h * CONFIG.CELL_SIZE.h, 10]} />
@@ -37,7 +36,7 @@ export function Tower() {
       {buildings.map((b) => (
         <Building key={b.id} data={b} />
       ))}
-      
+
       {/* Ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
         <planeGeometry args={[1000, 1000]} />

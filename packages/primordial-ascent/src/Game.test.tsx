@@ -5,11 +5,11 @@ import Game from "./Game";
 
 test("Primordial Ascent game renders and is playable", async () => {
   const { getByText } = render(
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: "100vw", height: "100vh" }}>
       <Game />
     </div>
   );
-  
+
   await new Promise((resolve) => setTimeout(resolve, 500));
   await page.screenshot({ path: "test-screenshots/primordial-start.png" });
 

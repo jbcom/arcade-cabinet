@@ -149,7 +149,7 @@ export interface VoidZone {
 export function generateVoidZones(level: number): VoidZone[] {
   const zones: VoidZone[] = [];
   const count = Math.min(level, 4);
-  
+
   for (let i = 0; i < count; i++) {
     zones.push({
       x: 20 + Math.random() * 60,
@@ -158,7 +158,7 @@ export function generateVoidZones(level: number): VoidZone[] {
       drainRate: 0.5 + level * 0.2,
     });
   }
-  
+
   return zones;
 }
 

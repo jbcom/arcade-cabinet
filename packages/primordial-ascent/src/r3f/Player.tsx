@@ -1,16 +1,16 @@
-import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { primordialEntity } from "../store/world";
-import { PrimordialTrait } from "../store/traits";
 import { CONFIG } from "../engine/types";
+import { PrimordialTrait } from "../store/traits";
+import { primordialEntity } from "../store/world";
 
 export function Player() {
   const { camera, raycaster, scene } = useThree();
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3());
-  
+
   const [isGrappling, setIsGrappling] = useState(false);
   const [grapplePoint, setGrapplePoint] = useState<THREE.Vector3 | null>(null);
   const movement = useRef({ w: false, a: false, s: false, d: false, space: false });
@@ -19,20 +19,40 @@ export function Player() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = true; break;
-        case "KeyS": movement.current.s = true; break;
-        case "KeyA": movement.current.a = true; break;
-        case "KeyD": movement.current.d = true; break;
-        case "Space": movement.current.space = true; break;
+        case "KeyW":
+          movement.current.w = true;
+          break;
+        case "KeyS":
+          movement.current.s = true;
+          break;
+        case "KeyA":
+          movement.current.a = true;
+          break;
+        case "KeyD":
+          movement.current.d = true;
+          break;
+        case "Space":
+          movement.current.space = true;
+          break;
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       switch (e.code) {
-        case "KeyW": movement.current.w = false; break;
-        case "KeyS": movement.current.s = false; break;
-        case "KeyA": movement.current.a = false; break;
-        case "KeyD": movement.current.d = false; break;
-        case "Space": movement.current.space = false; break;
+        case "KeyW":
+          movement.current.w = false;
+          break;
+        case "KeyS":
+          movement.current.s = false;
+          break;
+        case "KeyA":
+          movement.current.a = false;
+          break;
+        case "KeyD":
+          movement.current.d = false;
+          break;
+        case "Space":
+          movement.current.space = false;
+          break;
       }
     };
 
@@ -45,17 +65,23 @@ export function Player() {
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
 
-      const hit = intersects.find(i => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist);
+      const hit = intersects.find(
+        (i) => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist
+      );
 
       if (hit) {
         setIsGrappling(true);
         setGrapplePoint(hit.point);
-        
+
         if (rbRef.current) {
-            const currentPos = rbRef.current.translation();
-            const posVec = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
-            const impulseDir = hit.point.clone().sub(posVec).normalize().multiplyScalar(15 * CONFIG.playerMass);
-            rbRef.current.applyImpulse(impulseDir, true);
+          const currentPos = rbRef.current.translation();
+          const posVec = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
+          const impulseDir = hit.point
+            .clone()
+            .sub(posVec)
+            .normalize()
+            .multiplyScalar(15 * CONFIG.playerMass);
+          rbRef.current.applyImpulse(impulseDir, true);
         }
       }
     };
@@ -79,7 +105,7 @@ export function Player() {
     };
   }, [camera, raycaster, scene]);
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     const pState = primordialEntity.get(PrimordialTrait);
     if (pState?.phase !== "playing" || !rbRef.current) return;
 
@@ -90,10 +116,12 @@ export function Player() {
     // Continuous raycasting for crosshair
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     const intersects = raycaster.intersectObjects(scene.children, true);
-    const hit = intersects.find(i => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist);
-    
+    const hit = intersects.find(
+      (i) => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist
+    );
+
     if (!!hit !== pState.isInGrappleRange) {
-        primordialEntity.set(PrimordialTrait, { ...pState, isInGrappleRange: !!hit });
+      primordialEntity.set(PrimordialTrait, { ...pState, isInGrappleRange: !!hit });
     }
 
     // Apply tether physics
@@ -106,15 +134,21 @@ export function Player() {
         const dampingY = currentVel.y * CONFIG.tetherDamping * delta;
         const dampingZ = currentVel.z * CONFIG.tetherDamping * delta;
 
-        rbRef.current.applyImpulse({
-          x: forceDir.x * forceMag - dampingX,
-          y: forceDir.y * forceMag - dampingY,
-          z: forceDir.z * forceMag - dampingZ
-        }, true);
+        rbRef.current.applyImpulse(
+          {
+            x: forceDir.x * forceMag - dampingX,
+            y: forceDir.y * forceMag - dampingY,
+            z: forceDir.z * forceMag - dampingZ,
+          },
+          true
+        );
       }
 
       // Update tether line visual (from camera slightly lower to look like it comes from hand)
-      tetherLineGeometry.setFromPoints([new THREE.Vector3(position.current.x, position.current.y - 0.5, position.current.z), grapplePoint]);
+      tetherLineGeometry.setFromPoints([
+        new THREE.Vector3(position.current.x, position.current.y - 0.5, position.current.z),
+        grapplePoint,
+      ]);
     }
 
     // Air control (relative to camera view)
@@ -123,7 +157,9 @@ export function Player() {
     cameraDirection.y = 0; // Move horizontally relative to view
     cameraDirection.normalize();
 
-    const right = new THREE.Vector3().crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0)).normalize();
+    const right = new THREE.Vector3()
+      .crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0))
+      .normalize();
 
     const moveDir = new THREE.Vector3();
     if (movement.current.w) moveDir.add(cameraDirection);
@@ -137,8 +173,8 @@ export function Player() {
     }
 
     if (movement.current.space) {
-        rbRef.current.applyImpulse({x: 0, y: CONFIG.jumpForce * CONFIG.playerMass, z: 0}, true);
-        movement.current.space = false;
+      rbRef.current.applyImpulse({ x: 0, y: CONFIG.jumpForce * CONFIG.playerMass, z: 0 }, true);
+      movement.current.space = false;
     }
 
     // First-person camera: lock to player position
@@ -148,24 +184,30 @@ export function Player() {
     const currentAltitude = Math.floor(position.current.y);
     let maxAlt = pState.maxAltitude;
     if (currentAltitude > pState.maxAltitude) {
-       maxAlt = currentAltitude;
+      maxAlt = currentAltitude;
     }
-    
-    const speed = Math.sqrt(currentVel.x**2 + currentVel.y**2 + currentVel.z**2);
-    
+
+    const speed = Math.sqrt(currentVel.x ** 2 + currentVel.y ** 2 + currentVel.z ** 2);
+
     // Combine all high-frequency state updates into one set call
-    primordialEntity.set(PrimordialTrait, { 
-        ...pState, 
-        altitude: currentAltitude, 
-        maxAltitude: maxAlt, 
-        velocity: Math.floor(speed),
-        timeSurvived: pState.timeSurvived + delta * 1000
+    primordialEntity.set(PrimordialTrait, {
+      ...pState,
+      altitude: currentAltitude,
+      maxAltitude: maxAlt,
+      velocity: Math.floor(speed),
+      timeSurvived: pState.timeSurvived + delta * 1000,
     });
   });
 
   return (
     <>
-      <RigidBody ref={rbRef} mass={CONFIG.playerMass} position={[0, 10, 0]} enabledRotations={[false, false, false]} colliders="ball">
+      <RigidBody
+        ref={rbRef}
+        mass={CONFIG.playerMass}
+        position={[0, 10, 0]}
+        enabledRotations={[false, false, false]}
+        colliders="ball"
+      >
         <mesh visible={false}>
           <sphereGeometry args={[1, 16, 16]} />
           <meshStandardMaterial color="white" />

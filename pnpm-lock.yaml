@@ -85,8 +85,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
       vite:
         specifier: ^6.4.2
         version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
@@ -220,7 +220,7 @@ importers:
         version: 8.0.2(@capacitor/core@8.3.1)
       astro:
         specifier: ^6.1.8
-        version: 6.1.8(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.2)(typescript@5.9.3)(yaml@2.8.3)
+        version: 6.1.8(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.2)(typescript@6.0.3)(yaml@2.8.3)
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -230,7 +230,7 @@ importers:
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.8
-        version: 0.9.8(prettier@3.8.3)(typescript@5.9.3)
+        version: 0.9.8(prettier@3.8.3)(typescript@6.0.3)
       '@capacitor/cli':
         specifier: ^8.3.1
         version: 8.3.1
@@ -247,8 +247,8 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   apps/enchanted-forest:
     dependencies:
@@ -573,8 +573,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.14
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/cosmic-gardener:
     dependencies:
@@ -613,8 +613,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/enchanted-forest:
     dependencies:
@@ -641,8 +641,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.14
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/entropy-edge:
     dependencies:
@@ -672,14 +672,11 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/gridizen:
     dependencies:
-      '@arcade-cabinet/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@react-three/drei':
         specifier: ^10.0.0
         version: 10.7.7(@react-three/fiber@9.6.0(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0))(@types/react@19.2.14)(@types/three@0.176.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(three@0.176.0)
@@ -695,12 +692,6 @@ importers:
       postprocessing:
         specifier: ^6.36.3
         version: 6.39.1(three@0.176.0)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.5
-      three:
-        specifier: ^0.176.0
-        version: 0.176.0
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -708,9 +699,15 @@ importers:
       '@types/three':
         specifier: ^0.176.0
         version: 0.176.0
+      react:
+        specifier: ^19.0.0
+        version: 19.2.5
+      three:
+        specifier: ^0.176.0
+        version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/mega-track:
     dependencies:
@@ -740,8 +737,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/otterly-chaotic:
     dependencies:
@@ -757,12 +754,6 @@ importers:
       koota:
         specifier: ^0.6.6
         version: 0.6.6(@types/react@19.2.14)(react@19.2.5)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.5
-      three:
-        specifier: ^0.176.0
-        version: 0.176.0
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -770,9 +761,15 @@ importers:
       '@types/three':
         specifier: ^0.176.0
         version: 0.176.0
+      react:
+        specifier: ^19.0.0
+        version: 19.2.5
+      three:
+        specifier: ^0.176.0
+        version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/primordial-ascent:
     dependencies:
@@ -808,8 +805,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/protocol-snw:
     dependencies:
@@ -842,8 +839,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/reach-for-the-sky:
     dependencies:
@@ -879,8 +876,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/realmwalker:
     dependencies:
@@ -916,8 +913,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
       vitest-browser-react:
         specifier: ^0.0.4
         version: 0.0.4(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(@vitest/browser@4.1.5(vite@8.0.9(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(yaml@2.8.3))(vitest@4.1.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@4.1.5)
@@ -938,8 +935,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.14
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/sim-soviet:
     dependencies:
@@ -969,8 +966,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/titan-mech:
     dependencies:
@@ -1003,8 +1000,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/voxel-realms:
     dependencies:
@@ -1040,8 +1037,8 @@ importers:
         specifier: ^0.176.0
         version: 0.176.0
       typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
 packages:
 
@@ -4318,8 +4315,8 @@ packages:
   typescript-auto-import-cache@0.3.6:
     resolution: {integrity: sha512-RpuHXrknHdVdK7wv/8ug3Fr0WNsNi5l5aB8MYYuXhq2UH5lnEB1htJ1smhtD5VeCsGr2p8mUDtd83LCQDFVgjQ==}
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -4945,12 +4942,12 @@ snapshots:
 
   '@asamuzakjp/nwsapi@2.3.9': {}
 
-  '@astrojs/check@0.9.8(prettier@3.8.3)(typescript@5.9.3)':
+  '@astrojs/check@0.9.8(prettier@3.8.3)(typescript@6.0.3)':
     dependencies:
-      '@astrojs/language-server': 2.16.6(prettier@3.8.3)(typescript@5.9.3)
+      '@astrojs/language-server': 2.16.6(prettier@3.8.3)(typescript@6.0.3)
       chokidar: 4.0.3
       kleur: 4.1.5
-      typescript: 5.9.3
+      typescript: 6.0.3
       yargs: 17.7.2
     transitivePeerDependencies:
       - prettier
@@ -4964,12 +4961,12 @@ snapshots:
     dependencies:
       picomatch: 4.0.4
 
-  '@astrojs/language-server@2.16.6(prettier@3.8.3)(typescript@5.9.3)':
+  '@astrojs/language-server@2.16.6(prettier@3.8.3)(typescript@6.0.3)':
     dependencies:
       '@astrojs/compiler': 2.13.1
       '@astrojs/yaml2ts': 0.2.3
       '@jridgewell/sourcemap-codec': 1.5.5
-      '@volar/kit': 2.4.28(typescript@5.9.3)
+      '@volar/kit': 2.4.28(typescript@6.0.3)
       '@volar/language-core': 2.4.28
       '@volar/language-server': 2.4.28
       '@volar/language-service': 2.4.28
@@ -6363,12 +6360,12 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@volar/kit@2.4.28(typescript@5.9.3)':
+  '@volar/kit@2.4.28(typescript@6.0.3)':
     dependencies:
       '@volar/language-service': 2.4.28
       '@volar/typescript': 2.4.28
       typesafe-path: 0.2.2
-      typescript: 5.9.3
+      typescript: 6.0.3
       vscode-languageserver-textdocument: 1.0.12
       vscode-uri: 3.1.0
 
@@ -6462,7 +6459,7 @@ snapshots:
 
   astral-regex@2.0.0: {}
 
-  astro@6.1.8(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.2)(typescript@5.9.3)(yaml@2.8.3):
+  astro@6.1.8(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.2)(typescript@6.0.3)(yaml@2.8.3):
     dependencies:
       '@astrojs/compiler': 3.0.1
       '@astrojs/internal-helpers': 0.8.0
@@ -6507,7 +6504,7 @@ snapshots:
       tinyclip: 0.1.12
       tinyexec: 1.1.1
       tinyglobby: 0.2.16
-      tsconfck: 3.1.6(typescript@5.9.3)
+      tsconfck: 3.1.6(typescript@6.0.3)
       ultrahtml: 1.6.0
       unifont: 0.7.4
       unist-util-visit: 5.1.0
@@ -8527,9 +8524,9 @@ snapshots:
 
   trough@2.2.0: {}
 
-  tsconfck@3.1.6(typescript@5.9.3):
+  tsconfck@3.1.6(typescript@6.0.3):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
 
   tslib@2.8.1: {}
 
@@ -8547,7 +8544,7 @@ snapshots:
     dependencies:
       semver: 7.7.4
 
-  typescript@5.9.3: {}
+  typescript@6.0.3: {}
 
   ufo@1.6.3: {}
 

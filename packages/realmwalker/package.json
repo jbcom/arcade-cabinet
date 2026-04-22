@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/three": "^0.176.0",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "vitest-browser-react": "^0.0.4"
   }
 }

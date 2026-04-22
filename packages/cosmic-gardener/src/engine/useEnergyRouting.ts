@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface StarSeed {
   id: string;
@@ -24,7 +24,7 @@ interface UseEnergyRoutingProps {
   onEnergyDepleted?: () => void;
 }
 
-export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: UseEnergyRoutingProps = {}) {
+export function useEnergyRouting({ onConstellationComplete }: UseEnergyRoutingProps = {}) {
   const [stars, setStars] = useState<Map<string, StarSeed>>(new Map());
   const [streams, setStreams] = useState<Map<string, EnergyStream>>(new Map());
   const [totalEnergy, setTotalEnergy] = useState(500);
@@ -40,68 +40,74 @@ export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: 
     return 0;
   };
 
-  const plantSeed = useCallback((x: number, y: number): string | null => {
-    if (totalEnergy < 20) return null;
+  const plantSeed = useCallback(
+    (x: number, y: number): string | null => {
+      if (totalEnergy < 20) return null;
 
-    const id = `star-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newStar: StarSeed = {
-      id,
-      x,
-      y,
-      energy: 20,
-      maxEnergy: 100,
-      growthStage: 0,
-      connections: [],
-      isPlanted: true,
-    };
+      const id = `star-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newStar: StarSeed = {
+        id,
+        x,
+        y,
+        energy: 20,
+        maxEnergy: 100,
+        growthStage: 0,
+        connections: [],
+        isPlanted: true,
+      };
 
-    setStars((prev) => {
-      const next = new Map(prev);
-      next.set(id, newStar);
-      return next;
-    });
+      setStars((prev) => {
+        const next = new Map(prev);
+        next.set(id, newStar);
+        return next;
+      });
 
-    setTotalEnergy((prev) => prev - 20);
-    return id;
-  }, [totalEnergy]);
+      setTotalEnergy((prev) => prev - 20);
+      return id;
+    },
+    [totalEnergy]
+  );
 
-  const createStream = useCallback((fromId: string, toId: string): string | null => {
-    const existingKey = `${fromId}-${toId}`;
-    const reverseKey = `${toId}-${fromId}`;
-    
-    if (streams.has(existingKey) || streams.has(reverseKey)) return null;
+  const createStream = useCallback(
+    (fromId: string, toId: string): string | null => {
+      const existingKey = `${fromId}-${toId}`;
+      const reverseKey = `${toId}-${fromId}`;
 
-    const stream: EnergyStream = {
-      id: existingKey,
-      fromId,
-      toId,
-      flowRate: 2,
-      active: true,
-    };
+      if (streams.has(existingKey) || streams.has(reverseKey)) return null;
 
-    setStreams((prev) => {
-      const next = new Map(prev);
-      next.set(existingKey, stream);
-      return next;
-    });
+      const stream: EnergyStream = {
+        id: existingKey,
+        fromId,
+        toId,
+        flowRate: 2,
+        active: true,
+      };
 
-    setStars((prev) => {
-      const next = new Map(prev);
-      const fromStar = next.get(fromId);
-      const toStar = next.get(toId);
-      
-      if (fromStar && !fromStar.connections.includes(toId)) {
-        next.set(fromId, { ...fromStar, connections: [...fromStar.connections, toId] });
-      }
-      if (toStar && !toStar.connections.includes(fromId)) {
-        next.set(toId, { ...toStar, connections: [...toStar.connections, fromId] });
-      }
-      
-      return next;
-    });
+      setStreams((prev) => {
+        const next = new Map(prev);
+        next.set(existingKey, stream);
+        return next;
+      });
 
-    return existingKey;
-  }, [streams]);
+      setStars((prev) => {
+        const next = new Map(prev);
+        const fromStar = next.get(fromId);
+        const toStar = next.get(toId);
+
+        if (fromStar && !fromStar.connections.includes(toId)) {
+          next.set(fromId, { ...fromStar, connections: [...fromStar.connections, toId] });
+        }
+        if (toStar && !toStar.connections.includes(fromId)) {
+          next.set(toId, { ...toStar, connections: [...toStar.connections, fromId] });
+        }
+
+        return next;
+      });
+
+      return existingKey;
+    },
+    [streams]
+  );
 
   const removeStream = useCallback((streamId: string) => {
     setStreams((prev) => {
@@ -111,40 +117,46 @@ export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: 
     });
   }, []);
 
-  const transferEnergy = useCallback((starId: string, amount: number) => {
-    if (totalEnergy < amount) return;
+  const transferEnergy = useCallback(
+    (starId: string, amount: number) => {
+      if (totalEnergy < amount) return;
 
-    setStars((prev) => {
-      const next = new Map(prev);
-      const star = next.get(starId);
-      if (star) {
-        const newEnergy = Math.min(star.energy + amount, star.maxEnergy);
-        const newStage = getGrowthStage(newEnergy, star.maxEnergy);
-        next.set(starId, { ...star, energy: newEnergy, growthStage: newStage });
+      setStars((prev) => {
+        const next = new Map(prev);
+        const star = next.get(starId);
+        if (star) {
+          const newEnergy = Math.min(star.energy + amount, star.maxEnergy);
+          const newStage = getGrowthStage(newEnergy, star.maxEnergy);
+          next.set(starId, { ...star, energy: newEnergy, growthStage: newStage });
+        }
+        return next;
+      });
+
+      setTotalEnergy((prev) => prev - amount);
+    },
+    [totalEnergy, getGrowthStage]
+  );
+
+  const checkConstellationComplete = useCallback(
+    (requiredConnections: Array<{ from: string; to: string }>): boolean => {
+      const starsArray = Array.from(stars.values());
+      const fullyGrown = starsArray.filter((s) => s.growthStage === 3);
+
+      if (fullyGrown.length < requiredConnections.length + 1) return false;
+
+      for (const conn of requiredConnections) {
+        const hasConnection = Array.from(streams.values()).some(
+          (s) =>
+            (s.fromId === conn.from && s.toId === conn.to) ||
+            (s.fromId === conn.to && s.toId === conn.from)
+        );
+        if (!hasConnection) return false;
       }
-      return next;
-    });
 
-    setTotalEnergy((prev) => prev - amount);
-  }, [totalEnergy]);
-
-  const checkConstellationComplete = useCallback((requiredConnections: Array<{ from: string; to: string }>): boolean => {
-    const starsArray = Array.from(stars.values());
-    const fullyGrown = starsArray.filter((s) => s.growthStage === 3);
-    
-    if (fullyGrown.length < requiredConnections.length + 1) return false;
-
-    for (const conn of requiredConnections) {
-      const hasConnection = Array.from(streams.values()).some(
-        (s) =>
-          (s.fromId === conn.from && s.toId === conn.to) ||
-          (s.fromId === conn.to && s.toId === conn.from)
-      );
-      if (!hasConnection) return false;
-    }
-
-    return true;
-  }, [stars, streams]);
+      return true;
+    },
+    [stars, streams]
+  );
 
   useEffect(() => {
     const animate = (time: number) => {
@@ -162,17 +174,17 @@ export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: 
 
       setStars((prevStars) => {
         const next = new Map(prevStars);
-        
+
         streams.forEach((stream) => {
           if (!stream.active) return;
-          
+
           const fromStar = next.get(stream.fromId);
           const toStar = next.get(stream.toId);
-          
+
           if (fromStar && toStar && fromStar.energy > 10) {
             const transferAmount = Math.min(stream.flowRate * delta, fromStar.energy - 10);
             const toReceive = Math.min(transferAmount, toStar.maxEnergy - toStar.energy);
-            
+
             if (toReceive > 0) {
               next.set(stream.fromId, {
                 ...fromStar,
@@ -187,7 +199,7 @@ export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: 
             }
           }
         });
-        
+
         return next;
       });
 
@@ -201,7 +213,7 @@ export function useEnergyRouting({ onConstellationComplete, onEnergyDepleted }: 
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [streams, onEnergyDepleted]);
+  }, [streams, getGrowthStage]);
 
   const resetGame = useCallback(() => {
     setStars(new Map());

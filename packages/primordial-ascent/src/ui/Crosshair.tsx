@@ -1,8 +1,8 @@
-import { useTrait } from "koota/react";
-import { primordialEntity } from "../store/world";
-import { PrimordialTrait } from "../store/traits";
 import { motion } from "framer-motion";
+import { useTrait } from "koota/react";
 import { useEffect, useState } from "react";
+import { PrimordialTrait } from "../store/traits";
+import { primordialEntity } from "../store/world";
 
 export function Crosshair() {
   const state = useTrait(primordialEntity, PrimordialTrait);
@@ -46,7 +46,9 @@ export function Crosshair() {
         className="absolute rounded-full"
         style={{
           border: `2px solid ${isLocked ? "#00ff66" : "rgba(255, 255, 255, 0.8)"}`,
-          boxShadow: isLocked ? "0 0 15px #00ff66, inset 0 0 10px #00ff66" : "0 0 5px rgba(0,0,0,0.8)",
+          boxShadow: isLocked
+            ? "0 0 15px #00ff66, inset 0 0 10px #00ff66"
+            : "0 0 5px rgba(0,0,0,0.8)",
         }}
         animate={{
           width: isLocked ? 20 : state.isInGrappleRange ? 24 : 16,

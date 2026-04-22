@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface NoiseBackgroundProps {
   className?: string;
@@ -47,17 +47,50 @@ export function NoiseBackground({ className = "" }: NoiseBackgroundProps) {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className={`pointer-events-none absolute inset-0 ${className}`} style={{ imageRendering: "pixelated", mixBlendMode: "overlay" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`pointer-events-none absolute inset-0 ${className}`}
+      style={{ imageRendering: "pixelated", mixBlendMode: "overlay" }}
+    />
+  );
 }
 
 export function ForestGradientBackground({ className = "" }: { className?: string }) {
   return (
     <div className={`absolute inset-0 ${className}`}>
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10, 30, 20, 1) 0%, rgba(15, 45, 30, 1) 50%, rgba(20, 35, 25, 1) 100%)" }} />
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 80% 50% at 30% 20%, rgba(180, 160, 80, 0.15) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 70% 30%, rgba(200, 180, 100, 0.1) 0%, transparent 45%), radial-gradient(ellipse 50% 30% at 50% 60%, rgba(150, 180, 100, 0.08) 0%, transparent 40%)` }} />
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 100% 60% at 50% 100%, rgba(80, 40, 120, 0.2) 0%, transparent 60%)` }} />
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 120% 40% at 50% 100%, rgba(180, 120, 40, 0.15) 0%, transparent 50%)` }} />
-      <div className="absolute inset-0 opacity-20" style={{ background: `repeating-linear-gradient(105deg, transparent 0%, transparent 45%, rgba(255, 240, 180, 0.03) 45.5%, rgba(255, 240, 180, 0.03) 46.5%, transparent 47%)`, animation: "sway 8s ease-in-out infinite" }} />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(10, 30, 20, 1) 0%, rgba(15, 45, 30, 1) 50%, rgba(20, 35, 25, 1) 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 80% 50% at 30% 20%, rgba(180, 160, 80, 0.15) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 70% 30%, rgba(200, 180, 100, 0.1) 0%, transparent 45%), radial-gradient(ellipse 50% 30% at 50% 60%, rgba(150, 180, 100, 0.08) 0%, transparent 40%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 100% 60% at 50% 100%, rgba(80, 40, 120, 0.2) 0%, transparent 60%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 120% 40% at 50% 100%, rgba(180, 120, 40, 0.15) 0%, transparent 50%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          background: `repeating-linear-gradient(105deg, transparent 0%, transparent 45%, rgba(255, 240, 180, 0.03) 45.5%, rgba(255, 240, 180, 0.03) 46.5%, transparent 47%)`,
+          animation: "sway 8s ease-in-out infinite",
+        }}
+      />
     </div>
   );
 }

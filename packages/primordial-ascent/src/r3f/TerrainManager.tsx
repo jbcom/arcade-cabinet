@@ -1,24 +1,24 @@
-import { RigidBody, TrimeshCollider } from "@react-three/rapier";
-import { useEffect, useState, useRef, useMemo } from "react";
-import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CONFIG } from "../engine/types";
+import { RigidBody, TrimeshCollider } from "@react-three/rapier";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 import type { ChunkData } from "../engine/TerrainWorker";
 import TerrainWorker from "../engine/TerrainWorker?worker";
+import { CONFIG } from "../engine/types";
 
-const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+const _isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 function Chunk({ data }: { data: ChunkData }) {
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
-    geo.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(data.colors, 4));
+    geo.setAttribute("position", new THREE.BufferAttribute(data.positions, 3));
+    geo.setAttribute("normal", new THREE.BufferAttribute(data.normals, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(data.colors, 4));
     geo.setIndex(new THREE.BufferAttribute(data.indices, 1));
     return geo;
   }, [data]);
 
-  const isVitest = typeof window !== 'undefined' && (window as any).__vitest_browser__;
+  const isVitest = typeof window !== "undefined" && (window as any).__vitest_browser__;
 
   return (
     <RigidBody type="fixed" colliders={false}>
@@ -36,18 +36,18 @@ export function TerrainManager() {
   const { camera } = useThree();
   const [chunks, setChunks] = useState<Map<string, ChunkData>>(new Map());
   const workerRef = useRef<Worker>(null);
-  
+
   // Keep track of requested chunks to avoid spamming the worker
   const requestedChunks = useRef<Set<string>>(new Set());
   const currentChunkCoord = useRef<THREE.Vector3>(new THREE.Vector3(-999, -999, -999));
 
   useEffect(() => {
     workerRef.current = new TerrainWorker();
-    
+
     workerRef.current.onmessage = (e) => {
       const data = e.data as ChunkData;
       const key = `${data.cx},${data.cy},${data.cz}`;
-      setChunks(prev => {
+      setChunks((prev) => {
         const next = new Map(prev);
         next.set(key, data);
         return next;
@@ -65,10 +65,14 @@ export function TerrainManager() {
     const pCx = Math.floor(camera.position.x / (CONFIG.chunkSize * CONFIG.voxelSize));
     const pCy = Math.floor(camera.position.y / (CONFIG.chunkSize * CONFIG.voxelSize));
     const pCz = Math.floor(camera.position.z / (CONFIG.chunkSize * CONFIG.voxelSize));
-    
+
     // Only update if we moved to a new chunk
-    if (pCx === currentChunkCoord.current.x && pCy === currentChunkCoord.current.y && pCz === currentChunkCoord.current.z) {
-        return;
+    if (
+      pCx === currentChunkCoord.current.x &&
+      pCy === currentChunkCoord.current.y &&
+      pCz === currentChunkCoord.current.z
+    ) {
+      return;
     }
     currentChunkCoord.current.set(pCx, pCy, pCz);
 
@@ -82,14 +86,14 @@ export function TerrainManager() {
           const key = `${cx},${cy},${cz}`;
           currentKeys.add(key);
           if (!requestedChunks.current.has(key)) {
-             requestedChunks.current.add(key);
-             workerRef.current.postMessage({ cx, cy, cz, config: CONFIG });
+            requestedChunks.current.add(key);
+            workerRef.current.postMessage({ cx, cy, cz, config: CONFIG });
           }
         }
       }
     }
 
-    setChunks(prev => {
+    setChunks((prev) => {
       const next = new Map(prev);
       let changed = false;
       for (const key of next.keys()) {

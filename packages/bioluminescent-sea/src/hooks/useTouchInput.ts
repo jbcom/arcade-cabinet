@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InputPosition {
   x: number;
@@ -6,9 +6,7 @@ export interface InputPosition {
   isActive: boolean;
 }
 
-export function useTouchInput(
-  containerRef: React.RefObject<HTMLElement | null>
-) {
+export function useTouchInput(containerRef: React.RefObject<HTMLElement | null>) {
   const [position, setPosition] = useState<InputPosition>({
     x: 0,
     y: 0,

@@ -16,10 +16,7 @@ interface FireflyParticlesProps {
   className?: string;
 }
 
-export function FireflyParticles({
-  count = 50,
-  className = "",
-}: FireflyParticlesProps) {
+export function FireflyParticles({ count = 50, className = "" }: FireflyParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const firefliesRef = useRef<Firefly[]>([]);
   const animationRef = useRef<number>(0);
@@ -61,7 +58,14 @@ export function FireflyParticles({
         firefly.phase += firefly.phaseSpeed;
         const glow = (Math.sin(firefly.phase) + 1) / 2;
         const alpha = 0.3 + glow * 0.7;
-        const gradient = ctx.createRadialGradient(firefly.x, firefly.y, 0, firefly.x, firefly.y, firefly.size * 4);
+        const gradient = ctx.createRadialGradient(
+          firefly.x,
+          firefly.y,
+          0,
+          firefly.x,
+          firefly.y,
+          firefly.size * 4
+        );
         gradient.addColorStop(0, `rgba(255, 230, 120, ${alpha})`);
         gradient.addColorStop(0.3, `rgba(180, 220, 100, ${alpha * 0.6})`);
         gradient.addColorStop(1, "rgba(100, 180, 80, 0)");
@@ -83,5 +87,11 @@ export function FireflyParticles({
     };
   }, [count]);
 
-  return <canvas ref={canvasRef} className={`pointer-events-none absolute inset-0 ${className}`} style={{ mixBlendMode: "screen" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`pointer-events-none absolute inset-0 ${className}`}
+      style={{ mixBlendMode: "screen" }}
+    />
+  );
 }

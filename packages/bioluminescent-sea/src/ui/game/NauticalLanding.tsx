@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import { cn } from "../../lib/utils";
 
 // Nautical stock images from Unsplash (public domain style)
-const IMAGES = {
+const _IMAGES = {
   ship: "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=400&q=80",
   octopus: "https://images.unsplash.com/photo-1545671913-b89ac1b4ac10?w=300&q=80",
   compass: "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=200&q=80",
@@ -19,36 +19,54 @@ const IMAGES = {
 };
 
 const CutoutShip = () => (
-  <svg viewBox="0 0 200 150" className="w-full h-full">
+  <svg aria-hidden="true" viewBox="0 0 200 150" className="w-full h-full">
     <defs>
       <linearGradient id="shipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#8B4513" />
         <stop offset="100%" stopColor="#5D3A1A" />
       </linearGradient>
     </defs>
-    <path d="M20 100 Q100 130 180 100 L170 80 Q100 90 30 80 Z" fill="url(#shipGrad)" stroke="#3D2817" strokeWidth="2"/>
-    <rect x="95" y="20" width="10" height="70" fill="#5D3A1A" stroke="#3D2817" strokeWidth="1"/>
-    <path d="M50 25 L100 20 L100 75 Q75 70 50 75 Z" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1"/>
-    <path d="M100 20 L140 30 L100 40 Z" fill="#1a1a2e" stroke="#0f0f1a" strokeWidth="1"/>
-    <circle cx="115" cy="30" r="6" fill="#F5F5DC"/>
-    <circle cx="113" cy="29" r="1.5" fill="#1a1a2e"/>
-    <circle cx="117" cy="29" r="1.5" fill="#1a1a2e"/>
+    <path
+      d="M20 100 Q100 130 180 100 L170 80 Q100 90 30 80 Z"
+      fill="url(#shipGrad)"
+      stroke="#3D2817"
+      strokeWidth="2"
+    />
+    <rect x="95" y="20" width="10" height="70" fill="#5D3A1A" stroke="#3D2817" strokeWidth="1" />
+    <path
+      d="M50 25 L100 20 L100 75 Q75 70 50 75 Z"
+      fill="#F5F5DC"
+      stroke="#8B8B7A"
+      strokeWidth="1"
+    />
+    <path d="M100 20 L140 30 L100 40 Z" fill="#1a1a2e" stroke="#0f0f1a" strokeWidth="1" />
+    <circle cx="115" cy="30" r="6" fill="#F5F5DC" />
+    <circle cx="113" cy="29" r="1.5" fill="#1a1a2e" />
+    <circle cx="117" cy="29" r="1.5" fill="#1a1a2e" />
   </svg>
 );
 
 const CutoutOctopus = () => (
-  <svg viewBox="0 0 200 200" className="w-full h-full">
+  <svg aria-hidden="true" viewBox="0 0 200 200" className="w-full h-full">
     <defs>
       <radialGradient id="octoGrad" cx="50%" cy="30%" r="70%">
         <stop offset="0%" stopColor="#9B59B6" />
         <stop offset="100%" stopColor="#6C3483" />
       </radialGradient>
     </defs>
-    <ellipse cx="100" cy="60" rx="50" ry="40" fill="url(#octoGrad)" stroke="#4A235A" strokeWidth="2"/>
-    <ellipse cx="80" cy="55" rx="12" ry="15" fill="#F7DC6F"/>
-    <ellipse cx="120" cy="55" rx="12" ry="15" fill="#F7DC6F"/>
-    <circle cx="80" cy="58" r="6" fill="#1a1a2e"/>
-    <circle cx="120" cy="58" r="6" fill="#1a1a2e"/>
+    <ellipse
+      cx="100"
+      cy="60"
+      rx="50"
+      ry="40"
+      fill="url(#octoGrad)"
+      stroke="#4A235A"
+      strokeWidth="2"
+    />
+    <ellipse cx="80" cy="55" rx="12" ry="15" fill="#F7DC6F" />
+    <ellipse cx="120" cy="55" rx="12" ry="15" fill="#F7DC6F" />
+    <circle cx="80" cy="58" r="6" fill="#1a1a2e" />
+    <circle cx="120" cy="58" r="6" fill="#1a1a2e" />
     {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
       <path
         key={i}
@@ -63,32 +81,50 @@ const CutoutOctopus = () => (
 );
 
 const CutoutFish = () => (
-  <svg viewBox="0 0 120 60" className="w-full h-full">
+  <svg aria-hidden="true" viewBox="0 0 120 60" className="w-full h-full">
     <defs>
       <linearGradient id="fishGrad" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#5DADE2" />
         <stop offset="100%" stopColor="#2E86AB" />
       </linearGradient>
     </defs>
-    <ellipse cx="55" cy="30" rx="40" ry="20" fill="url(#fishGrad)" stroke="#1A5276" strokeWidth="2"/>
-    <path d="M10 30 L-10 10 L-10 50 Z" fill="#5DADE2" stroke="#1A5276" strokeWidth="1"/>
-    <circle cx="80" cy="25" r="8" fill="#F7F9F9"/>
-    <circle cx="82" cy="25" r="4" fill="#1a1a2e"/>
-    <path d="M55 10 Q65 -5 75 10" fill="#5DADE2" stroke="#1A5276" strokeWidth="1"/>
-    <path d="M40 25 Q45 20 50 25 Q55 20 60 25" fill="none" stroke="#1A5276" strokeWidth="1" opacity="0.5"/>
+    <ellipse
+      cx="55"
+      cy="30"
+      rx="40"
+      ry="20"
+      fill="url(#fishGrad)"
+      stroke="#1A5276"
+      strokeWidth="2"
+    />
+    <path d="M10 30 L-10 10 L-10 50 Z" fill="#5DADE2" stroke="#1A5276" strokeWidth="1" />
+    <circle cx="80" cy="25" r="8" fill="#F7F9F9" />
+    <circle cx="82" cy="25" r="4" fill="#1a1a2e" />
+    <path d="M55 10 Q65 -5 75 10" fill="#5DADE2" stroke="#1A5276" strokeWidth="1" />
+    <path
+      d="M40 25 Q45 20 50 25 Q55 20 60 25"
+      fill="none"
+      stroke="#1A5276"
+      strokeWidth="1"
+      opacity="0.5"
+    />
   </svg>
 );
 
 const CutoutJellyfish = () => (
-  <svg viewBox="0 0 100 150" className="w-full h-full">
+  <svg aria-hidden="true" viewBox="0 0 100 150" className="w-full h-full">
     <defs>
       <radialGradient id="jellyGrad" cx="50%" cy="30%" r="70%">
-        <stop offset="0%" stopColor="#E8DAEF" stopOpacity="0.9"/>
-        <stop offset="100%" stopColor="#BB8FCE" stopOpacity="0.7"/>
+        <stop offset="0%" stopColor="#E8DAEF" stopOpacity="0.9" />
+        <stop offset="100%" stopColor="#BB8FCE" stopOpacity="0.7" />
       </radialGradient>
     </defs>
-    <path d="M10 50 Q10 10 50 10 Q90 10 90 50 Q70 60 50 55 Q30 60 10 50 Z" 
-          fill="url(#jellyGrad)" stroke="#7D3C98" strokeWidth="2"/>
+    <path
+      d="M10 50 Q10 10 50 10 Q90 10 90 50 Q70 60 50 55 Q30 60 10 50 Z"
+      fill="url(#jellyGrad)"
+      stroke="#7D3C98"
+      strokeWidth="2"
+    />
     {[20, 35, 50, 65, 80].map((x, i) => (
       <path
         key={i}
@@ -103,33 +139,33 @@ const CutoutJellyfish = () => (
   </svg>
 );
 
-const CutoutSkull = () => (
-  <svg viewBox="0 0 80 100" className="w-full h-full">
-    <ellipse cx="40" cy="35" rx="35" ry="30" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="2"/>
-    <path d="M15 50 Q40 80 65 50" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="2"/>
-    <ellipse cx="25" cy="35" rx="10" ry="12" fill="#1a1a2e"/>
-    <ellipse cx="55" cy="35" rx="10" ry="12" fill="#1a1a2e"/>
-    <path d="M35 45 L40 55 L45 45 Z" fill="#1a1a2e"/>
-    <rect x="25" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1"/>
-    <rect x="33" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1"/>
-    <rect x="41" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1"/>
-    <rect x="49" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1"/>
+const _CutoutSkull = () => (
+  <svg aria-hidden="true" viewBox="0 0 80 100" className="w-full h-full">
+    <ellipse cx="40" cy="35" rx="35" ry="30" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="2" />
+    <path d="M15 50 Q40 80 65 50" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="2" />
+    <ellipse cx="25" cy="35" rx="10" ry="12" fill="#1a1a2e" />
+    <ellipse cx="55" cy="35" rx="10" ry="12" fill="#1a1a2e" />
+    <path d="M35 45 L40 55 L45 45 Z" fill="#1a1a2e" />
+    <rect x="25" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1" />
+    <rect x="33" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1" />
+    <rect x="41" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1" />
+    <rect x="49" y="58" width="6" height="10" fill="#F5F5DC" stroke="#8B8B7A" strokeWidth="1" />
   </svg>
 );
 
 const CutoutAnchor = () => (
-  <svg viewBox="0 0 80 120" className="w-full h-full">
+  <svg aria-hidden="true" viewBox="0 0 80 120" className="w-full h-full">
     <defs>
       <linearGradient id="anchorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#566573" />
         <stop offset="100%" stopColor="#2C3E50" />
       </linearGradient>
     </defs>
-    <circle cx="40" cy="15" r="10" fill="none" stroke="url(#anchorGrad)" strokeWidth="6"/>
-    <rect x="37" y="20" width="6" height="70" fill="url(#anchorGrad)"/>
-    <rect x="15" y="30" width="50" height="6" fill="url(#anchorGrad)" rx="3"/>
-    <path d="M20 90 Q10 110 40 95" fill="url(#anchorGrad)"/>
-    <path d="M60 90 Q70 110 40 95" fill="url(#anchorGrad)"/>
+    <circle cx="40" cy="15" r="10" fill="none" stroke="url(#anchorGrad)" strokeWidth="6" />
+    <rect x="37" y="20" width="6" height="70" fill="url(#anchorGrad)" />
+    <rect x="15" y="30" width="50" height="6" fill="url(#anchorGrad)" rx="3" />
+    <path d="M20 90 Q10 110 40 95" fill="url(#anchorGrad)" />
+    <path d="M60 90 Q70 110 40 95" fill="url(#anchorGrad)" />
   </svg>
 );
 
@@ -143,14 +179,14 @@ interface FloatingElementProps {
   clickable?: boolean;
 }
 
-const FloatingElement = ({ 
-  children, 
-  className, 
-  delay = 0, 
+const FloatingElement = ({
+  children,
+  className,
+  delay = 0,
   duration = 4,
   wobble = true,
   onClick,
-  clickable = false
+  clickable = false,
 }: FloatingElementProps) => {
   return (
     <motion.div
@@ -160,20 +196,22 @@ const FloatingElement = ({
         className
       )}
       initial={{ opacity: 0, y: 50, rotate: -10 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0, 
+      animate={{
+        opacity: 1,
+        y: 0,
         rotate: wobble ? [0, 3, -3, 0] : 0,
       }}
       transition={{
         opacity: { duration: 0.8, delay },
         y: { duration: 0.8, delay },
-        rotate: wobble ? {
-          duration,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay,
-        } : undefined,
+        rotate: wobble
+          ? {
+              duration,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay,
+            }
+          : undefined,
       }}
       whileHover={clickable ? { scale: 1.15, rotate: 5 } : undefined}
       onClick={onClick}
@@ -225,14 +263,19 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a1628] via-[#0d2137] to-[#051018]">
-      <div 
+      <div
         className="absolute inset-0 opacity-60"
         style={{
-          background: "radial-gradient(ellipse at 50% 0%, rgba(30, 80, 120, 0.4) 0%, transparent 60%)",
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(30, 80, 120, 0.4) 0%, transparent 60%)",
         }}
       />
 
-      <svg className="absolute bottom-0 left-0 w-full h-32 opacity-20" preserveAspectRatio="none">
+      <svg
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 w-full h-32 opacity-20"
+        preserveAspectRatio="none"
+      >
         <motion.path
           d="M0 50 Q250 0 500 50 T1000 50 T1500 50 T2000 50"
           fill="none"
@@ -253,7 +296,7 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
 
       <Bubbles />
 
-      <motion.div 
+      <motion.div
         className="absolute top-[8%] left-1/2 -translate-x-1/2 text-center z-20"
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -269,7 +312,7 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
                 textShadow: "3px 3px 0 #2C1810, -1px -1px 0 #F5DEB3",
                 WebkitTextStroke: "1px #2C1810",
               }}
-              animate={{ 
+              animate={{
                 rotate: [0, i % 2 ? 2 : -2, 0],
                 y: [0, i % 2 ? -5 : 5, 0],
               }}
@@ -284,7 +327,7 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
             </motion.span>
           ))}
         </h1>
-        <motion.h2 
+        <motion.h2
           className="text-3xl md:text-5xl font-bold mt-2 tracking-widest"
           style={{
             backgroundImage: "linear-gradient(180deg, #87CEEB 0%, #4ECDC4 50%, #2E8B8B 100%)",
@@ -292,7 +335,7 @@ export function NauticalLanding({ onStartGame }: { onStartGame: () => void }) {
             WebkitTextFillColor: "transparent",
             textShadow: "2px 2px 0 #0a1628",
           }}
-          animate={{ 
+          animate={{
             scale: [1, 1.02, 1],
           }}
           transition={{

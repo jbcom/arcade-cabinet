@@ -17,7 +17,12 @@ export function ConstellationPattern({
 }: ConstellationPatternProps) {
   return (
     <div className={cn("absolute inset-0 pointer-events-none", className)}>
-      <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <svg
+        aria-hidden="true"
+        className="w-full h-full"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
         {pattern.connections.map((conn, index) => {
           const fromPoint = pattern.points.find((p) => p.id === conn.from);
           const toPoint = pattern.points.find((p) => p.id === conn.to);
@@ -25,7 +30,8 @@ export function ConstellationPattern({
 
           const connectionKey = `${conn.from}-${conn.to}`;
           const reverseKey = `${conn.to}-${conn.from}`;
-          const isCompleted = completedConnections.has(connectionKey) || completedConnections.has(reverseKey);
+          const isCompleted =
+            completedConnections.has(connectionKey) || completedConnections.has(reverseKey);
 
           return (
             <motion.line
@@ -38,8 +44,8 @@ export function ConstellationPattern({
               strokeWidth={isCompleted ? 0.4 : 0.2}
               strokeDasharray={isCompleted ? "none" : "1 1"}
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ 
-                pathLength: 1, 
+              animate={{
+                pathLength: 1,
                 opacity: 1,
                 stroke: isCompleted ? "rgba(251, 191, 36, 0.8)" : "rgba(255, 255, 255, 0.15)",
               }}
@@ -61,17 +67,17 @@ export function ConstellationPattern({
                 stroke={isCompleted ? "rgba(251, 191, 36, 0.4)" : "rgba(255, 255, 255, 0.1)"}
                 strokeWidth={0.2}
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ 
+                animate={{
                   scale: [1, 1.2, 1],
                   opacity: isCompleted ? 1 : 0.5,
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
                   delay: index * 0.15,
                 }}
               />
-              
+
               <motion.circle
                 cx={point.x}
                 cy={point.y}
@@ -82,24 +88,21 @@ export function ConstellationPattern({
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               />
 
-              {isCompleted && (
-                <>
-                  {[0, 45, 90, 135].map((angle) => (
-                    <motion.line
-                      key={`burst-${point.id}-${angle}`}
-                      x1={point.x}
-                      y1={point.y}
-                      x2={point.x + Math.cos((angle * Math.PI) / 180) * 2}
-                      y2={point.y + Math.sin((angle * Math.PI) / 180) * 2}
-                      stroke="rgba(251, 191, 36, 0.6)"
-                      strokeWidth={0.15}
-                      initial={{ opacity: 0, pathLength: 0 }}
-                      animate={{ opacity: [0.6, 0.2, 0.6], pathLength: 1 }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  ))}
-                </>
-              )}
+              {isCompleted &&
+                [0, 45, 90, 135].map((angle) => (
+                  <motion.line
+                    key={`burst-${point.id}-${angle}`}
+                    x1={point.x}
+                    y1={point.y}
+                    x2={point.x + Math.cos((angle * Math.PI) / 180) * 2}
+                    y2={point.y + Math.sin((angle * Math.PI) / 180) * 2}
+                    stroke="rgba(251, 191, 36, 0.6)"
+                    strokeWidth={0.15}
+                    initial={{ opacity: 0, pathLength: 0 }}
+                    animate={{ opacity: [0.6, 0.2, 0.6], pathLength: 1 }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                ))}
             </g>
           );
         })}

@@ -23,7 +23,8 @@ export function VoidZone({ zone }: VoidZoneProps) {
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          background: "radial-gradient(circle, transparent 40%, rgba(139, 69, 102, 0.2) 60%, transparent 80%)",
+          background:
+            "radial-gradient(circle, transparent 40%, rgba(139, 69, 102, 0.2) 60%, transparent 80%)",
         }}
         animate={{
           scale: [1, 1.1, 1],
@@ -39,7 +40,8 @@ export function VoidZone({ zone }: VoidZoneProps) {
       <motion.div
         className="absolute inset-[15%] rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(0, 0, 0, 0.8) 0%, rgba(30, 10, 40, 0.6) 50%, transparent 100%)",
+          background:
+            "radial-gradient(circle, rgba(0, 0, 0, 0.8) 0%, rgba(30, 10, 40, 0.6) 50%, transparent 100%)",
           boxShadow: "inset 0 0 20px rgba(139, 69, 102, 0.3)",
         }}
         animate={{

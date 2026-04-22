@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface PinballOrb {
   id: string;
@@ -18,7 +18,7 @@ interface UsePinballPhysicsProps {
   bounds: { width: number; height: number };
 }
 
-export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinballPhysicsProps) {
+export function usePinballPhysics({ stars, onStarHit, bounds }: UsePinballPhysicsProps) {
   const [orbs, setOrbs] = useState<Map<string, PinballOrb>>(new Map());
   const [leftFlipper, setLeftFlipper] = useState(false);
   const [rightFlipper, setRightFlipper] = useState(false);
@@ -32,29 +32,32 @@ export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinb
   const FLIPPER_FORCE = 12;
   const MAX_TRAIL_LENGTH = 15;
 
-  const launchOrb = useCallback((fromX: number, fromY: number, angle: number, power: number = 8) => {
-    const id = `orb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const radians = (angle * Math.PI) / 180;
-    
-    const newOrb: PinballOrb = {
-      id,
-      x: fromX,
-      y: fromY,
-      vx: Math.cos(radians) * power,
-      vy: Math.sin(radians) * power,
-      radius: 1.2,
-      active: true,
-      trail: [],
-    };
+  const launchOrb = useCallback(
+    (fromX: number, fromY: number, angle: number, power: number = 8) => {
+      const id = `orb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const radians = (angle * Math.PI) / 180;
 
-    setOrbs((prev) => {
-      const next = new Map(prev);
-      next.set(id, newOrb);
-      return next;
-    });
+      const newOrb: PinballOrb = {
+        id,
+        x: fromX,
+        y: fromY,
+        vx: Math.cos(radians) * power,
+        vy: Math.sin(radians) * power,
+        radius: 1.2,
+        active: true,
+        trail: [],
+      };
 
-    return id;
-  }, []);
+      setOrbs((prev) => {
+        const next = new Map(prev);
+        next.set(id, newOrb);
+        return next;
+      });
+
+      return id;
+    },
+    []
+  );
 
   const activateLeftFlipper = useCallback(() => setLeftFlipper(true), []);
   const deactivateLeftFlipper = useCallback(() => setLeftFlipper(false), []);
@@ -66,12 +69,12 @@ export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinb
 
     const simulate = (time: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = time;
-      const delta = Math.min((time - lastTimeRef.current) / 16.67, 2); 
+      const delta = Math.min((time - lastTimeRef.current) / 16.67, 2);
       lastTimeRef.current = time;
 
       setOrbs((prevOrbs) => {
         const next = new Map(prevOrbs);
-        
+
         next.forEach((orb, id) => {
           if (!orb.active) return;
 
@@ -85,7 +88,9 @@ export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinb
           if (orb.trail.length > MAX_TRAIL_LENGTH) {
             orb.trail.shift();
           }
-          orb.trail.forEach((t) => t.age++);
+          orb.trail.forEach((t) => {
+            t.age++;
+          });
 
           if (orb.x < 3) {
             orb.x = 3;
@@ -106,14 +111,22 @@ export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinb
           const flipperWidth = 15;
 
           if (orb.y > flipperY && orb.y < 95) {
-            if (leftFlipper && orb.x > leftFlipperX - flipperWidth/2 && orb.x < leftFlipperX + flipperWidth/2) {
-              const hitPos = (orb.x - leftFlipperX) / (flipperWidth/2);
+            if (
+              leftFlipper &&
+              orb.x > leftFlipperX - flipperWidth / 2 &&
+              orb.x < leftFlipperX + flipperWidth / 2
+            ) {
+              const hitPos = (orb.x - leftFlipperX) / (flipperWidth / 2);
               orb.vy = -FLIPPER_FORCE;
               orb.vx = hitPos * 5 + 3;
               orb.y = flipperY - 1;
             }
-            if (rightFlipper && orb.x > rightFlipperX - flipperWidth/2 && orb.x < rightFlipperX + flipperWidth/2) {
-              const hitPos = (orb.x - rightFlipperX) / (flipperWidth/2);
+            if (
+              rightFlipper &&
+              orb.x > rightFlipperX - flipperWidth / 2 &&
+              orb.x < rightFlipperX + flipperWidth / 2
+            ) {
+              const hitPos = (orb.x - rightFlipperX) / (flipperWidth / 2);
               orb.vy = -FLIPPER_FORCE;
               orb.vx = hitPos * 5 - 3;
               orb.y = flipperY - 1;
@@ -166,7 +179,7 @@ export function usePinballPhysics({ stars, onStarHit, onDrain, bounds }: UsePinb
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [orbs.size, stars, leftFlipper, rightFlipper, onStarHit, onDrain]);
+  }, [orbs.size, stars, leftFlipper, rightFlipper, onStarHit]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -9,19 +9,17 @@ interface SpiritProps {
 const NOTES = ["♪", "♫", "♬", "♩"];
 
 export function Spirit({ position, isDrawing }: SpiritProps) {
-  const [trail, setTrail] = useState<{ x: number; y: number; id: number; note: string }[]>(
-    []
-  );
+  const [trail, setTrail] = useState<{ x: number; y: number; id: number; note: string }[]>([]);
 
   useEffect(() => {
     setTrail((prev) => {
       const newTrail = [
-        ...prev, 
-        { 
-          ...position, 
-          id: Date.now(), 
-          note: NOTES[Math.floor(Math.random() * NOTES.length)]
-        }
+        ...prev,
+        {
+          ...position,
+          id: Date.now(),
+          note: NOTES[Math.floor(Math.random() * NOTES.length)],
+        },
       ];
       return newTrail.slice(-15);
     });
@@ -29,24 +27,25 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
 
   return (
     <>
-      {isDrawing && trail.map((pos, i) => (
-        <motion.div
-          key={pos.id}
-          className="fixed pointer-events-none text-amber-300/60"
-          initial={{ opacity: 0.8, scale: 1 }}
-          animate={{ opacity: 0, scale: 0.5, y: -20 }}
-          transition={{ duration: 0.8 }}
-          style={{
-            left: pos.x,
-            top: pos.y,
-            fontSize: 12 + (i / trail.length) * 12,
-            transform: "translate(-50%, -50%)",
-            textShadow: "0 0 10px rgba(251, 191, 36, 0.5)",
-          }}
-        >
-          {pos.note}
-        </motion.div>
-      ))}
+      {isDrawing &&
+        trail.map((pos, i) => (
+          <motion.div
+            key={pos.id}
+            className="fixed pointer-events-none text-amber-300/60"
+            initial={{ opacity: 0.8, scale: 1 }}
+            animate={{ opacity: 0, scale: 0.5, y: -20 }}
+            transition={{ duration: 0.8 }}
+            style={{
+              left: pos.x,
+              top: pos.y,
+              fontSize: 12 + (i / trail.length) * 12,
+              transform: "translate(-50%, -50%)",
+              textShadow: "0 0 10px rgba(251, 191, 36, 0.5)",
+            }}
+          >
+            {pos.note}
+          </motion.div>
+        ))}
 
       {trail.slice(-8).map((pos, i) => (
         <motion.div
@@ -60,7 +59,7 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
             top: pos.y,
             width: 8 + (i / 8) * 12,
             height: 8 + (i / 8) * 12,
-            background: isDrawing 
+            background: isDrawing
               ? `radial-gradient(circle, rgba(251, 191, 36, ${0.2 + (i / 8) * 0.3}) 0%, transparent 70%)`
               : `radial-gradient(circle, rgba(180, 230, 255, ${0.2 + (i / 8) * 0.3}) 0%, transparent 70%)`,
             transform: "translate(-50%, -50%)",
@@ -100,33 +99,30 @@ export function Spirit({ position, isDrawing }: SpiritProps) {
           }}
         />
 
-        {isDrawing && (
-          <>
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full border-2"
-                style={{
-                  borderColor: "rgba(251, 191, 36, 0.4)",
-                  left: "50%",
-                  top: "50%",
-                }}
-                initial={{ width: 20, height: 20, x: "-50%", y: "-50%", opacity: 0.6 }}
-                animate={{ 
-                  width: 60, 
-                  height: 60, 
-                  opacity: 0,
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  delay: i * 0.33,
-                  ease: "easeOut",
-                }}
-              />
-            ))}
-          </>
-        )}
+        {isDrawing &&
+          [0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full border-2"
+              style={{
+                borderColor: "rgba(251, 191, 36, 0.4)",
+                left: "50%",
+                top: "50%",
+              }}
+              initial={{ width: 20, height: 20, x: "-50%", y: "-50%", opacity: 0.6 }}
+              animate={{
+                width: 60,
+                height: 60,
+                opacity: 0,
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                delay: i * 0.33,
+                ease: "easeOut",
+              }}
+            />
+          ))}
 
         <div
           className="absolute w-10 h-10 -m-5 rounded-full"

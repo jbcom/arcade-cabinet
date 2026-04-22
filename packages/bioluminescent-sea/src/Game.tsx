@@ -1,11 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useResponsive } from "@arcade-cabinet/shared";
-import { NauticalLanding } from "./ui/game/NauticalLanding";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameLoop } from "./hooks/useGameLoop";
 import { useTouchInput } from "./hooks/useTouchInput";
-import { noise2D, fbm } from "./lib/perlin";
-import { cn } from "./lib/utils";
+import { fbm, noise2D } from "./lib/perlin";
+import { NauticalLanding } from "./ui/game/NauticalLanding";
 
 type CreatureType = "jellyfish" | "plankton" | "fish";
 
@@ -75,7 +74,7 @@ const CREATURE_POINTS: Record<CreatureType, number> = {
 };
 
 function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
-  const viewport = useResponsive();
+  const _viewport = useResponsive();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
@@ -85,7 +84,12 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
   const [isGameOver, setIsGameOver] = useState(false);
 
   const playerRef = useRef<Player>({
-    x: 400, y: 300, targetX: 400, targetY: 300, angle: 0, glowIntensity: 1,
+    x: 400,
+    y: 300,
+    targetX: 400,
+    targetY: 300,
+    angle: 0,
+    glowIntensity: 1,
   });
   const creaturesRef = useRef<Creature[]>([]);
   const predatorsRef = useRef<Predator[]>([]);
@@ -108,9 +112,12 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
   useEffect(() => {
     const { width, height } = dimensions;
     playerRef.current = {
-      x: width / 2, y: height / 2,
-      targetX: width / 2, targetY: height / 2,
-      angle: 0, glowIntensity: 1,
+      x: width / 2,
+      y: height / 2,
+      targetX: width / 2,
+      targetY: height / 2,
+      angle: 0,
+      glowIntensity: 1,
     };
 
     creaturesRef.current = Array.from({ length: 15 }, (_, i) => {
@@ -160,136 +167,151 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
     }));
   }, [dimensions]);
 
-  const gameLoop = useCallback((deltaTime: number, totalTime: number) => {
-    if (isGameOver) return;
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+  const gameLoop = useCallback(
+    (deltaTime: number, totalTime: number) => {
+      if (isGameOver) return;
 
-    const { width, height } = dimensions;
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
 
-    const newTimeLeft = Math.max(0, GAME_DURATION - Math.floor(totalTime));
-    if (newTimeLeft !== timeLeft) {
-      setTimeLeft(newTimeLeft);
-      if (newTimeLeft === 0) {
-        setIsGameOver(true);
-        onGameOver(scoreRef.current);
-        return;
-      }
-    }
+      const { width, height } = dimensions;
 
-    const player = playerRef.current;
-    if (input.isActive) {
-      player.targetX = input.x;
-      player.targetY = input.y;
-    }
-
-    const dx = player.targetX - player.x;
-    const dy = player.targetY - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance > 1) {
-      const speed = Math.min(distance * 0.08, 8);
-      player.x += (dx / distance) * speed;
-      player.y += (dy / distance) * speed;
-      player.angle = Math.atan2(dy, dx);
-    }
-
-    player.glowIntensity = 0.7 + Math.sin(totalTime * 3) * 0.3;
-
-    creaturesRef.current.forEach((creature) => {
-      const noiseX = noise2D(creature.noiseOffsetX + totalTime * creature.speed, creature.noiseOffsetY);
-      const noiseY = noise2D(creature.noiseOffsetX, creature.noiseOffsetY + totalTime * creature.speed);
-      creature.x += noiseX * 2;
-      creature.y += noiseY * 2;
-      if (creature.x < -creature.size) creature.x = width + creature.size;
-      if (creature.x > width + creature.size) creature.x = -creature.size;
-      if (creature.y < -creature.size) creature.y = height + creature.size;
-      if (creature.y > height + creature.size) creature.y = -creature.size;
-      creature.pulsePhase += deltaTime * 2;
-      creature.glowIntensity = 0.5 + Math.sin(creature.pulsePhase) * 0.3;
-    });
-
-    predatorsRef.current.forEach((predator) => {
-      const pdx = player.x - predator.x;
-      const pdy = player.y - predator.y;
-      const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
-      const noiseAngle = fbm(predator.noiseOffset + totalTime * 0.3, totalTime * 0.2);
-
-      if (pDist > 150) {
-        predator.x += (pdx / pDist) * predator.speed + Math.cos(noiseAngle * Math.PI * 2) * 0.5;
-        predator.y += (pdy / pDist) * predator.speed + Math.sin(noiseAngle * Math.PI * 2) * 0.5;
-      } else {
-        predator.x += (pdx / pDist) * predator.speed * 1.5;
-        predator.y += (pdy / pDist) * predator.speed * 1.5;
-      }
-      predator.x = Math.max(0, Math.min(width, predator.x));
-      predator.y = Math.max(0, Math.min(height, predator.y));
-    });
-
-    piratesRef.current.forEach((pirate) => {
-      const pdx = player.x - pirate.x;
-      const pdy = player.y - pirate.y;
-      const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
-      pirate.lanternPhase += deltaTime * 5;
-      const noiseY = noise2D(pirate.noiseOffset, totalTime * 0.5) * 2;
-
-      if (pDist < 300) {
-        const targetAngle = Math.atan2(pdy, pdx);
-        pirate.angle += (targetAngle - pirate.angle) * 0.05;
-        pirate.x += Math.cos(pirate.angle) * pirate.speed * 1.2;
-        pirate.y += Math.sin(pirate.angle) * pirate.speed * 1.2 + noiseY * 0.5;
-      } else {
-        pirate.x += Math.cos(pirate.angle) * pirate.speed * 0.5;
-        pirate.y += noiseY;
+      const newTimeLeft = Math.max(0, GAME_DURATION - Math.floor(totalTime));
+      if (newTimeLeft !== timeLeft) {
+        setTimeLeft(newTimeLeft);
+        if (newTimeLeft === 0) {
+          setIsGameOver(true);
+          onGameOver(scoreRef.current);
+          return;
+        }
       }
 
-      if (pirate.x < -100) { pirate.x = -100; pirate.angle = 0; }
-      if (pirate.x > width + 100) { pirate.x = width + 100; pirate.angle = Math.PI; }
-      pirate.y = Math.max(50, Math.min(height - 50, pirate.y));
-    });
-
-    particlesRef.current.forEach((particle) => {
-      particle.y -= particle.speed;
-      particle.x += Math.sin(particle.drift + totalTime) * 0.3;
-      particle.opacity = 0.1 + Math.sin(totalTime * 2 + particle.drift) * 0.1;
-      if (particle.y < 0) {
-        particle.y = height;
-        particle.x = Math.random() * width;
+      const player = playerRef.current;
+      if (input.isActive) {
+        player.targetX = input.x;
+        player.targetY = input.y;
       }
-    });
 
-    creaturesRef.current = creaturesRef.current.filter((creature) => {
-      const cdx = creature.x - player.x;
-      const cdy = creature.y - player.y;
-      const collisionDist = Math.sqrt(cdx * cdx + cdy * cdy);
+      const dx = player.targetX - player.x;
+      const dy = player.targetY - player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (collisionDist < creature.size + 30) {
-        const timeSinceLast = totalTime - lastCollectTimeRef.current;
-        const newMultiplier = timeSinceLast < 2 ? Math.min(multiplier + 1, 5) : 1;
-        setMultiplier(newMultiplier);
-        lastCollectTimeRef.current = totalTime;
-        const points = CREATURE_POINTS[creature.type] * newMultiplier;
-        scoreRef.current += points;
-        setScore(scoreRef.current);
-        return false;
+      if (distance > 1) {
+        const speed = Math.min(distance * 0.08, 8);
+        player.x += (dx / distance) * speed;
+        player.y += (dy / distance) * speed;
+        player.angle = Math.atan2(dy, dx);
       }
-      return true;
-    });
 
-    for (const predator of predatorsRef.current) {
-      const pdx = predator.x - player.x;
-      const pdy = predator.y - player.y;
-      if (Math.sqrt(pdx * pdx + pdy * pdy) < predator.size * 0.4 + 25) {
-        setIsGameOver(true);
-        onGameOver(scoreRef.current);
-        return;
+      player.glowIntensity = 0.7 + Math.sin(totalTime * 3) * 0.3;
+
+      creaturesRef.current.forEach((creature) => {
+        const noiseX = noise2D(
+          creature.noiseOffsetX + totalTime * creature.speed,
+          creature.noiseOffsetY
+        );
+        const noiseY = noise2D(
+          creature.noiseOffsetX,
+          creature.noiseOffsetY + totalTime * creature.speed
+        );
+        creature.x += noiseX * 2;
+        creature.y += noiseY * 2;
+        if (creature.x < -creature.size) creature.x = width + creature.size;
+        if (creature.x > width + creature.size) creature.x = -creature.size;
+        if (creature.y < -creature.size) creature.y = height + creature.size;
+        if (creature.y > height + creature.size) creature.y = -creature.size;
+        creature.pulsePhase += deltaTime * 2;
+        creature.glowIntensity = 0.5 + Math.sin(creature.pulsePhase) * 0.3;
+      });
+
+      predatorsRef.current.forEach((predator) => {
+        const pdx = player.x - predator.x;
+        const pdy = player.y - predator.y;
+        const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+        const noiseAngle = fbm(predator.noiseOffset + totalTime * 0.3, totalTime * 0.2);
+
+        if (pDist > 150) {
+          predator.x += (pdx / pDist) * predator.speed + Math.cos(noiseAngle * Math.PI * 2) * 0.5;
+          predator.y += (pdy / pDist) * predator.speed + Math.sin(noiseAngle * Math.PI * 2) * 0.5;
+        } else {
+          predator.x += (pdx / pDist) * predator.speed * 1.5;
+          predator.y += (pdy / pDist) * predator.speed * 1.5;
+        }
+        predator.x = Math.max(0, Math.min(width, predator.x));
+        predator.y = Math.max(0, Math.min(height, predator.y));
+      });
+
+      piratesRef.current.forEach((pirate) => {
+        const pdx = player.x - pirate.x;
+        const pdy = player.y - pirate.y;
+        const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+        pirate.lanternPhase += deltaTime * 5;
+        const noiseY = noise2D(pirate.noiseOffset, totalTime * 0.5) * 2;
+
+        if (pDist < 300) {
+          const targetAngle = Math.atan2(pdy, pdx);
+          pirate.angle += (targetAngle - pirate.angle) * 0.05;
+          pirate.x += Math.cos(pirate.angle) * pirate.speed * 1.2;
+          pirate.y += Math.sin(pirate.angle) * pirate.speed * 1.2 + noiseY * 0.5;
+        } else {
+          pirate.x += Math.cos(pirate.angle) * pirate.speed * 0.5;
+          pirate.y += noiseY;
+        }
+
+        if (pirate.x < -100) {
+          pirate.x = -100;
+          pirate.angle = 0;
+        }
+        if (pirate.x > width + 100) {
+          pirate.x = width + 100;
+          pirate.angle = Math.PI;
+        }
+        pirate.y = Math.max(50, Math.min(height - 50, pirate.y));
+      });
+
+      particlesRef.current.forEach((particle) => {
+        particle.y -= particle.speed;
+        particle.x += Math.sin(particle.drift + totalTime) * 0.3;
+        particle.opacity = 0.1 + Math.sin(totalTime * 2 + particle.drift) * 0.1;
+        if (particle.y < 0) {
+          particle.y = height;
+          particle.x = Math.random() * width;
+        }
+      });
+
+      creaturesRef.current = creaturesRef.current.filter((creature) => {
+        const cdx = creature.x - player.x;
+        const cdy = creature.y - player.y;
+        const collisionDist = Math.sqrt(cdx * cdx + cdy * cdy);
+
+        if (collisionDist < creature.size + 30) {
+          const timeSinceLast = totalTime - lastCollectTimeRef.current;
+          const newMultiplier = timeSinceLast < 2 ? Math.min(multiplier + 1, 5) : 1;
+          setMultiplier(newMultiplier);
+          lastCollectTimeRef.current = totalTime;
+          const points = CREATURE_POINTS[creature.type] * newMultiplier;
+          scoreRef.current += points;
+          setScore(scoreRef.current);
+          return false;
+        }
+        return true;
+      });
+
+      for (const predator of predatorsRef.current) {
+        const pdx = predator.x - player.x;
+        const pdy = predator.y - player.y;
+        if (Math.sqrt(pdx * pdx + pdy * pdy) < predator.size * 0.4 + 25) {
+          setIsGameOver(true);
+          onGameOver(scoreRef.current);
+          return;
+        }
       }
-    }
 
-    render(ctx, width, height, totalTime);
-  }, [dimensions, input, timeLeft, multiplier, isGameOver, onGameOver]);
+      render(ctx, width, height, totalTime);
+    },
+    [dimensions, input, timeLeft, multiplier, isGameOver, onGameOver, render]
+  );
 
   const render = (ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
     ctx.clearRect(0, 0, width, height);
@@ -306,13 +328,19 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
       ctx.fill();
     });
 
-    creaturesRef.current.forEach((c) => drawCreature(ctx, c, time));
-    predatorsRef.current.forEach((p) => drawPredator(ctx, p, time));
-    piratesRef.current.forEach((p) => drawPirate(ctx, p, time));
+    creaturesRef.current.forEach((c) => {
+      drawCreature(ctx, c, time);
+    });
+    predatorsRef.current.forEach((p) => {
+      drawPredator(ctx, p, time);
+    });
+    piratesRef.current.forEach((p) => {
+      drawPirate(ctx, p, time);
+    });
     drawPlayer(ctx, playerRef.current, time);
   };
 
-  const drawCreature = (ctx: CanvasRenderingContext2D, c: Creature, time: number) => {
+  const drawCreature = (ctx: CanvasRenderingContext2D, c: Creature, _time: number) => {
     ctx.save();
     ctx.translate(c.x, c.y);
     const glowSize = c.size * 1.5 * c.glowIntensity;
@@ -366,10 +394,17 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden touch-none">
-      <canvas ref={canvasRef} width={dimensions.width} height={dimensions.height} className="w-full h-full" />
+      <canvas
+        ref={canvasRef}
+        width={dimensions.width}
+        height={dimensions.height}
+        className="w-full h-full"
+      />
       <div className="absolute top-4 left-4 flex gap-4 pointer-events-none">
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10">
-          <div className="text-cyan-400 text-xs uppercase font-bold tracking-widest mb-1">Score</div>
+          <div className="text-cyan-400 text-xs uppercase font-bold tracking-widest mb-1">
+            Score
+          </div>
           <div className="text-white text-2xl font-bold">{score}</div>
         </div>
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10">
@@ -395,13 +430,27 @@ export default function Game() {
         )}
         {gameState === "playing" && (
           <motion.div key="playing" className="absolute inset-0" initial={{ opacity: 0 }}>
-            <DeepSeaGame onGameOver={(s) => { setFinalScore(s); setGameState("gameover"); }} />
+            <DeepSeaGame
+              onGameOver={(s) => {
+                setFinalScore(s);
+                setGameState("gameover");
+              }}
+            />
           </motion.div>
         )}
         {gameState === "gameover" && (
-          <motion.div key="gameover" className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
+          <motion.div
+            key="gameover"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80"
+          >
             <h2 className="text-6xl font-bold text-white mb-8">Score: {finalScore}</h2>
-            <button onClick={() => setGameState("landing")} className="px-8 py-4 bg-cyan-500 text-white font-bold rounded-full">Restart</button>
+            <button
+              type="button"
+              onClick={() => setGameState("landing")}
+              className="px-8 py-4 bg-cyan-500 text-white font-bold rounded-full"
+            >
+              Restart
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,9 +1,9 @@
 import { InstancedRigidBodies } from "@react-three/rapier";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { CONFIG } from "../engine/types";
-import type { ChunkData, BlockData } from "../engine/TerrainWorker";
+import type { BlockData, ChunkData } from "../engine/TerrainWorker";
 import TerrainWorker from "../engine/TerrainWorker?worker";
+import { CONFIG } from "../engine/types";
 
 const COLORS: Record<string, string> = {
   grass: "#4caf50",
@@ -16,13 +16,33 @@ const COLORS: Record<string, string> = {
   leaves: "#2e7d32",
 };
 
-const isVitest = typeof window !== 'undefined' && (window as any).__vitest_browser__;
+const isVitest =
+  typeof window !== "undefined" &&
+  (window as unknown as { __vitest_browser__?: boolean }).__vitest_browser__;
 
-function InstancedBlocks({ type, blocks, cx, cz }: { type: string, blocks: BlockData[], cx: number, cz: number }) {
+function InstancedBlocks({
+  type,
+  blocks,
+  cx,
+  cz,
+}: {
+  type: string;
+  blocks: BlockData[];
+  cx: number;
+  cz: number;
+}) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  
-  const positions = useMemo(() => 
-    blocks.map(b => [cx * CONFIG.CHUNK_SIZE + b.x + 0.5, b.y + 0.5, cz * CONFIG.CHUNK_SIZE + b.z + 0.5] as [number, number, number]),
+
+  const positions = useMemo(
+    () =>
+      blocks.map(
+        (b) =>
+          [cx * CONFIG.CHUNK_SIZE + b.x + 0.5, b.y + 0.5, cz * CONFIG.CHUNK_SIZE + b.z + 0.5] as [
+            number,
+            number,
+            number,
+          ]
+      ),
     [blocks, cx, cz]
   );
 
@@ -30,22 +50,22 @@ function InstancedBlocks({ type, blocks, cx, cz }: { type: string, blocks: Block
     if (isVitest && meshRef.current) {
       const dummy = new THREE.Object3D();
       blocks.forEach((block, i) => {
-        dummy.position.set(cx * CONFIG.CHUNK_SIZE + block.x + 0.5, block.y + 0.5, cz * CONFIG.CHUNK_SIZE + block.z + 0.5);
+        dummy.position.set(
+          cx * CONFIG.CHUNK_SIZE + block.x + 0.5,
+          block.y + 0.5,
+          cz * CONFIG.CHUNK_SIZE + block.z + 0.5
+        );
         dummy.updateMatrix();
-        meshRef.current!.setMatrixAt(i, dummy.matrix);
+        meshRef.current?.setMatrixAt(i, dummy.matrix);
       });
       meshRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [blocks, cx, cz, isVitest]);
+  }, [blocks, cx, cz]);
 
   return (
     <>
       {!isVitest && (
-        <InstancedRigidBodies
-          positions={positions}
-          colliders="cuboid"
-          type="fixed"
-        >
+        <InstancedRigidBodies positions={positions} colliders="cuboid" type="fixed">
           <instancedMesh args={[undefined, undefined, blocks.length]} castShadow receiveShadow>
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial color={COLORS[type] || "#ffffff"} />
@@ -53,7 +73,12 @@ function InstancedBlocks({ type, blocks, cx, cz }: { type: string, blocks: Block
         </InstancedRigidBodies>
       )}
       {isVitest && (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, blocks.length]} castShadow receiveShadow>
+        <instancedMesh
+          ref={meshRef}
+          args={[undefined, undefined, blocks.length]}
+          castShadow
+          receiveShadow
+        >
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={COLORS[type] || "#ffffff"} />
         </instancedMesh>
@@ -65,7 +90,7 @@ function InstancedBlocks({ type, blocks, cx, cz }: { type: string, blocks: Block
 function Chunk({ data }: { data: ChunkData }) {
   const blocksByType = useMemo(() => {
     const grouped = new Map<string, BlockData[]>();
-    data.blocks.forEach(block => {
+    data.blocks.forEach((block) => {
       const arr = grouped.get(block.type) || [];
       arr.push(block);
       grouped.set(block.type, arr);
@@ -90,12 +115,12 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
   useEffect(() => {
     console.log("Initializing Voxel TerrainWorker...");
     workerRef.current = new TerrainWorker();
-    
+
     workerRef.current.onmessage = (e) => {
       const data = e.data as ChunkData;
       const key = `${data.cx},${data.cz}`;
       console.log(`Received chunk data for ${key}:`, data.blocks.length, "blocks");
-      setChunks(prev => {
+      setChunks((prev) => {
         const next = new Map(prev);
         next.set(key, data);
         return next;
@@ -107,10 +132,10 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
 
   useEffect(() => {
     if (!workerRef.current) return;
-    
+
     const pCx = Math.floor(playerPos.x / CONFIG.CHUNK_SIZE);
     const pCz = Math.floor(playerPos.z / CONFIG.CHUNK_SIZE);
-    
+
     const R = CONFIG.RENDER_DISTANCE;
     const currentVisibleKeys = new Set<string>();
 
@@ -119,14 +144,14 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
         const key = `${cx},${cz}`;
         currentVisibleKeys.add(key);
         if (!requestedChunks.current.has(key)) {
-           console.log(`Requesting chunk ${key}...`);
-           requestedChunks.current.add(key);
-           workerRef.current.postMessage({ cx, cz, config: CONFIG });
+          console.log(`Requesting chunk ${key}...`);
+          requestedChunks.current.add(key);
+          workerRef.current.postMessage({ cx, cz, config: CONFIG });
         }
       }
     }
 
-    setChunks(prev => {
+    setChunks((prev) => {
       const next = new Map(prev);
       let changed = false;
       for (const key of next.keys()) {
@@ -138,7 +163,6 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
       }
       return changed ? next : prev;
     });
-
   }, [playerPos.x, playerPos.z]); // Only react to player position changes, not chunk state updates
 
   return (

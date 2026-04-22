@@ -1,6 +1,6 @@
 import { motion, useAnimationControls } from "framer-motion";
-import { cn } from "../../lib/utils";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "../../lib/utils";
 
 interface SacredTreeProps {
   id: number;
@@ -36,10 +36,10 @@ export function SacredTree({
       const damage = prevHealthRef.current - health;
       setDamageAmount(damage);
       setShowDamage(true);
-      
+
       controls.start({
         x: [0, -10, 10, -5, 5, 0],
-        transition: { duration: 0.4 }
+        transition: { duration: 0.4 },
       });
 
       setTimeout(() => setShowDamage(false), 800);
@@ -66,7 +66,7 @@ export function SacredTree({
           animate={{ opacity: [1, 1, 0], y: -40, scale: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <div 
+          <div
             className="text-3xl font-black text-red-500 whitespace-nowrap"
             style={{
               textShadow: "0 0 10px rgba(239, 68, 68, 0.8), 2px 2px 0 #000, -2px -2px 0 #000",
@@ -125,7 +125,7 @@ export function SacredTree({
               />
             </svg>
           </motion.div>
-          
+
           <motion.div
             className="absolute inset-0 -m-8 rounded-full"
             animate={{
@@ -185,7 +185,7 @@ export function SacredTree({
               }}
             />
           ))}
-          
+
           <motion.div
             className="absolute -top-4 left-1/2 -translate-x-1/2 text-violet-400 font-bold"
             initial={{ opacity: 0, scale: 1.5 }}
@@ -229,7 +229,7 @@ export function SacredTree({
             }}
             transition={{ duration: 0.5, repeat: Infinity }}
           >
-            <div 
+            <div
               className="text-red-500 text-2xl font-black"
               style={{ textShadow: "0 0 10px rgba(239, 68, 68, 0.8)" }}
             >
@@ -238,12 +238,7 @@ export function SacredTree({
           </motion.div>
         )}
 
-        <svg
-          width="60"
-          height="120"
-          viewBox="0 0 60 120"
-          className="drop-shadow-lg"
-        >
+        <svg width="60" height="120" viewBox="0 0 60 120" className="drop-shadow-lg">
           <path
             d="M25 120 L25 70 Q20 60 25 50 L25 50 Q30 45 30 40 Q30 45 35 50 L35 50 Q40 60 35 70 L35 120"
             fill={isCritical ? "#4a3728" : "#5d4037"}
@@ -265,25 +260,13 @@ export function SacredTree({
             fill={isCritical ? "#5a6d33" : "#3d7a37"}
             opacity="0.95"
           />
-          <ellipse
-            cx="30"
-            cy="22"
-            rx="18"
-            ry="14"
-            fill={isCritical ? "#6a7d43" : "#4d9a47"}
-          />
+          <ellipse cx="30" cy="22" rx="18" ry="14" fill={isCritical ? "#6a7d43" : "#4d9a47"} />
 
-          <g
-            opacity={healthPercent / 100}
-            filter={`url(#treeGlow-${id})`}
-          >
+          <g opacity={healthPercent / 100} filter={`url(#treeGlow-${id})`}>
             <circle cx="30" cy="65" r="2" fill="#a78bfa" />
             <circle cx="27" cy="75" r="1.5" fill="#a78bfa" />
             <circle cx="33" cy="75" r="1.5" fill="#a78bfa" />
-            <path
-              d="M28 80 L32 80 L30 85 Z"
-              fill="#a78bfa"
-            />
+            <path d="M28 80 L32 80 L30 85 Z" fill="#a78bfa" />
           </g>
 
           <defs>
@@ -310,10 +293,14 @@ export function SacredTree({
       </motion.div>
 
       <div className="mt-2 relative">
-        <div 
+        <div
           className="w-20 h-3 bg-black/70 overflow-hidden border-2"
           style={{
-            borderColor: isCritical ? "rgba(239, 68, 68, 0.5)" : isDamaged ? "rgba(245, 158, 11, 0.3)" : "rgba(255, 255, 255, 0.2)",
+            borderColor: isCritical
+              ? "rgba(239, 68, 68, 0.5)"
+              : isDamaged
+                ? "rgba(245, 158, 11, 0.3)"
+                : "rgba(255, 255, 255, 0.2)",
             clipPath: "polygon(5% 0, 100% 0, 95% 100%, 0% 100%)",
           }}
         >
@@ -323,8 +310,8 @@ export function SacredTree({
               isCritical
                 ? "bg-gradient-to-r from-red-600 to-red-400"
                 : isDamaged
-                ? "bg-gradient-to-r from-amber-600 to-amber-400"
-                : "bg-gradient-to-r from-emerald-600 to-emerald-400"
+                  ? "bg-gradient-to-r from-amber-600 to-amber-400"
+                  : "bg-gradient-to-r from-emerald-600 to-emerald-400"
             )}
             initial={{ width: 0 }}
             animate={{ width: `${healthPercent}%` }}
@@ -333,8 +320,8 @@ export function SacredTree({
               boxShadow: isCritical
                 ? "0 0 8px rgba(239, 68, 68, 0.5)"
                 : isDamaged
-                ? "0 0 8px rgba(245, 158, 11, 0.5)"
-                : "0 0 8px rgba(16, 185, 129, 0.5)",
+                  ? "0 0 8px rgba(245, 158, 11, 0.5)"
+                  : "0 0 8px rgba(16, 185, 129, 0.5)",
             }}
           >
             <motion.div
@@ -344,13 +331,13 @@ export function SacredTree({
             />
           </motion.div>
         </div>
-        
+
         <div className="absolute -right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/80">
           {Math.ceil(health)}
         </div>
       </div>
 
-      <div 
+      <div
         className="mt-1 text-xs font-bold tracking-wider"
         style={{
           color: isCritical ? "#f87171" : "#fcd34d",

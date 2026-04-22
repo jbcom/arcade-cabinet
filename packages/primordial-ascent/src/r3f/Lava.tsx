@@ -1,20 +1,22 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef, useMemo } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { CONFIG } from "../engine/types";
-import { useTrait } from "koota/react";
-import { primordialEntity } from "../store/world";
 import { PrimordialTrait } from "../store/traits";
+import { primordialEntity } from "../store/world";
 
 export function Lava() {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  
-  const uniforms = useMemo(() => ({
-    time: { value: 0 },
-    colorA: { value: new THREE.Color("#ff3300") },
-    colorB: { value: new THREE.Color("#aa0000") },
-  }), []);
+
+  const uniforms = useMemo(
+    () => ({
+      time: { value: 0 },
+      colorA: { value: new THREE.Color("#ff3300") },
+      colorB: { value: new THREE.Color("#aa0000") },
+    }),
+    []
+  );
 
   useFrame((state, delta) => {
     if (materialRef.current) {
@@ -23,12 +25,14 @@ export function Lava() {
     if (meshRef.current) {
       const pState = primordialEntity.get(PrimordialTrait);
       if (pState?.phase === "playing") {
-         const newY = meshRef.current.position.y + (CONFIG.lavaBaseSpeed + (pState.timeSurvived/1000) * CONFIG.lavaAccel) * delta * 0.1;
-         meshRef.current.position.y = newY;
-         
-         if (pState.altitude < newY && pState.phase !== "gameover") {
-             primordialEntity.set(PrimordialTrait, { ...pState, phase: "gameover" });
-         }
+        const newY =
+          meshRef.current.position.y +
+          (CONFIG.lavaBaseSpeed + (pState.timeSurvived / 1000) * CONFIG.lavaAccel) * delta * 0.1;
+        meshRef.current.position.y = newY;
+
+        if (pState.altitude < newY && pState.phase !== "gameover") {
+          primordialEntity.set(PrimordialTrait, { ...pState, phase: "gameover" });
+        }
       }
     }
   });

@@ -20,7 +20,7 @@
     "@types/three": "^0.176.0",
     "react": "^19.0.0",
     "three": "^0.176.0",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "react": "^19.0.0",

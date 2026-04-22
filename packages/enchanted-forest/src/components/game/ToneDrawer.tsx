@@ -1,5 +1,5 @@
-import { useRef, useEffect, useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { forestAudio, type ToneType } from "../../lib/forestAudio";
 import { RUNE_PATTERNS, type RunePattern } from "../../lib/runePatterns";
 
@@ -53,11 +53,14 @@ export function ToneDrawer({
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }, []);
 
-  const getNormalizedPosition = useCallback((pos: { x: number; y: number }): { x: number; y: number } => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    return { x: pos.x / canvas.width, y: pos.y / canvas.height };
-  }, []);
+  const getNormalizedPosition = useCallback(
+    (pos: { x: number; y: number }): { x: number; y: number } => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
+      return { x: pos.x / canvas.width, y: pos.y / canvas.height };
+    },
+    []
+  );
 
   const playNoteAtPosition = useCallback((x: number, y: number) => {
     const now = Date.now();
@@ -70,26 +73,37 @@ export function ToneDrawer({
     const clampedIndex = Math.max(0, Math.min(noteIndex, SCALE_NOTES.length - 1));
     setActiveNote(clampedIndex);
     forestAudio.playTouchNote(x / canvas.width, normalizedY);
-    setVisualNotes((prev) => [...prev.slice(-20), { x, y, note: clampedIndex, id: noteIdRef.current++ }]);
+    setVisualNotes((prev) => [
+      ...prev.slice(-20),
+      { x, y, note: clampedIndex, id: noteIdRef.current++ },
+    ]);
     setTimeout(() => setActiveNote(null), 100);
   }, []);
 
-  const drawTrail = useCallback((ctx: CanvasRenderingContext2D, from: { x: number; y: number }, to: { x: number; y: number }, noteIndex: number) => {
-    const gradient = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-    gradient.addColorStop(0, NOTE_COLORS[noteIndex] || NOTE_COLORS[0]);
-    gradient.addColorStop(1, NOTE_COLORS[(noteIndex + 1) % NOTE_COLORS.length]);
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.shadowColor = NOTE_COLORS[noteIndex] || NOTE_COLORS[0];
-    ctx.shadowBlur = 20;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-  }, []);
+  const drawTrail = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      from: { x: number; y: number },
+      to: { x: number; y: number },
+      noteIndex: number
+    ) => {
+      const gradient = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+      gradient.addColorStop(0, NOTE_COLORS[noteIndex] || NOTE_COLORS[0]);
+      gradient.addColorStop(1, NOTE_COLORS[(noteIndex + 1) % NOTE_COLORS.length]);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.shadowColor = NOTE_COLORS[noteIndex] || NOTE_COLORS[0];
+      ctx.shadowBlur = 20;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    },
+    []
+  );
 
   const analyzeGesture = useCallback((): ToneType | null => {
     const points = pointsRef.current;
@@ -105,9 +119,12 @@ export function ToneDrawer({
     const height = maxY - minY;
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
-    const distances = normalizedPoints.map((p) => Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2));
+    const distances = normalizedPoints.map((p) =>
+      Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2)
+    );
     const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
-    const distanceVariance = distances.reduce((sum, d) => sum + (d - avgDistance) ** 2, 0) / distances.length;
+    const distanceVariance =
+      distances.reduce((sum, d) => sum + (d - avgDistance) ** 2, 0) / distances.length;
     const isCircular = distanceVariance < 0.01 && width > 0.15 && height > 0.15;
     const startY = normalizedPoints.slice(0, 5).reduce((sum, p) => sum + p.y, 0) / 5;
     const endY = normalizedPoints.slice(-5).reduce((sum, p) => sum + p.y, 0) / 5;
@@ -127,53 +144,73 @@ export function ToneDrawer({
     return null;
   }, []);
 
-  const startDrawing = useCallback((e: MouseEvent | TouchEvent) => {
-    if (disabled) return;
-    isDrawingRef.current = true;
-    onDrawingChange(true);
-    const pos = getEventPosition(e);
-    pointsRef.current = [{ ...pos, time: Date.now() }];
-    playNoteAtPosition(pos.x, pos.y);
-    const clientPos = e instanceof MouseEvent ? { x: e.clientX, y: e.clientY } : { x: e.touches[0]?.clientX || 0, y: e.touches[0]?.clientY || 0 };
-    onPositionChange(clientPos);
-  }, [disabled, getEventPosition, onDrawingChange, onPositionChange, playNoteAtPosition]);
+  const startDrawing = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (disabled) return;
+      isDrawingRef.current = true;
+      onDrawingChange(true);
+      const pos = getEventPosition(e);
+      pointsRef.current = [{ ...pos, time: Date.now() }];
+      playNoteAtPosition(pos.x, pos.y);
+      const clientPos =
+        e instanceof MouseEvent
+          ? { x: e.clientX, y: e.clientY }
+          : { x: e.touches[0]?.clientX || 0, y: e.touches[0]?.clientY || 0 };
+      onPositionChange(clientPos);
+    },
+    [disabled, getEventPosition, onDrawingChange, onPositionChange, playNoteAtPosition]
+  );
 
-  const draw = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDrawingRef.current || disabled) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    const pos = getEventPosition(e);
-    const lastPos = pointsRef.current[pointsRef.current.length - 1];
-    if (lastPos) {
-      const noteIndex = Math.floor((1 - pos.y / canvas.height) * SCALE_NOTES.length);
-      drawTrail(ctx, lastPos, pos, Math.max(0, Math.min(noteIndex, SCALE_NOTES.length - 1)));
-    }
-    pointsRef.current.push({ ...pos, time: Date.now() });
-    playNoteAtPosition(pos.x, pos.y);
-    const clientPos = e instanceof MouseEvent ? { x: e.clientX, y: e.clientY } : { x: e.touches[0]?.clientX || 0, y: e.touches[0]?.clientY || 0 };
-    onPositionChange(clientPos);
-  }, [disabled, getEventPosition, drawTrail, onPositionChange, playNoteAtPosition]);
-
-  const stopDrawing = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDrawingRef.current) return;
-    isDrawingRef.current = false;
-    onDrawingChange(false);
-    const spellType = analyzeGesture();
-    if (spellType) {
-      const spell = RUNE_PATTERNS.find((r) => r.type === spellType);
-      if (spell) {
-        forestAudio.playSpellEffect(spellType);
-        forestAudio.playGestureSequence(pointsRef.current.map((p) => getNormalizedPosition(p)), spellType);
-        const avgX = pointsRef.current.reduce((sum, p) => sum + p.x, 0) / pointsRef.current.length;
-        const avgY = pointsRef.current.reduce((sum, p) => sum + p.y, 0) / pointsRef.current.length;
-        setShowSpellFeedback({ type: spellType, position: { x: avgX, y: avgY } });
-        onSpellCast(spell);
+  const draw = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!isDrawingRef.current || disabled) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const pos = getEventPosition(e);
+      const lastPos = pointsRef.current[pointsRef.current.length - 1];
+      if (lastPos) {
+        const noteIndex = Math.floor((1 - pos.y / canvas.height) * SCALE_NOTES.length);
+        drawTrail(ctx, lastPos, pos, Math.max(0, Math.min(noteIndex, SCALE_NOTES.length - 1)));
       }
-    }
-    pointsRef.current = [];
-    setVisualNotes([]);
-  }, [analyzeGesture, getNormalizedPosition, onSpellCast, onDrawingChange]);
+      pointsRef.current.push({ ...pos, time: Date.now() });
+      playNoteAtPosition(pos.x, pos.y);
+      const clientPos =
+        e instanceof MouseEvent
+          ? { x: e.clientX, y: e.clientY }
+          : { x: e.touches[0]?.clientX || 0, y: e.touches[0]?.clientY || 0 };
+      onPositionChange(clientPos);
+    },
+    [disabled, getEventPosition, drawTrail, onPositionChange, playNoteAtPosition]
+  );
+
+  const stopDrawing = useCallback(
+    (_e: MouseEvent | TouchEvent) => {
+      if (!isDrawingRef.current) return;
+      isDrawingRef.current = false;
+      onDrawingChange(false);
+      const spellType = analyzeGesture();
+      if (spellType) {
+        const spell = RUNE_PATTERNS.find((r) => r.type === spellType);
+        if (spell) {
+          forestAudio.playSpellEffect(spellType);
+          forestAudio.playGestureSequence(
+            pointsRef.current.map((p) => getNormalizedPosition(p)),
+            spellType
+          );
+          const avgX =
+            pointsRef.current.reduce((sum, p) => sum + p.x, 0) / pointsRef.current.length;
+          const avgY =
+            pointsRef.current.reduce((sum, p) => sum + p.y, 0) / pointsRef.current.length;
+          setShowSpellFeedback({ type: spellType, position: { x: avgX, y: avgY } });
+          onSpellCast(spell);
+        }
+      }
+      pointsRef.current = [];
+      setVisualNotes([]);
+    },
+    [analyzeGesture, getNormalizedPosition, onSpellCast, onDrawingChange]
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -203,25 +240,86 @@ export function ToneDrawer({
 
   return (
     <>
-      <canvas ref={canvasRef} className="absolute inset-0 z-30 touch-none" style={{ cursor: disabled ? "not-allowed" : "crosshair" }} />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 z-30 touch-none"
+        style={{ cursor: disabled ? "not-allowed" : "crosshair" }}
+      />
       <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
         <div className="flex flex-col-reverse gap-1">
           {SCALE_NOTES.map((note, i) => (
-            <motion.div key={i} className="flex items-center gap-2" animate={{ scale: activeNote === i ? 1.2 : 1, opacity: activeNote === i ? 1 : 0.5 }} transition={{ duration: 0.1 }}>
-              <div className="w-8 h-6 rounded flex items-center justify-center text-xs font-bold text-white" style={{ background: NOTE_COLORS[i], boxShadow: activeNote === i ? `0 0 20px ${NOTE_COLORS[i]}` : "none" }}>{note}</div>
+            <motion.div
+              key={i}
+              className="flex items-center gap-2"
+              animate={{ scale: activeNote === i ? 1.2 : 1, opacity: activeNote === i ? 1 : 0.5 }}
+              transition={{ duration: 0.1 }}
+            >
+              <div
+                className="w-8 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
+                style={{
+                  background: NOTE_COLORS[i],
+                  boxShadow: activeNote === i ? `0 0 20px ${NOTE_COLORS[i]}` : "none",
+                }}
+              >
+                {note}
+              </div>
             </motion.div>
           ))}
         </div>
       </div>
       <AnimatePresence>
         {visualNotes.map((vn) => (
-          <motion.div key={vn.id} className="fixed pointer-events-none z-35 text-2xl font-bold" style={{ left: vn.x, top: vn.y, color: NOTE_COLORS[vn.note], textShadow: `0 0 10px ${NOTE_COLORS[vn.note]}` }} initial={{ opacity: 1, scale: 1, y: 0 }} animate={{ opacity: 0, scale: 0.5, y: -30 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>♪</motion.div>
+          <motion.div
+            key={vn.id}
+            className="fixed pointer-events-none z-35 text-2xl font-bold"
+            style={{
+              left: vn.x,
+              top: vn.y,
+              color: NOTE_COLORS[vn.note],
+              textShadow: `0 0 10px ${NOTE_COLORS[vn.note]}`,
+            }}
+            initial={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ opacity: 0, scale: 0.5, y: -30 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            ♪
+          </motion.div>
         ))}
       </AnimatePresence>
       <AnimatePresence>
         {showSpellFeedback && (
-          <motion.div className="fixed pointer-events-none z-40" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.5, opacity: 0 }} transition={{ duration: 0.3 }} style={{ left: showSpellFeedback.position.x, top: showSpellFeedback.position.y, transform: "translate(-50%, -50%)" }}>
-            <div className="px-6 py-3 rounded-lg font-bold text-2xl text-center" style={{ background: showSpellFeedback.type === "shield" ? "linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.1))" : showSpellFeedback.type === "heal" ? "linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(167, 139, 250, 0.1))" : "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.1))", color: showSpellFeedback.type === "shield" ? "#4ade80" : showSpellFeedback.type === "heal" ? "#a78bfa" : "#fbbf24", border: `2px solid ${showSpellFeedback.type === "shield" ? "#4ade80" : showSpellFeedback.type === "heal" ? "#a78bfa" : "#fbbf24"}`, boxShadow: `0 0 40px ${showSpellFeedback.type === "shield" ? "rgba(74, 222, 128, 0.5)" : showSpellFeedback.type === "heal" ? "rgba(167, 139, 250, 0.5)" : "rgba(251, 191, 36, 0.5)"}` }}>
+          <motion.div
+            className="fixed pointer-events-none z-40"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 1.5, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              left: showSpellFeedback.position.x,
+              top: showSpellFeedback.position.y,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div
+              className="px-6 py-3 rounded-lg font-bold text-2xl text-center"
+              style={{
+                background:
+                  showSpellFeedback.type === "shield"
+                    ? "linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.1))"
+                    : showSpellFeedback.type === "heal"
+                      ? "linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(167, 139, 250, 0.1))"
+                      : "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.1))",
+                color:
+                  showSpellFeedback.type === "shield"
+                    ? "#4ade80"
+                    : showSpellFeedback.type === "heal"
+                      ? "#a78bfa"
+                      : "#fbbf24",
+                border: `2px solid ${showSpellFeedback.type === "shield" ? "#4ade80" : showSpellFeedback.type === "heal" ? "#a78bfa" : "#fbbf24"}`,
+                boxShadow: `0 0 40px ${showSpellFeedback.type === "shield" ? "rgba(74, 222, 128, 0.5)" : showSpellFeedback.type === "heal" ? "rgba(167, 139, 250, 0.5)" : "rgba(251, 191, 36, 0.5)"}`,
+              }}
+            >
               {showSpellFeedback.type === "shield" && "♪ 守護の歌 ♪"}
               {showSpellFeedback.type === "heal" && "♪ 癒しの調べ ♪"}
               {showSpellFeedback.type === "purify" && "♪ 浄化の旋律 ♪"}

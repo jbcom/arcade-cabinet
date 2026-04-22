@@ -4,10 +4,10 @@ import Game from "./Game";
 
 test("Mega Track game renders without crashing", async () => {
   const { container } = render(<Game />);
-  
+
   // Wait a bit for R3F to initialize
   await new Promise((resolve) => setTimeout(resolve, 500));
-  
+
   // Check for the canvas
   const canvas = container.querySelector("canvas");
   expect(canvas).toBeTruthy();
