@@ -7,7 +7,7 @@ import {
   useCabinetRuntime,
 } from "@app/shared";
 import { useEffect, useState } from "react";
-import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
 import ArcadeGallery from "./components/ArcadeGallery";
 import Footer from "./components/Footer";
 import GameIsland from "./components/GameIsland";
@@ -46,10 +46,10 @@ function CabinetHome() {
 function GameRoute() {
   const { slug } = useParams();
   const game = getGameBySlug(slug ?? "");
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [returnHome, setReturnHome] = useState(false);
   const [restartKey, setRestartKey] = useState(0);
-  const { clearRun, saveSlot, setSettings, settings } = useCabinetRuntime(game?.slug);
+  const { abandonRun, saveSlot, setSettings, settings } = useCabinetRuntime(game?.slug);
 
   usePageTitle(game ? `${game.title} | Arcade Cabinet` : "Arcade Cabinet");
 
@@ -62,9 +62,13 @@ function GameRoute() {
     return <Navigate to="/" replace />;
   }
 
+  if (returnHome) {
+    return <Navigate to="/" replace />;
+  }
+
   const returnToCabinet = () => {
     setMenuOpen(false);
-    navigate({ hash: "games", pathname: "/" });
+    setReturnHome(true);
   };
 
   return (
@@ -82,11 +86,11 @@ function GameRoute() {
         onCabinet={returnToCabinet}
         onClose={() => setMenuOpen(false)}
         onQuitRun={() => {
-          clearRun();
+          abandonRun({ summary: "Quit from pause menu" });
           returnToCabinet();
         }}
         onRestart={() => {
-          clearRun();
+          abandonRun({ summary: "Restarted from pause menu" });
           setRestartKey((current) => current + 1);
           setMenuOpen(false);
         }}

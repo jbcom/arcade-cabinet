@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import {
+  abandonGameRun,
   beginGameRun,
   clearGameSaveSlot,
   finishGameRun,
@@ -85,5 +86,30 @@ describe("cabinet browser runtime storage", () => {
     });
     expect(progress.milestones).toEqual(["first-cup"]);
     expect(readGameSaveSlot("mega-track")).toBeUndefined();
+  });
+
+  test("abandons an active run from the pause menu and records it as progress", () => {
+    beginGameRun("farm-follies", "cozy", {
+      progressSummary: "Tier 4 tower",
+      snapshot: { height: 18 },
+    });
+
+    const result = abandonGameRun("farm-follies", {
+      now: new Date("2026-04-22T12:30:00.000Z"),
+      summary: "Quit from pause menu",
+    });
+
+    expect(result?.result).toMatchObject({
+      mode: "cozy",
+      score: 0,
+      slug: "farm-follies",
+      status: "abandoned",
+      summary: "Quit from pause menu",
+    });
+    expect(result?.progress).toMatchObject({
+      sessionsAbandoned: 1,
+      sessionsStarted: 1,
+    });
+    expect(readGameSaveSlot("farm-follies")).toBeUndefined();
   });
 });

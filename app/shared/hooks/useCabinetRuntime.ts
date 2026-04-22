@@ -33,6 +33,15 @@ export interface FinishGameRunInput {
   now?: Date;
 }
 
+export interface AbandonGameRunInput {
+  mode?: SessionMode;
+  score?: number;
+  summary?: string;
+  stats?: Record<string, number | string | boolean>;
+  milestones?: readonly string[];
+  now?: Date;
+}
+
 export function readCabinetSettings(storage = getStorage()): GameSettings {
   return normalizeGameSettings(readJson<GameSettings>(SETTINGS_KEY, storage));
 }
@@ -119,6 +128,32 @@ export function finishGameRun(
   return { progress: nextProgress, result };
 }
 
+export function abandonGameRun(
+  slug: LaunchGameSlug,
+  input: AbandonGameRunInput = {},
+  storage = getStorage()
+): { progress: GameProgress; result: GameResult } | undefined {
+  const saveSlot = readGameSaveSlot(slug, storage);
+  if (!saveSlot) {
+    clearGameSaveSlot(slug, storage);
+    return undefined;
+  }
+
+  return finishGameRun(
+    slug,
+    {
+      milestones: input.milestones,
+      mode: input.mode ?? saveSlot.mode,
+      now: input.now,
+      score: input.score ?? 0,
+      stats: input.stats,
+      status: "abandoned",
+      summary: input.summary,
+    },
+    storage
+  );
+}
+
 export function useCabinetRuntime(slug?: LaunchGameSlug) {
   const [settings, setSettingsState] = useState<GameSettings>(() => readCabinetSettings());
   const [progress, setProgressState] = useState<GameProgress | undefined>(() =>
@@ -198,7 +233,19 @@ export function useCabinetRuntime(slug?: LaunchGameSlug) {
     [slug]
   );
 
+  const abandonRun = useCallback(
+    (input: AbandonGameRunInput = {}) => {
+      if (!slug) return undefined;
+      const result = abandonGameRun(slug, input);
+      if (result) setProgressState(result.progress);
+      setSaveSlotState(undefined);
+      return result;
+    },
+    [slug]
+  );
+
   return {
+    abandonRun,
     beginRun,
     clearRun,
     finishRun,

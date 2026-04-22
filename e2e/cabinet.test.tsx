@@ -3,6 +3,7 @@ import { cleanup, render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
+import { readGameProgress, readGameSaveSlot } from "../app/shared/hooks/useCabinetRuntime";
 
 const cabinetViewports = [
   { name: "desktop", width: 1280, height: 720 },
@@ -74,6 +75,38 @@ describe("cabinet runtime shell", () => {
 
     await userEvent.click(page.getByLabelText("Resume game"));
     expect(document.documentElement.dataset.cabinetPaused).toBe("false");
+  });
+
+  test("quit run records an abandoned local result instead of silently deleting progress", async () => {
+    render(
+      <MemoryRouter initialEntries={["/games/mega-track"]}>
+        <ArcadeApp />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "Start Race" }));
+    expect(readGameSaveSlot("mega-track")).toMatchObject({
+      mode: "standard",
+      status: "active",
+    });
+
+    await userEvent.click(page.getByTestId("cabinet-menu-button"));
+    const quitRunButton = page
+      .getByTestId("cabinet-pause-menu")
+      .getByRole("button", { name: "Quit Run" });
+    await expect.element(quitRunButton).toBeVisible();
+    await userEvent.click(quitRunButton);
+
+    await expect.element(page.getByRole("heading", { name: "ARCADE" })).toBeVisible();
+    expect(readGameSaveSlot("mega-track")).toBeUndefined();
+    expect(readGameProgress("mega-track")).toMatchObject({
+      lastResult: {
+        status: "abandoned",
+        summary: "Quit from pause menu",
+      },
+      sessionsAbandoned: 1,
+      sessionsStarted: 1,
+    });
   });
 
   test("unknown routes fall back to the cabinet", async () => {
