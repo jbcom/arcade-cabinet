@@ -20,6 +20,13 @@ A high-speed lane racer about reading a deterministic hazard ribbon early and ma
 
 Mega Track is an arcade tabletop racer staged as a dark asphalt ribbon suspended in bright air. Cyan and yellow rails frame the safe play space, checkpoint gates sell speed, and composite cars/cones/barriers replace POC cubes while keeping obstacle silhouettes readable.
 
+## Current Feature and Polish Pass
+
+- Overdrive, clean-pass, and impact timing now persist as deterministic telemetry in the pure race state.
+- The R3F scene renders overdrive lane strips, road speed lines, recent clean-pass rings, impact sparks, and differentiated hazard bases.
+- The HUD calls out recent impact type and clean-lane feedback without obscuring the road.
+- The cabinet landing uses the shared cartridge frame with a track label, play control, and rules drawer.
+
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.

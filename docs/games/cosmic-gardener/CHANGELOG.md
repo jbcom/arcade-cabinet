@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added constellation completion rewards with resonance bloom score bonus and next-pattern preview.
+- Added pulsing active constellation edges, stronger launch/drain feedback, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/cosmic-gardener-v0.1.0...cosmic-gardener-v0.2.0) (2026-04-22)
 
 

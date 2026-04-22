@@ -209,8 +209,10 @@ export function Player() {
       (i) => i.object.name === "terrain-chunk" && i.distance < CONFIG.maxTetherDist
     );
 
+    let grappleTension = 0;
     if (isGrappling && grapplePoint) {
       const tether = calculateTetherImpulse(position.current, currentVel, grapplePoint, delta);
+      grappleTension = tether.tension;
       rbRef.current.applyImpulse(tether.impulse, true);
 
       tetherLineGeometry.setFromPoints([
@@ -256,7 +258,9 @@ export function Player() {
         position: currentTrans,
         velocity: currentVel,
         lavaHeight: pState.lavaHeight,
+        grappleActive: isGrappling,
         grappleDistance: hit?.distance ?? null,
+        grappleTension,
       })
     );
   });

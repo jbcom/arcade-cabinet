@@ -8,6 +8,7 @@ import {
   createGroveLayout,
   createInitialForestState,
   getForestTransition,
+  getShadowIntentPath,
   MAX_WAVES,
   removePurifiedShadow,
   spawnCorruptionWave,
@@ -40,6 +41,20 @@ describe("forest simulation", () => {
     expect(wave.nextShadowId).toBe(19);
     expect(wave.shadows[0]?.id).toBe(10);
     expect(wave.shadows.every((shadow) => shadow.targetTreeIndex >= 0)).toBe(true);
+  });
+
+  test("exposes deterministic shadow intent paths for target telegraphs", () => {
+    const wave = spawnCorruptionWave(1, 10);
+    const firstShadow = wave.shadows[0];
+    if (!firstShadow) throw new Error("missing shadow");
+
+    const intent = getShadowIntentPath(firstShadow);
+
+    expect(intent.id).toBe(10);
+    expect(intent.targetTreeId).toBe(TREE_POSITIONS[firstShadow.targetTreeIndex].id);
+    expect(intent.targetX).toBeGreaterThan(0);
+    expect(intent.alertLevel).toBeGreaterThanOrEqual(0);
+    expect(intent.alertLevel).toBeLessThanOrEqual(1);
   });
 
   test("applies spells, mana costs, shield, heal, and purify zones", () => {

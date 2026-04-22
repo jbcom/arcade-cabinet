@@ -1,4 +1,9 @@
-import { browserTestCanvasGlOptions, GameViewport, PhaseTrait } from "@app/shared";
+import {
+  browserTestCanvasGlOptions,
+  CartridgeStartScreen,
+  GameViewport,
+  PhaseTrait,
+} from "@app/shared";
 import { createInitialPrimordialState } from "@logic/games/primordial-ascent/engine/primordialSimulation";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity, primordialWorld } from "@logic/games/primordial-ascent/store/world";
@@ -21,48 +26,22 @@ function PrimordialApp() {
       <Canvas gl={browserTestCanvasGlOptions}>{state.phase === "playing" && <World />}</Canvas>
 
       {state.phase === "menu" && (
-        <div
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white backdrop-blur-md"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(2,6,8,0.68), rgba(2,6,8,0.94)), linear-gradient(135deg, rgba(0,238,255,0.18), rgba(255,51,51,0.2)), repeating-linear-gradient(0deg, rgba(255,116,72,0.18) 0 2px, transparent 2px 18px)",
-          }}
-        >
-          <h1
-            className="text-5xl md:text-7xl font-black uppercase tracking-[5px] mb-4 text-center text-white"
-            style={{ textShadow: "0 0 20px #00eeff, 2px 2px 0px #000" }}
-          >
-            PRIMORDIAL ASCENT
-          </h1>
-          <div className="bg-black/40 p-6 rounded-lg border border-slate-800 max-w-2xl text-center text-slate-300 leading-relaxed mb-10 text-lg">
-            The magma wake is climbing through a basalt lung. Read the anchor chain and keep your
-            swing above the red line.
-            <br />
-            <br />
-            Aim at the{" "}
-            <span className="font-bold text-[#00eeff]" style={{ textShadow: "0 0 10px #00eeff" }}>
-              GLOWING CYAN CEILINGS
-            </span>{" "}
-            and hold <b>[LEFT CLICK]</b> to swing.
-            <br />
-            Land on the <span className="font-bold text-[#00ff66]">GREEN MOSS</span> to rest and
-            press <b>[SPACE]</b> to leap.
-            <br />
-            <b>[WASD] / [ARROWS]</b> to shift momentum mid-air. On touch screens, press anywhere in
-            the cavern to spawn the movement joystick.
-            <br />
-          </div>
-          <button
-            type="button"
-            onClick={handleStart}
-            className="px-12 py-4 text-xl font-bold uppercase tracking-[3px] text-[#00eeff] bg-[#00eeff]/10 border-2 border-[#00eeff] rounded hover:bg-[#00eeff] hover:text-black transition-all duration-200"
-            style={{
-              boxShadow: "0 0 15px rgba(0,238,255,0.2), inset 0 0 10px rgba(0,238,255,0.1)",
-            }}
-          >
-            Initiate Sequence
-          </button>
-        </div>
+        <CartridgeStartScreen
+          accent="#00ff66"
+          cartridgeId="Slot 07"
+          description="Grapple out of a rising lava cavern before the magma wake catches you."
+          kicker="Escape Cartridge"
+          motif="primordial"
+          onStart={handleStart}
+          rules={[
+            "Lock to cyan ceiling anchors and build controlled swing tension.",
+            "Touch green moss to recover before the next leap.",
+            "Stay ahead of the red lava pressure and climb toward brighter air.",
+          ]}
+          secondaryAccent="#ff3333"
+          startLabel="Initiate Sequence"
+          title="PRIMORDIAL ASCENT"
+        />
       )}
 
       {state.phase === "playing" && (

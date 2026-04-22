@@ -19,11 +19,18 @@ A frantic 3D chase game where the player protects a rolling kudzu salad from hun
 
 The game is a small, readable chase arena. Bright pasture, blue water, a warm crater goal, fence rails, reeds, and soft composite animal models keep the tone playful while preserving collision readability.
 
+## Current Feature and Polish Pass
+
+- Goat intent is now exposed from pure logic and rendered as chase, chewing, and stunned feedback.
+- Bark events drive a visible shockwave, stun stars, rally timing, and rescue feedback.
+- The opening chew balance now keeps desktop and mobile screenshot captures in active play instead of falling into game-over during inspection.
+- The cabinet landing uses the shared cartridge frame with a pasture label, play control, and rules drawer.
+
 ## Responsive and Android Contract
 
 - The arena canvas fills its parent with `GameViewport`.
 - The fixed camera widens in portrait and keeps otter, salad, goats, water, and crater visible.
-- Keyboard and on-screen D-pad/bark controls are both supported.
+- Keyboard, touch-anywhere movement, and bark controls update the same deterministic simulation.
 - Vitest Browser captures page-mode desktop and mobile screenshots through the shared harness.
 
 ## Stack

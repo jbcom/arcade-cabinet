@@ -25,6 +25,9 @@ export function createInitialState(): MegaTrackState {
     integrity: 100,
     impactCount: 0,
     lastImpactMs: -Infinity,
+    lastImpactType: null,
+    lastCleanPassMs: -Infinity,
+    lastOverdriveStartMs: -Infinity,
     elapsedMs: 0,
     milestone: 0,
     boostCharge: 0,
@@ -109,6 +112,7 @@ export function tick(
       next.integrity = Math.max(0, next.integrity - getObstacleDamage(obs));
       next.impactCount++;
       next.lastImpactMs = next.elapsedMs;
+      next.lastImpactType = obs.type;
       next.boostCharge = Math.max(0, next.boostCharge - 30);
       next.cleanPassStreak = 0;
       next.obstacles = next.obstacles.filter((o) => o.id !== obs.id);
@@ -121,11 +125,13 @@ export function tick(
 
   if (cleanPasses > 0) {
     next.cleanPassStreak += cleanPasses;
+    next.lastCleanPassMs = next.elapsedMs;
     next.boostCharge = Math.min(100, next.boostCharge + cleanPasses * 9);
   }
 
   if (next.overdriveMs === 0 && next.boostCharge >= 100 && next.cleanPassStreak >= 4) {
     next.overdriveMs = 2400;
+    next.lastOverdriveStartMs = next.elapsedMs;
     next.boostCharge = 0;
   }
 

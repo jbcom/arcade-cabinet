@@ -1,6 +1,7 @@
-import { GameViewport, useResponsive } from "@app/shared";
+import { CartridgeStartScreen, GameViewport, useResponsive } from "@app/shared";
 import {
   findMatchedPointId,
+  getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
 } from "@logic/games/cosmic-gardener/engine/constellationProgress";
@@ -133,6 +134,8 @@ export default function Game({ className }: { className?: string }) {
     points: number;
     connectionCount: number;
   } | null>(null);
+  const [launchPulse, setLaunchPulse] = useState(0);
+  const [drainPulse, setDrainPulse] = useState(0);
 
   const gardenRef = useRef<HTMLDivElement>(null);
 
@@ -198,6 +201,7 @@ export default function Game({ className }: { className?: string }) {
   );
 
   const handleDrain = useCallback(() => {
+    setDrainPulse((prev) => prev + 1);
     setBallsRemaining((prev) => {
       const newCount = prev - 1;
       if (newCount <= 0) {
@@ -224,6 +228,7 @@ export default function Game({ className }: { className?: string }) {
   });
 
   const currentPattern = getConstellationForLevel(level);
+  const nextPreview = getNextConstellationPreview(level);
 
   const loadLevel = useCallback(
     (targetLevel: number) => {
@@ -387,6 +392,7 @@ export default function Game({ className }: { className?: string }) {
     (x: number, y: number, angle: number, power: number) => {
       if (orbs.size < 3) {
         launchOrb(x, y, angle, power);
+        setLaunchPulse((prev) => prev + 1);
       }
     },
     [orbs.size, launchOrb]
@@ -447,6 +453,36 @@ export default function Game({ className }: { className?: string }) {
       <NebulaBackground />
       <CosmicDust particleCount={150} />
       <CosmicTableDeck />
+
+      <AnimatePresence>
+        {launchPulse > 0 && (
+          <motion.div
+            key={`launch-${launchPulse}`}
+            aria-hidden="true"
+            className="pointer-events-none absolute right-[5%] bottom-[16%] z-30 h-28 w-16 rounded-full border border-amber-200/50"
+            initial={{ opacity: 0.85, scale: 0.45, y: 20 }}
+            animate={{ opacity: 0, scale: 1.35, y: -48 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.72 }}
+            style={{ boxShadow: "0 0 32px rgba(251,191,36,0.45)" }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {drainPulse > 0 && (
+          <motion.div
+            key={`drain-${drainPulse}`}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-[24%] bottom-[4%] z-30 h-14 rounded-full border border-rose-300/50 bg-rose-950/20"
+            initial={{ opacity: 0.9, scaleX: 0.55 }}
+            animate={{ opacity: 0, scaleX: 1.28, y: -20 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7 }}
+            style={{ boxShadow: "0 0 34px rgba(251,113,133,0.42)" }}
+          />
+        )}
+      </AnimatePresence>
 
       {(gameState === "playing" || gameState === "zenMode") && (
         <ConstellationPattern
@@ -586,20 +622,31 @@ export default function Game({ className }: { className?: string }) {
 
           <AnimatePresence>
             {resonanceBloom && (
-              <motion.div
-                className="pointer-events-none absolute left-1/2 top-[18%] z-50 -translate-x-1/2 rounded-md border border-amber-200/40 bg-slate-950/70 px-4 py-2 text-center shadow-2xl shadow-amber-900/30 backdrop-blur-md"
-                initial={{ opacity: 0, scale: 0.86, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -16 }}
-              >
-                <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-amber-200">
-                  Resonance Bloom
-                </div>
-                <div className="text-xl font-black text-white">+{resonanceBloom.points}</div>
-                <div className="text-xs text-cyan-100/70">
-                  {resonanceBloom.connectionCount} pattern links aligned
-                </div>
-              </motion.div>
+              <>
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 top-[38%] z-30 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200/45"
+                  initial={{ opacity: 0.8, scale: 0.35 }}
+                  animate={{ opacity: 0, scale: 2.3 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.05 }}
+                  style={{ boxShadow: "0 0 52px rgba(251,191,36,0.5)" }}
+                />
+                <motion.div
+                  className="pointer-events-none absolute left-1/2 top-[18%] z-50 -translate-x-1/2 rounded-md border border-amber-200/40 bg-slate-950/70 px-4 py-2 text-center shadow-2xl shadow-amber-900/30 backdrop-blur-md"
+                  initial={{ opacity: 0, scale: 0.86, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -16 }}
+                >
+                  <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-amber-200">
+                    Resonance Bloom
+                  </div>
+                  <div className="text-xl font-black text-white">+{resonanceBloom.points}</div>
+                  <div className="text-xs text-cyan-100/70">
+                    {resonanceBloom.connectionCount} pattern links aligned
+                  </div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
 
@@ -622,45 +669,27 @@ export default function Game({ className }: { className?: string }) {
       <AnimatePresence>
         {gameState === "intro" && (
           <motion.div
-            className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-[100]"
+            className="absolute inset-0 z-[100]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="text-center"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.h1
-                className="text-5xl md:text-7xl font-light text-white mb-4"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                Cosmic Gardener
-              </motion.h1>
-              <motion.p
-                className="text-white/40 text-sm mb-12 max-w-md mx-auto"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                Plant your stars. Build your table. Keep the cosmic ball alive.
-              </motion.p>
-              <motion.button
-                className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white font-medium text-lg hover:from-amber-400 hover:to-pink-400 transition-all shadow-lg shadow-pink-500/20"
-                onClick={startGame}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Begin the Journey
-              </motion.button>
-            </motion.div>
+            <CartridgeStartScreen
+              accent="#fbbf24"
+              cartridgeId="Slot 02"
+              description="Plant star seeds, keep the orb alive, and bloom constellations across a living pinball sky."
+              kicker="Pinball Garden Cartridge"
+              motif="cosmic"
+              onStart={startGame}
+              rules={[
+                "Launch the orb and use flippers to keep energy moving.",
+                "Connect charged stars into the active constellation pattern.",
+                "Completion blooms score bonus and previews the next pattern.",
+              ]}
+              secondaryAccent="#ec4899"
+              startLabel="Begin the Journey"
+              title="Cosmic Gardener"
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -747,6 +776,15 @@ export default function Game({ className }: { className?: string }) {
               <h2 className="text-4xl font-light text-white mb-4">Constellation Complete!</h2>
               <p className="text-white/60 mb-2">{currentPattern.name} has awakened</p>
               <p className="text-amber-400 text-2xl mb-2">{score.toLocaleString()} points</p>
+              <div className="mx-auto mb-6 grid max-w-sm gap-1 rounded-md border border-cyan-200/20 bg-cyan-950/25 px-4 py-3 text-left">
+                <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-cyan-200">
+                  Next Pattern
+                </div>
+                <div className="truncate text-lg font-bold text-white">{nextPreview.name}</div>
+                <div className="text-sm text-white/55">
+                  {nextPreview.pointCount} seeds / {nextPreview.connectionCount} links
+                </div>
+              </div>
               <p className="text-white/40 text-sm mb-8">
                 {constellationsCompleted} of 5 constellations cultivated
               </p>

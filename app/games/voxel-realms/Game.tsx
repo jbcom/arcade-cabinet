@@ -1,9 +1,9 @@
 import {
   browserTestCanvasGlOptions,
+  CartridgeStartScreen,
   GameOverScreen,
   GameViewport,
   OverlayButton,
-  StartScreen,
 } from "@app/shared";
 import { createInitialVoxelState } from "@logic/games/voxel-realms/engine/voxelSimulation";
 import { VoxelTrait } from "@logic/games/voxel-realms/store/traits";
@@ -38,11 +38,21 @@ function VoxelApp() {
       </Canvas>
 
       {state.phase === "menu" && (
-        <StartScreen
+        <CartridgeStartScreen
           accent="#84cc16"
+          cartridgeId="Slot 09"
+          description="Explore from a shoreline beacon camp into a living voxel frontier."
+          kicker="World Cartridge"
+          motif="voxel"
+          onStart={handleStart}
+          rules={[
+            "Survey the biome ring and follow beacon pings to orient yourself.",
+            "Collect resources when pickup pulses mark nearby blocks.",
+            "Use mobile or desktop movement to keep the horizon stable.",
+          ]}
+          secondaryAccent="#38bdf8"
+          startLabel="Enter Realm"
           title="Voxel Realms"
-          subtitle="Step out from a surveyed shoreline camp, read the beacon chain, and map the living terrain before nightfall."
-          primaryAction={<OverlayButton onClick={handleStart}>Enter Realm</OverlayButton>}
         />
       )}
 

@@ -28,6 +28,7 @@ export function createInitialTitanState(phase: TitanState["phase"] = "menu"): Ti
     coolantCharge: 100,
     scrap: 0,
     score: 0,
+    lastWeaponEventMs: 0,
     objective: "Secure reactor pylons and keep the chassis inside thermal limits.",
     objectiveProgress: 0,
     controls: { ...DEFAULT_CONTROLS },
@@ -41,6 +42,7 @@ export function createInitialTitanState(phase: TitanState["phase"] = "menu"): Ti
       servos: 100,
       targeting: 100,
     },
+    weaponFeedback: "idle",
   };
 }
 
@@ -97,12 +99,20 @@ export function advanceTitanSystems(
     controls.fire &&
     state.energy > CONFIG.FIRE_ENERGY_PER_SECOND * 0.18 &&
     state.heat < CONFIG.OVERHEAT_THRESHOLD;
+  const weaponFeedback = getWeaponFeedbackState({
+    coolantActive: false,
+    energy: state.energy,
+    firingAllowed,
+    heat: state.heat,
+    requestedFire: controls.fire,
+  });
 
   const energySpend =
     drive.energyCost + (firingAllowed ? CONFIG.FIRE_ENERGY_PER_SECOND * deltaSeconds : 0);
   const coolantRequested = controls.brace && state.coolantCharge >= 100 && state.heat > 30;
   const coolantBurstMs = coolantRequested ? 1800 : Math.max(0, state.coolantBurstMs - deltaMs);
   const coolantActive = coolantBurstMs > 0;
+  const finalWeaponFeedback = coolantActive && !firingAllowed ? "cooling" : weaponFeedback;
   const energyRegen =
     controls.throttle === 0 && !firingAllowed
       ? CONFIG.ENERGY_REGEN_PER_SECOND * (controls.brace ? 1.35 : 1) * deltaSeconds
@@ -129,6 +139,8 @@ export function advanceTitanSystems(
       : clamp(state.coolantCharge + (controls.brace ? 18 : 8) * deltaSeconds, 0, 100),
     energy: clamp(state.energy - energySpend + energyRegen, 0, state.maxEnergy),
     heat: clamp(state.heat + heatGain - cooling, 0, state.maxHeat),
+    lastWeaponEventMs:
+      finalWeaponFeedback !== "idle" ? state.lastWeaponEventMs + deltaMs : state.lastWeaponEventMs,
     score: Math.max(state.score, distanceScore),
     objectiveProgress,
     objective:
@@ -153,7 +165,29 @@ export function advanceTitanSystems(
         100
       ),
     },
+    weaponFeedback: finalWeaponFeedback,
   };
+}
+
+export function getWeaponFeedbackState({
+  coolantActive,
+  energy,
+  firingAllowed,
+  heat,
+  requestedFire,
+}: {
+  coolantActive: boolean;
+  energy: number;
+  firingAllowed: boolean;
+  heat: number;
+  requestedFire: boolean;
+}) {
+  if (coolantActive) return "cooling";
+  if (firingAllowed) return "firing";
+  if (!requestedFire) return "idle";
+  if (heat >= CONFIG.OVERHEAT_THRESHOLD) return "overheated";
+  if (energy <= CONFIG.FIRE_ENERGY_PER_SECOND * 0.18) return "dry";
+  return "idle";
 }
 
 export function createArenaLayout(): ArenaLayout {

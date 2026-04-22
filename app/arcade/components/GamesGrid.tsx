@@ -3,16 +3,16 @@ import { withBasePath } from "../utils/basePath";
 
 export default function GamesGrid() {
   return (
-    <section id="games" className="py-24 px-8 max-w-7xl mx-auto">
+    <section id="library" className="mx-auto max-w-7xl px-8 py-24">
       <div className="mb-16 text-center">
-        <div className="font-mono text-[0.7rem] tracking-[0.4em] uppercase text-violet-400 mb-4">
-          — The Collection —
+        <div className="mb-4 font-mono text-[0.7rem] uppercase tracking-[0.4em] text-violet-400">
+          Cabinet Library
         </div>
-        <h2 className="font-display font-extrabold text-4xl md:text-6xl tracking-tight text-white mb-4">
-          Games in the Cabinet
+        <h2 className="mb-4 font-display text-4xl font-extrabold tracking-normal text-white md:text-6xl">
+          All Playable Slots
         </h2>
-        <p className="font-body text-lg text-slate-400 max-w-lg mx-auto">
-          Each game is an independent interactive experience, playable directly in your browser.
+        <p className="mx-auto max-w-lg font-body text-lg text-slate-400">
+          A quick launcher for the whole cabinet after the marquee has done its job.
         </p>
       </div>
 
@@ -29,10 +29,10 @@ function GameCard({ game }: { game: Game }) {
   return (
     <a
       href={withBasePath(`/games/${game.slug}`)}
-      className="group relative bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-slate-700 hover:shadow-2xl"
+      className="group relative overflow-hidden rounded-md border border-slate-800 bg-slate-900/50 transition-all duration-300 hover:scale-[1.02] hover:border-slate-600 hover:shadow-2xl"
     >
       <div
-        className="h-48 flex items-center justify-center relative overflow-hidden"
+        className="relative flex h-48 items-center justify-center overflow-hidden"
         style={{ background: game.gradient }}
       >
         <svg
@@ -49,23 +49,20 @@ function GameCard({ game }: { game: Game }) {
           </defs>
           <rect width="100%" height="100%" fill={`url(#grid-${game.slug})`} />
         </svg>
-        <span className="font-display font-black text-2xl text-white tracking-wider drop-shadow-lg z-10 uppercase">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-8 top-8 h-1 rounded-full bg-white/80 shadow-[0_0_24px_rgba(255,255,255,0.55)]"
+        />
+        <span className="z-10 px-4 text-center font-display text-2xl font-black uppercase tracking-normal text-white drop-shadow-lg">
           {game.title}
         </span>
       </div>
 
       <div className="p-6">
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">{game.description}</p>
+        <p className="mb-6 text-sm leading-relaxed text-slate-400">{game.description}</p>
 
-        <div className="flex flex-wrap gap-2">
-          {game.tags.map((tag) => (
-            <span
-              key={tag}
-              className="font-mono text-[0.65rem] tracking-wider px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700"
-            >
-              #{tag}
-            </span>
-          ))}
+        <div className="font-mono text-[0.68rem] font-black uppercase tracking-[0.22em] text-cyan-200">
+          Play Slot
         </div>
       </div>
     </a>

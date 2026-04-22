@@ -23,6 +23,8 @@ export interface TitanSystems {
   targeting: number;
 }
 
+export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "cooling";
+
 export interface TitanState {
   phase: "menu" | "playing" | "gameover" | "upgrade";
   hp: number;
@@ -35,11 +37,13 @@ export interface TitanState {
   coolantCharge: number;
   scrap: number;
   score: number;
+  lastWeaponEventMs: number;
   objective: string;
   objectiveProgress: number;
   controls: TitanControls;
   pose: TitanPose;
   systems: TitanSystems;
+  weaponFeedback: WeaponFeedbackState;
 }
 
 export type ArenaObstacleKind = "barricade" | "cover" | "gantry" | "pylon" | "reactor";

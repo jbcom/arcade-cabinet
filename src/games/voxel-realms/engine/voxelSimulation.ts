@@ -46,6 +46,8 @@ export function createInitialVoxelState(phase: VoxelState["phase"] = "menu"): Vo
     maxHp: 20,
     inventory: [],
     biome: "shoreline",
+    biomeDiscovery: null,
+    lastPickup: null,
     objective: DEFAULT_OBJECTIVE,
     objectiveProgress: 0,
     coordinates: { ...CONFIG.PLAYER_START },
@@ -161,10 +163,26 @@ export function advanceVoxelState(
   const score = Math.max(state.score, distanceScore);
   const nearbyResource = findNearbyResource(telemetry.position, state.inventory);
   const inventory = nearbyResource ? [...state.inventory, nearbyResource.label] : state.inventory;
+  const nextTimeSurvived = state.timeSurvived + Math.max(0, deltaMs);
   const objectiveProgress = calculateObjectiveProgress(telemetry.position, score, inventory.length);
   const fallDamage = telemetry.position.y < CONFIG.FALL_DAMAGE_Y ? 4 : 0;
   const hp = Math.max(0, state.hp - fallDamage);
   const nearestResourceDistance = findNearestResourceDistance(telemetry.position, inventory);
+  const biomeDiscovery =
+    telemetry.biome !== state.biome
+      ? { biome: telemetry.biome, elapsedMs: nextTimeSurvived }
+      : state.biomeDiscovery && nextTimeSurvived - state.biomeDiscovery.elapsedMs < 3_000
+        ? state.biomeDiscovery
+        : null;
+  const lastPickup = nearbyResource
+    ? {
+        blockType: nearbyResource.blockType,
+        elapsedMs: nextTimeSurvived,
+        label: nearbyResource.label,
+      }
+    : state.lastPickup && nextTimeSurvived - state.lastPickup.elapsedMs < 2_500
+      ? state.lastPickup
+      : null;
 
   return {
     ...state,
@@ -172,7 +190,9 @@ export function advanceVoxelState(
     score,
     hp,
     biome: telemetry.biome,
+    biomeDiscovery,
     inventory,
+    lastPickup,
     objective: describeObjective(objectiveProgress, telemetry, nearbyResource?.label),
     objectiveProgress,
     coordinates: {
@@ -183,7 +203,7 @@ export function advanceVoxelState(
     nearestLandmarkDistance: round(telemetry.nearestLandmarkDistance, 1),
     nearestResourceDistance: round(nearestResourceDistance, 1),
     surveyPings: state.surveyPings + (nearbyResource ? 1 : 0),
-    timeSurvived: state.timeSurvived + Math.max(0, deltaMs),
+    timeSurvived: nextTimeSurvived,
   };
 }
 

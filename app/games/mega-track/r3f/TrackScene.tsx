@@ -154,6 +154,70 @@ function Car({ lane, overdrive }: { lane: number; overdrive: boolean }) {
   );
 }
 
+function RaceEffects({ state }: { state: MegaTrackState }) {
+  const impactAge = state.elapsedMs - state.lastImpactMs;
+  const hasRecentImpact = Number.isFinite(impactAge) && impactAge >= 0 && impactAge < 640;
+  const cleanAge = state.elapsedMs - state.lastCleanPassMs;
+  const hasRecentCleanPass = Number.isFinite(cleanAge) && cleanAge >= 0 && cleanAge < 720;
+  const carX = state.currentLane * CONFIG.LANE_WIDTH;
+  const impactOpacity = hasRecentImpact ? 1 - impactAge / 640 : 0;
+  const cleanOpacity = hasRecentCleanPass ? 1 - cleanAge / 720 : 0;
+
+  return (
+    <group>
+      {state.overdriveMs > 0 ? (
+        <group>
+          {[-1, 0, 1].map((lane) => (
+            <mesh
+              key={`overdrive-lane-${lane}`}
+              position={[lane * CONFIG.LANE_WIDTH, 0.13, -136]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={[10, 420]} />
+              <meshBasicMaterial color="#fde047" transparent opacity={0.12} />
+            </mesh>
+          ))}
+          {[-9, 9].map((x) => (
+            <mesh key={`overdrive-speed-line-${x}`} position={[carX + x, 0.16, -78]}>
+              <boxGeometry args={[0.8, 0.1, 240]} />
+              <meshBasicMaterial color="#facc15" transparent opacity={0.5} />
+            </mesh>
+          ))}
+        </group>
+      ) : null}
+
+      {hasRecentCleanPass ? (
+        <mesh position={[carX, 0.18, -36]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[9.5, 12.5, 48]} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={cleanOpacity * 0.5} />
+        </mesh>
+      ) : null}
+
+      {hasRecentImpact ? (
+        <group position={[carX, 2.4, -4]}>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
+            const angle = (index / 8) * Math.PI * 2;
+            return (
+              <mesh
+                key={`impact-spark-${index}`}
+                position={[
+                  Math.cos(angle) * (2 + index * 0.25),
+                  Math.sin(angle * 1.7) * 1.4,
+                  Math.sin(angle) * (3 + index * 0.35),
+                ]}
+                rotation={[angle, 0, -angle]}
+              >
+                <boxGeometry args={[0.26, 0.26, 4.5 + index * 0.22]} />
+                <meshBasicMaterial color="#f97316" transparent opacity={impactOpacity * 0.82} />
+              </mesh>
+            );
+          })}
+        </group>
+      ) : null}
+    </group>
+  );
+}
+
 function Obstacles({ obstacles, distance }: { obstacles: Obstacle[]; distance: number }) {
   return (
     <>
@@ -171,6 +235,10 @@ function ObstacleMesh({ obstacle, z }: { obstacle: Obstacle; z: number }) {
   if (obstacle.type === "barrier") {
     return (
       <group position={[obstacle.x, 3.2, z]}>
+        <mesh position={[0, -3.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[8.8, 10.5, 48]} />
+          <meshBasicMaterial color="#f43f5e" transparent opacity={0.24} />
+        </mesh>
         <mesh castShadow>
           <boxGeometry args={[16, 5.2, 5]} />
           <meshStandardMaterial color="#b91c1c" roughness={0.5} />
@@ -188,6 +256,10 @@ function ObstacleMesh({ obstacle, z }: { obstacle: Obstacle; z: number }) {
   if (obstacle.type === "pace-car") {
     return (
       <group position={[obstacle.x, 2.5, z]}>
+        <mesh position={[0, -2.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[7.2, 8.8, 48]} />
+          <meshBasicMaterial color="#facc15" transparent opacity={0.28} />
+        </mesh>
         <mesh castShadow>
           <boxGeometry args={[11, 3.2, 20]} />
           <meshStandardMaterial color="#f97316" roughness={0.34} metalness={0.12} />
@@ -206,6 +278,10 @@ function ObstacleMesh({ obstacle, z }: { obstacle: Obstacle; z: number }) {
 
   return (
     <group position={[obstacle.x, 2.2, z]}>
+      <mesh position={[0, -2.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[4.6, 5.5, 40]} />
+        <meshBasicMaterial color="#fb923c" transparent opacity={0.26} />
+      </mesh>
       <mesh castShadow>
         <coneGeometry args={[4.5, 8.5, 16]} />
         <meshStandardMaterial color="#fb923c" roughness={0.52} />
@@ -376,6 +452,7 @@ export function TrackScene({ state }: TrackSceneProps) {
       <TrackDressing distance={state.distance} />
       <Car lane={state.currentLane} overdrive={state.overdriveMs > 0} />
       <Obstacles obstacles={state.obstacles} distance={state.distance} />
+      <RaceEffects state={state} />
 
       <fog attach="fog" args={["#a7ddeb", 360, 1320]} />
     </Canvas>

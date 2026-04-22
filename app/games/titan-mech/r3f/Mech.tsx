@@ -3,7 +3,7 @@ import {
   calculateDriveForces,
   normalizeTitanControls,
 } from "@logic/games/titan-mech/engine/titanSimulation";
-import type { TitanControls } from "@logic/games/titan-mech/engine/types";
+import type { TitanControls, WeaponFeedbackState } from "@logic/games/titan-mech/engine/types";
 import { CONFIG } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
@@ -130,13 +130,25 @@ export function Mech() {
     >
       <CuboidCollider args={[2.8, 4.8, 2.4]} position={[0, -0.8, 0]} />
       <group>
-        <MechChassis coolantActive={renderState.coolantBurstMs > 0} />
+        <MechChassis
+          coolantActive={renderState.coolantBurstMs > 0}
+          weaponFeedback={renderState.weaponFeedback}
+        />
       </group>
     </RigidBody>
   );
 }
 
-function MechChassis({ coolantActive }: { coolantActive: boolean }) {
+function MechChassis({
+  coolantActive,
+  weaponFeedback,
+}: {
+  coolantActive: boolean;
+  weaponFeedback: WeaponFeedbackState;
+}) {
+  const isFiring = weaponFeedback === "firing";
+  const isOverheated = weaponFeedback === "overheated";
+
   return (
     <group>
       <ArmorBox position={[0, 1.3, 0]} scale={[4.8, 3.4, 3.4]} color="#334155" />
@@ -154,6 +166,21 @@ function MechChassis({ coolantActive }: { coolantActive: boolean }) {
         <mesh position={[0, 1.1, -2.72]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[2.4, 0.08, 8, 48]} />
           <meshBasicMaterial color="#67e8f9" transparent opacity={0.7} />
+        </mesh>
+      ) : null}
+      {isFiring ? (
+        <group position={[-2.67, -0.7, 5.2]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.72, 4.6, 18]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.86} />
+          </mesh>
+          <pointLight color="#f59e0b" intensity={6} distance={16} />
+        </group>
+      ) : null}
+      {isOverheated ? (
+        <mesh position={[0, 2.6, -2.76]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[2.7, 0.12, 8, 48]} />
+          <meshBasicMaterial color="#f43f5e" transparent opacity={0.78} />
         </mesh>
       ) : null}
 

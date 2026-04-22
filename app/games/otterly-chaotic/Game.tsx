@@ -1,11 +1,11 @@
 import {
+  CartridgeStartScreen,
   createEventBus,
   GameOverScreen,
   GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
-  StartScreen,
   TimerTrait,
   useContainerSize,
   useGameLoop,
@@ -130,20 +130,24 @@ function OtterlyApp() {
     <GameViewport ref={mountRef} background="#082f49" data-browser-screenshot-mode="page">
       <OtterScene state={state} />
       {phase.phase === "menu" ? (
-        <StartScreen
+        <CartridgeStartScreen
           accent="#0ea5e9"
+          cartridgeId="Slot 06"
+          description="Keep the salad rolling while goats try to turn the rescue into lunch."
+          kicker="Pasture Panic Cartridge"
+          motif="otter"
+          onStart={() => {
+            writeState(createInitialState());
+            otterlyEntity.set(PhaseTrait, { phase: "playing" });
+          }}
+          rules={[
+            "Stay between goats and the salad to protect its health.",
+            "Bark to stun nearby goats and open a rescue window.",
+            "Push the salad toward the crater before the chase collapses.",
+          ]}
+          secondaryAccent="#84cc16"
+          startLabel="Start Sprint"
           title="Otterly Chaotic"
-          subtitle="A 3D chase arena: steer the otter with keys or a touch-anywhere joystick, bark to stun goats, and roll the Kudzu ball into the crater."
-          primaryAction={
-            <OverlayButton
-              onClick={() => {
-                writeState(createInitialState());
-                otterlyEntity.set(PhaseTrait, { phase: "playing" });
-              }}
-            >
-              Start Sprint
-            </OverlayButton>
-          }
         />
       ) : null}
       {phase.phase === "playing" ? (

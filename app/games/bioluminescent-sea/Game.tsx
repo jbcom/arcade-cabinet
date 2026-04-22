@@ -1,4 +1,4 @@
-import { GameViewport } from "@app/shared";
+import { CartridgeStartScreen, GameViewport } from "@app/shared";
 import {
   advanceScene,
   type Creature,
@@ -16,7 +16,15 @@ import { useGameLoop } from "@logic/games/bioluminescent-sea/hooks/useGameLoop";
 import { useTouchInput } from "@logic/games/bioluminescent-sea/hooks/useTouchInput";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NauticalLanding } from "./ui/game/NauticalLanding";
+
+interface CollectionBurst {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+  startedAt: number;
+}
 
 function drawCreature(ctx: CanvasRenderingContext2D, creature: Creature) {
   ctx.save();
@@ -234,14 +242,28 @@ function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, scale: number
   ctx.rotate(player.angle);
   ctx.scale(scale, scale);
 
-  const light = ctx.createLinearGradient(20, 0, 150, 0);
-  light.addColorStop(0, `rgba(165, 243, 252, ${0.26 + player.glowIntensity * 0.08})`);
+  const wideLight = ctx.createLinearGradient(8, 0, 220, 0);
+  wideLight.addColorStop(0, `rgba(125, 211, 252, ${0.14 + player.glowIntensity * 0.07})`);
+  wideLight.addColorStop(0.42, "rgba(125, 211, 252, 0.1)");
+  wideLight.addColorStop(1, "rgba(125, 211, 252, 0)");
+  ctx.fillStyle = wideLight;
+  ctx.beginPath();
+  ctx.moveTo(8, -22);
+  ctx.lineTo(228, -86);
+  ctx.lineTo(228, 86);
+  ctx.lineTo(8, 22);
+  ctx.closePath();
+  ctx.fill();
+
+  const light = ctx.createLinearGradient(20, 0, 176, 0);
+  light.addColorStop(0, `rgba(224, 242, 254, ${0.32 + player.glowIntensity * 0.12})`);
+  light.addColorStop(0.55, "rgba(165, 243, 252, 0.16)");
   light.addColorStop(1, "rgba(165, 243, 252, 0)");
   ctx.fillStyle = light;
   ctx.beginPath();
   ctx.moveTo(20, -9);
-  ctx.lineTo(158, -50);
-  ctx.lineTo(158, 50);
+  ctx.lineTo(184, -56);
+  ctx.lineTo(184, 56);
   ctx.lineTo(20, 9);
   ctx.closePath();
   ctx.fill();
@@ -288,7 +310,8 @@ function renderScene(
   width: number,
   height: number,
   scene: SceneState,
-  totalTime: number
+  totalTime: number,
+  collectionBursts: CollectionBurst[]
 ) {
   ctx.clearRect(0, 0, width, height);
   drawBackdrop(ctx, width, height, totalTime);
@@ -302,6 +325,9 @@ function renderScene(
   scene.creatures.forEach((creature) => {
     drawCreature(ctx, creature);
   });
+  collectionBursts.forEach((burst) => {
+    drawCollectionBurst(ctx, burst, totalTime);
+  });
   scene.predators.forEach((predator) => {
     drawPredator(ctx, predator);
   });
@@ -309,6 +335,41 @@ function renderScene(
     drawPirate(ctx, pirate);
   });
   drawPlayer(ctx, scene.player, getViewportScale(width, height));
+}
+
+function drawCollectionBurst(
+  ctx: CanvasRenderingContext2D,
+  burst: CollectionBurst,
+  totalTime: number
+) {
+  const age = totalTime - burst.startedAt;
+  if (age < 0 || age > 0.85) return;
+
+  const progress = age / 0.85;
+  const alpha = 1 - progress;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = `${burst.color}${Math.round(alpha * 210)
+    .toString(16)
+    .padStart(2, "0")}`;
+  ctx.lineWidth = Math.max(1.4, burst.size * 0.08);
+  ctx.beginPath();
+  ctx.arc(burst.x, burst.y, burst.size * (0.9 + progress * 2.1), 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = `rgba(254, 249, 195, ${alpha * 0.74})`;
+  ctx.lineWidth = 1.3;
+  for (let i = 0; i < 8; i++) {
+    const angle = i * (Math.PI / 4) + progress * 0.8;
+    const inner = burst.size * (0.55 + progress * 1.2);
+    const outer = burst.size * (1.15 + progress * 2.8);
+    ctx.beginPath();
+    ctx.moveTo(burst.x + Math.cos(angle) * inner, burst.y + Math.sin(angle) * inner);
+    ctx.lineTo(burst.x + Math.cos(angle) * outer, burst.y + Math.sin(angle) * outer);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawSonarPing(ctx: CanvasRenderingContext2D, scene: SceneState, totalTime: number) {
@@ -388,9 +449,43 @@ function drawBackdrop(
   drawRidge(ctx, width, height, height * 0.83, height * 0.09, "#05111f", 1.4);
   drawRidge(ctx, width, height, height * 0.94, height * 0.06, "#020817", 2.2);
 
+  drawDepthSilhouette(ctx, width * 0.2, height * 0.66, 0.72, totalTime, "#062033");
+  drawDepthSilhouette(ctx, width * 0.73, height * 0.59, 0.56, totalTime + 2.1, "#071a2b");
+
   drawCoralFan(ctx, width * 0.1, height * 0.83, 0.9);
   drawCoralFan(ctx, width * 0.82, height * 0.78, 0.72);
   drawCoralFan(ctx, width * 0.62, height * 0.9, 0.56);
+}
+
+function drawDepthSilhouette(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale: number,
+  totalTime: number,
+  color: string
+) {
+  ctx.save();
+  ctx.translate(x + Math.sin(totalTime * 0.22) * 8, y);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 92, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-64, 0);
+  ctx.lineTo(-122, -28);
+  ctx.lineTo(-112, 24);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(36, -8);
+  ctx.lineTo(74, -42);
+  ctx.lineTo(64, 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawRidge(
@@ -465,7 +560,9 @@ function shouldUpdateTelemetry(current: DiveTelemetry, next: DiveTelemetry) {
     Math.abs(current.oxygenRatio - next.oxygenRatio) > 0.01 ||
     Math.abs(current.nearestThreatDistance - next.nearestThreatDistance) > 18 ||
     Math.abs(current.nearestBeaconDistance - next.nearestBeaconDistance) > 18 ||
-    Math.abs(current.depthMeters - next.depthMeters) > 20
+    Math.abs(current.depthMeters - next.depthMeters) > 20 ||
+    current.routeLandmarkLabel !== next.routeLandmarkLabel ||
+    Math.abs(current.routeLandmarkDistance - next.routeLandmarkDistance) > 14
   );
 }
 
@@ -498,6 +595,7 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
   const predatorsRef = useRef<Predator[]>(initialScene.predators);
   const piratesRef = useRef<Pirate[]>(initialScene.pirates);
   const particlesRef = useRef<Particle[]>(initialScene.particles);
+  const collectionBurstsRef = useRef<CollectionBurst[]>([]);
   const lastCollectTimeRef = useRef(0);
   const multiplierRef = useRef(1);
   const scoreRef = useRef(0);
@@ -575,6 +673,19 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
       particlesRef.current = result.scene.particles;
 
       if (result.collection.collected.length > 0) {
+        collectionBurstsRef.current.push(
+          ...result.collection.collected.map((creature) => ({
+            color: creature.glowColor,
+            id: `${creature.id}-${Math.round(totalTime * 1000)}`,
+            size: creature.size,
+            startedAt: totalTime,
+            x: creature.x,
+            y: creature.y,
+          }))
+        );
+        collectionBurstsRef.current = collectionBurstsRef.current.filter(
+          (burst) => totalTime - burst.startedAt < 0.95
+        );
         multiplierRef.current = result.collection.multiplier;
         lastCollectTimeRef.current = result.collection.lastCollectTime;
         scoreRef.current += result.collection.scoreDelta;
@@ -593,12 +704,14 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         return;
       }
 
-      renderScene(ctx, width, height, result.scene, totalTime);
+      renderScene(ctx, width, height, result.scene, totalTime, collectionBurstsRef.current);
     },
     [dimensions, input, timeLeft, isGameOver, onGameOver]
   );
 
   useGameLoop(gameLoop, !isGameOver);
+  const threatAlert = telemetry.nearestThreatDistance < 180;
+  const landmarkAngle = telemetry.routeLandmarkBearingRadians ?? -Math.PI / 5;
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden touch-none">
@@ -608,6 +721,16 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         width={dimensions.width}
         height={dimensions.height}
         className="w-full h-full"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 transition-opacity duration-200"
+        style={{
+          background: threatAlert
+            ? "radial-gradient(circle at 50% 52%, transparent 48%, rgba(248, 113, 113, 0.26) 100%)"
+            : "radial-gradient(circle at 50% 52%, transparent 62%, rgba(14, 165, 233, 0.1) 100%)",
+          opacity: threatAlert ? 1 : 0.72,
+        }}
       />
       <div className="pointer-events-none absolute inset-x-3 top-3 grid grid-cols-3 gap-2 sm:inset-x-auto sm:left-4 sm:flex sm:gap-3">
         <div className="min-w-0 rounded-md border border-cyan-200/15 bg-slate-950/58 p-2.5 shadow-2xl shadow-cyan-950/30 backdrop-blur-md sm:min-w-28 sm:p-3">
@@ -636,7 +759,7 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         </div>
       </div>
       <div className="pointer-events-none absolute inset-x-3 bottom-3 sm:inset-x-4">
-        <div className="mx-auto grid max-w-5xl gap-2 rounded-md border border-cyan-100/15 bg-slate-950/60 p-3 shadow-2xl shadow-cyan-950/30 backdrop-blur-md sm:grid-cols-[1.35fr_0.9fr_0.85fr] sm:items-end">
+        <div className="mx-auto grid max-w-5xl gap-2 rounded-md border border-cyan-100/15 bg-slate-950/60 p-3 shadow-2xl shadow-cyan-950/30 backdrop-blur-md sm:grid-cols-[1.35fr_0.9fr_0.85fr_0.75fr] sm:items-end">
           <div className="min-w-0">
             <div className="mb-1 font-semibold text-[0.62rem] uppercase tracking-widest text-cyan-300">
               Dive Plan
@@ -679,6 +802,24 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
               <div className="truncate font-bold text-amber-200">{telemetry.pressureLabel}</div>
             </div>
           </div>
+          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-md border border-cyan-200/10 bg-cyan-950/22 p-2 text-xs sm:text-sm">
+            <div
+              aria-hidden="true"
+              className="grid h-10 w-10 place-items-center rounded-full border border-cyan-200/30 bg-cyan-900/35"
+            >
+              <div
+                className="h-4 w-1 rounded-full bg-cyan-100 shadow-[0_0_14px_rgba(165,243,252,0.8)]"
+                style={{ transform: `rotate(${landmarkAngle + Math.PI / 2}rad)` }}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold uppercase tracking-widest text-slate-400">Route</div>
+              <div className="truncate font-bold text-cyan-100">{telemetry.routeLandmarkLabel}</div>
+              <div className="truncate text-[0.68rem] font-semibold text-amber-200">
+                {formatThreatDistance(telemetry.routeLandmarkDistance)}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -694,7 +835,22 @@ export default function Game() {
       <AnimatePresence mode="wait">
         {gameState === "landing" && (
           <motion.div key="landing" className="absolute inset-0" exit={{ opacity: 0 }}>
-            <NauticalLanding onStartGame={() => setGameState("playing")} />
+            <CartridgeStartScreen
+              accent="#4ecdc4"
+              cartridgeId="Slot 01"
+              description="Descend through a glowing ocean route, collect light, and avoid the dark silhouettes."
+              kicker="Deep Sea Cartridge"
+              motif="sea"
+              onStart={() => setGameState("playing")}
+              rules={[
+                "Collect bioluminescent chains to stay oriented in the trench.",
+                "Use the route beacon and headlamp cone to read the next safe direction.",
+                "Predator and pirate glints mean change course before oxygen runs low.",
+              ]}
+              secondaryAccent="#a78bfa"
+              startLabel="Start Descent"
+              title="COLLECTOR"
+            />
           </motion.div>
         )}
         {gameState === "playing" && (

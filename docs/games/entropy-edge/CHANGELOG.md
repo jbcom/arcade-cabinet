@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added resonance surge payoff that clears or weakens blocked cells.
+- Added resonance bands, corrected Three opacity usage, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/entropy-edge-v0.1.0...entropy-edge-v0.2.0) (2026-04-22)
 
 

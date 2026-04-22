@@ -12,6 +12,7 @@ import {
   findNearestThreatDistance,
   GAME_DURATION,
   getDeterministicWrapX,
+  getDiveRouteLandmark,
   getDiveTelemetry,
   hasPredatorCollision,
   type Player,
@@ -157,6 +158,8 @@ describe("deep sea simulation", () => {
     expect(telemetry.depthMeters).toBeGreaterThan(2_800);
     expect(telemetry.nearestBeaconDistance).toBeGreaterThan(0);
     expect(telemetry.beaconBearingRadians).not.toBeNull();
+    expect(telemetry.routeLandmarkLabel).toBe("Trench Choir");
+    expect(telemetry.routeLandmarkDistance).toBeGreaterThan(0);
     expect(telemetry.oxygenRatio).toBeCloseTo(1 / 6);
     expect(["Ascent", "Hunted", "Critical", "Calm"]).toContain(telemetry.pressureLabel);
   });
@@ -169,6 +172,16 @@ describe("deep sea simulation", () => {
 
     expect(vector.distance).toBe(20);
     expect(vector.bearingRadians).toBeCloseTo(0);
+  });
+
+  test("advances route landmark telemetry with the beacon chain", () => {
+    const early = getDiveRouteLandmark(0.1, { bearingRadians: 0.4, distance: 160 });
+    const late = getDiveRouteLandmark(0.94, { bearingRadians: -0.2, distance: 42 });
+
+    expect(early.label).toBe("Kelp Gate");
+    expect(early.bearingRadians).toBeCloseTo(0.4);
+    expect(late.label).toBe("Living Map");
+    expect(late.distance).toBeLessThan(early.distance);
   });
 });
 

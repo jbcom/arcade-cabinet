@@ -1,4 +1,5 @@
 import { FloatingJoystick, OverlayButton, useResponsive } from "@app/shared";
+import { getGoatIntent } from "@logic/games/otterly-chaotic/engine/simulation";
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 
 interface HUDProps {
@@ -9,6 +10,7 @@ interface HUDProps {
 
 export function HUD({ state, onBark, onMove }: HUDProps) {
   const { isMobile } = useResponsive();
+  const goatIntents = state.goats.map((goat) => getGoatIntent(state, goat));
   const panelStyle = {
     background: "rgba(15,23,42,0.74)",
     border: "1px solid rgba(148,163,184,0.35)",
@@ -90,6 +92,36 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
             {state.rallyMs > 0 ? `${(state.rallyMs / 1000).toFixed(1)}s` : "Build with barks"}
           </div>
           <div style={{ color: "#a7f3d0" }}>Rescue streak: {state.rescueStreak}</div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 4,
+              marginTop: 6,
+            }}
+          >
+            {goatIntents.map((intent) => (
+              <span
+                key={intent.goatId}
+                style={{
+                  border: "1px solid rgba(226,232,240,0.22)",
+                  borderRadius: 6,
+                  color:
+                    intent.state === "stunned"
+                      ? "#c084fc"
+                      : intent.state === "chewing"
+                        ? "#fb7185"
+                        : "#facc15",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: "0.12rem 0.35rem",
+                  textTransform: "uppercase",
+                }}
+              >
+                {intent.goatId}: {intent.state}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       <div

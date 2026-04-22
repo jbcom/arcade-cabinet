@@ -1,5 +1,8 @@
 import { createSpawnCampLayout } from "@logic/games/voxel-realms/engine/voxelSimulation";
+import { VoxelTrait } from "@logic/games/voxel-realms/store/traits";
+import { voxelEntity } from "@logic/games/voxel-realms/store/world";
 import { RigidBody } from "@react-three/rapier";
+import { useTrait } from "koota/react";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 
@@ -17,8 +20,13 @@ const RESOURCE_COLORS = {
 
 export function SpawnCamp({ physicsEnabled = true }: { physicsEnabled?: boolean }) {
   const layout = useMemo(() => createSpawnCampLayout(), []);
+  const state = useTrait(voxelEntity, VoxelTrait);
   const solidBlocks = layout.blocks.filter((block) => block.type !== "water");
   const waterBlocks = layout.blocks.filter((block) => block.type === "water");
+  const recentPickup =
+    state.lastPickup && state.timeSurvived - state.lastPickup.elapsedMs < 2_500
+      ? state.lastPickup
+      : null;
 
   return (
     <group>
@@ -66,6 +74,26 @@ export function SpawnCamp({ physicsEnabled = true }: { physicsEnabled?: boolean 
             />
           </mesh>
           <pointLight color={resource.accent} intensity={1.8} distance={8} />
+          {recentPickup?.label === resource.label ? (
+            <group>
+              <mesh position={[0, 0.24, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.9, 1.24, 48]} />
+                <meshBasicMaterial color={resource.accent} transparent opacity={0.64} />
+              </mesh>
+              {[0, 1, 2, 3].map((index) => {
+                const angle = (index / 4) * Math.PI * 2;
+                return (
+                  <mesh
+                    key={`pickup-spark-${resource.id}-${index}`}
+                    position={[Math.cos(angle) * 0.78, 1.05 + index * 0.12, Math.sin(angle) * 0.78]}
+                  >
+                    <boxGeometry args={[0.16, 0.16, 0.16]} />
+                    <meshBasicMaterial color={resource.accent} transparent opacity={0.86} />
+                  </mesh>
+                );
+              })}
+            </group>
+          ) : null}
         </group>
       ))}
 

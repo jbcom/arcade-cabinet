@@ -46,6 +46,7 @@ export default defineConfig({
       "@react-three/rapier",
       "framer-motion",
       "koota",
+      "lucide-react",
       "simplex-noise",
     ],
   },

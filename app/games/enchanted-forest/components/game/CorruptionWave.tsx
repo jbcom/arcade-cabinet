@@ -1,6 +1,7 @@
 import {
   advanceShadowPosition,
   type CorruptionShadow,
+  type ShadowIntentPath,
   type TreePosition,
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,6 +28,7 @@ interface CorruptionWaveProps {
   shadows: CorruptionShadow[];
   onShadowReachTree: (shadowId: number, treeIndex: number) => void;
   onShadowPurified: (shadowId: number) => void;
+  shadowIntents: ShadowIntentPath[];
   treePositions: TreePosition[];
   isPurifying: boolean;
   purifyZone?: { x: number; y: number; radius: number } | null;
@@ -34,24 +36,76 @@ interface CorruptionWaveProps {
 
 export function CorruptionWave({
   shadows,
+  shadowIntents,
   onShadowReachTree,
   onShadowPurified,
   treePositions,
   purifyZone,
 }: CorruptionWaveProps) {
   return (
-    <AnimatePresence>
-      {shadows.map((shadow) => (
-        <CorruptionShadowEntity
-          key={shadow.id}
-          shadow={shadow}
-          treePosition={treePositions[shadow.targetTreeIndex]}
-          onReachTree={() => onShadowReachTree(shadow.id, shadow.targetTreeIndex)}
-          onPurified={() => onShadowPurified(shadow.id)}
-          purifyZone={purifyZone}
-        />
+    <>
+      <ShadowIntentTelegraph paths={shadowIntents} />
+      <AnimatePresence>
+        {shadows.map((shadow) => (
+          <CorruptionShadowEntity
+            key={shadow.id}
+            shadow={shadow}
+            treePosition={treePositions[shadow.targetTreeIndex]}
+            onReachTree={() => onShadowReachTree(shadow.id, shadow.targetTreeIndex)}
+            onPurified={() => onShadowPurified(shadow.id)}
+            purifyZone={purifyZone}
+          />
+        ))}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function ShadowIntentTelegraph({ paths }: { paths: ShadowIntentPath[] }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <linearGradient id="shadow-intent" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="rgba(168, 85, 247, 0)" />
+          <stop offset="54%" stopColor="rgba(168, 85, 247, 0.38)" />
+          <stop offset="100%" stopColor="rgba(251, 191, 36, 0.5)" />
+        </linearGradient>
+      </defs>
+      {paths.map((path) => (
+        <g key={`intent-${path.id}`}>
+          <motion.path
+            d={`M ${path.fromX} ${path.fromY} C ${path.fromX} ${(path.fromY + path.targetY) / 2}, ${path.targetX} ${(path.fromY + path.targetY) / 2}, ${path.targetX} ${path.targetY}`}
+            fill="none"
+            stroke="url(#shadow-intent)"
+            strokeLinecap="round"
+            strokeWidth={0.28 + path.alertLevel * 0.22}
+            strokeDasharray="1.2 1.2"
+            initial={{ opacity: 0, pathLength: 0 }}
+            animate={{
+              opacity: [0.18, 0.52 + path.alertLevel * 0.28, 0.22],
+              pathLength: 1,
+            }}
+            transition={{ duration: 1.4, repeat: Infinity, delay: (path.id % 5) * 0.08 }}
+          />
+          <motion.circle
+            cx={path.targetX}
+            cy={path.targetY}
+            r={1.4 + path.alertLevel * 1.4}
+            fill="none"
+            stroke="rgba(251, 191, 36, 0.55)"
+            strokeWidth="0.2"
+            initial={{ opacity: 0.2, scale: 0.6 }}
+            animate={{ opacity: [0.25, 0.75, 0.25], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: 1.1, repeat: Infinity, delay: (path.id % 3) * 0.11 }}
+          />
+        </g>
       ))}
-    </AnimatePresence>
+    </svg>
   );
 }
 

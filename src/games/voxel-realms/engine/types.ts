@@ -38,6 +38,8 @@ export interface VoxelState {
   maxHp: number;
   inventory: string[];
   biome: string;
+  biomeDiscovery: { biome: string; elapsedMs: number } | null;
+  lastPickup: { blockType: BlockType; elapsedMs: number; label: string } | null;
   objective: string;
   objectiveProgress: number;
   coordinates: Vec3;

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added weapon fire gating, heat/coolant feedback, and target reticle state.
+- Added muzzle flash, overheat feedback, objective rings, damage vignette, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/titan-mech-v0.1.0...titan-mech-v0.2.0) (2026-04-22)
 
 

@@ -17,6 +17,16 @@ export function HUD() {
 
   const isDanger = state.distToLava < 60;
   const intensity = Math.max(0, 1.0 - state.distToLava / 60);
+  const grappleColor =
+    state.grappleTargetState === "taut"
+      ? "#00ff66"
+      : state.grappleTargetState === "locked"
+        ? "#36fbd1"
+        : state.grappleTargetState === "in-range"
+          ? "#00e5ff"
+          : state.grappleTargetState === "missed"
+            ? "#ff7448"
+            : "#94a3b8";
   const dispatchControl = (
     name: "primordial:grapple-start" | "primordial:grapple-end" | "primordial:jump"
   ) => {
@@ -109,6 +119,17 @@ export function HUD() {
             <div style={{ color: "#f8fafc", fontWeight: 800, lineHeight: 1.25 }}>
               {state.objective}
             </div>
+            <div
+              style={{
+                color: grappleColor,
+                fontSize: 12,
+                fontWeight: 900,
+                marginTop: 6,
+                textTransform: "uppercase",
+              }}
+            >
+              Grapple {state.grappleTargetState.replace("-", " ")}
+            </div>
           </div>
 
           <div
@@ -121,11 +142,16 @@ export function HUD() {
           >
             <ControlButton
               label="Grip"
+              accent={grappleColor}
               onPointerDown={() => dispatchControl("primordial:grapple-start")}
               onPointerUp={() => dispatchControl("primordial:grapple-end")}
               onPointerLeave={() => dispatchControl("primordial:grapple-end")}
             />
-            <ControlButton label="Jump" onPointerDown={() => dispatchControl("primordial:jump")} />
+            <ControlButton
+              label="Jump"
+              accent="#00e5ff"
+              onPointerDown={() => dispatchControl("primordial:jump")}
+            />
           </div>
         </div>
       </div>
@@ -185,11 +211,13 @@ function Metric({
 
 function ControlButton({
   label,
+  accent = "#00e5ff",
   onPointerDown,
   onPointerUp,
   onPointerLeave,
 }: {
   label: string;
+  accent?: string;
   onPointerDown: () => void;
   onPointerUp?: () => void;
   onPointerLeave?: () => void;
@@ -203,13 +231,13 @@ function ControlButton({
       style={{
         height: "4.25rem",
         borderRadius: 8,
-        border: "1px solid rgba(0, 229, 255, 0.55)",
-        background: "rgba(0, 229, 255, 0.14)",
+        border: `1px solid ${accent}`,
+        background: `${accent}24`,
         color: "#dffbff",
         fontWeight: 900,
         textTransform: "uppercase",
         letterSpacing: 0,
-        boxShadow: "0 0 18px rgba(0, 229, 255, 0.2)",
+        boxShadow: `0 0 18px ${accent}40`,
         touchAction: "none",
       }}
     >

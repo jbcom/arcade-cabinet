@@ -24,6 +24,8 @@ describe("voxel simulation", () => {
     expect(state.objective).toContain("Survey");
     expect(state.nearestResourceDistance).toBeGreaterThan(0);
     expect(state.surveyPings).toBe(0);
+    expect(state.lastPickup).toBeNull();
+    expect(state.biomeDiscovery).toBeNull();
   });
 
   test("keeps spawn camp layout deterministic and readable", () => {
@@ -83,6 +85,7 @@ describe("voxel simulation", () => {
     expect(next.score).toBe(60);
     expect(next.objectiveProgress).toBeGreaterThan(40);
     expect(next.objective).toContain("Landmark");
+    expect(next.biomeDiscovery).toEqual({ biome: "greenwood", elapsedMs: 1_500 });
     expect(next.coordinates).toEqual({ x: 36, y: 8, z: -48 });
     expect(next.timeSurvived).toBe(1_500);
     expect(state.score).toBe(0);
@@ -123,6 +126,11 @@ describe("voxel simulation", () => {
     expect(findNearbyResource(next.coordinates)?.id).toBe(resource.id);
     expect(findNearestResourceDistance(state.coordinates)).toBe(state.nearestResourceDistance);
     expect(next.inventory).toEqual([resource.label]);
+    expect(next.lastPickup).toEqual({
+      blockType: resource.blockType,
+      elapsedMs: 500,
+      label: resource.label,
+    });
     expect(next.surveyPings).toBe(1);
     expect(next.nearestResourceDistance).toBeGreaterThanOrEqual(0);
     expect(next.objective).toContain(resource.label);

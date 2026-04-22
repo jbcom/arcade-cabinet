@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added route landmark beacon telemetry and objective text tied to trench markers.
+- Added collection burst rings, stronger headlamp/depth treatment, warning glints, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/bioluminescent-sea-v0.1.0...bioluminescent-sea-v0.2.0) (2026-04-22)
 
 

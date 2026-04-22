@@ -13,6 +13,13 @@ A gesture and rhythm defense game about protecting sacred trees by drawing music
 
 The grove should feel theatrical and hand-authored. Trees form a readable stage line, corruption advances as visible waves, and rune drawing owns the foreground. Emerald, violet, and warm firefly accents separate safe life, magic, and threat. The browser capture path uses a full page screenshot because decorative canvases are only part of the stage; trees, ward rings, UI, and pointer/touch drawing must be verified together.
 
+## Current Feature and Polish Pass
+
+- Rune cadence now builds harmony surge state through alternating spell types.
+- Shadow intent paths are generated from pure logic and rendered as visible telegraphs toward targeted trees.
+- Mobile rune affordances are larger and easier to read while shield, heal, and purify remain distinct.
+- The cabinet landing uses the shared cartridge frame with a grove label, play control, and rules drawer.
+
 ## Simulation and Test Boundaries
 
 `src/engine/forestSimulation.ts` owns deterministic wave spawning, tree state, spell application, shadow movement, wave transitions, threat scoring, and rune gesture classification. Rendering components consume those helpers instead of keeping gameplay math and random spawn rules in React effects.

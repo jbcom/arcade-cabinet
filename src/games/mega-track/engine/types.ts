@@ -21,6 +21,9 @@ export interface MegaTrackState {
   integrity: number;
   impactCount: number;
   lastImpactMs: number;
+  lastImpactType: Obstacle["type"] | null;
+  lastCleanPassMs: number;
+  lastOverdriveStartMs: number;
   elapsedMs: number;
   milestone: number;
   boostCharge: number;

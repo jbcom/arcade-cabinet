@@ -93,8 +93,10 @@ function GridSeams() {
           [x - 0.5, 0.085, -GRID_HALF - 0.48],
           [x - 0.5, 0.085, GRID_HALF + 0.48],
         ]}
-        color="rgba(125, 211, 252, 0.22)"
+        color="#7dd3fc"
         lineWidth={1}
+        transparent
+        opacity={0.22}
       />
     );
   }
@@ -107,8 +109,10 @@ function GridSeams() {
           [-GRID_HALF - 0.48, 0.085, z - 0.5],
           [GRID_HALF + 0.48, 0.085, z - 0.5],
         ]}
-        color="rgba(125, 211, 252, 0.14)"
+        color="#7dd3fc"
         lineWidth={1}
+        transparent
+        opacity={0.14}
       />
     );
   }
@@ -178,8 +182,10 @@ function FallingBlockMesh({ block }: { block: FallingBlock }) {
           [block.gridX, 0.5, block.gridZ],
           [block.gridX, Math.max(0.6, block.worldY - 0.6), block.gridZ],
         ]}
-        color="rgba(0, 229, 255, 0.32)"
+        color="#00e5ff"
         lineWidth={2}
+        transparent
+        opacity={0.32}
       />
     </group>
   );
@@ -253,12 +259,34 @@ function TargetGuide({ state }: { state: EntropyState }) {
         [state.playerGridX, 0.18, state.playerGridZ],
         [state.targetNode.gridX, 0.18, state.targetNode.gridZ],
       ]}
-      color="rgba(0, 229, 255, 0.5)"
+      color="#00e5ff"
       dashed
       dashScale={0.8}
       gapSize={0.12}
       lineWidth={2}
+      transparent
+      opacity={0.5}
     />
+  );
+}
+
+function ResonanceBands({ state }: { state: EntropyState }) {
+  const strength = state.isResonanceMax ? 1 : state.resonance;
+  if (strength <= 0.04) return null;
+
+  return (
+    <group position={[state.playerGridX, 0.16, state.playerGridZ]} rotation={[-Math.PI / 2, 0, 0]}>
+      {[0, 1, 2].map((index) => (
+        <mesh key={`resonance-band-${index}`} scale={1 + index * 0.44 + strength * 0.3}>
+          <ringGeometry args={[0.82 + index * 0.28, 0.92 + index * 0.28, 64]} />
+          <meshBasicMaterial
+            color={state.isResonanceMax ? "#ffcc00" : "#00e5ff"}
+            transparent
+            opacity={Math.max(0.06, strength * (0.34 - index * 0.07))}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -336,6 +364,7 @@ export function EdgeScene({ state, isPlaying }: EdgeSceneProps) {
       <GridSeams />
       <RiftPillars />
       <TargetGuide state={state} />
+      <ResonanceBands state={state} />
 
       {state.blockedCells.map((key) => (
         <BlockedCell key={key} cellKey={key} />

@@ -14,6 +14,13 @@ The mech is a composed industrial machine, not a capsule stand-in: torso armor, 
 
 Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat over dark metal rather than a single-color neon wash. The camera sits behind and above the chassis, tightening slightly on portrait screens while keeping the objective rings, obstacles, and mech centerline legible.
 
+## Current Feature and Polish Pass
+
+- Weapon feedback now exposes firing, cooling, dry, and overheated states from pure simulation.
+- Firing consumes energy and heat budget while the scene renders muzzle flash, reticle, and overheat feedback.
+- Objective rings, pylon progress, damage vignette, and brighter threat hierarchy improve the mobile combat read.
+- The cabinet landing uses the shared cartridge frame with a mech label, play control, and rules drawer.
+
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.

@@ -10,6 +10,7 @@ import {
   clearShield,
   createInitialForestState,
   getForestTransition,
+  getShadowIntentPath,
   MAX_WAVES,
   regenerateMana,
   removePurifiedShadow,
@@ -151,6 +152,7 @@ export function ForestGame() {
 
       <CorruptionWave
         shadows={forestState.shadows}
+        shadowIntents={forestState.shadows.map(getShadowIntentPath)}
         treePositions={TREE_POSITIONS}
         onShadowReachTree={handleShadowReach}
         onShadowPurified={handleShadowPurified}

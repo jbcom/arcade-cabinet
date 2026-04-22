@@ -1,12 +1,15 @@
 import { createArenaLayout } from "@logic/games/titan-mech/engine/titanSimulation";
 import type { ArenaBeaconData, ArenaObstacleData } from "@logic/games/titan-mech/engine/types";
+import { TitanTrait } from "@logic/games/titan-mech/store/traits";
+import { titanEntity } from "@logic/games/titan-mech/store/world";
 import { ContactShadows, Grid, Sky, Sparkles, Stars } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
+import { useTrait } from "koota/react";
 import { Mech } from "./Mech";
 
 const layout = createArenaLayout();
 
-function ArenaFloor() {
+function ArenaFloor({ objectiveProgress }: { objectiveProgress: number }) {
   return (
     <RigidBody type="fixed">
       <group>
@@ -33,7 +36,7 @@ function ArenaFloor() {
           </mesh>
         ))}
         {layout.beacons.map((beacon) => (
-          <Beacon key={beacon.id} beacon={beacon} />
+          <Beacon key={beacon.id} beacon={beacon} objectiveProgress={objectiveProgress} />
         ))}
       </group>
     </RigidBody>
@@ -155,28 +158,46 @@ function Pylon({ obstacle }: { obstacle: ArenaObstacleData }) {
   );
 }
 
-function Beacon({ beacon }: { beacon: ArenaBeaconData }) {
+function Beacon({
+  beacon,
+  objectiveProgress,
+}: {
+  beacon: ArenaBeaconData;
+  objectiveProgress: number;
+}) {
+  const progressGlow = Math.max(0.18, objectiveProgress / 100);
+
   return (
     <group position={beacon.position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]}>
+        <ringGeometry args={[beacon.radius * 1.04, beacon.radius * 1.22, 64]} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={progressGlow * 0.28} />
+      </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
         <ringGeometry args={[beacon.radius * 0.72, beacon.radius, 48]} />
         <meshStandardMaterial
           color="#f59e0b"
           emissive="#f59e0b"
-          emissiveIntensity={0.32}
+          emissiveIntensity={0.32 + progressGlow * 0.24}
           transparent
           opacity={0.5}
         />
       </mesh>
       <mesh position={[0, 1.4, 0]}>
         <cylinderGeometry args={[0.28, 0.28, 2.8, 10]} />
-        <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.7} />
+        <meshStandardMaterial
+          color="#f59e0b"
+          emissive="#f59e0b"
+          emissiveIntensity={0.7 + progressGlow}
+        />
       </mesh>
     </group>
   );
 }
 
 export function World() {
+  const state = useTrait(titanEntity, TitanTrait);
+
   return (
     <>
       <fog attach="fog" args={["#141922", 42, 176]} />
@@ -195,7 +216,7 @@ export function World() {
       <pointLight position={[-42, 11, -38]} color="#f59e0b" intensity={1.8} distance={58} />
 
       <Physics gravity={[0, -9.8, 0]}>
-        <ArenaFloor />
+        <ArenaFloor objectiveProgress={state.objectiveProgress} />
         {layout.obstacles.map((obstacle) => (
           <ArenaObstacle key={obstacle.id} obstacle={obstacle} />
         ))}

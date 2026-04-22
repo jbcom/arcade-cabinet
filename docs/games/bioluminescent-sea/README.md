@@ -17,6 +17,13 @@ The scene uses a parent-sized canvas, particulate drift, authored beacon lanes, 
 
 The HUD stays compact: score, time, and chain sit at the top edge, while the dive-plan panel reports oxygen, pressure, depth, and nearest-threat distance without blocking the center of the playfield.
 
+## Current Feature and Polish Pass
+
+- Route landmark beacons now expose deterministic bearing, distance, and label telemetry from pure dive logic.
+- The route HUD adds a compass readout so the player can follow trench markers instead of reading the objective as prose only.
+- Collection bursts, a stronger headlamp cone, deeper silhouettes, and threat warning glints make pickups and danger readable in desktop and mobile captures.
+- The cabinet landing uses the shared cartridge frame with a deep-sea label, play control, and rules drawer.
+
 ## Gameplay Systems
 
 - `src/engine/deepSeaSimulation.ts` owns the deterministic dive route, authored creature distribution, scoring chains, predator collision, threat telemetry, and particle wrapping.

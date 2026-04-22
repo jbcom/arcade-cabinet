@@ -33,6 +33,16 @@ export interface PurifyZone {
   radius: number;
 }
 
+export interface ShadowIntentPath {
+  id: number;
+  alertLevel: number;
+  fromX: number;
+  fromY: number;
+  targetTreeId: string;
+  targetX: number;
+  targetY: number;
+}
+
 export interface ForestState {
   phase: ForestPhase;
   wave: number;
@@ -267,6 +277,21 @@ export function advanceShadowPosition(
     x: shadow.x + (dx / distance) * shadow.speed * stepScale,
     y: shadow.y + (dy / distance) * shadow.speed * stepScale,
     reached: false,
+  };
+}
+
+export function getShadowIntentPath(shadow: CorruptionShadow): ShadowIntentPath {
+  const target = TREE_POSITIONS[shadow.targetTreeIndex] ?? TREE_POSITIONS[0];
+  const distance = Math.hypot(target.x - shadow.x, target.y - shadow.y);
+
+  return {
+    alertLevel: clamp(1 - distance / 92, 0, 1),
+    fromX: shadow.x,
+    fromY: shadow.y,
+    id: shadow.id,
+    targetTreeId: target.id,
+    targetX: target.x,
+    targetY: target.y,
   };
 }
 

@@ -1,4 +1,5 @@
 import type { ConstellationPattern } from "./constellations";
+import { getConstellationForLevel } from "./constellations";
 
 export const DEFAULT_POINT_MATCH_RADIUS = 8;
 
@@ -49,4 +50,15 @@ export function isConstellationComplete(
   });
 
   return allPointsPlanted && allConnectionsMade;
+}
+
+export function getNextConstellationPreview(level: number) {
+  const nextPattern = getConstellationForLevel(level + 1);
+
+  return {
+    connectionCount: nextPattern.connections.length,
+    level: level + 1,
+    name: nextPattern.name,
+    pointCount: nextPattern.points.length,
+  };
 }

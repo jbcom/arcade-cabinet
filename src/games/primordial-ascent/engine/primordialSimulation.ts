@@ -36,6 +36,7 @@ export function createInitialPrimordialState(
     thermalLift: calculateThermalLift(
       calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight)
     ),
+    grappleTargetState: "none",
     objective: DEFAULT_OBJECTIVE,
     objectiveProgress: calculateObjectiveProgress(altitude),
   };
@@ -129,6 +130,11 @@ export function advancePrimordialState(
     lavaHeight: telemetry.lavaHeight,
     thermalLift,
     isInGrappleRange: canGrapple(telemetry.grappleDistance),
+    grappleTargetState: calculateGrappleTargetState(
+      telemetry.grappleDistance,
+      telemetry.grappleActive,
+      telemetry.grappleTension
+    ),
     objective: describeObjective(objectiveProgress, distToLava),
     objectiveProgress,
   };
@@ -175,6 +181,18 @@ export function calculateThermalLift(distToLava: number): number {
 
 export function canGrapple(distance: number | null | undefined): boolean {
   return distance !== null && distance !== undefined && distance <= CONFIG.maxTetherDist;
+}
+
+export function calculateGrappleTargetState(
+  distance: number | null | undefined,
+  grappleActive = false,
+  tension = 0
+) {
+  if (distance === null || distance === undefined) return "none";
+  if (!canGrapple(distance)) return "missed";
+  if (grappleActive && tension > 0.65) return "taut";
+  if (grappleActive) return "locked";
+  return "in-range";
 }
 
 export function calculateAirControlImpulse(

@@ -7,6 +7,17 @@ import { useEffect, useState } from "react";
 export function Crosshair() {
   const state = useTrait(primordialEntity, PrimordialTrait);
   const [isLocked, setIsLocked] = useState(false);
+  const reticleColor =
+    state.grappleTargetState === "taut"
+      ? "#00ff66"
+      : state.grappleTargetState === "locked"
+        ? "#36fbd1"
+        : state.grappleTargetState === "in-range"
+          ? "#00e5ff"
+          : state.grappleTargetState === "missed"
+            ? "#ff7448"
+            : "rgba(255, 255, 255, 0.8)";
+  const targetVisible = state.grappleTargetState !== "none" || isLocked;
 
   useEffect(() => {
     const handlePointerDown = (e: MouseEvent) => {
@@ -45,14 +56,28 @@ export function Crosshair() {
       <motion.div
         className="absolute rounded-full"
         style={{
-          border: `2px solid ${isLocked ? "#00ff66" : "rgba(255, 255, 255, 0.8)"}`,
-          boxShadow: isLocked
-            ? "0 0 15px #00ff66, inset 0 0 10px #00ff66"
+          border: `2px solid ${reticleColor}`,
+          boxShadow: targetVisible
+            ? `0 0 15px ${reticleColor}, inset 0 0 10px ${reticleColor}`
             : "0 0 5px rgba(0,0,0,0.8)",
         }}
         animate={{
-          width: isLocked ? 20 : state.isInGrappleRange ? 24 : 16,
-          height: isLocked ? 20 : state.isInGrappleRange ? 24 : 16,
+          width:
+            state.grappleTargetState === "taut"
+              ? 18
+              : state.grappleTargetState === "locked"
+                ? 20
+                : state.isInGrappleRange
+                  ? 24
+                  : 16,
+          height:
+            state.grappleTargetState === "taut"
+              ? 18
+              : state.grappleTargetState === "locked"
+                ? 20
+                : state.isInGrappleRange
+                  ? 24
+                  : 16,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       />

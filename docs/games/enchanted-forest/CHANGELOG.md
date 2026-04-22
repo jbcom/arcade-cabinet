@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added rune harmony surge state and deterministic shadow intent path metadata.
+- Added shadow path telegraphs, larger mobile rune affordances, distinct spell feedback, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/enchanted-forest-v0.1.0...enchanted-forest-v0.2.0) (2026-04-22)
 
 

@@ -1,6 +1,7 @@
 import { browserTestCanvasGlOptions } from "@app/shared";
-import { GOAL, WATER_ZONE } from "@logic/games/otterly-chaotic/engine/simulation";
-import type { OtterlyState } from "@logic/games/otterly-chaotic/engine/types";
+import { GOAL, getGoatIntent, WATER_ZONE } from "@logic/games/otterly-chaotic/engine/simulation";
+import type { GoatState, OtterlyState } from "@logic/games/otterly-chaotic/engine/types";
+import { Line } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
@@ -143,18 +144,22 @@ export function OtterScene({ state }: OtterSceneProps) {
         <meshStandardMaterial color="#0ea5e9" transparent opacity={0.82} roughness={0.28} />
       </mesh>
       <GoalMarker />
+      <GoalPullLine state={state} />
       <SaladBall state={state} />
       <Character position={[state.otter.x, 0.1, state.otter.y]} color="#a8a29e" scale={1.1} />
       {state.goats.map((goat) => (
         <group key={goat.id}>
+          <GoatIntentLine goat={goat} state={state} />
           <Character
             position={[goat.position.x, 0.1, goat.position.y]}
             color={goat.stunnedMs > 0 ? "#c084fc" : "#e2e8f0"}
             scale={goat.id === "elder" ? 1.15 : 1}
             isGoat={true}
           />
+          {goat.stunnedMs > 0 ? <StunStars goat={goat} /> : null}
         </group>
       ))}
+      <BarkShockwave state={state} />
       {(
         [
           [1.4, -2.8],
@@ -174,6 +179,83 @@ export function OtterScene({ state }: OtterSceneProps) {
         </mesh>
       ))}
     </Canvas>
+  );
+}
+
+function GoatIntentLine({ goat, state }: { goat: GoatState; state: OtterlyState }) {
+  const intent = getGoatIntent(state, goat);
+  const color =
+    intent.state === "stunned" ? "#c084fc" : intent.state === "chewing" ? "#fb7185" : "#facc15";
+
+  return (
+    <Line
+      points={[
+        [goat.position.x, 0.08, goat.position.y],
+        [state.ball.x, 0.08, state.ball.y],
+      ]}
+      color={color}
+      lineWidth={2}
+      transparent
+      opacity={0.16 + intent.alertLevel * 0.5}
+      dashed={intent.state !== "chewing"}
+      dashScale={0.7}
+      gapSize={0.12}
+    />
+  );
+}
+
+function StunStars({ goat }: { goat: GoatState }) {
+  return (
+    <group position={[goat.position.x, 1.24, goat.position.y]}>
+      {[0, 1, 2].map((index) => {
+        const angle = (index / 3) * Math.PI * 2;
+        return (
+          <mesh
+            key={`stun-${goat.id}-${index}`}
+            position={[Math.cos(angle) * 0.42, 0.1 + index * 0.06, Math.sin(angle) * 0.42]}
+            rotation={[0, angle, Math.PI / 4]}
+          >
+            <octahedronGeometry args={[0.11, 0]} />
+            <meshBasicMaterial color="#fde047" transparent opacity={0.84} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function BarkShockwave({ state }: { state: OtterlyState }) {
+  const age = state.elapsedMs - state.lastBarkMs;
+  if (!Number.isFinite(age) || age < 0 || age > 760) return null;
+
+  const progress = age / 760;
+  return (
+    <mesh position={[state.otter.x, 0.12, state.otter.y]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.45 + progress * 2.6, 0.62 + progress * 2.6, 64]} />
+      <meshBasicMaterial
+        color={state.lastBarkStunned > 0 ? "#fde047" : "#38bdf8"}
+        transparent
+        opacity={(1 - progress) * 0.58}
+      />
+    </mesh>
+  );
+}
+
+function GoalPullLine({ state }: { state: OtterlyState }) {
+  return (
+    <Line
+      points={[
+        [state.ball.x, 0.1, state.ball.y],
+        [GOAL.x, 0.1, GOAL.y],
+      ]}
+      color="#fde047"
+      lineWidth={2}
+      transparent
+      opacity={0.36}
+      dashed
+      dashScale={0.65}
+      gapSize={0.16}
+    />
   );
 }
 
@@ -325,6 +407,7 @@ function GoalMarker() {
 
 function SaladBall({ state }: { state: OtterlyState }) {
   const radius = 0.42 + state.ballHealth / 350;
+  const damageRatio = 1 - state.ballHealth / 100;
   return (
     <group position={[state.ball.x, 0.4, state.ball.y]}>
       {state.rallyMs > 0 ? (
@@ -335,8 +418,19 @@ function SaladBall({ state }: { state: OtterlyState }) {
       ) : null}
       <mesh castShadow>
         <sphereGeometry args={[radius, 32, 32]} />
-        <meshStandardMaterial color="#45c657" roughness={0.62} />
+        <meshStandardMaterial
+          color={damageRatio > 0.45 ? "#f97316" : "#45c657"}
+          emissive={damageRatio > 0.45 ? "#7f1d1d" : "#14532d"}
+          emissiveIntensity={damageRatio * 0.32}
+          roughness={0.62}
+        />
       </mesh>
+      {damageRatio > 0.2 ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[radius + 0.12, radius + 0.22, 48]} />
+          <meshBasicMaterial color="#fb7185" transparent opacity={damageRatio * 0.5} />
+        </mesh>
+      ) : null}
       {[
         [0.2, 0.2, 0.22],
         [-0.24, 0.16, -0.18],

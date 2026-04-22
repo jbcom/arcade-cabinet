@@ -21,6 +21,7 @@ export function World({ interactive = true }: { interactive?: boolean }) {
       <BlockClouds />
       <OceanPlane />
       <DistantBlockRidges />
+      <BiomeSilhouettes />
       <ambientLight intensity={0.42} color="#dff7ff" />
       <directionalLight
         castShadow
@@ -55,6 +56,35 @@ export function World({ interactive = true }: { interactive?: boolean }) {
       )}
       {interactive ? <PointerLockControls /> : null}
     </>
+  );
+}
+
+function BiomeSilhouettes() {
+  const silhouettes = useMemo(
+    () => [
+      { key: "pine-a", position: [-28, 3, 18], scale: [2.4, 6.5, 2.4], color: "#1f6f42" },
+      { key: "pine-b", position: [-23, 4.2, 23], scale: [2.8, 8.5, 2.8], color: "#265f39" },
+      { key: "mesa-a", position: [30, 2.6, 14], scale: [5.6, 5.2, 4.2], color: "#b98f4c" },
+      { key: "snow-a", position: [22, 5.2, 38], scale: [4.8, 8.4, 4.8], color: "#dcefff" },
+    ],
+    []
+  );
+
+  return (
+    <group>
+      {silhouettes.map((item) => (
+        <mesh
+          key={item.key}
+          position={item.position as [number, number, number]}
+          scale={item.scale as [number, number, number]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={item.color} roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

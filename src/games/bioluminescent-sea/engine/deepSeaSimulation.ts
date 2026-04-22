@@ -92,6 +92,9 @@ export interface DiveTelemetry {
   objective: string;
   oxygenRatio: number;
   pressureLabel: string;
+  routeLandmarkBearingRadians: number | null;
+  routeLandmarkDistance: number;
+  routeLandmarkLabel: string;
 }
 
 export interface SceneAdvanceResult {
@@ -146,6 +149,13 @@ const CREATURE_ANCHORS: CreatureAnchor[] = [
 
 const PARTICLE_COUNT = 130;
 export const TOTAL_BEACONS = CREATURE_ANCHORS.length;
+
+const ROUTE_LANDMARKS = [
+  { label: "Kelp Gate", threshold: 0, distanceOffset: 120 },
+  { label: "Lantern Shelf", threshold: 0.34, distanceOffset: 92 },
+  { label: "Trench Choir", threshold: 0.67, distanceOffset: 64 },
+  { label: "Living Map", threshold: 0.92, distanceOffset: 28 },
+] as const;
 
 export function createInitialScene(dimensions: ViewportDimensions): SceneState {
   return {
@@ -566,6 +576,7 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
   const nearestBeacon = findNearestBeaconVector(scene.player, scene.creatures);
   const collectionRatio = clamp((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS, 0, 1);
   const oxygenRatio = clamp(timeLeft / GAME_DURATION, 0, 1);
+  const routeLandmark = getDiveRouteLandmark(collectionRatio, nearestBeacon);
 
   return {
     beaconBearingRadians: nearestBeacon.bearingRadians,
@@ -581,6 +592,28 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
     ),
     oxygenRatio,
     pressureLabel: getPressureLabel(oxygenRatio, nearestThreatDistance),
+    routeLandmarkBearingRadians: routeLandmark.bearingRadians,
+    routeLandmarkDistance: routeLandmark.distance,
+    routeLandmarkLabel: routeLandmark.label,
+  };
+}
+
+export function getDiveRouteLandmark(
+  collectionRatio: number,
+  nearestBeacon: { bearingRadians: number | null; distance: number }
+) {
+  const normalizedRatio = clamp(collectionRatio, 0, 1);
+  let landmark: (typeof ROUTE_LANDMARKS)[number] = ROUTE_LANDMARKS[0];
+  for (const entry of ROUTE_LANDMARKS) {
+    if (normalizedRatio >= entry.threshold) {
+      landmark = entry;
+    }
+  }
+
+  return {
+    bearingRadians: nearestBeacon.bearingRadians,
+    distance: Math.round(nearestBeacon.distance + landmark.distanceOffset * (1 - normalizedRatio)),
+    label: landmark.label,
   };
 }
 
@@ -593,6 +626,7 @@ export function describeDiveObjective(
   if (remainingCreatures === 0) return "All beacons charted. Surface with the living map.";
   if (nearestThreatDistance < 120) return "Predator silhouette closing. Glide out of its cone.";
   if (nearestBeaconDistance < 95) return "Sonar ping is tight. Sweep the lamp through this bloom.";
+  if (nearestBeaconDistance < 180) return "Route marker ahead. Follow the beacon chain deeper.";
   if (timeLeft <= 15) return "Oxygen low. Chain the brightest beacons before ascent.";
 
   return "Collect luminous life while reading silhouettes at the edge of the light.";

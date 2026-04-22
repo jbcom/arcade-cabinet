@@ -42,12 +42,36 @@ export function World() {
       </Physics>
 
       <Lava />
+      <HeatShimmer y={state.lavaHeight + 3} intensity={Math.max(0, 1 - state.distToLava / 70)} />
       {state.thermalLift > 0 ? (
         <ThermalDraft lift={state.thermalLift} y={state.lavaHeight + 8} />
       ) : null}
 
       {state.phase === "playing" && <PointerLockControls />}
     </>
+  );
+}
+
+function HeatShimmer({ y, intensity }: { y: number; intensity: number }) {
+  if (intensity <= 0.03) return null;
+
+  return (
+    <group position={[0, y, -20]}>
+      {[0, 1, 2, 3].map((index) => (
+        <mesh
+          key={`heat-shimmer-${index}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, index * 2.2, 0]}
+        >
+          <ringGeometry args={[12 + index * 4.4, 0.09, 8, 72]} />
+          <meshBasicMaterial
+            color="#ff8a2a"
+            transparent
+            opacity={Math.max(0, intensity * (0.26 - index * 0.045))}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

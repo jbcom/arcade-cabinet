@@ -5,6 +5,7 @@ import {
   calculateObjectiveProgress,
   createArenaLayout,
   createInitialTitanState,
+  getWeaponFeedbackState,
   normalizeTitanControls,
 } from "./titanSimulation";
 
@@ -20,6 +21,7 @@ describe("titan simulation", () => {
     expect(state.systems.reactor).toBe(100);
     expect(state.coolantCharge).toBe(100);
     expect(state.coolantBurstMs).toBe(0);
+    expect(state.weaponFeedback).toBe("idle");
   });
 
   test("normalizes analog and binary control input", () => {
@@ -60,6 +62,8 @@ describe("titan simulation", () => {
     expect(next).not.toBe(state);
     expect(next.energy).toBeLessThan(state.energy);
     expect(next.heat).toBeGreaterThan(state.heat);
+    expect(next.weaponFeedback).toBe("firing");
+    expect(next.lastWeaponEventMs).toBeGreaterThan(0);
     expect(next.objectiveProgress).toBe(100);
     expect(next.pose.heading).toBe(0.25);
     expect(state.pose.position.x).toBe(0);
@@ -87,6 +91,37 @@ describe("titan simulation", () => {
     expect(burst.coolantBurstMs).toBeGreaterThan(0);
     expect(burst.coolantCharge).toBe(0);
     expect(burst.heat).toBeLessThan(hot.heat);
+    expect(burst.weaponFeedback).toBe("cooling");
     expect(burst.objective).toContain("Coolant burst");
+  });
+
+  test("classifies weapon feedback for dry fire and overheating", () => {
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
+        firingAllowed: true,
+        heat: 20,
+        requestedFire: true,
+      })
+    ).toBe("firing");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 0,
+        firingAllowed: false,
+        heat: 20,
+        requestedFire: true,
+      })
+    ).toBe("dry");
+    expect(
+      getWeaponFeedbackState({
+        coolantActive: false,
+        energy: 100,
+        firingAllowed: false,
+        heat: 94,
+        requestedFire: true,
+      })
+    ).toBe("overheated");
   });
 });

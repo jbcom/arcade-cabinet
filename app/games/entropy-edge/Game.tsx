@@ -1,11 +1,11 @@
 import {
+  CartridgeStartScreen,
   FloatingJoystick,
   GameOverScreen,
   GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
-  StartScreen,
   TimerTrait,
   useContainerSize,
   useGameLoop,
@@ -121,20 +121,24 @@ function EntropyApp() {
       <EdgeScene state={state} isPlaying={isPlaying} />
 
       {phase === "menu" ? (
-        <StartScreen
+        <CartridgeStartScreen
           accent="#38bdf8"
+          cartridgeId="Slot 04"
+          description="Hold a collapsing resonance field together at the edge of failure."
+          kicker="Resonance Cartridge"
+          motif="entropy"
+          onStart={() => {
+            writeState(startGame(readState()));
+            entropyEntity.set(PhaseTrait, { phase: "playing" });
+          }}
+          rules={[
+            "Secure glowing anchors before stability runs out.",
+            "Build resonance to trigger surge clears and bonus score.",
+            "Read blocked cells, falling cells, and anchors as separate threats.",
+          ]}
+          secondaryAccent="#ff0055"
+          startLabel="Initialize Link"
           title="Entropy's Edge"
-          subtitle="Reality is fracturing. Navigate the grid to reach glowing anchors before sector stability collapses. Secure anchors quickly to build Resonance for bonus points."
-          primaryAction={
-            <OverlayButton
-              onClick={() => {
-                writeState(startGame(readState()));
-                entropyEntity.set(PhaseTrait, { phase: "playing" });
-              }}
-            >
-              Initialize Link
-            </OverlayButton>
-          }
         />
       ) : null}
 

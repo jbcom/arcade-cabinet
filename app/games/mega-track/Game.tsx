@@ -1,10 +1,10 @@
 import {
+  CartridgeStartScreen,
   GameOverScreen,
   GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
-  StartScreen,
   TimerTrait,
   useGameLoop,
 } from "@app/shared";
@@ -90,11 +90,21 @@ function MegaTrackApp() {
       <TrackScene state={state} />
 
       {phase.phase === "menu" ? (
-        <StartScreen
+        <CartridgeStartScreen
           accent="#fb7185"
+          cartridgeId="Slot 05"
+          description="Thread a high-speed machine through a deterministic hazard ribbon."
+          kicker="Race Cartridge"
+          motif="track"
+          onStart={handleStart}
+          rules={[
+            "Shift lanes early and keep the car centered through hazard gates.",
+            "Clean passes build overdrive, sparks, and speed-line feedback.",
+            "Impacts cost integrity and briefly mark the hazard type.",
+          ]}
+          secondaryAccent="#facc15"
+          startLabel="Start Race"
           title="Mega Track"
-          subtitle="Arcade racing on a deterministic hazard ribbon. Use A/D, Arrow keys, or a touch-anywhere lane joystick to thread the safe line."
-          primaryAction={<OverlayButton onClick={handleStart}>Start Race</OverlayButton>}
         />
       ) : null}
 

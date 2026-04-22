@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added overdrive, impact, and clean-pass telemetry in deterministic race state.
+- Added lane effects, speed markings, collision sparks, hazard differentiation, HUD feedback, and shared cartridge landing identity.
+
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/mega-track-v0.1.0...mega-track-v0.2.0) (2026-04-22)
 
 

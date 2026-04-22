@@ -8,6 +8,14 @@ type ControlEvent = "voxel:jump";
 export function HUD() {
   const state = useTrait(voxelEntity, VoxelTrait);
   const hpRatio = state.hp / state.maxHp;
+  const recentPickup =
+    state.lastPickup && state.timeSurvived - state.lastPickup.elapsedMs < 2_500
+      ? state.lastPickup
+      : null;
+  const recentBiome =
+    state.biomeDiscovery && state.timeSurvived - state.biomeDiscovery.elapsedMs < 3_000
+      ? state.biomeDiscovery
+      : null;
 
   const dispatchControl = (event: ControlEvent) => {
     window.dispatchEvent(new Event(event));
@@ -90,6 +98,32 @@ export function HUD() {
           <div style={{ color: "#f8fafc", fontWeight: 800, lineHeight: 1.25 }}>
             {state.objective}
           </div>
+          {recentPickup ? (
+            <div
+              style={{
+                color: "#facc15",
+                fontSize: 12,
+                fontWeight: 900,
+                marginTop: 6,
+                textTransform: "uppercase",
+              }}
+            >
+              Pickup {recentPickup.label}
+            </div>
+          ) : null}
+          {recentBiome ? (
+            <div
+              style={{
+                color: "#a3e635",
+                fontSize: 12,
+                fontWeight: 900,
+                marginTop: 4,
+                textTransform: "uppercase",
+              }}
+            >
+              Biome discovered: {recentBiome.biome}
+            </div>
+          ) : null}
           <div
             style={{
               marginTop: "0.52rem",
