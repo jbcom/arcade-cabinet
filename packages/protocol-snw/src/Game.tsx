@@ -3,10 +3,12 @@ import {
   GameOverScreen,
   GameViewport,
   OverlayButton,
+  PhaseTrait,
   StartScreen,
 } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { createInitialSNWState } from "./engine/protocolSimulation";
 import { World } from "./r3f/World";
 import { SNWTrait } from "./store/traits";
 import { snwEntity, snwWorld } from "./store/world";
@@ -16,30 +18,20 @@ function SNWApp() {
   const state = useTrait(snwEntity, SNWTrait);
 
   const handleStart = () => {
-    snwEntity.set(SNWTrait, {
-      phase: "playing",
-      hp: 100,
-      maxHp: 100,
-      score: 0,
-      level: 1,
-      xp: 0,
-      xpNeeded: 5,
-      wave: 1,
-      waveTime: 0,
-      kills: 0,
-    });
+    snwEntity.set(PhaseTrait, { phase: "playing" });
+    snwEntity.set(SNWTrait, createInitialSNWState("playing"));
   };
 
   return (
-    <GameViewport background="#020205">
-      <Canvas shadows camera={{ position: [0, 34, 18], fov: 55 }} gl={browserTestCanvasGlOptions}>
+    <GameViewport background="#03070a">
+      <Canvas shadows camera={{ position: [0, 36, 26], fov: 46 }} gl={browserTestCanvasGlOptions}>
         {state.phase === "playing" && <World />}
       </Canvas>
 
       {state.phase === "menu" && (
         <StartScreen
           title="PROTOCOL: SILENT NIGHT"
-          subtitle="Defend the perimeter. Survive the onslaught."
+          subtitle="Hold the signal ring, read the threat lanes, and erase hostile constructs before they breach."
           primaryAction={<OverlayButton onClick={handleStart}>Engage</OverlayButton>}
         />
       )}
@@ -56,9 +48,10 @@ function SNWApp() {
               transform: "translate(-50%, -50%)",
               width: 20,
               height: 20,
-              border: "2px solid rgba(0, 255, 204, 0.5)",
+              border: "2px solid rgba(45, 212, 191, 0.58)",
               borderRadius: "50%",
               pointerEvents: "none",
+              boxShadow: "0 0 18px rgba(45, 212, 191, 0.32)",
             }}
           >
             <div
@@ -68,7 +61,7 @@ function SNWApp() {
                 left: "50%",
                 width: 4,
                 height: 4,
-                background: "#00ffcc",
+                background: "#2dd4bf",
                 borderRadius: "50%",
                 transform: "translate(-50%, -50%)",
               }}

@@ -10,13 +10,16 @@ A tactical survival protocol set in a cold neon void.
 
 ## Presentation Direction
 
-The scene is a tactical firing range, not a dense environment. Dark teal space, restrained directional light, cyan UI, and clean silhouettes create the protocol mood while keeping targets readable.
+The scene is a tactical firing range, not a dense environment. A circular signal ring, perimeter beacons, readable cover baffles, and hostile constructs are generated from deterministic engine data so the Astro island, browser tests, and Android shell share the same authored combat space.
+
+The visual grammar is cold and operational: cyan means player/system signal, magenta/red means hostile breach pressure, amber marks warnings, and outer void blocks only frame the arena instead of swallowing it. The camera stays high enough to read threat lanes on desktop, then tightens in portrait without hiding the ring center.
 
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.
 - HUD panels stay compact so the crosshair and threat lanes remain open.
-- Desktop pointer play is supported today.
+- Desktop keyboard/pointer and mobile touch controls both write into the same `SNWControls` state.
+- The pure engine owns initial state, wave enemy spawning, enemy pressure, dash velocity, hit resolution, and arena layout.
 - Android packaging uses the standalone Capacitor app shell.
 
 ## Stack
