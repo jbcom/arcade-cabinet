@@ -279,7 +279,7 @@ export function generateChunkData(cx: number, cz: number, config: ChunkConfig): 
 
       blocks.push({ x: lx, y: wy - 1, z: lz, type: wy <= 0 ? "sand" : "dirt" });
 
-      for (let depth = wy - 2; depth > wy - 6; depth--) {
+      for (let depth = wy - 2; depth > wy - 4; depth--) {
         blocks.push({ x: lx, y: depth, z: lz, type: "stone" });
       }
 
@@ -342,7 +342,7 @@ function pickSurfaceBlock(height: number): BlockType {
 function shouldPlaceTree(x: number, z: number, height: number): boolean {
   if (height <= 0 || height > 7) return false;
 
-  return hash2d(x, z, 101) > 0.955;
+  return hash2d(x, z, 101) > 0.965;
 }
 
 function shouldPlaceOre(x: number, z: number, height: number): boolean {

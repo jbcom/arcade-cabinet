@@ -1,4 +1,5 @@
 import { InstancedRigidBodies } from "@react-three/rapier";
+import type { MutableRefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import TerrainWorker from "../engine/TerrainWorker?worker";
@@ -150,6 +151,9 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
   const [chunks, setChunks] = useState<Map<string, ChunkData>>(initialChunks);
   const workerRef = useRef<Worker>(null);
   const requestedChunks = useRef<Set<string>>(new Set(initialChunks.keys()));
+  const queuedChunks = useRef<Set<string>>(new Set());
+  const streamQueue = useRef<Array<[number, number]>>([]);
+  const streamingTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   useEffect(() => {
     workerRef.current = new TerrainWorker();
@@ -164,7 +168,12 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
       });
     };
 
-    return () => workerRef.current?.terminate();
+    return () => {
+      if (streamingTimer.current) {
+        window.clearTimeout(streamingTimer.current);
+      }
+      workerRef.current?.terminate();
+    };
   }, []);
 
   useEffect(() => {
@@ -176,16 +185,27 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
     const R = CONFIG.RENDER_DISTANCE;
     const currentVisibleKeys = new Set<string>();
 
+    const pendingKeys: Array<[string, number, number, number]> = [];
+
     for (let cx = pCx - R; cx <= pCx + R; cx++) {
       for (let cz = pCz - R; cz <= pCz + R; cz++) {
         const key = `${cx},${cz}`;
         currentVisibleKeys.add(key);
-        if (!requestedChunks.current.has(key)) {
-          requestedChunks.current.add(key);
-          workerRef.current.postMessage({ cx, cz, config: CONFIG });
+        if (!requestedChunks.current.has(key) && !queuedChunks.current.has(key)) {
+          queuedChunks.current.add(key);
+          pendingKeys.push([key, cx, cz, Math.max(Math.abs(cx - pCx), Math.abs(cz - pCz))]);
         }
       }
     }
+
+    streamChunkRequests({
+      pendingKeys,
+      worker: workerRef.current,
+      timerRef: streamingTimer,
+      queueRef: streamQueue,
+      queuedRef: queuedChunks,
+      requestedRef: requestedChunks,
+    });
 
     setChunks((prev) => {
       const next = new Map(prev);
@@ -214,7 +234,7 @@ function createInitialChunkRing() {
   const chunks = new Map<string, ChunkData>();
   const pCx = Math.floor(CONFIG.PLAYER_START.x / CONFIG.CHUNK_SIZE);
   const pCz = Math.floor(CONFIG.PLAYER_START.z / CONFIG.CHUNK_SIZE);
-  const radius = CONFIG.RENDER_DISTANCE;
+  const radius = Math.min(CONFIG.RENDER_DISTANCE, 1);
 
   for (let cx = pCx - radius; cx <= pCx + radius; cx++) {
     for (let cz = pCz - radius; cz <= pCz + radius; cz++) {
@@ -223,4 +243,46 @@ function createInitialChunkRing() {
   }
 
   return chunks;
+}
+
+function streamChunkRequests({
+  pendingKeys,
+  worker,
+  timerRef,
+  queueRef,
+  queuedRef,
+  requestedRef,
+}: {
+  pendingKeys: Array<[string, number, number, number]>;
+  worker: Worker;
+  timerRef: MutableRefObject<ReturnType<typeof window.setTimeout> | null>;
+  queueRef: MutableRefObject<Array<[number, number]>>;
+  queuedRef: MutableRefObject<Set<string>>;
+  requestedRef: MutableRefObject<Set<string>>;
+}) {
+  if (pendingKeys.length === 0) return;
+
+  queueRef.current.push(
+    ...pendingKeys.sort((a, b) => a[3] - b[3]).map(([, cx, cz]) => [cx, cz] as [number, number])
+  );
+
+  if (timerRef.current) return;
+
+  const sendNext = () => {
+    const next = queueRef.current.shift();
+
+    if (!next) {
+      timerRef.current = null;
+      return;
+    }
+
+    const [cx, cz] = next;
+    const key = `${cx},${cz}`;
+    queuedRef.current.delete(key);
+    requestedRef.current.add(key);
+    worker.postMessage({ cx, cz, config: CONFIG });
+    timerRef.current = window.setTimeout(sendNext, 32);
+  };
+
+  timerRef.current = window.setTimeout(sendNext, 250);
 }
