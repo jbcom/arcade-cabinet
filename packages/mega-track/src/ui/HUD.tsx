@@ -10,6 +10,7 @@ export function HUD({ state, onLaneControl }: HUDProps) {
   const { isMobile } = useResponsive();
   const speed = Math.round(state.speed * 100);
   const distance = Math.floor(state.distance / 10);
+  const overdriveSeconds = (state.overdriveMs / 1000).toFixed(1);
   const integrityColor =
     state.integrity > 60 ? "#86efac" : state.integrity > 30 ? "#facc15" : "#f87171";
   const panelStyle = {
@@ -66,6 +67,10 @@ export function HUD({ state, onLaneControl }: HUDProps) {
           <div style={{ color: "#cbd5e1" }}>Speed: {speed} km/h</div>
           <div style={{ color: "#cbd5e1", fontSize: 12 }}>
             Hazards {state.obstacles.length} | Boost {Math.round(state.boostCharge)}%
+          </div>
+          <div style={{ color: state.overdriveMs > 0 ? "#facc15" : "#94a3b8", fontSize: 12 }}>
+            Clean pass x{state.cleanPassStreak}{" "}
+            {state.overdriveMs > 0 ? `| Overdrive ${overdriveSeconds}s` : ""}
           </div>
         </div>
       </div>

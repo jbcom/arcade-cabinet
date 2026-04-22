@@ -33,6 +33,9 @@ export function createInitialPrimordialState(
     distToLava: calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight),
     isInGrappleRange: false,
     lavaHeight,
+    thermalLift: calculateThermalLift(
+      calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight)
+    ),
     objective: DEFAULT_OBJECTIVE,
     objectiveProgress: calculateObjectiveProgress(altitude),
   };
@@ -109,6 +112,7 @@ export function advancePrimordialState(
   const velocity = calculatePlayerSpeed(telemetry.velocity);
   const distToLava = calculateDistanceToLava(telemetry.position.y, telemetry.lavaHeight);
   const objectiveProgress = calculateObjectiveProgress(altitude);
+  const thermalLift = calculateThermalLift(distToLava);
   const nextPhase =
     telemetry.position.y <= telemetry.lavaHeight + CONFIG.lavaContactMargin
       ? "gameover"
@@ -123,6 +127,7 @@ export function advancePrimordialState(
     velocity,
     distToLava,
     lavaHeight: telemetry.lavaHeight,
+    thermalLift,
     isInGrappleRange: canGrapple(telemetry.grappleDistance),
     objective: describeObjective(objectiveProgress, distToLava),
     objectiveProgress,
@@ -155,6 +160,17 @@ export function calculatePlayerSpeed(velocity: Vec3): number {
 
 export function calculateObjectiveProgress(altitude: number): number {
   return clamp(Math.round((altitude / CONFIG.escapeAltitude) * 100), 0, 100);
+}
+
+export function calculateThermalLift(distToLava: number): number {
+  const dangerStart = CONFIG.dangerDistance;
+  const safeFloor = CONFIG.dangerDistance * 0.22;
+  if (distToLava <= safeFloor || distToLava >= dangerStart) {
+    return 0;
+  }
+
+  const normalized = 1 - (distToLava - safeFloor) / (dangerStart - safeFloor);
+  return round(clamp(normalized, 0, 1) * 18, 2);
 }
 
 export function canGrapple(distance: number | null | undefined): boolean {

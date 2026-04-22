@@ -83,10 +83,20 @@ export function World() {
           </mesh>
         </Float>
       ))}
+      {state.attunement > 0 ? <AttunementRing strength={state.attunement} /> : null}
       <Portal position={layout.portal} accent={zone.accent} secondary={zone.secondary} />
       <Sparkles count={85} scale={[70, 18, 70]} size={2.6} speed={0.35} color={zone.accent} />
       <ContactShadows position={[0, 0, 0]} opacity={0.55} scale={90} blur={2.5} />
     </>
+  );
+}
+
+function AttunementRing({ strength }: { strength: number }) {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.12, 0]}>
+      <ringGeometry args={[6.5, 6.7 + strength / 80, 96]} />
+      <meshBasicMaterial color="#f0abfc" transparent opacity={Math.min(0.36, strength / 180)} />
+    </mesh>
   );
 }
 

@@ -17,6 +17,9 @@ export function createInitialState(): OtterlyState {
     goalRadius: 0.9,
     elapsedMs: 0,
     barkCooldownMs: 0,
+    lastBarkStunned: 0,
+    rallyMs: 0,
+    rescueStreak: 0,
     objective: "Push the Kudzu ball into Elder Bleat's crater before the goats eat it.",
   };
 }
@@ -25,6 +28,8 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
   const next = structuredClone(state) as OtterlyState;
   next.elapsedMs += deltaMs;
   next.barkCooldownMs = Math.max(0, next.barkCooldownMs - deltaMs);
+  next.rallyMs = Math.max(0, next.rallyMs - deltaMs);
+  next.lastBarkStunned = 0;
 
   const speedMultiplier = isInsideWater(next.otter) ? 0.0046 : 0.0035;
   next.otterVelocity.x = damp(next.otterVelocity.x + input.x * speedMultiplier, 0.88);
@@ -46,10 +51,26 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
   const barkRadius = 2.4;
   if (barkTriggered && next.barkCooldownMs === 0) {
     next.barkCooldownMs = 1500;
+    let stunnedCount = 0;
     for (const goat of next.goats) {
       if (distance(goat.position, next.otter) < barkRadius) {
         goat.stunnedMs = 1600;
+        stunnedCount++;
       }
+    }
+    next.lastBarkStunned = stunnedCount;
+    if (stunnedCount > 0) {
+      next.rescueStreak += stunnedCount;
+      next.ballHealth = Math.min(100, next.ballHealth + stunnedCount * 3);
+      next.objective =
+        stunnedCount >= 2
+          ? "Double bark rally! Push hard while the goats scatter."
+          : "Clean bark stun. Drive the salad toward the crater.";
+      if (stunnedCount >= 2) {
+        next.rallyMs = 1800;
+      }
+    } else {
+      next.rescueStreak = 0;
     }
   }
 
@@ -62,9 +83,10 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
     goat.position = clampPosition(add(goat.position, scale(direction, goat.speed * deltaMs)));
 
     if (distance(goat.position, next.ball) < 0.95) {
+      const rallyScale = next.rallyMs > 0 ? 0.45 : 1;
       next.ballHealth = Math.max(
         0,
-        next.ballHealth - (goat.id === "elder" ? 0.02 : 0.015) * deltaMs
+        next.ballHealth - (goat.id === "elder" ? 0.02 : 0.015) * deltaMs * rallyScale
       );
       next.objective = "Goats are chewing! Bark to stun them and keep pushing.";
     }

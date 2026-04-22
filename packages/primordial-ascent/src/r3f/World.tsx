@@ -34,8 +34,26 @@ export function World() {
       </Physics>
 
       <Lava />
+      {state.thermalLift > 0 ? (
+        <ThermalDraft lift={state.thermalLift} y={state.lavaHeight + 8} />
+      ) : null}
 
       {state.phase === "playing" && <PointerLockControls />}
     </>
+  );
+}
+
+function ThermalDraft({ lift, y }: { lift: number; y: number }) {
+  const opacity = Math.min(0.48, 0.12 + lift / 50);
+
+  return (
+    <group position={[0, y, -18]}>
+      {[0, 1, 2].map((index) => (
+        <mesh key={index} rotation={[-Math.PI / 2, 0, 0]} position={[0, index * 3.8, 0]}>
+          <torusGeometry args={[8 + index * 3.4, 0.08, 8, 72]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={opacity - index * 0.08} />
+        </mesh>
+      ))}
+    </group>
   );
 }

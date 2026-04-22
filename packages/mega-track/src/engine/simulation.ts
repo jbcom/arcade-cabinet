@@ -28,6 +28,8 @@ export function createInitialState(): MegaTrackState {
     elapsedMs: 0,
     milestone: 0,
     boostCharge: 0,
+    cleanPassStreak: 0,
+    overdriveMs: 0,
   };
 }
 
@@ -66,10 +68,13 @@ export function tick(
 
   const next = structuredClone(state) as MegaTrackState;
   next.elapsedMs += deltaMs;
+  next.overdriveMs = Math.max(0, next.overdriveMs - deltaMs);
 
   const seconds = deltaMs / 1000;
   const previousDistance = next.distance;
-  next.speed = Math.min(CONFIG.MAX_SPEED, next.speed + 0.9 * seconds);
+  const maxSpeed = next.overdriveMs > 0 ? CONFIG.MAX_SPEED * 1.32 : CONFIG.MAX_SPEED;
+  const acceleration = next.overdriveMs > 0 ? 1.35 : 0.9;
+  next.speed = Math.min(maxSpeed, next.speed + acceleration * seconds);
   next.distance += next.speed * deltaMs;
   next.boostCharge = Math.min(100, next.boostCharge + seconds * (next.currentLane === 0 ? 8 : 5));
 
@@ -89,6 +94,7 @@ export function tick(
   );
 
   const carX = next.currentLane * CONFIG.LANE_WIDTH;
+  let cleanPasses = 0;
   for (const obs of next.obstacles) {
     const dz = Math.abs(obs.z - next.distance);
     const dx = Math.abs(obs.x - carX);
@@ -104,9 +110,23 @@ export function tick(
       next.impactCount++;
       next.lastImpactMs = next.elapsedMs;
       next.boostCharge = Math.max(0, next.boostCharge - 30);
+      next.cleanPassStreak = 0;
       next.obstacles = next.obstacles.filter((o) => o.id !== obs.id);
       break;
     }
+    if (crossed) {
+      cleanPasses++;
+    }
+  }
+
+  if (cleanPasses > 0) {
+    next.cleanPassStreak += cleanPasses;
+    next.boostCharge = Math.min(100, next.boostCharge + cleanPasses * 9);
+  }
+
+  if (next.overdriveMs === 0 && next.boostCharge >= 100 && next.cleanPassStreak >= 4) {
+    next.overdriveMs = 2400;
+    next.boostCharge = 0;
   }
 
   return next;

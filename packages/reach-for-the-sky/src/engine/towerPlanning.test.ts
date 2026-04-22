@@ -2,7 +2,9 @@ import { describe, expect, test } from "vitest";
 import {
   advanceSkyState,
   calculateDailyRevenue,
+  calculateMaintenanceCoverage,
   calculatePopulation,
+  calculateTowerRating,
   canAffordBuilding,
   createInitialSkyState,
   createPlacedBuilding,
@@ -36,6 +38,8 @@ describe("tower planning", () => {
     expect(tower.filter((building) => building.type === "floor")).toHaveLength(11);
     expect(calculatePopulation(tower)).toBeGreaterThan(0);
     expect(calculateDailyRevenue(tower)).toBeGreaterThan(0);
+    expect(calculateMaintenanceCoverage(tower)).toBe(100);
+    expect(calculateTowerRating(tower)).toBeGreaterThan(1);
   });
 
   test("places new buildings deterministically in the next free bay", () => {
@@ -56,7 +60,10 @@ describe("tower planning", () => {
     expect(next.day).toBe(2);
     expect(next.tick).toBe(1);
     expect(next.population).toBe(calculatePopulation(tower));
-    expect(next.funds).toBe(skyState.funds + calculateDailyRevenue(tower));
+    expect(next.stars).toBe(calculateTowerRating(tower));
+    expect(next.funds).toBe(
+      skyState.funds + Math.floor(calculateDailyRevenue(tower) * (1 + next.stars * 0.04))
+    );
   });
 
   test("checks affordability against the selected module cost", () => {

@@ -70,6 +70,9 @@ export interface RealmState {
   zone: number;
   score: number;
   loot: string[];
+  attunement: number;
+  nearestRelicDistance: number;
+  portalDistance: number;
   objective: string;
   player: Vec3;
   movement: MovementInput;

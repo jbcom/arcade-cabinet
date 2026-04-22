@@ -63,6 +63,11 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
             Bark:{" "}
             {state.barkCooldownMs > 0 ? `${(state.barkCooldownMs / 1000).toFixed(1)}s` : "Ready"}
           </div>
+          <div style={{ color: state.rallyMs > 0 ? "#facc15" : "#cbd5e1" }}>
+            Rally:{" "}
+            {state.rallyMs > 0 ? `${(state.rallyMs / 1000).toFixed(1)}s` : "Build with barks"}
+          </div>
+          <div style={{ color: "#a7f3d0" }}>Rescue streak: {state.rescueStreak}</div>
         </div>
       </div>
       <div

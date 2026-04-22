@@ -42,6 +42,8 @@ export interface VoxelState {
   objectiveProgress: number;
   coordinates: Vec3;
   nearestLandmarkDistance: number;
+  nearestResourceDistance: number;
+  surveyPings: number;
   timeSurvived: number;
 }
 

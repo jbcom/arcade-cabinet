@@ -7,6 +7,7 @@ import {
   createSectorCells,
   didLose,
   didWin,
+  findNearestBlockedCell,
   generateNode,
   getStabilityBand,
   getTargetVector,
@@ -38,6 +39,21 @@ describe("entropy simulation", () => {
     expect(next.score).toBeGreaterThan(0);
     expect(didWin(next)).toBe(false);
     expect(next.shockwaves[0].id).toBe("sw-1-1");
+  });
+
+  test("uses max resonance to clear the nearest landed block after securing an anchor", () => {
+    const state = startGame({} as never);
+    state.targetNode = { id: "target", gridX: 1, gridZ: 0 };
+    state.blockedCells = ["2,0", "-5,-5"];
+    state.isResonanceMax = true;
+    state.resonance = 1;
+
+    expect(findNearestBlockedCell(state.blockedCells, 1, 0)).toBe("2,0");
+
+    const next = tick(state, 250, { x: 1, y: 0 });
+
+    expect(next.lastSurgeClearedKey).toBe("2,0");
+    expect(next.blockedCells).not.toContain("2,0");
   });
 
   test("reports loss only for depleted active sectors", () => {

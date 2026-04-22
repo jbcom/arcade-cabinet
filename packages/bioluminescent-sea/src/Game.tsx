@@ -297,6 +297,8 @@ function renderScene(
     drawParticle(ctx, particle);
   });
 
+  drawSonarPing(ctx, scene, totalTime);
+
   scene.creatures.forEach((creature) => {
     drawCreature(ctx, creature);
   });
@@ -307,6 +309,47 @@ function renderScene(
     drawPirate(ctx, pirate);
   });
   drawPlayer(ctx, scene.player, getViewportScale(width, height));
+}
+
+function drawSonarPing(ctx: CanvasRenderingContext2D, scene: SceneState, totalTime: number) {
+  if (scene.creatures.length === 0) return;
+
+  const nearest = scene.creatures.reduce(
+    (best, creature) => {
+      const distance = Math.hypot(creature.x - scene.player.x, creature.y - scene.player.y);
+      return distance < best.distance ? { creature, distance } : best;
+    },
+    { creature: scene.creatures[0], distance: Number.POSITIVE_INFINITY }
+  );
+  const creature = nearest.creature;
+  if (!creature) return;
+
+  const pulse = 0.5 + 0.5 * Math.sin(totalTime * 4.2);
+  const alpha = Math.max(0.16, 0.42 - nearest.distance / 900);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = `rgba(125, 211, 252, ${alpha})`;
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([8, 10]);
+  ctx.beginPath();
+  ctx.moveTo(scene.player.x, scene.player.y);
+  ctx.lineTo(creature.x, creature.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = `rgba(165, 243, 252, ${0.2 + pulse * 0.26})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(scene.player.x, scene.player.y, 54 + pulse * 38, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = `rgba(251, 191, 36, ${0.32 + pulse * 0.3})`;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(creature.x, creature.y, creature.size * (1.15 + pulse * 0.4), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawBackdrop(
@@ -421,6 +464,7 @@ function shouldUpdateTelemetry(current: DiveTelemetry, next: DiveTelemetry) {
     Math.abs(current.collectionRatio - next.collectionRatio) > 0.01 ||
     Math.abs(current.oxygenRatio - next.oxygenRatio) > 0.01 ||
     Math.abs(current.nearestThreatDistance - next.nearestThreatDistance) > 18 ||
+    Math.abs(current.nearestBeaconDistance - next.nearestBeaconDistance) > 18 ||
     Math.abs(current.depthMeters - next.depthMeters) > 20
   );
 }
@@ -613,7 +657,7 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs sm:grid-cols-1 sm:text-sm">
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-1 sm:text-sm">
             <div className="min-w-0">
               <div className="font-semibold uppercase tracking-widest text-slate-400">Depth</div>
               <div className="truncate font-bold text-white">{telemetry.depthMeters}m</div>
@@ -622,6 +666,12 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
               <div className="font-semibold uppercase tracking-widest text-slate-400">Threat</div>
               <div className="truncate font-bold text-white">
                 {formatThreatDistance(telemetry.nearestThreatDistance)}
+              </div>
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold uppercase tracking-widest text-slate-400">Beacon</div>
+              <div className="truncate font-bold text-cyan-100">
+                {formatThreatDistance(telemetry.nearestBeaconDistance)}
               </div>
             </div>
             <div className="min-w-0">

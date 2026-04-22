@@ -124,6 +124,7 @@ export function HUD({ state, onToggleHeatmap }: HUDProps) {
     powerMax,
     waterUse,
     waterMax,
+    civicBoost,
     milestone,
     heatmap,
   } = state;
@@ -264,6 +265,9 @@ export function HUD({ state, onToggleHeatmap }: HUDProps) {
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
               Mood {happiness}%
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              Civic +{civicBoost}
             </span>
           </div>
           <div

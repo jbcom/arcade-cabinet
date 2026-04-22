@@ -73,6 +73,7 @@ export interface GridizenState {
   powerMax: number;
   waterUse: number;
   waterMax: number;
+  civicBoost: number;
   milestone: number;
   selectedTool: string;
   inspectedTileIdx: number | null;

@@ -36,6 +36,8 @@ export function createInitialSNWState(phase: SNWState["phase"] = "menu"): SNWSta
     waveTime: CONFIG.WAVE_SECONDS,
     kills: 0,
     threat: calculateThreatPressure(enemies, { x: 0, y: 0, z: 0 }),
+    firewallActiveMs: 0,
+    firewallCharge: 0,
     dashCooldownMs: 0,
     objective: "Hold the signal ring and erase hostile constructs before they breach.",
     controls: { ...DEFAULT_CONTROLS },
@@ -131,16 +133,20 @@ export function advanceSNWState(
   const deltaSeconds = Math.max(0, deltaMs) / 1000;
   const controls = normalizeSNWControls({ ...state.controls, ...telemetry.controls });
   const player = telemetry.player ?? state.player;
+  const firewallRequested = controls.fire && state.firewallCharge >= 100;
+  const firewallActiveMs = firewallRequested ? 2400 : Math.max(0, state.firewallActiveMs - deltaMs);
+  const firewallActive = firewallActiveMs > 0;
   const enemies = state.enemies
-    .map((enemy) => advanceEnemy(enemy, player, deltaSeconds))
+    .map((enemy) => advanceEnemy(enemy, player, deltaSeconds, firewallActive ? 0.72 : 1))
     .filter((enemy) => distance(enemy.position, player) > 1.8);
   const breaches = state.enemies.length - enemies.length;
-  const nextHp = clamp(state.hp - breaches * 7, 0, state.maxHp);
+  const nextHp = clamp(state.hp - breaches * (firewallActive ? 4 : 7), 0, state.maxHp);
   const nextWaveTime = Math.max(0, state.waveTime - deltaSeconds);
   const shouldSpawn = enemies.length === 0 || nextWaveTime === 0;
   const wave = shouldSpawn ? state.wave + 1 : state.wave;
   const nextEnemies = shouldSpawn ? [...enemies, ...createWaveEnemies(wave)] : enemies;
-  const threat = calculateThreatPressure(nextEnemies, player);
+  const rawThreat = calculateThreatPressure(nextEnemies, player);
+  const threat = firewallActive ? Math.max(0, rawThreat - 12) : rawThreat;
 
   return {
     ...state,
@@ -148,13 +154,17 @@ export function advanceSNWState(
     hp: nextHp,
     wave,
     waveTime: shouldSpawn ? CONFIG.WAVE_SECONDS + Math.min(wave * 3, 18) : nextWaveTime,
+    firewallActiveMs,
+    firewallCharge: firewallRequested ? 0 : state.firewallCharge,
     dashCooldownMs: controls.dash
       ? CONFIG.DASH_COOLDOWN_MS
       : Math.max(0, state.dashCooldownMs - deltaMs),
     objective:
       threat > 72
         ? "Threat lanes converging. Dash through the gap and clear close constructs."
-        : `Wave ${wave}: maintain perimeter lock and prevent a silent breach.`,
+        : firewallActive
+          ? "Signal firewall online. Breaches are damped while the ring holds."
+          : `Wave ${wave}: maintain perimeter lock and prevent a silent breach.`,
     controls: { ...controls, dash: false },
     player: { ...player },
     enemies: nextEnemies,
@@ -188,6 +198,7 @@ export function resolveEnemyHit(state: SNWState, enemyId: string, damage = 1): S
     ...state,
     score: state.score + target.score,
     kills: state.kills + 1,
+    firewallCharge: clamp(state.firewallCharge + 25, 0, 100),
     xp: leveled ? xp - state.xpNeeded : xp,
     xpNeeded: leveled ? state.xpNeeded + 3 : state.xpNeeded,
     level: leveled ? state.level + 1 : state.level,
@@ -207,7 +218,12 @@ export function calculateThreatPressure(enemies: SNWEnemy[], player: Vec3): numb
   return Math.round(clamp(raw, 0, 100));
 }
 
-function advanceEnemy(enemy: SNWEnemy, player: Vec3, deltaSeconds: number): SNWEnemy {
+function advanceEnemy(
+  enemy: SNWEnemy,
+  player: Vec3,
+  deltaSeconds: number,
+  speedScale = 1
+): SNWEnemy {
   const direction = normalize({
     x: player.x - enemy.position.x,
     y: 0,
@@ -217,9 +233,9 @@ function advanceEnemy(enemy: SNWEnemy, player: Vec3, deltaSeconds: number): SNWE
   return {
     ...enemy,
     position: {
-      x: round(enemy.position.x + direction.x * enemy.speed * deltaSeconds),
+      x: round(enemy.position.x + direction.x * enemy.speed * speedScale * deltaSeconds),
       y: enemy.position.y,
-      z: round(enemy.position.z + direction.z * enemy.speed * deltaSeconds),
+      z: round(enemy.position.z + direction.z * enemy.speed * speedScale * deltaSeconds),
     },
   };
 }

@@ -41,6 +41,9 @@ export interface ForestState {
   trees: GroveTreeState[];
   shadows: CorruptionShadow[];
   lastRune: string | null;
+  lastRuneType: RuneType | null;
+  harmonyLevel: number;
+  harmonySurgeActive: boolean;
   purifyZone: PurifyZone | null;
   healingTreeIndex: number | null;
   objective: string;
@@ -70,6 +73,9 @@ export function createInitialForestState(phase: ForestPhase = "intro"): ForestSt
     trees: createInitialTreeStates(),
     shadows: [],
     lastRune: null,
+    lastRuneType: null,
+    harmonyLevel: 0,
+    harmonySurgeActive: false,
     purifyZone: null,
     healingTreeIndex: null,
     objective: DEFAULT_OBJECTIVE,
@@ -137,33 +143,55 @@ export function regenerateMana(state: ForestState, amount = 1): ForestState {
 }
 
 export function canCastSpell(state: ForestState, spell: RunePattern): boolean {
-  return state.phase === "playing" && state.mana >= spell.manaCost;
+  return state.phase === "playing" && state.mana >= getSpellManaCost(state, spell);
+}
+
+export function getSpellManaCost(state: ForestState, spell: RunePattern): number {
+  const alternating = state.lastRuneType !== null && state.lastRuneType !== spell.type;
+  const harmonyDiscount = alternating && state.harmonyLevel >= 2 ? 0.75 : 1;
+
+  return Math.ceil(spell.manaCost * harmonyDiscount);
 }
 
 export function applySpellCast(state: ForestState, spell: RunePattern): ForestState {
   if (!canCastSpell(state, spell)) return state;
 
-  const mana = state.mana - spell.manaCost;
+  const alternating = state.lastRuneType !== null && state.lastRuneType !== spell.type;
+  const harmonyLevel = alternating ? Math.min(3, state.harmonyLevel + 1) : 1;
+  const harmonySurgeActive = harmonyLevel >= 3;
+  const mana = clamp(
+    state.mana - getSpellManaCost(state, spell) + (harmonySurgeActive ? 6 : 0),
+    0,
+    state.maxMana
+  );
   const base = {
     ...state,
+    harmonyLevel,
+    harmonySurgeActive,
+    lastRuneType: spell.type,
     mana,
     lastRune: spell.name,
-    objective: describeObjective(state, spell.type),
+    objective: describeObjective(state, spell.type, harmonySurgeActive),
   };
 
   if (spell.type === "shield") {
     return {
       ...base,
-      trees: state.trees.map((tree) => ({ ...tree, isShielded: true })),
+      trees: state.trees.map((tree) => ({
+        ...tree,
+        health: harmonySurgeActive ? Math.min(tree.maxHealth, tree.health + 6) : tree.health,
+        isShielded: true,
+      })),
     };
   }
 
   if (spell.type === "heal") {
+    const healAmount = harmonySurgeActive ? 35 : 20;
     return {
       ...base,
       trees: state.trees.map((tree) => ({
         ...tree,
-        health: Math.min(tree.maxHealth, tree.health + 20),
+        health: Math.min(tree.maxHealth, tree.health + healAmount),
       })),
       healingTreeIndex: findWeakestTreeIndex(state.trees),
     };
@@ -171,12 +199,12 @@ export function applySpellCast(state: ForestState, spell: RunePattern): ForestSt
 
   return {
     ...base,
-    purifyZone: { x: 50, y: 50, radius: 30 },
+    purifyZone: { x: 50, y: 50, radius: harmonySurgeActive ? 42 : 30 },
   };
 }
 
 export function clearRuneFeedback(state: ForestState): ForestState {
-  return { ...state, lastRune: null };
+  return { ...state, harmonySurgeActive: false, lastRune: null };
 }
 
 export function clearShield(state: ForestState): ForestState {
@@ -357,7 +385,14 @@ function findWeakestTreeIndex(trees: GroveTreeState[]): number {
   }, 0);
 }
 
-function describeObjective(state: ForestState, spellType: RuneType): string {
+function describeObjective(
+  state: ForestState,
+  spellType: RuneType,
+  harmonySurgeActive = false
+): string {
+  if (harmonySurgeActive) {
+    return "Harmony surge active. The grove echoes the spell with extra force.";
+  }
   if (spellType === "shield") return "Shield chorus raised. Hold the line while mana returns.";
   if (spellType === "heal") return "Healing motif restored root light across the grove.";
   if (state.shadows.length > 0)

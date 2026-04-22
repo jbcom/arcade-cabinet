@@ -46,6 +46,9 @@ const ZONES: RealmZonePalette[] = [
 const DEFAULT_MOVEMENT: MovementInput = { x: 0, z: 0 };
 
 export function createInitialRealmState(phase: RealmState["phase"] = "menu"): RealmState {
+  const player = { x: 0, y: 5, z: 0 };
+  const layout = createRealmLayout(1);
+
   return {
     phase,
     hp: 100,
@@ -54,9 +57,12 @@ export function createInitialRealmState(phase: RealmState["phase"] = "menu"): Re
     zone: 1,
     score: 0,
     loot: [],
+    attunement: 0,
+    nearestRelicDistance: Math.round(findNearestRelicDistance(layout.relics, player, [])),
+    portalDistance: Math.round(distance(player, tupleToVec3(layout.portal))),
     objective:
       "Follow the runic causeway, claim relics, and cross the portal before the realm shifts.",
-    player: { x: 0, y: 5, z: 0 },
+    player,
     movement: { ...DEFAULT_MOVEMENT },
   };
 }
@@ -137,21 +143,27 @@ export function advanceRealmState(
   const movement = normalizeMovement({ ...state.movement, ...telemetry.movement });
   const layout = createRealmLayout(state.zone);
   const relic = findNearbyRelic(layout.relics, player, state.loot);
+  const nearestRelicDistance = findNearestRelicDistance(layout.relics, player, state.loot);
   const portalDistance = distance(player, tupleToVec3(layout.portal));
   const crossedPortal = portalDistance < CONFIG.PORTAL_RADIUS;
   const loot = relic ? [...state.loot, relic.name] : state.loot;
   const zone = crossedPortal ? state.zone + 1 : state.zone;
+  const attunement = calculateRelicAttunement(loot.length, nearestRelicDistance, portalDistance);
   const score = Math.max(
     state.score,
-    Math.floor(Math.hypot(player.x, player.z)) + loot.length * 50 + (zone - 1) * 120
+    Math.floor(Math.hypot(player.x, player.z)) + loot.length * 50 + (zone - 1) * 120 + attunement
   );
 
   return {
     ...state,
     zone,
     atk: state.atk + (loot.length - state.loot.length) * 2,
+    hp: relic ? Math.min(state.maxHp, state.hp + getRelicHeal(relic)) : state.hp,
     score,
     loot,
+    attunement,
+    nearestRelicDistance: Math.round(nearestRelicDistance),
+    portalDistance: Math.round(portalDistance),
     objective: crossedPortal
       ? `Realm ${state.zone} crossed. Stabilize Zone ${zone} and seek the next relic.`
       : relic
@@ -160,6 +172,18 @@ export function advanceRealmState(
     player: { ...player },
     movement,
   };
+}
+
+export function calculateRelicAttunement(
+  lootCount: number,
+  nearestRelicDistance: number,
+  portalDistance: number
+) {
+  const lootSignal = lootCount * 18;
+  const relicSignal = Math.max(0, 18 - nearestRelicDistance);
+  const portalSignal = Math.max(0, 16 - portalDistance) * 0.75;
+
+  return Math.round(Math.min(100, lootSignal + relicSignal + portalSignal));
 }
 
 function createRealmRelics(zone: number): RealmRelic[] {
@@ -187,6 +211,20 @@ function findNearbyRelic(relics: RealmRelic[], player: Vec3, loot: string[]) {
       !loot.includes(relic.name) &&
       distance(tupleToVec3(relic.position), player) < CONFIG.RELIC_RADIUS
   );
+}
+
+function findNearestRelicDistance(relics: RealmRelic[], player: Vec3, loot: string[]) {
+  const distances = relics
+    .filter((relic) => !loot.includes(relic.name))
+    .map((relic) => distance(tupleToVec3(relic.position), player));
+
+  return distances.length > 0 ? Math.min(...distances) : 0;
+}
+
+function getRelicHeal(relic: RealmRelic) {
+  if (relic.rarity === "mythic") return 18;
+  if (relic.rarity === "rare") return 12;
+  return 8;
 }
 
 function tupleToVec3(tuple: [number, number, number]): Vec3 {

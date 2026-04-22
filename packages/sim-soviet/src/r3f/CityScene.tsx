@@ -30,10 +30,18 @@ function CityCellMesh({
         <meshStandardMaterial color={building ? "#1e293b" : "#334155"} />
       </mesh>
       {buildingInfo ? (
-        <mesh castShadow receiveShadow position={[0, buildingInfo.height / 2 + 0.08, 0]}>
-          <boxGeometry args={[0.7, buildingInfo.height, 0.7]} />
-          <meshStandardMaterial color={buildingInfo.color} />
-        </mesh>
+        <>
+          <mesh castShadow receiveShadow position={[0, buildingInfo.height / 2 + 0.08, 0]}>
+            <boxGeometry args={[0.7, buildingInfo.height, 0.7]} />
+            <meshStandardMaterial color={buildingInfo.color} />
+          </mesh>
+          {building === "tower" ? (
+            <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.72, 0.88, 32]} />
+              <meshBasicMaterial color="#ef4444" transparent opacity={0.5} />
+            </mesh>
+          ) : null}
+        </>
       ) : null}
     </group>
   );

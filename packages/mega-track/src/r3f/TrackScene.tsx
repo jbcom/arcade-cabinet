@@ -65,7 +65,7 @@ function Track({ distance }: { distance: number }) {
   );
 }
 
-function Car({ lane }: { lane: number }) {
+function Car({ lane, overdrive }: { lane: number; overdrive: boolean }) {
   const meshRef = useRef<THREE.Group>(null);
   const targetX = lane * CONFIG.LANE_WIDTH;
 
@@ -112,6 +112,18 @@ function Car({ lane }: { lane: number }) {
           <meshBasicMaterial color="#67e8f9" />
         </mesh>
       ))}
+      {overdrive
+        ? [-3.6, 3.6].map((x) => (
+            <mesh
+              key={`overdrive-flame-${x}`}
+              position={[x, -0.1, 15.2]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <coneGeometry args={[1.2, 7.5, 16]} />
+              <meshBasicMaterial color="#facc15" transparent opacity={0.72} />
+            </mesh>
+          ))
+        : null}
     </group>
   );
 }
@@ -275,7 +287,7 @@ export function TrackScene({ state }: TrackSceneProps) {
 
       <Track distance={state.distance} />
       <TrackDressing distance={state.distance} />
-      <Car lane={state.currentLane} />
+      <Car lane={state.currentLane} overdrive={state.overdriveMs > 0} />
       <Obstacles obstacles={state.obstacles} distance={state.distance} />
 
       <fog attach="fog" args={["#bde7f1", 360, 1280]} />

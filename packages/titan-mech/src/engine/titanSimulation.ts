@@ -24,6 +24,8 @@ export function createInitialTitanState(phase: TitanState["phase"] = "menu"): Ti
     maxEnergy: 100,
     heat: 0,
     maxHeat: 100,
+    coolantBurstMs: 0,
+    coolantCharge: 100,
     scrap: 0,
     score: 0,
     objective: "Secure reactor pylons and keep the chassis inside thermal limits.",
@@ -98,6 +100,9 @@ export function advanceTitanSystems(
 
   const energySpend =
     drive.energyCost + (firingAllowed ? CONFIG.FIRE_ENERGY_PER_SECOND * deltaSeconds : 0);
+  const coolantRequested = controls.brace && state.coolantCharge >= 100 && state.heat > 30;
+  const coolantBurstMs = coolantRequested ? 1800 : Math.max(0, state.coolantBurstMs - deltaMs);
+  const coolantActive = coolantBurstMs > 0;
   const energyRegen =
     controls.throttle === 0 && !firingAllowed
       ? CONFIG.ENERGY_REGEN_PER_SECOND * (controls.brace ? 1.35 : 1) * deltaSeconds
@@ -105,7 +110,8 @@ export function advanceTitanSystems(
   const heatGain =
     drive.heatGain + (firingAllowed ? CONFIG.FIRE_HEAT_PER_SECOND * deltaSeconds : 0);
   const cooling =
-    controls.throttle === 0 && !firingAllowed ? CONFIG.COOLING_PER_SECOND * deltaSeconds : 0;
+    (controls.throttle === 0 && !firingAllowed ? CONFIG.COOLING_PER_SECOND * deltaSeconds : 0) +
+    (coolantActive ? CONFIG.COOLING_PER_SECOND * 1.45 * deltaSeconds : 0);
 
   const position = telemetry.position ?? state.pose.position;
   const velocity = telemetry.velocity ?? state.pose.velocity;
@@ -117,6 +123,10 @@ export function advanceTitanSystems(
   return {
     ...state,
     controls: { ...controls, fire: firingAllowed },
+    coolantBurstMs,
+    coolantCharge: coolantRequested
+      ? 0
+      : clamp(state.coolantCharge + (controls.brace ? 18 : 8) * deltaSeconds, 0, 100),
     energy: clamp(state.energy - energySpend + energyRegen, 0, state.maxEnergy),
     heat: clamp(state.heat + heatGain - cooling, 0, state.maxHeat),
     score: Math.max(state.score, distanceScore),
@@ -124,9 +134,11 @@ export function advanceTitanSystems(
     objective:
       objectiveProgress >= 100
         ? "Reactor pylon secured. Sweep the outer ring for scrap caches."
-        : stressed
-          ? "Thermal pressure rising. Brace and let coolant cycles recover."
-          : "Secure reactor pylons and keep the chassis inside thermal limits.",
+        : coolantActive
+          ? "Coolant burst venting. Keep braced until the thermal spike breaks."
+          : stressed
+            ? "Thermal pressure rising. Brace and let coolant cycles recover."
+            : "Secure reactor pylons and keep the chassis inside thermal limits.",
     pose: {
       position: { ...position },
       heading,

@@ -49,4 +49,25 @@ describe("mega track simulation", () => {
     expect(next.obstacles.some((entry) => entry.id === obstacle.id)).toBe(false);
     expect(next.nextObstacleIndex).toBeGreaterThanOrEqual(1);
   });
+
+  test("rewards clean passes with overdrive instead of only punishing impacts", () => {
+    const obstacle = { ...createObstacle(0), lane: 1 as const, x: CONFIG.LANE_WIDTH };
+    const state = {
+      ...createInitialState(),
+      boostCharge: 99,
+      cleanPassStreak: 3,
+      currentLane: 0,
+      distance: obstacle.z - 2,
+      isPlaying: true,
+      nextObstacleIndex: 1,
+      obstacles: [obstacle],
+      speed: 2,
+    };
+
+    const next = tick(state, 16, { laneChange: 0 });
+
+    expect(next.cleanPassStreak).toBe(4);
+    expect(next.overdriveMs).toBeGreaterThan(0);
+    expect(next.boostCharge).toBe(0);
+  });
 });

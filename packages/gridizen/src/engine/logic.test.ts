@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   CIVIC_CENTER,
+  calculateCivicBoost,
   createInitialState,
   handleInteraction,
   initMap,
@@ -31,6 +32,8 @@ describe("gridizen logic", () => {
     expect(first.population).toBeGreaterThan(0);
     expect(first.powerMax).toBeGreaterThan(first.powerUse);
     expect(first.waterMax).toBeGreaterThan(first.waterUse);
+    expect(first.civicBoost).toBe(calculateCivicBoost(first.grid));
+    expect(first.civicBoost).toBeGreaterThan(0);
     expect(first.grid.filter((tile) => tile.warning !== "NONE")).toHaveLength(0);
   });
 

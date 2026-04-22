@@ -40,6 +40,7 @@ export function HUD({ state, onSelectTool }: HUDProps) {
           <span>Funds: ₽{state.funds}</span>
           <span>Population: {state.population}</span>
           <span>Food: {state.food}</span>
+          <span>Morale: {state.morale}%</span>
           <span>Power: {state.power}</span>
           <span>Water: {state.water}</span>
           <span>

@@ -84,8 +84,10 @@ export interface CreatureCollectionResult {
 }
 
 export interface DiveTelemetry {
+  beaconBearingRadians: number | null;
   collectionRatio: number;
   depthMeters: number;
+  nearestBeaconDistance: number;
   nearestThreatDistance: number;
   objective: string;
   oxygenRatio: number;
@@ -531,20 +533,52 @@ export function findNearestThreatDistance(
   return Number.isFinite(nearest) ? Math.max(0, round(nearest, 2)) : Number.POSITIVE_INFINITY;
 }
 
+export function findNearestBeaconVector(
+  player: Player,
+  creatures: Creature[]
+): { bearingRadians: number | null; distance: number } {
+  if (creatures.length === 0) {
+    return { bearingRadians: null, distance: 0 };
+  }
+
+  const nearest = creatures.reduce(
+    (best, creature) => {
+      const dx = creature.x - player.x;
+      const dy = creature.y - player.y;
+      const distance = Math.hypot(dx, dy);
+      return distance < best.distance ? { bearingRadians: Math.atan2(dy, dx), distance } : best;
+    },
+    { bearingRadians: null as number | null, distance: Number.POSITIVE_INFINITY }
+  );
+
+  return {
+    bearingRadians: nearest.bearingRadians,
+    distance: Number.isFinite(nearest.distance) ? round(nearest.distance, 2) : 0,
+  };
+}
+
 export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelemetry {
   const nearestThreatDistance = findNearestThreatDistance(
     scene.player,
     scene.predators,
     scene.pirates
   );
+  const nearestBeacon = findNearestBeaconVector(scene.player, scene.creatures);
   const collectionRatio = clamp((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS, 0, 1);
   const oxygenRatio = clamp(timeLeft / GAME_DURATION, 0, 1);
 
   return {
+    beaconBearingRadians: nearestBeacon.bearingRadians,
     collectionRatio,
     depthMeters: Math.round(2200 + collectionRatio * 850 + (1 - oxygenRatio) * 350),
+    nearestBeaconDistance: nearestBeacon.distance,
     nearestThreatDistance,
-    objective: describeDiveObjective(scene.creatures.length, timeLeft, nearestThreatDistance),
+    objective: describeDiveObjective(
+      scene.creatures.length,
+      timeLeft,
+      nearestThreatDistance,
+      nearestBeacon.distance
+    ),
     oxygenRatio,
     pressureLabel: getPressureLabel(oxygenRatio, nearestThreatDistance),
   };
@@ -553,10 +587,12 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
 export function describeDiveObjective(
   remainingCreatures: number,
   timeLeft: number,
-  nearestThreatDistance: number
+  nearestThreatDistance: number,
+  nearestBeaconDistance = Number.POSITIVE_INFINITY
 ): string {
   if (remainingCreatures === 0) return "All beacons charted. Surface with the living map.";
   if (nearestThreatDistance < 120) return "Predator silhouette closing. Glide out of its cone.";
+  if (nearestBeaconDistance < 95) return "Sonar ping is tight. Sweep the lamp through this bloom.";
   if (timeLeft <= 15) return "Oxygen low. Chain the brightest beacons before ascent.";
 
   return "Collect luminous life while reading silhouettes at the edge of the light.";

@@ -138,6 +138,14 @@ export function calculateStarHitScore(growthStage: number, multiplier: number): 
   return Math.floor(100 * (growthStage + 1) * multiplier);
 }
 
+export function calculateResonanceBloomBonus(
+  completedConnectionCount: number,
+  multiplier: number
+): number {
+  const linkValue = Math.max(1, completedConnectionCount) * 250;
+  return Math.floor(linkValue * Math.max(1, multiplier));
+}
+
 export function advanceEnergyNetwork(
   stars: Map<string, StarSeed>,
   streams: Map<string, EnergyStream>,

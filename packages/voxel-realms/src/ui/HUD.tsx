@@ -34,7 +34,7 @@ export function HUD() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, max-content))",
+          gridTemplateColumns: "repeat(4, minmax(0, max-content))",
           justifyContent: "space-between",
           gap: "0.65rem",
           alignItems: "start",
@@ -42,6 +42,7 @@ export function HUD() {
       >
         <Metric label="Survey" value={`${state.objectiveProgress}%`} accent="#38bdf8" />
         <Metric label="Biome" value={state.biome} accent="#a3e635" />
+        <Metric label="Kit" value={`${state.inventory.length}/3`} accent="#facc15" />
         <Metric label="HP" value={`${state.hp}/${state.maxHp}`} accent="#fb7185" align="right" />
       </div>
 
@@ -80,7 +81,8 @@ export function HUD() {
             <span>
               XYZ {state.coordinates.x}, {state.coordinates.y}, {state.coordinates.z}
             </span>
-            <span>{Math.round(state.nearestLandmarkDistance)}M to beacon</span>
+            <span>{Math.round(state.nearestLandmarkDistance)}M beacon</span>
+            <span>{Math.round(state.nearestResourceDistance)}M resource</span>
           </div>
           <div style={{ color: "#f8fafc", fontWeight: 800, lineHeight: 1.25 }}>
             {state.objective}

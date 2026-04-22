@@ -18,6 +18,8 @@ describe("titan simulation", () => {
     expect(state.controls).toEqual({ throttle: 0, turn: 0, fire: false, brace: false });
     expect(state.pose.position.y).toBeGreaterThan(0);
     expect(state.systems.reactor).toBe(100);
+    expect(state.coolantCharge).toBe(100);
+    expect(state.coolantBurstMs).toBe(0);
   });
 
   test("normalizes analog and binary control input", () => {
@@ -76,5 +78,15 @@ describe("titan simulation", () => {
     ]);
     expect(calculateObjectiveProgress({ x: 44, y: 0, z: 44 }, layout)).toBe(100);
     expect(calculateObjectiveProgress({ x: 0, y: 0, z: 0 }, layout)).toBe(0);
+  });
+
+  test("vents a coolant burst from a defensive brace at high heat", () => {
+    const hot = { ...createInitialTitanState("playing"), heat: 64, coolantCharge: 100 };
+    const burst = advanceTitanSystems(hot, 500, { brace: true }, {});
+
+    expect(burst.coolantBurstMs).toBeGreaterThan(0);
+    expect(burst.coolantCharge).toBe(0);
+    expect(burst.heat).toBeLessThan(hot.heat);
+    expect(burst.objective).toContain("Coolant burst");
   });
 });

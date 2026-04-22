@@ -4,6 +4,7 @@ import {
   applyShadowHit,
   applySpellCast,
   type CorruptionShadow,
+  canCastSpell,
   clearHealing,
   clearPurifyZone,
   clearRuneFeedback,
@@ -84,7 +85,7 @@ export function ForestGame() {
   }, [forestState.phase, forestState.trees]);
 
   const handleSpellCast = (spell: RunePattern) => {
-    if (forestState.mana < spell.manaCost || forestState.phase !== "playing") return;
+    if (!canCastSpell(forestState, spell)) return;
 
     forestAudio.playSpellEffect(spell.type);
     setForestState((prev) => applySpellCast(prev, spell));
@@ -177,6 +178,8 @@ export function ForestGame() {
         lastRune={forestState.lastRune}
         objective={forestState.objective}
         threatLevel={forestState.threatLevel}
+        harmonyLevel={forestState.harmonyLevel}
+        harmonySurgeActive={forestState.harmonySurgeActive}
       />
     </GameViewport>
   );

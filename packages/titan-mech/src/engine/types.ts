@@ -31,6 +31,8 @@ export interface TitanState {
   maxEnergy: number;
   heat: number;
   maxHeat: number;
+  coolantBurstMs: number;
+  coolantCharge: number;
   scrap: number;
   score: number;
   objective: string;

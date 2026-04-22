@@ -18,6 +18,7 @@ describe("protocol simulation", () => {
     expect(state.enemies).toHaveLength(8);
     expect(state.enemies[0]?.id).toBe("w1-runner-1");
     expect(state.threat).toBeGreaterThan(0);
+    expect(state.firewallCharge).toBe(0);
     expect(state.controls).toEqual({ x: 0, z: 0, dash: false, fire: false });
   });
 
@@ -71,7 +72,23 @@ describe("protocol simulation", () => {
     expect(next.kills).toBe(1);
     expect(next.score).toBe(target?.score);
     expect(next.level).toBe(2);
+    expect(next.firewallCharge).toBe(25);
     expect(next.enemies.some((enemy) => enemy.id === target?.id)).toBe(false);
     expect(next.threat).toBe(calculateThreatPressure(next.enemies, next.player));
+  });
+
+  test("charges and deploys the signal firewall from clean eliminations", () => {
+    let state = createInitialSNWState("playing");
+    for (const enemy of state.enemies.slice(0, 4)) {
+      state = resolveEnemyHit(state, enemy.id, enemy.hp);
+    }
+
+    expect(state.firewallCharge).toBe(100);
+
+    const active = advanceSNWState(state, 100, { controls: { fire: true } });
+
+    expect(active.firewallActiveMs).toBeGreaterThan(0);
+    expect(active.firewallCharge).toBe(0);
+    expect(active.objective).toContain("firewall");
   });
 });

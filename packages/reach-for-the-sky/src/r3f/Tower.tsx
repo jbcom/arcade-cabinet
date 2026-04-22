@@ -1,11 +1,18 @@
 import { Float, Sparkles } from "@react-three/drei";
 import { useTrait } from "koota/react";
 import { BUILDINGS, type BuildingData, type BuildingId, CONFIG } from "../engine/types";
-import { TowerTrait } from "../store/traits";
+import { SkyTrait, TowerTrait } from "../store/traits";
 import { skyEntity } from "../store/world";
 
 const ROOM_TYPES = new Set<BuildingId>(["lobby", "office", "condo", "cafe", "hotel", "maint"]);
 const WINDOW_ROWS = [0.28, 0.5, 0.72] as const;
+const RATING_GEMS = [
+  "rating-gem-1",
+  "rating-gem-2",
+  "rating-gem-3",
+  "rating-gem-4",
+  "rating-gem-5",
+];
 
 function getBuildingDimensions(data: BuildingData) {
   const width = data.w * CONFIG.CELL_SIZE.w;
@@ -102,7 +109,7 @@ function Building({ data }: { data: BuildingData }) {
   );
 }
 
-function TowerCrown({ topY }: { topY: number }) {
+function TowerCrown({ rating, topY }: { rating: number; topY: number }) {
   return (
     <group position={[0, topY + 2.1, 0]}>
       <mesh castShadow>
@@ -120,12 +127,19 @@ function TowerCrown({ topY }: { topY: number }) {
         </mesh>
       </Float>
       <pointLight position={[0, 2.4, 0]} color="#facc15" intensity={1.8} distance={34} />
+      {RATING_GEMS.slice(0, rating).map((id, index) => (
+        <mesh key={id} position={[(index - (rating - 1) / 2) * 1.2, 3.95, 0]}>
+          <octahedronGeometry args={[0.24, 0]} />
+          <meshStandardMaterial color="#fde047" emissive="#facc15" emissiveIntensity={0.9} />
+        </mesh>
+      ))}
     </group>
   );
 }
 
 export function Tower() {
   const { buildings } = useTrait(skyEntity, TowerTrait);
+  const state = useTrait(skyEntity, SkyTrait);
   const topFloor = Math.max(...buildings.map((building) => building.y + building.h));
   const topY = topFloor * CONFIG.CELL_SIZE.h;
 
@@ -137,7 +151,7 @@ export function Tower() {
         ))}
       </group>
 
-      <TowerCrown topY={topY} />
+      <TowerCrown rating={state.stars} topY={topY} />
 
       <mesh position={[0, -0.52, 0]} receiveShadow>
         <boxGeometry args={[42, 0.9, 24]} />

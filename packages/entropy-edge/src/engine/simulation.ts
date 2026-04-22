@@ -191,6 +191,7 @@ function buildPlayingState(
     fallingBlocks,
     isResonanceMax: false,
     lastAnchorTimeMs: 0,
+    lastSurgeClearedKey: null,
     level,
     moveCooldownMs: 0,
     phase: "playing",
@@ -243,6 +244,23 @@ function secureNode(s: EntropyState): void {
 
   const nodeKey = `${s.targetNode.gridX},${s.targetNode.gridZ}`;
   s.blockedCells = s.blockedCells.filter((k) => k !== nodeKey);
+  s.lastSurgeClearedKey = null;
+
+  if (s.isResonanceMax) {
+    const clearedKey = findNearestBlockedCell(s.blockedCells, s.playerGridX, s.playerGridZ);
+    if (clearedKey) {
+      s.blockedCells = s.blockedCells.filter((key) => key !== clearedKey);
+      s.lastSurgeClearedKey = clearedKey;
+      const cleared = parseCellKey(clearedKey);
+      s.shockwaves.push({
+        id: createEventId(s, "sw-surge"),
+        life: 1.35,
+        scale: 0.1,
+        x: cleared.x,
+        z: cleared.y,
+      });
+    }
+  }
 
   const nodeX = s.targetNode.gridX;
   const nodeZ = s.targetNode.gridZ;
@@ -289,6 +307,23 @@ export function chooseFallingBlockCell(s: EntropyState): Vec2 | null {
   const index = (s.level * 17 + s.totalAnchors * 7 + bucket + s.eventCount) % candidates.length;
 
   return candidates[index];
+}
+
+export function findNearestBlockedCell(
+  blockedCells: string[],
+  fromX: number,
+  fromZ: number
+): string | null {
+  if (blockedCells.length === 0) return null;
+
+  return blockedCells.reduce<string | null>((nearest, key) => {
+    if (!nearest) return key;
+    const current = parseCellKey(key);
+    const best = parseCellKey(nearest);
+    const currentDistance = Math.abs(current.x - fromX) + Math.abs(current.y - fromZ);
+    const bestDistance = Math.abs(best.x - fromX) + Math.abs(best.y - fromZ);
+    return currentDistance < bestDistance ? key : nearest;
+  }, null);
 }
 
 function trySpawnBlock(s: EntropyState): void {

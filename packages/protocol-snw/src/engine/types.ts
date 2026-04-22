@@ -71,6 +71,8 @@ export interface SNWState {
   waveTime: number;
   kills: number;
   threat: number;
+  firewallCharge: number;
+  firewallActiveMs: number;
   dashCooldownMs: number;
   objective: string;
   controls: SNWControls;

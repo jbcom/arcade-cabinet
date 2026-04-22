@@ -8,6 +8,7 @@ import {
   calculateMultiplier,
   collectCreatures,
   createInitialScene,
+  findNearestBeaconVector,
   findNearestThreatDistance,
   GAME_DURATION,
   getDeterministicWrapX,
@@ -154,8 +155,20 @@ describe("deep sea simulation", () => {
 
     expect(telemetry.collectionRatio).toBeGreaterThan(0.8);
     expect(telemetry.depthMeters).toBeGreaterThan(2_800);
+    expect(telemetry.nearestBeaconDistance).toBeGreaterThan(0);
+    expect(telemetry.beaconBearingRadians).not.toBeNull();
     expect(telemetry.oxygenRatio).toBeCloseTo(1 / 6);
     expect(["Ascent", "Hunted", "Critical", "Calm"]).toContain(telemetry.pressureLabel);
+  });
+
+  test("points sonar telemetry at the nearest uncharted beacon", () => {
+    const player = createPlayer({ x: 100, y: 100 });
+    const far = createCreature("fish", 300, 100);
+    const near = createCreature("plankton", 120, 100);
+    const vector = findNearestBeaconVector(player, [far, near]);
+
+    expect(vector.distance).toBe(20);
+    expect(vector.bearingRadians).toBeCloseTo(0);
   });
 });
 

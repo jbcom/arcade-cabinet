@@ -20,5 +20,8 @@ export interface OtterlyState {
   goalRadius: number;
   elapsedMs: number;
   barkCooldownMs: number;
+  lastBarkStunned: number;
+  rallyMs: number;
+  rescueStreak: number;
   objective: string;
 }

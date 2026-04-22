@@ -268,6 +268,12 @@ function SaladBall({ state }: { state: OtterlyState }) {
   const radius = 0.42 + state.ballHealth / 350;
   return (
     <group position={[state.ball.x, 0.4, state.ball.y]}>
+      {state.rallyMs > 0 ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[radius + 0.25, radius + 0.42, 48]} />
+          <meshBasicMaterial color="#facc15" transparent opacity={0.58} />
+        </mesh>
+      ) : null}
       <mesh castShadow>
         <sphereGeometry args={[radius, 32, 32]} />
         <meshStandardMaterial color="#45c657" roughness={0.62} />

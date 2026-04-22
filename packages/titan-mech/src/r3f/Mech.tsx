@@ -1,5 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
+import { useTrait } from "koota/react";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import {
@@ -14,6 +15,7 @@ import { titanEntity } from "../store/world";
 
 export function Mech() {
   const { camera, size } = useThree();
+  const renderState = useTrait(titanEntity, TitanTrait);
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3());
   const movement = useRef({ w: false, a: false, s: false, d: false, fire: false, brace: false });
@@ -128,13 +130,13 @@ export function Mech() {
     >
       <CuboidCollider args={[2.8, 4.8, 2.4]} position={[0, -0.8, 0]} />
       <group>
-        <MechChassis />
+        <MechChassis coolantActive={renderState.coolantBurstMs > 0} />
       </group>
     </RigidBody>
   );
 }
 
-function MechChassis() {
+function MechChassis({ coolantActive }: { coolantActive: boolean }) {
   return (
     <group>
       <ArmorBox position={[0, 1.3, 0]} scale={[4.8, 3.4, 3.4]} color="#334155" />
@@ -148,6 +150,12 @@ function MechChassis() {
       <Leg side={1} />
       <Arm side={-1} cannon />
       <Arm side={1} />
+      {coolantActive ? (
+        <mesh position={[0, 1.1, -2.72]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[2.4, 0.08, 8, 48]} />
+          <meshBasicMaterial color="#67e8f9" transparent opacity={0.7} />
+        </mesh>
+      ) : null}
 
       <mesh position={[0, 4.28, 0.35]} castShadow>
         <cylinderGeometry args={[0.28, 0.38, 1.45, 8]} />

@@ -423,6 +423,10 @@ function ParkLot({ tile }: WarningMeshProps) {
 
   return (
     <group position={[tile.x, 0, tile.z]}>
+      <mesh position={[0, 0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.46, 0.57, 32]} />
+        <meshBasicMaterial color="#a3e635" transparent opacity={0.42} />
+      </mesh>
       {treePoints.map(({ key, x, z }) => (
         <group key={`park-tree-${tile.id}-${key}`} position={[x, 0, z]}>
           <mesh position={[0, 0.42, 0]} castShadow>

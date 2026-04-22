@@ -33,6 +33,19 @@ describe("otterly simulation", () => {
     expect(next.goats[0].stunnedMs).toBeGreaterThan(0);
   });
 
+  test("double bark rallies restore salad health and damp goat damage", () => {
+    const state = createInitialState();
+    state.ballHealth = 90;
+    state.goats = state.goats.map((goat) => ({ ...goat, position: { ...state.otter } }));
+
+    const rallied = tick(state, 16, { x: 0, y: 0 }, true);
+
+    expect(rallied.lastBarkStunned).toBe(2);
+    expect(rallied.rescueStreak).toBe(2);
+    expect(rallied.ballHealth).toBe(96);
+    expect(rallied.rallyMs).toBeGreaterThan(0);
+  });
+
   test("goats damage the salad only while unstunned and close", () => {
     const state = createInitialState();
     state.goats[0].position = { ...state.ball };

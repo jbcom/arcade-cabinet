@@ -27,6 +27,8 @@ interface GameUIProps {
   lastRune?: string | null;
   objective: string;
   threatLevel: number;
+  harmonyLevel: number;
+  harmonySurgeActive: boolean;
 }
 
 function SpeedLines({ direction = "radial" }: { direction?: "radial" | "horizontal" }) {
@@ -201,6 +203,8 @@ export function GameUI({
   lastRune,
   objective,
   threatLevel,
+  harmonyLevel,
+  harmonySurgeActive,
 }: GameUIProps) {
   const [showRuneEffect, setShowRuneEffect] = useState<(typeof RUNE_PATTERNS)[0] | null>(null);
 
@@ -261,6 +265,26 @@ export function GameUI({
                     className="h-full bg-gradient-to-r from-emerald-400 via-amber-300 to-purple-400"
                     animate={{ width: `${Math.max(4, Math.min(100, threatLevel))}%` }}
                   />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-widest text-emerald-100/75">
+                  <span>Harmony</span>
+                  <span style={{ color: harmonySurgeActive ? "#fbbf24" : "#a7f3d0" }}>
+                    {harmonySurgeActive ? "Surge" : `${harmonyLevel}/3`}
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-3 gap-1">
+                  {[1, 2, 3].map((step) => (
+                    <div
+                      key={step}
+                      className="h-1 rounded-full"
+                      style={{
+                        background:
+                          harmonyLevel >= step
+                            ? "linear-gradient(90deg, #34d399, #fbbf24)"
+                            : "rgba(148, 163, 184, 0.24)",
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </motion.div>

@@ -58,6 +58,7 @@ export function HUD({ onBuildSelected, onSelectTool, selectedTool }: HUDProps) {
             <Users size={14} style={{ display: "inline", marginRight: 4 }} />
             {state.population}
           </div>
+          <div style={{ color: "#facc15", fontSize: 13 }}>Rating {state.stars}/5</div>
         </div>
       }
       bottomLeft={

@@ -48,6 +48,7 @@ export interface EntropyState {
   isResonanceMax: boolean;
   /** elapsed time when the last anchor was secured */
   lastAnchorTimeMs: number;
+  lastSurgeClearedKey: string | null;
   blockSpawnCooldownMs: number;
   moveCooldownMs: number;
   elapsedMs: number;

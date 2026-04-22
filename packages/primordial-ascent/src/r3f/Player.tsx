@@ -7,6 +7,7 @@ import {
   calculateAirControlImpulse,
   calculateJumpImpulse,
   calculateTetherImpulse,
+  calculateThermalLift,
 } from "../engine/primordialSimulation";
 import { CONFIG, type PrimordialControls } from "../engine/types";
 import { PrimordialTrait } from "../store/traits";
@@ -190,6 +191,11 @@ export function Player() {
     const moveImpulse = calculateAirControlImpulse(movement.current, cameraDirection, delta);
     if (moveImpulse.x !== 0 || moveImpulse.z !== 0) {
       rbRef.current.applyImpulse(moveImpulse, true);
+    }
+
+    const thermalLift = calculateThermalLift(pState.distToLava);
+    if (thermalLift > 0) {
+      rbRef.current.applyImpulse({ x: 0, y: thermalLift * delta * CONFIG.playerMass, z: 0 }, true);
     }
 
     if (movement.current.jump) {

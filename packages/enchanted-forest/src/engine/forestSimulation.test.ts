@@ -67,6 +67,23 @@ describe("forest simulation", () => {
     expect(purified.purifyZone).toEqual({ x: 50, y: 50, radius: 30 });
   });
 
+  test("builds harmony across alternating runes and amplifies the third spell", () => {
+    const shield = RUNE_PATTERNS.find((rune) => rune.type === "shield");
+    const heal = RUNE_PATTERNS.find((rune) => rune.type === "heal");
+    const purify = RUNE_PATTERNS.find((rune) => rune.type === "purify");
+    if (!shield || !heal || !purify) throw new Error("missing rune patterns");
+
+    const shielded = applySpellCast(createInitialForestState("playing"), shield);
+    const healed = applySpellCast(shielded, heal);
+    const surged = applySpellCast(healed, purify);
+
+    expect(healed.harmonyLevel).toBe(2);
+    expect(surged.harmonyLevel).toBe(3);
+    expect(surged.harmonySurgeActive).toBe(true);
+    expect(surged.purifyZone?.radius).toBe(42);
+    expect(surged.mana).toBe(37);
+  });
+
   test("handles shadow movement, tree hits, purification, and wave transitions", () => {
     const spawned = spawnCorruptionWave(1, 0);
     const state = {

@@ -7,7 +7,9 @@ import {
   classifyBiome,
   createInitialVoxelState,
   createSpawnCampLayout,
+  findNearbyResource,
   findNearestLandmarkDistance,
+  findNearestResourceDistance,
   generateChunkData,
   getProceduralHeight,
 } from "./voxelSimulation";
@@ -20,6 +22,8 @@ describe("voxel simulation", () => {
     expect(state.hp).toBe(state.maxHp);
     expect(state.coordinates).toEqual(CONFIG.PLAYER_START);
     expect(state.objective).toContain("Survey");
+    expect(state.nearestResourceDistance).toBeGreaterThan(0);
+    expect(state.surveyPings).toBe(0);
   });
 
   test("keeps spawn camp layout deterministic and readable", () => {
@@ -97,5 +101,29 @@ describe("voxel simulation", () => {
     expect(distance).toBeLessThan(2);
     expect(fallen.hp).toBe(16);
     expect(fallen.phase).toBe("playing");
+  });
+
+  test("surveys nearby authored resources into the expedition kit", () => {
+    const layout = createSpawnCampLayout();
+    const resource = layout.resources[0];
+    const state = createInitialVoxelState("playing");
+    const next = advanceVoxelState(state, 500, {
+      position: {
+        x: resource.position[0],
+        y: resource.position[1],
+        z: resource.position[2],
+      },
+      velocity: { x: 0, y: 0, z: 0 },
+      grounded: true,
+      biome: "greenwood",
+      nearestLandmarkDistance: 4,
+    });
+
+    expect(findNearbyResource(next.coordinates)?.id).toBe(resource.id);
+    expect(findNearestResourceDistance(state.coordinates)).toBe(state.nearestResourceDistance);
+    expect(next.inventory).toEqual([resource.label]);
+    expect(next.surveyPings).toBe(1);
+    expect(next.nearestResourceDistance).toBeGreaterThanOrEqual(0);
+    expect(next.objective).toContain(resource.label);
   });
 });

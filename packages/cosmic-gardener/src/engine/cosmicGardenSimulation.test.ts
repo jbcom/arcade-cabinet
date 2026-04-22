@@ -5,6 +5,7 @@ import {
   advancePinballOrb,
   calculateComboMultiplier,
   calculateGrowthStage,
+  calculateResonanceBloomBonus,
   calculateStarHitScore,
   createDeterministicVoidZones,
   createEnergyStream,
@@ -68,6 +69,7 @@ describe("cosmic garden simulation", () => {
     expect(calculateComboMultiplier(1_000, 2_500, 1)).toBe(1.5);
     expect(calculateComboMultiplier(1_000, 2_500, 5)).toBe(5);
     expect(calculateStarHitScore(2, 1.5)).toBe(450);
+    expect(calculateResonanceBloomBonus(3, 2)).toBe(1500);
   });
 
   test("creates and advances pinball orbs through walls, flippers, and drains", () => {

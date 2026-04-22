@@ -10,6 +10,7 @@ export interface SimSovietState {
   water: number;
   population: number;
   quotaProgress: number;
+  morale: number;
   month: number;
   year: number;
 }
@@ -24,6 +25,7 @@ export function createInitialState(): SimSovietState {
     water: 0,
     population: 12,
     quotaProgress: 8,
+    morale: 54,
     month: 1,
     year: 1980,
   };
@@ -36,6 +38,7 @@ function recomputeDerived(state: SimSovietState) {
   let water = 0;
   let incomeDelta = 0;
   let population = 0;
+  let morale = 48;
 
   for (const cell of next.grid) {
     if (!cell.building) continue;
@@ -45,11 +48,14 @@ function recomputeDerived(state: SimSovietState) {
     water += definition.water ?? 0;
     incomeDelta += definition.income ?? 0;
     population += definition.population ?? 0;
+    if (cell.building === "tower") morale += 16;
+    if (cell.building === "housing") morale += 2;
   }
 
   next.power = power;
   next.water = water;
   next.population = population;
+  next.morale = Math.max(0, Math.min(100, morale));
   return { next, foodDelta, incomeDelta };
 }
 
@@ -82,11 +88,12 @@ export function tickSimulation(state: SimSovietState, deltaMs: number) {
 
     // Apply monthly changes
     const foodConsumed = Math.max(6, Math.floor(next.population / 8));
+    const moraleBonus = Math.floor(next.morale / 35);
     next.food = Math.max(0, next.food + derived.foodDelta - foodConsumed);
     next.funds = Math.max(0, next.funds + derived.incomeDelta + 6); // Keep base +6 income
 
     next.month += 1;
-    next.quotaProgress = Math.min(100, next.quotaProgress + 4);
+    next.quotaProgress = Math.min(100, next.quotaProgress + 4 + moraleBonus);
     if (next.month > 12) {
       next.month = 1;
       next.year += 1;

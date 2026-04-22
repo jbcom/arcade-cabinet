@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   advanceRealmState,
   calculateMovementVelocity,
+  calculateRelicAttunement,
   createInitialRealmState,
   createRealmLayout,
   getZonePalette,
@@ -18,6 +19,8 @@ describe("realm simulation", () => {
     expect(playing.phase).toBe("playing");
     expect(playing.hp).toBe(playing.maxHp);
     expect(playing.loot).toEqual([]);
+    expect(playing.nearestRelicDistance).toBeGreaterThan(0);
+    expect(playing.portalDistance).toBeGreaterThan(0);
     expect(playing.movement).toEqual({ x: 0, z: 0 });
   });
 
@@ -44,7 +47,7 @@ describe("realm simulation", () => {
   });
 
   test("collects nearby relics once and updates score and attack", () => {
-    const state = createInitialRealmState("playing");
+    const state = { ...createInitialRealmState("playing"), hp: 70 };
     const relic = createRealmLayout(1).relics[0];
     expect(relic).toBeDefined();
 
@@ -57,6 +60,10 @@ describe("realm simulation", () => {
 
     expect(next.loot).toEqual(["Moonlit Lens I"]);
     expect(next.atk).toBe(state.atk + 2);
+    expect(next.hp).toBe(78);
+    expect(next.attunement).toBe(
+      calculateRelicAttunement(1, next.nearestRelicDistance, next.portalDistance)
+    );
     expect(next.score).toBeGreaterThan(state.score);
     expect(again.loot).toEqual(next.loot);
   });

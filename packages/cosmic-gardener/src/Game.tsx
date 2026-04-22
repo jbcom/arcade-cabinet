@@ -13,6 +13,7 @@ import {
 } from "./engine/constellations";
 import {
   calculateComboMultiplier,
+  calculateResonanceBloomBonus,
   calculateStarHitScore,
   createStarterGarden,
 } from "./engine/cosmicGardenSimulation";
@@ -127,6 +128,10 @@ export default function Game({ className }: { className?: string }) {
     x: number;
     y: number;
     points: number;
+  } | null>(null);
+  const [resonanceBloom, setResonanceBloom] = useState<{
+    points: number;
+    connectionCount: number;
   } | null>(null);
 
   const gardenRef = useRef<HTMLDivElement>(null);
@@ -351,8 +356,13 @@ export default function Game({ className }: { className?: string }) {
           selectedStarId,
           targetStar.id
         );
-        if (connectionKey) {
+        if (connectionKey && !completedConnections.has(connectionKey)) {
+          const nextConnectionCount = completedConnections.size + 1;
+          const points = calculateResonanceBloomBonus(nextConnectionCount, comboMultiplier);
           setCompletedConnections((prev) => new Set([...prev, connectionKey]));
+          setScore((prev) => prev + points);
+          setResonanceBloom({ connectionCount: nextConnectionCount, points });
+          setTimeout(() => setResonanceBloom(null), 1200);
         }
       }
 
@@ -361,7 +371,16 @@ export default function Game({ className }: { className?: string }) {
       setDragEnd(null);
       setSelectedStarId(null);
     },
-    [isDragging, selectedStarId, stars, createStream, currentPattern, starPointMatches]
+    [
+      isDragging,
+      selectedStarId,
+      stars,
+      createStream,
+      currentPattern,
+      starPointMatches,
+      completedConnections,
+      comboMultiplier,
+    ]
   );
 
   const handleLaunch = useCallback(
@@ -560,7 +579,29 @@ export default function Game({ className }: { className?: string }) {
                 x{comboMultiplier.toFixed(1)} COMBO
               </motion.div>
             )}
+            <div className="mt-1 text-[0.68rem] font-medium uppercase tracking-[0.18em] text-cyan-100/70">
+              Links {completedConnections.size}/{currentPattern.connections.length}
+            </div>
           </motion.div>
+
+          <AnimatePresence>
+            {resonanceBloom && (
+              <motion.div
+                className="pointer-events-none absolute left-1/2 top-[18%] z-50 -translate-x-1/2 rounded-md border border-amber-200/40 bg-slate-950/70 px-4 py-2 text-center shadow-2xl shadow-amber-900/30 backdrop-blur-md"
+                initial={{ opacity: 0, scale: 0.86, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -16 }}
+              >
+                <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-amber-200">
+                  Resonance Bloom
+                </div>
+                <div className="text-xl font-black text-white">+{resonanceBloom.points}</div>
+                <div className="text-xs text-cyan-100/70">
+                  {resonanceBloom.connectionCount} pattern links aligned
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="absolute top-4 right-20 flex gap-1 pointer-events-none z-50">
             {BALL_INDICATOR_KEYS.map((key, i) => (

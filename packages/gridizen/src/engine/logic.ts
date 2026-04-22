@@ -61,6 +61,7 @@ export function createInitialState(): GridizenState {
     powerMax: 0,
     waterUse: 0,
     waterMax: 0,
+    civicBoost: 0,
     milestone: 1,
     selectedTool: "INSPECT",
     inspectedTileIdx: null,
@@ -228,9 +229,15 @@ export function getGrowthSignal(tile: GridTile, time: number, population: number
   return signal - Math.floor(signal);
 }
 
-export function shouldGrowTile(tile: GridTile, time: number, population: number): boolean {
+export function shouldGrowTile(
+  tile: GridTile,
+  time: number,
+  population: number,
+  civicBoost = 0
+): boolean {
   const threshold = GROWTH_THRESHOLDS[tile.building] ?? 0;
-  return threshold > 0 && getGrowthSignal(tile, time, population) < threshold;
+  const boostedThreshold = threshold + civicBoost / 500;
+  return threshold > 0 && getGrowthSignal(tile, time, population) < boostedThreshold;
 }
 
 export function shouldDeclineTile(tile: GridTile, time: number, population: number): boolean {
@@ -321,6 +328,7 @@ function evaluateCityState(state: GridizenState, options: EvaluationOptions): Gr
 
   const powerAvailable = pMax >= pUse;
   const waterAvailable = wMax >= wUse;
+  const civicBoost = calculateCivicBoost(newGrid);
   let civicHappinessTotal = 0;
   let civicHappinessCount = 0;
 
@@ -350,6 +358,7 @@ function evaluateCityState(state: GridizenState, options: EvaluationOptions): Gr
         if (nTile.building === "INDUSTRIAL") localHap -= 20;
       }
     }
+    if (t.building !== "INDUSTRIAL") localHap += civicBoost * 0.15;
     t.happiness = Math.max(0, Math.min(100, localHap));
     if (t.building === "NONE" || t.building === "ROAD") continue;
     t.roadAccess = hasRoad;
@@ -370,7 +379,7 @@ function evaluateCityState(state: GridizenState, options: EvaluationOptions): Gr
         t.powered &&
         t.watered &&
         t.happiness > 40 &&
-        shouldGrowTile(t, time, state.population) &&
+        shouldGrowTile(t, time, state.population, civicBoost) &&
         t.level < 5
       ) {
         t.level++;
@@ -423,8 +432,16 @@ function evaluateCityState(state: GridizenState, options: EvaluationOptions): Gr
     powerMax: pMax,
     waterUse: wUse,
     waterMax: wMax,
+    civicBoost,
     milestone: newMilestone,
   };
+}
+
+export function calculateCivicBoost(grid: GridTile[]): number {
+  const parkTiles = grid.filter((tile) => tile.building === "PARK");
+  const servicedParks = parkTiles.filter((tile) => tile.roadAccess || hasAdjacentRoad(tile, grid));
+
+  return clamp(parkTiles.length * 3 + servicedParks.length * 2, 0, 30);
 }
 
 function getTileDemand(tile: GridTile): { power: number; water: number } {
@@ -453,4 +470,19 @@ function requiresWater(tile: GridTile): boolean {
     tile.building === "INDUSTRIAL" ||
     tile.building === "PARK"
   );
+}
+
+function hasAdjacentRoad(tile: GridTile, grid: GridTile[]): boolean {
+  const neighbors: [number, number][] = [
+    [tile.x + 1, tile.z],
+    [tile.x - 1, tile.z],
+    [tile.x, tile.z + 1],
+    [tile.x, tile.z - 1],
+  ];
+
+  return neighbors.some(([x, z]) => grid[z * GRID_SIZE + x]?.building === "ROAD");
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }

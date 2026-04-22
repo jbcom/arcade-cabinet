@@ -53,11 +53,33 @@ export function calculateDailyRevenue(buildings: BuildingData[]) {
   );
 }
 
+export function calculateMaintenanceCoverage(buildings: BuildingData[]) {
+  const occupiedRooms = buildings.filter(
+    (building) => BUILDINGS[building.type].cat === "room" || BUILDINGS[building.type].cat === "com"
+  ).length;
+  if (occupiedRooms === 0) return 100;
+
+  const maintCapacity = buildings.filter((building) => building.type === "maint").length * 6;
+  return Math.min(100, Math.round((maintCapacity / occupiedRooms) * 100));
+}
+
+export function calculateTowerRating(buildings: BuildingData[]) {
+  const population = calculatePopulation(buildings);
+  const commercialMix = buildings.filter(
+    (building) => BUILDINGS[building.type].cat === "com"
+  ).length;
+  const maintenanceCoverage = calculateMaintenanceCoverage(buildings);
+  const rawRating = 1 + population / 24 + commercialMix * 0.35 + maintenanceCoverage / 42;
+
+  return Math.max(1, Math.min(5, Math.round(rawRating)));
+}
+
 export function advanceSkyState(state: SkyState, buildings: BuildingData[], ticks = 1): SkyState {
   let nextTick = state.tick + Math.max(1, ticks) * state.speed;
   let nextDay = state.day;
   let nextFunds = state.funds;
-  const dailyRevenue = calculateDailyRevenue(buildings);
+  const stars = calculateTowerRating(buildings);
+  const dailyRevenue = Math.floor(calculateDailyRevenue(buildings) * (1 + stars * 0.04));
 
   while (nextTick >= CONFIG.DAY_TICKS) {
     nextTick -= CONFIG.DAY_TICKS;
@@ -70,6 +92,7 @@ export function advanceSkyState(state: SkyState, buildings: BuildingData[], tick
     day: nextDay,
     funds: nextFunds,
     population: calculatePopulation(buildings),
+    stars,
     tick: nextTick,
   };
 }

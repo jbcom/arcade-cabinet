@@ -75,11 +75,17 @@ export function HUD() {
             />
           </div>
           <div style={{ fontSize: 14, marginTop: 4 }}>ATK: {state.atk}</div>
+          <div style={{ color: "#f0abfc", fontSize: 13, marginTop: 4 }}>
+            Attunement {state.attunement}%
+          </div>
         </div>
       }
       bottomLeft={
         <div style={{ color: "#c4b5fd", fontFamily: "serif", fontSize: 14 }}>
           <div style={{ color: "#94a3b8", marginBottom: 10 }}>{state.objective}</div>
+          <div style={{ color: "#ddd6fe", fontSize: 12, marginBottom: 8 }}>
+            Relic {state.nearestRelicDistance}m / Portal {state.portalDistance}m
+          </div>
           <div
             style={{
               display: "grid",
@@ -110,6 +116,7 @@ export function HUD() {
         <div style={{ textAlign: "right", color: "#e2e8f0", fontFamily: "serif" }}>
           <div style={{ fontSize: 12, letterSpacing: "2px", opacity: 0.6 }}>LOOT COLLECTED</div>
           <div style={{ fontSize: 24, fontWeight: "bold" }}>{state.loot.length}</div>
+          <div style={{ color: "#c4b5fd", fontSize: 12 }}>Relics heal on pickup</div>
         </div>
       }
     />

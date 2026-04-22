@@ -24,6 +24,8 @@ export interface MegaTrackState {
   elapsedMs: number;
   milestone: number;
   boostCharge: number;
+  cleanPassStreak: number;
+  overdriveMs: number;
 }
 
 export const CONFIG = {

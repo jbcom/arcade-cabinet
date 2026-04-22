@@ -33,6 +33,7 @@ export function HUD() {
           }}
         >
           <Gauge label="INTEGRITY" value={state.hp} max={state.maxHp} color={red} />
+          <Gauge label="FIREWALL" value={state.firewallCharge} max={100} color={cyan} />
           <Gauge
             label="THREAT"
             value={state.threat}
@@ -55,6 +56,11 @@ export function HUD() {
           <div style={{ marginTop: 8, color: "#94a3b8", fontSize: 11 }}>
             HOSTILES {state.enemies.length} / WAVE {state.wave}
           </div>
+          {state.firewallActiveMs > 0 ? (
+            <div style={{ marginTop: 4, color: cyan, fontSize: 11 }}>
+              FIREWALL {(state.firewallActiveMs / 1000).toFixed(1)}s
+            </div>
+          ) : null}
         </div>
       }
       bottomRight={<ControlPad />}

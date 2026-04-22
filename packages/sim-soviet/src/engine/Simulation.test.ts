@@ -23,6 +23,7 @@ describe("sim soviet simulation", () => {
 
     expect(next.month).toBe(2);
     expect(next.year).toBe(1980);
-    expect(next.quotaProgress).toBe(state.quotaProgress + 4);
+    expect(next.morale).toBeGreaterThan(0);
+    expect(next.quotaProgress).toBe(state.quotaProgress + 4 + Math.floor(state.morale / 35));
   });
 });

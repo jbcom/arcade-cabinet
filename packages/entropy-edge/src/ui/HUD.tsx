@@ -70,6 +70,11 @@ export function HUD({ state }: HUDProps) {
               2x multiplier active
             </div>
           ) : null}
+          {state.lastSurgeClearedKey ? (
+            <div className="mt-1 truncate text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cyan-200">
+              Surge cleared cell {state.lastSurgeClearedKey}
+            </div>
+          ) : null}
         </div>
 
         <div className="min-w-0 justify-self-end rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 text-right text-xs shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:min-w-[220px] sm:p-4 sm:text-sm">

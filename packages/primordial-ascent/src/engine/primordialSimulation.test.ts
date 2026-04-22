@@ -7,6 +7,7 @@ import {
   calculateJumpImpulse,
   calculateObjectiveProgress,
   calculateTetherImpulse,
+  calculateThermalLift,
   canGrapple,
   createCavernLayout,
   createInitialPrimordialState,
@@ -22,6 +23,7 @@ describe("primordial simulation", () => {
     expect(state.maxAltitude).toBe(CONFIG.playerStartPosition.y);
     expect(state.lavaHeight).toBe(CONFIG.lavaStartHeight);
     expect(state.distToLava).toBe(50);
+    expect(state.thermalLift).toBeGreaterThan(0);
     expect(state.objective).toContain("cyan anchors");
   });
 
@@ -46,6 +48,9 @@ describe("primordial simulation", () => {
     expect(advanceLavaHeight(-40, 0, 1000)).toBeCloseTo(-39.4);
     expect(advanceLavaHeight(-40, 60_000, 1000)).toBeCloseTo(-38.92);
     expect(calculateDistanceToLava(12, -38.92)).toBe(50);
+    expect(calculateThermalLift(50)).toBeGreaterThan(0);
+    expect(calculateThermalLift(8)).toBe(0);
+    expect(calculateThermalLift(80)).toBe(0);
   });
 
   test("advances telemetry, objective progress, and gameover transition", () => {

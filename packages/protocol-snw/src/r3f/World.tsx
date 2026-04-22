@@ -1,7 +1,10 @@
 import { ContactShadows, Grid, Stars } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
+import { useTrait } from "koota/react";
 import { createProtocolArenaLayout } from "../engine/protocolSimulation";
-import type { CoverNode, PerimeterNode } from "../engine/types";
+import { CONFIG, type CoverNode, type PerimeterNode } from "../engine/types";
+import { SNWTrait } from "../store/traits";
+import { snwEntity } from "../store/world";
 import { Enemies } from "./Enemies";
 import { Player } from "./Player";
 import { TerrainManager } from "./TerrainManager";
@@ -107,6 +110,8 @@ function CoverBaffle({ node }: { node: CoverNode }) {
 }
 
 export function World() {
+  const state = useTrait(snwEntity, SNWTrait);
+
   return (
     <>
       <color attach="background" args={["#03070a"]} />
@@ -129,6 +134,7 @@ export function World() {
         <Enemies />
         <Player />
       </Physics>
+      {state.firewallActiveMs > 0 ? <SignalFirewall /> : null}
       <ContactShadows
         opacity={0.48}
         scale={80}
@@ -138,5 +144,24 @@ export function World() {
         color="#020305"
       />
     </>
+  );
+}
+
+function SignalFirewall() {
+  return (
+    <group>
+      {[0, 1].map((index) => (
+        <mesh key={index} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6 + index * 0.05, 0]}>
+          <ringGeometry
+            args={[
+              CONFIG.ARENA_RADIUS - 1.4 - index * 2,
+              CONFIG.ARENA_RADIUS - 0.6 - index * 2,
+              128,
+            ]}
+          />
+          <meshBasicMaterial color="#2dd4bf" transparent opacity={0.22 - index * 0.06} />
+        </mesh>
+      ))}
+    </group>
   );
 }

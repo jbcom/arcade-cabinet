@@ -25,8 +25,25 @@ function GridFloor({ state }: { state: EntropyState }) {
           Math.sign(cell.z - state.playerGridZ));
     const isTarget = cell.key === targetKey;
     const isPlayer = cell.key === playerKey;
-    const baseColor = isTarget ? "#321226" : isPlayer ? "#0d2d35" : isDark ? "#111a2b" : "#0c1724";
-    const emissive = isTarget ? "#ff0055" : isPlayer ? "#00e5ff" : isGuide ? "#14536a" : "#020617";
+    const isSurgeCleared = cell.key === state.lastSurgeClearedKey;
+    const baseColor = isTarget
+      ? "#321226"
+      : isPlayer
+        ? "#0d2d35"
+        : isSurgeCleared
+          ? "#1d2a18"
+          : isDark
+            ? "#111a2b"
+            : "#0c1724";
+    const emissive = isTarget
+      ? "#ff0055"
+      : isPlayer
+        ? "#00e5ff"
+        : isSurgeCleared
+          ? "#a3e635"
+          : isGuide
+            ? "#14536a"
+            : "#020617";
 
     tiles.push(
       <mesh key={cell.key} position={[cell.x, 0, cell.z]} receiveShadow>
@@ -35,7 +52,15 @@ function GridFloor({ state }: { state: EntropyState }) {
           color={baseColor}
           emissive={emissive}
           emissiveIntensity={
-            isTarget || isPlayer ? 0.32 : isGuide ? 0.16 : cell.unstable ? 0.04 : 0
+            isTarget || isPlayer
+              ? 0.32
+              : isSurgeCleared
+                ? 0.26
+                : isGuide
+                  ? 0.16
+                  : cell.unstable
+                    ? 0.04
+                    : 0
           }
           metalness={0.45}
           roughness={0.38}

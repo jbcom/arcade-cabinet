@@ -34,6 +34,7 @@ export function HUD() {
         >
           <Gauge label="SYSTEM INTEGRITY" value={state.hp} max={state.maxHp} color={accent} />
           <Gauge label="ENERGY" value={state.energy} max={state.maxEnergy} color="#38bdf8" />
+          <Gauge label="COOLANT" value={state.coolantCharge} max={100} color="#67e8f9" />
           <Gauge
             label="HEAT"
             value={state.heat}
@@ -52,6 +53,11 @@ export function HUD() {
         >
           <div style={{ color: warning, fontSize: 11, textTransform: "uppercase" }}>Objective</div>
           <div style={{ fontSize: 13, lineHeight: 1.35 }}>{state.objective}</div>
+          {state.coolantBurstMs > 0 ? (
+            <div style={{ color: "#67e8f9", fontSize: 12, marginTop: 6 }}>
+              COOLANT BURST {(state.coolantBurstMs / 1000).toFixed(1)}s
+            </div>
+          ) : null}
           <Gauge label="PYLON LOCK" value={state.objectiveProgress} max={100} color={warning} />
         </div>
       }

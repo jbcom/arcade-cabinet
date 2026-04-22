@@ -54,7 +54,7 @@ export function HUD() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, max-content))",
+            gridTemplateColumns: "repeat(4, minmax(0, max-content))",
             gap: "0.65rem",
             alignItems: "start",
             justifyContent: "space-between",
@@ -62,6 +62,7 @@ export function HUD() {
         >
           <Metric label="Altitude" value={`${state.altitude}M`} accent="#35d07f" />
           <Metric label="Lava Gap" value={`${state.distToLava}M`} accent="#ff7448" />
+          <Metric label="Thermal" value={`+${state.thermalLift.toFixed(1)}`} accent="#f59e0b" />
           <Metric label="Velocity" value={`${state.velocity}`} accent="#00e5ff" align="right" />
         </div>
 

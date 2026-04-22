@@ -50,6 +50,8 @@ export function createInitialVoxelState(phase: VoxelState["phase"] = "menu"): Vo
     objectiveProgress: 0,
     coordinates: { ...CONFIG.PLAYER_START },
     nearestLandmarkDistance: 10,
+    nearestResourceDistance: findNearestResourceDistance(CONFIG.PLAYER_START),
+    surveyPings: 0,
     timeSurvived: 0,
   };
 }
@@ -157,9 +159,12 @@ export function advanceVoxelState(
 
   const distanceScore = Math.floor(Math.hypot(telemetry.position.x, telemetry.position.z));
   const score = Math.max(state.score, distanceScore);
-  const objectiveProgress = calculateObjectiveProgress(telemetry.position, score);
+  const nearbyResource = findNearbyResource(telemetry.position, state.inventory);
+  const inventory = nearbyResource ? [...state.inventory, nearbyResource.label] : state.inventory;
+  const objectiveProgress = calculateObjectiveProgress(telemetry.position, score, inventory.length);
   const fallDamage = telemetry.position.y < CONFIG.FALL_DAMAGE_Y ? 4 : 0;
   const hp = Math.max(0, state.hp - fallDamage);
+  const nearestResourceDistance = findNearestResourceDistance(telemetry.position, inventory);
 
   return {
     ...state,
@@ -167,7 +172,8 @@ export function advanceVoxelState(
     score,
     hp,
     biome: telemetry.biome,
-    objective: describeObjective(objectiveProgress, telemetry),
+    inventory,
+    objective: describeObjective(objectiveProgress, telemetry, nearbyResource?.label),
     objectiveProgress,
     coordinates: {
       x: round(telemetry.position.x, 1),
@@ -175,6 +181,8 @@ export function advanceVoxelState(
       z: round(telemetry.position.z, 1),
     },
     nearestLandmarkDistance: round(telemetry.nearestLandmarkDistance, 1),
+    nearestResourceDistance: round(nearestResourceDistance, 1),
+    surveyPings: state.surveyPings + (nearbyResource ? 1 : 0),
     timeSurvived: state.timeSurvived + Math.max(0, deltaMs),
   };
 }
@@ -209,11 +217,16 @@ export function calculateJumpVelocity(currentVelocity: Vec3, grounded: boolean):
     : { ...currentVelocity };
 }
 
-export function calculateObjectiveProgress(position: Vec3, score: number): number {
+export function calculateObjectiveProgress(
+  position: Vec3,
+  score: number,
+  inventoryCount = 0
+): number {
   const distanceProgress = Math.min(score / CONFIG.EXPLORATION_GOAL, 1) * 70;
   const altitudeProgress = Math.min(Math.max(position.y, 0) / 18, 1) * 30;
+  const resourceProgress = Math.min(inventoryCount * 6, 18);
 
-  return clamp(Math.round(distanceProgress + altitudeProgress), 0, 100);
+  return clamp(Math.round(distanceProgress + altitudeProgress + resourceProgress), 0, 100);
 }
 
 export function classifyBiome(height: number): string {
@@ -285,6 +298,33 @@ export function findNearestLandmarkDistance(position: Vec3, layout = createSpawn
   }, Number.POSITIVE_INFINITY);
 }
 
+export function findNearestResourceDistance(
+  position: Vec3,
+  inventory: string[] = [],
+  layout = createSpawnCampLayout()
+) {
+  const distances = layout.resources
+    .filter((resource) => !inventory.includes(resource.label))
+    .map((resource) => {
+      const [x, y, z] = resource.position;
+      return Math.hypot(position.x - x, position.y - y, position.z - z);
+    });
+
+  return distances.length > 0 ? Math.min(...distances) : 0;
+}
+
+export function findNearbyResource(
+  position: Vec3,
+  inventory: string[] = [],
+  layout = createSpawnCampLayout()
+) {
+  return layout.resources.find((resource) => {
+    if (inventory.includes(resource.label)) return false;
+    const [x, y, z] = resource.position;
+    return Math.hypot(position.x - x, position.y - y, position.z - z) <= 2.8;
+  });
+}
+
 function pickSurfaceBlock(height: number): BlockType {
   if (height < -1) return "water";
   if (height <= 0) return "sand";
@@ -320,7 +360,15 @@ function createTreeBlocks(x: number, surfaceY: number, z: number, chunkSize: num
   return blocks;
 }
 
-function describeObjective(progress: number, telemetry: VoxelTelemetry): string {
+function describeObjective(
+  progress: number,
+  telemetry: VoxelTelemetry,
+  collectedResource?: string
+): string {
+  if (collectedResource) {
+    return `${collectedResource} logged in the survey kit. Keep mapping the route beyond camp.`;
+  }
+
   if (telemetry.position.y < CONFIG.FALL_DAMAGE_Y + 5) {
     return "Climb back to stable blocks before the realm consumes your signal.";
   }

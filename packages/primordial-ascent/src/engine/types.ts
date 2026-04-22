@@ -29,6 +29,7 @@ export interface PrimordialState {
   distToLava: number;
   isInGrappleRange: boolean;
   lavaHeight: number;
+  thermalLift: number;
   objective: string;
   objectiveProgress: number;
 }
