@@ -3,7 +3,7 @@ import type { MegaTrackState, Obstacle } from "@logic/games/mega-track/engine/ty
 import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 interface TrackSceneProps {
@@ -81,17 +81,39 @@ function Car({ lane, overdrive }: { lane: number; overdrive: boolean }) {
 
   return (
     <group ref={meshRef} position={[0, 2.2, 10]}>
-      <mesh castShadow>
-        <boxGeometry args={[12, 3.4, 22]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.34} metalness={0.12} />
+      <mesh position={[0, 0.15, 0.8]} castShadow>
+        <boxGeometry args={[11.4, 2.1, 18]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.32} metalness={0.28} />
       </mesh>
-      <mesh position={[0, 2.35, -4]} castShadow>
-        <boxGeometry args={[8.5, 3.8, 8.5]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.22} metalness={0.2} />
+      <mesh position={[0, 1.25, -3.1]} castShadow>
+        <boxGeometry args={[7.8, 2.3, 7.2]} />
+        <meshStandardMaterial color="#020617" roughness={0.2} metalness={0.36} />
       </mesh>
-      <mesh position={[0, 0.05, -14]} rotation={[Math.PI / 2, 0, Math.PI / 4]} castShadow>
-        <coneGeometry args={[6.4, 9, 4]} />
-        <meshStandardMaterial color="#e0f2fe" roughness={0.28} metalness={0.18} />
+      <mesh position={[0, 0.2, -11.8]} rotation={[Math.PI / 2, 0, Math.PI / 4]} castShadow>
+        <coneGeometry args={[6.3, 9.4, 4]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.26} metalness={0.22} />
+      </mesh>
+      <mesh position={[0, -0.38, 9.6]} castShadow>
+        <boxGeometry args={[13.8, 1.2, 5.2]} />
+        <meshStandardMaterial color="#facc15" roughness={0.42} metalness={0.16} />
+      </mesh>
+      {[-7.1, 7.1].map((x) => (
+        <mesh key={`sidepod-${x}`} position={[x, -0.1, -1.5]} castShadow>
+          <boxGeometry args={[2.4, 1.4, 15.5]} />
+          <meshStandardMaterial
+            color={x < 0 ? "#22d3ee" : "#fb7185"}
+            roughness={0.34}
+            metalness={0.2}
+          />
+        </mesh>
+      ))}
+      <mesh position={[0, 3, 5.8]} castShadow>
+        <boxGeometry args={[14.8, 0.55, 2.2]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.32} />
+      </mesh>
+      <mesh position={[0, -0.98, -0.8]}>
+        <boxGeometry args={[9.8, 0.16, 19]} />
+        <meshBasicMaterial color={overdrive ? "#fde047" : "#22d3ee"} transparent opacity={0.72} />
       </mesh>
       {[-5.9, 5.9].map((x) =>
         [-7, 7].map((z) => (
@@ -103,6 +125,10 @@ function Car({ lane, overdrive }: { lane: number; overdrive: boolean }) {
           >
             <cylinderGeometry args={[1.45, 1.45, 1.3, 16]} />
             <meshStandardMaterial color="#020617" roughness={0.6} />
+            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[1.48, 0.12, 8, 18]} />
+              <meshBasicMaterial color="#67e8f9" />
+            </mesh>
           </mesh>
         ))
       )}
@@ -228,9 +254,70 @@ function TrackDressing({ distance }: { distance: number }) {
           </group>
         );
       })}
+      <TracksideSkyline />
     </group>
   );
 }
+
+const TracksideSkyline = memo(function TracksideSkyline() {
+  const towerRefs = useRef<Array<THREE.Group | null>>([]);
+  const towers = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, index) => {
+        const side = index % 2 === 0 ? -1 : 1;
+        const zSeed = Math.floor(index / 2);
+        const height = 10 + ((index * 11) % 24);
+        const width = 4 + ((index * 5) % 5);
+
+        return {
+          key: `skyline-${index}`,
+          side,
+          x: side * (82 + (index % 4) * 10),
+          zOffset: zSeed * 145 + (index % 3) * 28,
+          height,
+          width,
+          color: index % 5 === 0 ? "#334155" : index % 3 === 0 ? "#1f2937" : "#273449",
+          accent: index % 4 === 0 ? "#fb7185" : side < 0 ? "#22d3ee" : "#facc15",
+        };
+      }),
+    []
+  );
+
+  useFrame((state) => {
+    const travel = state.clock.elapsedTime * 95;
+    towers.forEach((tower, index) => {
+      const group = towerRefs.current[index];
+      if (!group) return;
+      group.position.z = -(((tower.zOffset + travel) % 1760) + 130);
+    });
+  });
+
+  return (
+    <group>
+      {towers.map((tower, index) => {
+        const initialZ = -(((tower.zOffset + index * 12) % 1760) + 130);
+        return (
+          <group
+            key={tower.key}
+            ref={(element) => {
+              towerRefs.current[index] = element;
+            }}
+            position={[tower.x, tower.height / 2 - 1, initialZ]}
+          >
+            <mesh>
+              <boxGeometry args={[tower.width, tower.height, tower.width * 1.35]} />
+              <meshStandardMaterial color={tower.color} roughness={0.48} metalness={0.18} />
+            </mesh>
+            <mesh position={[0, tower.height / 2 + 0.35, 0]}>
+              <boxGeometry args={[tower.width * 1.35, 0.55, tower.width * 1.65]} />
+              <meshBasicMaterial color={tower.accent} transparent opacity={0.74} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+});
 
 function CheckpointGate({ z, index }: { z: number; index: number }) {
   const color = index % 2 === 0 ? "#22d3ee" : "#facc15";
@@ -277,20 +364,20 @@ function CameraRig() {
 export function TrackScene({ state }: TrackSceneProps) {
   return (
     <Canvas shadows gl={browserTestCanvasGlOptions} dpr={[1, 1.5]}>
-      <color attach="background" args={["#bde7f1"]} />
+      <color attach="background" args={["#a7ddeb"]} />
       <PerspectiveCamera makeDefault position={[0, 34, 76]} fov={52} />
       <CameraRig />
 
-      <ambientLight intensity={0.9} />
-      <hemisphereLight args={["#dff7ff", "#172033", 0.9]} />
-      <directionalLight position={[45, 95, 35]} intensity={1.35} castShadow />
+      <ambientLight intensity={0.76} />
+      <hemisphereLight args={["#dff7ff", "#172033", 0.78]} />
+      <directionalLight position={[45, 95, 35]} intensity={1.52} castShadow />
 
       <Track distance={state.distance} />
       <TrackDressing distance={state.distance} />
       <Car lane={state.currentLane} overdrive={state.overdriveMs > 0} />
       <Obstacles obstacles={state.obstacles} distance={state.distance} />
 
-      <fog attach="fog" args={["#bde7f1", 360, 1280]} />
+      <fog attach="fog" args={["#a7ddeb", 360, 1320]} />
     </Canvas>
   );
 }

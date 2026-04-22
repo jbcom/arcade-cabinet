@@ -10,11 +10,17 @@ import { VoxelTrait } from "@logic/games/voxel-realms/store/traits";
 import { voxelEntity, voxelWorld } from "@logic/games/voxel-realms/store/world";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
+import { useEffect, useState } from "react";
 import { World } from "./r3f/World";
 import { HUD } from "./ui/HUD";
 
+const MENU_PREVIEW_DELAY_MS = 900;
+const PLAY_SCENE_DELAY_MS = 120;
+
 function VoxelApp() {
   const state = useTrait(voxelEntity, VoxelTrait);
+  const sceneMounted = useDeferredSceneMount(state.phase);
+  const worldInteractive = useDeferredWorldInteractivity(state.phase === "playing");
 
   const handleStart = () => {
     voxelEntity.set(VoxelTrait, createInitialVoxelState("playing"));
@@ -23,10 +29,10 @@ function VoxelApp() {
   return (
     <GameViewport background="#9fd7e8">
       <Canvas shadows camera={{ fov: 72, position: [0, 4.6, 0] }} gl={browserTestCanvasGlOptions}>
-        {state.phase !== "gameover" && (
+        {sceneMounted && state.phase !== "gameover" && (
           <World
-            key={state.phase === "playing" ? "playing" : "preview"}
-            interactive={state.phase === "playing"}
+            key={worldInteractive ? "interactive" : "preview"}
+            interactive={worldInteractive}
           />
         )}
       </Canvas>
@@ -85,6 +91,58 @@ function VoxelApp() {
       )}
     </GameViewport>
   );
+}
+
+function useDeferredSceneMount(phase: "menu" | "playing" | "gameover") {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (phase === "gameover") {
+      setMounted(false);
+      return undefined;
+    }
+
+    setMounted(false);
+
+    const delay = phase === "playing" ? PLAY_SCENE_DELAY_MS : MENU_PREVIEW_DELAY_MS;
+    let frame = 0;
+    const timer = window.setTimeout(() => {
+      frame = window.requestAnimationFrame(() => {
+        setMounted(true);
+      });
+    }, delay);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, [phase]);
+
+  return mounted;
+}
+
+function useDeferredWorldInteractivity(isPlaying: boolean) {
+  const [interactive, setInteractive] = useState(false);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      setInteractive(false);
+      return undefined;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setInteractive(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      setInteractive(false);
+    };
+  }, [isPlaying]);
+
+  return isPlaying && interactive;
 }
 
 export default function Game() {

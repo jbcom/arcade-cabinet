@@ -14,18 +14,26 @@ export function World() {
   return (
     <>
       <color attach="background" args={["#020608"]} />
-      <ambientLight intensity={0.12} />
-      <directionalLight position={[10, 38, 12]} intensity={0.85} castShadow color="#dffbff" />
-      <pointLight position={[0, -24, -18]} intensity={28} distance={80} color="#ff3b1f" />
+      <ambientLight intensity={0.22} />
+      <directionalLight position={[10, 38, 12]} intensity={1.05} castShadow color="#dffbff" />
+      <pointLight position={[0, -24, -18]} intensity={38} distance={92} color="#ff3b1f" />
       <spotLight
         position={[-18, 28, 10]}
         angle={0.55}
         penumbra={0.7}
-        intensity={36}
+        intensity={48}
         distance={120}
         color="#00e5ff"
       />
-      <fogExp2 attach="fog" args={["#020608", 0.012]} />
+      <spotLight
+        position={[10, 34, -32]}
+        angle={0.42}
+        penumbra={0.8}
+        intensity={28}
+        distance={130}
+        color="#36fbd1"
+      />
+      <fogExp2 attach="fog" args={["#020608", 0.008]} />
 
       <Physics gravity={[0, -22, 0]}>
         <CavernGuide />

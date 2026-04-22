@@ -15,17 +15,17 @@ export function World({ interactive = true }: { interactive?: boolean }) {
 
   return (
     <>
-      <color attach="background" args={["#bfe7f2"]} />
-      <fog attach="fog" args={["#bfe7f2", 18, 88]} />
-      <Sky sunPosition={[80, 34, 90]} turbidity={4.5} rayleigh={1.2} mieCoefficient={0.01} />
+      <color attach="background" args={["#8ecfe7"]} />
+      <fog attach="fog" args={["#a8dced", 26, 118]} />
+      <Sky sunPosition={[-52, 42, -78]} turbidity={3.8} rayleigh={0.82} mieCoefficient={0.006} />
       <BlockClouds />
       <OceanPlane />
       <DistantBlockRidges />
-      <ambientLight intensity={0.56} color="#e7f8ff" />
+      <ambientLight intensity={0.42} color="#dff7ff" />
       <directionalLight
         castShadow
-        position={[80, 130, 60]}
-        intensity={1.45}
+        position={[-54, 96, -72]}
+        intensity={1.68}
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={0.1}
@@ -35,7 +35,7 @@ export function World({ interactive = true }: { interactive?: boolean }) {
         shadow-camera-top={100}
         shadow-camera-bottom={-100}
       />
-      <hemisphereLight args={["#c7f3ff", "#2f5a31", 0.45]} />
+      <hemisphereLight args={["#c7f3ff", "#31522c", 0.38]} />
       {interactive ? (
         <Physics gravity={[0, -15, 0]}>
           <Player onChunkChange={setPlayerChunk} />
@@ -63,7 +63,7 @@ function PreviewCamera() {
 
   useEffect(() => {
     camera.position.set(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.y + 0.75, CONFIG.PLAYER_START.z);
-    camera.lookAt(5.5, 1.8, 13);
+    camera.lookAt(0, 0.4, -12);
     camera.updateProjectionMatrix();
   }, [camera]);
 
@@ -119,18 +119,24 @@ function OceanPlane() {
 
 function DistantBlockRidges() {
   const blocks = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, index) => {
-        const x = -42 + index * 5;
-        const height = 2 + ((index * 7) % 5);
-
-        return {
-          key: `ridge-${index}`,
-          position: [x, height / 2 - 1, 42 + (index % 3) * 4] as [number, number, number],
-          scale: [4, height, 4] as [number, number, number],
-          color: index % 4 === 0 ? "#d6c06f" : index % 3 === 0 ? "#5f8f3a" : "#64748b",
-        };
+    () => [
+      ...createRidgeLine({
+        key: "shore",
+        z: -38,
+        xStart: -46,
+        count: 20,
+        step: 4.8,
+        heightOffset: 0,
       }),
+      ...createRidgeLine({
+        key: "inland",
+        z: 46,
+        xStart: -42,
+        count: 18,
+        step: 5,
+        heightOffset: 1,
+      }),
+    ],
     []
   );
 
@@ -144,4 +150,33 @@ function DistantBlockRidges() {
       ))}
     </group>
   );
+}
+
+function createRidgeLine({
+  key,
+  z,
+  xStart,
+  count,
+  step,
+  heightOffset,
+}: {
+  key: string;
+  z: number;
+  xStart: number;
+  count: number;
+  step: number;
+  heightOffset: number;
+}) {
+  return Array.from({ length: count }, (_, index) => {
+    const x = xStart + index * step;
+    const height = 2 + ((index * 7 + heightOffset) % 5);
+    const palette = index % 5 === 0 ? "#d6c06f" : index % 3 === 0 ? "#47783a" : "#708090";
+
+    return {
+      key: `${key}-ridge-${index}`,
+      position: [x, height / 2 - 1, z + (index % 3) * 3] as [number, number, number],
+      scale: [4, height, 4] as [number, number, number],
+      color: palette,
+    };
+  });
 }

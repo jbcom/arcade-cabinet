@@ -15,7 +15,7 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
     borderRadius: 8,
     boxShadow: "0 18px 45px rgba(2,6,23,0.35)",
     color: "#f8fafc",
-    padding: isMobile ? "0.65rem" : "0.85rem 1rem",
+    padding: isMobile ? "0.55rem 0.65rem" : "0.85rem 1rem",
     pointerEvents: "auto" as const,
   };
 
@@ -41,13 +41,13 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
       <div
         style={{
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: "row",
           justifyContent: "space-between",
           gap: "0.5rem",
-          alignItems: isMobile ? "stretch" : "flex-start",
+          alignItems: "flex-start",
         }}
       >
-        <div style={panelStyle}>
+        <div style={{ ...panelStyle, flex: isMobile ? 1 : undefined, minWidth: 0 }}>
           <div
             style={{
               fontSize: 12,
@@ -58,10 +58,27 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           >
             Otterly Chaotic
           </div>
-          <h2 style={{ margin: "0.35rem 0", fontSize: isMobile ? 20 : 28 }}>Salad Sprint</h2>
-          <div style={{ color: "#cbd5e1", fontSize: isMobile ? 12 : 14 }}>{state.objective}</div>
+          <h2 style={{ margin: "0.25rem 0", fontSize: isMobile ? 16 : 28 }}>Salad Sprint</h2>
+          <div
+            style={{
+              color: "#cbd5e1",
+              fontSize: isMobile ? 11 : 14,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: isMobile ? "nowrap" : "normal",
+            }}
+          >
+            {state.objective}
+          </div>
         </div>
-        <div style={{ ...panelStyle, minWidth: isMobile ? undefined : 190 }}>
+        <div
+          style={{
+            ...panelStyle,
+            flex: isMobile ? 1 : undefined,
+            minWidth: isMobile ? 0 : 190,
+            fontSize: isMobile ? 12 : undefined,
+          }}
+        >
           <div>Ball health: {Math.round(state.ballHealth)}%</div>
           <div>Time: {(state.elapsedMs / 1000).toFixed(1)}s</div>
           <div>

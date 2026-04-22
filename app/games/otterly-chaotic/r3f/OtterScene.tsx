@@ -131,7 +131,7 @@ export function OtterScene({ state }: OtterSceneProps) {
       <directionalLight position={[6, 10, 4]} intensity={2.1} castShadow />
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[12, 12]} />
-        <meshStandardMaterial color="#1f6b3a" roughness={0.88} />
+        <meshStandardMaterial color="#236f3d" roughness={0.88} />
       </mesh>
       <ArenaDressing />
       <mesh
@@ -184,8 +184,8 @@ function CameraRig() {
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
     if (isPortrait) {
-      camera.position.set(0, 13.2, 10.8);
-      camera.fov = 62;
+      camera.position.set(0, 12.8, 6.6);
+      camera.fov = 60;
     } else {
       camera.position.set(0, 8.5, 7);
       camera.fov = 48;
@@ -199,6 +199,12 @@ function CameraRig() {
 
 function ArenaDressing() {
   const fencePosts = [-5.4, -3.6, -1.8, 0, 1.8, 3.6, 5.4];
+  const meadowPatches: Array<[number, number, number, number, string]> = [
+    [-3.4, 2.5, 1.8, 0.7, "#2f8f46"],
+    [1.5, -2.9, 2.4, 0.75, "#1f7a3b"],
+    [3.2, -0.9, 1.4, 0.55, "#3aa555"],
+    [-0.7, 3.7, 2.2, 0.5, "#2b7a44"],
+  ];
   const reeds: Array<[number, number]> = [
     [-3.7, -0.7],
     [-3.2, -2.2],
@@ -209,6 +215,28 @@ function ArenaDressing() {
 
   return (
     <group>
+      {meadowPatches.map(([x, z, width, depth, color]) => (
+        <mesh
+          key={`meadow-patch-${x}-${z}`}
+          position={[x, 0.018, z]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[width, depth]} />
+          <meshStandardMaterial color={color} roughness={0.92} />
+        </mesh>
+      ))}
+      {[
+        [0, -5.85, 11.8, 0.42],
+        [0, 5.85, 11.8, 0.42],
+        [-5.85, 0, 0.42, 11.8],
+        [5.85, 0, 0.42, 11.8],
+      ].map(([x, z, width, depth]) => (
+        <mesh key={`berm-${x}-${z}`} position={[x, 0.22, z]} castShadow receiveShadow>
+          <boxGeometry args={[width, 0.44, depth]} />
+          <meshStandardMaterial color="#14532d" roughness={0.9} />
+        </mesh>
+      ))}
       {fencePosts.map((x) => (
         <group key={`fence-x-${x}`}>
           <mesh position={[x, 0.32, -5.2]} castShadow>
@@ -227,6 +255,17 @@ function ArenaDressing() {
           <meshStandardMaterial color="#8b6a3f" roughness={0.72} />
         </mesh>
       ))}
+      <mesh
+        position={[
+          WATER_ZONE.x + WATER_ZONE.width / 2,
+          0.035,
+          WATER_ZONE.y + WATER_ZONE.height / 2,
+        ]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <ringGeometry args={[1.76, 1.94, 48]} />
+        <meshBasicMaterial color="#fde68a" transparent opacity={0.34} />
+      </mesh>
       {reeds.map(([x, z]) => (
         <group key={`reed-${x}-${z}`} position={[x, 0, z]}>
           {[0, 0.12, -0.12].map((offset) => (
@@ -245,6 +284,22 @@ function ArenaDressing() {
         <ringGeometry args={[1.18, 1.55, 64]} />
         <meshBasicMaterial color="#fde68a" transparent opacity={0.68} />
       </mesh>
+      {[
+        [-4.6, 4.2, 0.7],
+        [4.8, -3.6, 0.55],
+        [4.7, 4.4, 0.62],
+      ].map(([x, z, radius]) => (
+        <group key={`shrub-${x}-${z}`} position={[x, 0, z]}>
+          <mesh position={[0, radius, 0]} castShadow>
+            <sphereGeometry args={[radius, 12, 8]} />
+            <meshStandardMaterial color="#166534" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, radius * 0.48, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.16, radius, 8]} />
+            <meshStandardMaterial color="#6b4423" roughness={0.85} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -253,12 +308,16 @@ function GoalMarker() {
   return (
     <group position={[GOAL.x, 0.08, GOAL.y]}>
       <mesh receiveShadow>
-        <cylinderGeometry args={[1.1, 1.1, 0.15, 48]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.55} />
+        <cylinderGeometry args={[1.18, 1.35, 0.22, 48]} />
+        <meshStandardMaterial color="#b7791f" roughness={0.62} />
       </mesh>
       <mesh position={[0, 0.16, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.42, 0.72, 48]} />
         <meshBasicMaterial color="#7c2d12" transparent opacity={0.72} />
+      </mesh>
+      <mesh position={[0, 0.27, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.82, 1.08, 48]} />
+        <meshBasicMaterial color="#fde047" transparent opacity={0.48} />
       </mesh>
     </group>
   );
