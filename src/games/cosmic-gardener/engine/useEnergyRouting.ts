@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   advanceEnergyNetwork,
@@ -142,15 +143,17 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
       const delta = (time - lastTimeRef.current) / 1000;
       lastTimeRef.current = time;
 
-      setCosmicCold((prev) => {
-        const newCold = prev + delta * 0.5;
-        if (newCold >= MAX_COSMIC_COLD && onEnergyDepleted) {
-          onEnergyDepleted();
-        }
-        return Math.min(newCold, MAX_COSMIC_COLD);
-      });
+      if (!isCabinetRuntimePaused()) {
+        setCosmicCold((prev) => {
+          const newCold = prev + delta * 0.5;
+          if (newCold >= MAX_COSMIC_COLD && onEnergyDepleted) {
+            onEnergyDepleted();
+          }
+          return Math.min(newCold, MAX_COSMIC_COLD);
+        });
 
-      setStars((prevStars) => advanceEnergyNetwork(prevStars, streams, delta));
+        setStars((prevStars) => advanceEnergyNetwork(prevStars, streams, delta));
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };

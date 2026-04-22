@@ -1,5 +1,6 @@
 export * from "./eventBus";
 export * from "./runtime";
+export * from "./runtimePause";
 export * from "./sessionMode";
 export * from "./testing";
 export * from "./traits";

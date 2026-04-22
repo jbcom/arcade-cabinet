@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   advancePinballOrb,
@@ -51,42 +52,44 @@ export function usePinballPhysics({ stars, onStarHit, onDrain }: UsePinballPhysi
       const delta = Math.min((time - lastTimeRef.current) / 16.67, 2);
       lastTimeRef.current = time;
 
-      setOrbs((prevOrbs) => {
-        const next = new Map(prevOrbs);
+      if (!isCabinetRuntimePaused()) {
+        setOrbs((prevOrbs) => {
+          const next = new Map(prevOrbs);
 
-        next.forEach((orb, id) => {
-          if (!orb.active) return;
+          next.forEach((orb, id) => {
+            if (!orb.active) return;
 
-          const step = advancePinballOrb(orb, {
-            delta,
-            leftFlipper,
-            rightFlipper,
-          });
-          let nextOrb = step.orb;
+            const step = advancePinballOrb(orb, {
+              delta,
+              leftFlipper,
+              rightFlipper,
+            });
+            let nextOrb = step.orb;
 
-          if (step.drained) {
-            onDrain();
-          }
-
-          stars.forEach((star) => {
-            if (!nextOrb.active) return;
-
-            const collision = resolveOrbStarCollision(nextOrb, star);
-            if (collision.hit) {
-              nextOrb = collision.orb;
-              onStarHit(star.id);
+            if (step.drained) {
+              onDrain();
             }
+
+            stars.forEach((star) => {
+              if (!nextOrb.active) return;
+
+              const collision = resolveOrbStarCollision(nextOrb, star);
+              if (collision.hit) {
+                nextOrb = collision.orb;
+                onStarHit(star.id);
+              }
+            });
+
+            next.set(id, nextOrb);
           });
 
-          next.set(id, nextOrb);
-        });
+          next.forEach((orb, id) => {
+            if (!orb.active) next.delete(id);
+          });
 
-        next.forEach((orb, id) => {
-          if (!orb.active) next.delete(id);
+          return next;
         });
-
-        return next;
-      });
+      }
 
       animationRef.current = requestAnimationFrame(simulate);
     };

@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@app/shared";
 import {
   advanceShadowPosition,
   type CorruptionShadow,
@@ -146,6 +147,7 @@ function CorruptionShadowEntity({
   useEffect(() => {
     if (isVaporizing) return undefined;
     const interval = setInterval(() => {
+      if (isCabinetRuntimePaused()) return;
       setPosition((prev) => {
         const next = advanceShadowPosition(
           {

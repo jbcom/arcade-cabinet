@@ -8,6 +8,7 @@ import {
 import { CONFIG, type PrimordialControls } from "@logic/games/primordial-ascent/engine/types";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity } from "@logic/games/primordial-ascent/store/world";
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -196,6 +197,8 @@ export function Player() {
   }, [camera, raycaster, scene]);
 
   useFrame((_state, delta) => {
+    if (isCabinetRuntimePaused()) return;
+
     const pState = primordialEntity.get(PrimordialTrait);
     if (pState?.phase !== "playing" || !rbRef.current) return;
 
@@ -294,6 +297,8 @@ function FirstPersonHarness({ isGrappling }: { isGrappling: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
+    if (isCabinetRuntimePaused()) return;
+
     if (!groupRef.current) return;
 
     const offset = new THREE.Vector3(0.38, -0.36, -1.08).applyQuaternion(camera.quaternion);

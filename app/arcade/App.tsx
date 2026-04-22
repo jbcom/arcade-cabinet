@@ -3,6 +3,7 @@ import {
   CabinetErrorBoundary,
   CabinetMenuButton,
   CabinetPauseMenu,
+  setCabinetRuntimePaused,
   useCabinetRuntime,
 } from "@app/shared";
 import { useEffect, useState } from "react";
@@ -51,6 +52,11 @@ function GameRoute() {
   const { clearRun, saveSlot, setSettings, settings } = useCabinetRuntime(game?.slug);
 
   usePageTitle(game ? `${game.title} | Arcade Cabinet` : "Arcade Cabinet");
+
+  useEffect(() => {
+    setCabinetRuntimePaused(menuOpen);
+    return () => setCabinetRuntimePaused(false);
+  }, [menuOpen]);
 
   if (!game) {
     return <Navigate to="/" replace />;

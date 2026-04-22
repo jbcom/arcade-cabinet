@@ -3,6 +3,7 @@ import {
   FloatingJoystick,
   GameOverScreen,
   GameViewport,
+  isCabinetRuntimePaused,
   OverlayButton,
 } from "@app/shared";
 import {
@@ -125,6 +126,10 @@ function useOvercastLoop(
     const tick = (now: number) => {
       const delta = Math.min(64, now - last);
       last = now;
+      if (isCabinetRuntimePaused()) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
       const controlsSnapshot = { ...controlsRef.current };
       controlsRef.current = {
         ...controlsRef.current,

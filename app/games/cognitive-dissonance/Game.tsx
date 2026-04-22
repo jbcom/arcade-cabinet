@@ -1,4 +1,10 @@
-import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  GameOverScreen,
+  GameViewport,
+  isCabinetRuntimePaused,
+  OverlayButton,
+} from "@app/shared";
 import {
   advanceCognitiveState,
   createInitialCognitiveState,
@@ -32,7 +38,9 @@ export default function Game() {
     const step = (now: number) => {
       const delta = now - last;
       last = now;
-      setState((current) => advanceCognitiveState(current, delta, heldPattern.current));
+      if (!isCabinetRuntimePaused()) {
+        setState((current) => advanceCognitiveState(current, delta, heldPattern.current));
+      }
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);

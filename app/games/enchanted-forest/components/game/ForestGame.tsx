@@ -1,4 +1,4 @@
-import { GameViewport, RuntimeResultRecorder } from "@app/shared";
+import { GameViewport, isCabinetRuntimePaused, RuntimeResultRecorder } from "@app/shared";
 import {
   applyShadowHit,
   applySpellCast,
@@ -77,9 +77,11 @@ export function ForestGame() {
     if (forestState.phase !== "playing") return undefined;
 
     const manaRegen = setInterval(() => {
-      setForestState((prev) =>
-        regenerateMana(prev, getForestModeTuning(prev.sessionMode).manaRegenPerSecond)
-      );
+      setForestState((prev) => {
+        if (isCabinetRuntimePaused()) return prev;
+
+        return regenerateMana(prev, getForestModeTuning(prev.sessionMode).manaRegenPerSecond);
+      });
     }, 1000);
 
     return () => clearInterval(manaRegen);

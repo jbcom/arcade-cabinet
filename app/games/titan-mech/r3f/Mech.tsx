@@ -11,7 +11,7 @@ import type {
 import { CONFIG } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
-import { PhaseTrait } from "@logic/shared";
+import { isCabinetRuntimePaused, PhaseTrait } from "@logic/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useTrait } from "koota/react";
@@ -95,6 +95,8 @@ export function Mech() {
   }, []);
 
   useFrame((_state, delta) => {
+    if (isCabinetRuntimePaused()) return;
+
     if (!rbRef.current) {
       return;
     }

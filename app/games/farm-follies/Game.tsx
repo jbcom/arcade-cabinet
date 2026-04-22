@@ -1,4 +1,10 @@
-import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  GameOverScreen,
+  GameViewport,
+  isCabinetRuntimePaused,
+  OverlayButton,
+} from "@app/shared";
 import {
   bankFarmScore,
   createInitialFarmState,
@@ -41,7 +47,9 @@ export default function Game() {
     const step = (now: number) => {
       const delta = now - last;
       last = now;
-      setState((current) => tickFarmState(current, delta));
+      if (!isCabinetRuntimePaused()) {
+        setState((current) => tickFarmState(current, delta));
+      }
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);

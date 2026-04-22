@@ -1,4 +1,10 @@
-import { CartridgeStartScreen, GameOverScreen, GameViewport, OverlayButton } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  GameOverScreen,
+  GameViewport,
+  isCabinetRuntimePaused,
+  OverlayButton,
+} from "@app/shared";
 import {
   advanceBeppoTime,
   BEPPO_ROOMS,
@@ -30,7 +36,9 @@ export default function Game() {
     const step = (now: number) => {
       const delta = now - last;
       last = now;
-      setState((current) => advanceBeppoTime(current, delta));
+      if (!isCabinetRuntimePaused()) {
+        setState((current) => advanceBeppoTime(current, delta));
+      }
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);

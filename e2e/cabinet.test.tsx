@@ -58,6 +58,7 @@ describe("cabinet runtime shell", () => {
     await expect.element(page.getByTestId("cabinet-menu-button")).toBeVisible();
     await userEvent.click(page.getByTestId("cabinet-menu-button"));
     await expect.element(page.getByTestId("cabinet-pause-menu")).toBeVisible();
+    expect(document.documentElement.dataset.cabinetPaused).toBe("true");
 
     await userEvent.click(page.getByText("Settings"));
     await expect.element(page.getByTestId("cabinet-settings-panel")).toBeVisible();
@@ -70,6 +71,9 @@ describe("cabinet runtime shell", () => {
       page.getByTestId("cabinet-pause-menu").getByRole("button", { name: "Rules" })
     );
     await expect.element(page.getByText(/Run a three-leg cup/)).toBeVisible();
+
+    await userEvent.click(page.getByLabelText("Resume game"));
+    expect(document.documentElement.dataset.cabinetPaused).toBe("false");
   });
 
   test("unknown routes fall back to the cabinet", async () => {
