@@ -8,6 +8,47 @@ import {
   type WarningType,
 } from "./types";
 
+export const GRIDIZEN_MAP_SEED = 73421;
+export const CIVIC_CENTER = {
+  x: Math.floor(GRID_SIZE / 2),
+  z: Math.floor(GRID_SIZE / 2),
+} as const;
+
+interface StarterLot {
+  dx: number;
+  dz: number;
+  building: string;
+  level: number;
+  terrain?: GridTile["terrain"];
+}
+
+const STARTER_LOTS: StarterLot[] = [
+  { dx: -4, dz: -4, building: "RESIDENTIAL", level: 1 },
+  { dx: -4, dz: -3, building: "RESIDENTIAL", level: 1 },
+  { dx: 4, dz: -4, building: "RESIDENTIAL", level: 1 },
+  { dx: 4, dz: -3, building: "RESIDENTIAL", level: 1 },
+  { dx: -2, dz: -4, building: "RESIDENTIAL", level: 1 },
+  { dx: 2, dz: -4, building: "RESIDENTIAL", level: 1 },
+  { dx: -4, dz: 3, building: "RESIDENTIAL", level: 1 },
+  { dx: -4, dz: 4, building: "RESIDENTIAL", level: 1 },
+  { dx: 4, dz: 3, building: "RESIDENTIAL", level: 1 },
+  { dx: 4, dz: 4, building: "RESIDENTIAL", level: 1 },
+  { dx: -2, dz: 4, building: "RESIDENTIAL", level: 1 },
+  { dx: 2, dz: 4, building: "RESIDENTIAL", level: 1 },
+  { dx: 0, dz: 4, building: "PARK", level: 1 },
+  { dx: 1, dz: 4, building: "PARK", level: 1 },
+  { dx: 7, dz: 0, building: "POWER", level: 1 },
+  { dx: -7, dz: 0, building: "WATER_PUMP", level: 1, terrain: "WATER" },
+];
+
+const GROWTH_THRESHOLDS: Record<string, number> = {
+  RESIDENTIAL: 0.2,
+  COMMERCIAL: 0.16,
+  INDUSTRIAL: 0.12,
+};
+
+const DECLINE_THRESHOLD = 0.12;
+
 export function createInitialState(): GridizenState {
   return {
     grid: [],
@@ -28,7 +69,13 @@ export function createInitialState(): GridizenState {
 }
 
 export function initMap(state: GridizenState): GridizenState {
-  return { ...state, grid: generateMap() };
+  return refreshCityServices({
+    ...state,
+    grid: applyStarterSettlement(generateMap(GRIDIZEN_MAP_SEED)),
+    inspectedTileIdx: null,
+    selectedTool: "INSPECT",
+    heatmap: false,
+  });
 }
 
 export function setTool(state: GridizenState, tool: string): GridizenState {
@@ -45,6 +92,80 @@ export function setInspectedTile(state: GridizenState, idx: number | null): Grid
 
 export function toggleHeatmap(state: GridizenState): GridizenState {
   return { ...state, heatmap: !state.heatmap };
+}
+
+export function applyStarterSettlement(grid: GridTile[]): GridTile[] {
+  const settled = grid.map((tile) => ({ ...tile }));
+  const setTile = (
+    x: number,
+    z: number,
+    patch: Partial<GridTile> & Pick<GridTile, "building">
+  ): void => {
+    if (x < 0 || x >= GRID_SIZE || z < 0 || z >= GRID_SIZE) return;
+    const idx = z * GRID_SIZE + x;
+    const tile = settled[idx];
+    if (!tile) return;
+    settled[idx] = {
+      ...tile,
+      terrain: patch.terrain ?? tile.terrain,
+      building: patch.building,
+      level: patch.level ?? 0,
+      powered: false,
+      watered: false,
+      roadAccess: false,
+      happiness: 70,
+      warning: "NONE",
+    };
+  };
+
+  for (let dz = -9; dz <= 9; dz++) {
+    for (let dx = -10; dx <= 10; dx++) {
+      const x = CIVIC_CENTER.x + dx;
+      const z = CIVIC_CENTER.z + dz;
+      const idx = z * GRID_SIZE + x;
+      const tile = settled[idx];
+      if (!tile) continue;
+
+      const riverEdge = dx === -8 && Math.abs(dz) <= 7;
+      const civicLawn = Math.abs(dx) <= 6 && Math.abs(dz) <= 6;
+      settled[idx] = {
+        ...tile,
+        terrain: riverEdge
+          ? "WATER"
+          : civicLawn || tile.terrain === "FOREST"
+            ? "GRASS"
+            : tile.terrain,
+        building: "NONE",
+        level: 0,
+        warning: "NONE",
+      };
+    }
+  }
+
+  for (let offset = -8; offset <= 8; offset++) {
+    setTile(CIVIC_CENTER.x + offset, CIVIC_CENTER.z, { building: "ROAD", terrain: "GRASS" });
+    setTile(CIVIC_CENTER.x, CIVIC_CENTER.z + offset, { building: "ROAD", terrain: "GRASS" });
+  }
+
+  for (let offset = -5; offset <= 5; offset++) {
+    setTile(CIVIC_CENTER.x - 5, CIVIC_CENTER.z + offset, { building: "ROAD", terrain: "GRASS" });
+    setTile(CIVIC_CENTER.x + 5, CIVIC_CENTER.z + offset, { building: "ROAD", terrain: "GRASS" });
+  }
+
+  for (let offset = -5; offset <= 5; offset++) {
+    setTile(CIVIC_CENTER.x + offset, CIVIC_CENTER.z - 5, { building: "ROAD", terrain: "GRASS" });
+    setTile(CIVIC_CENTER.x + offset, CIVIC_CENTER.z + 5, { building: "ROAD", terrain: "GRASS" });
+  }
+
+  for (const lot of STARTER_LOTS) {
+    setTile(CIVIC_CENTER.x + lot.dx, CIVIC_CENTER.z + lot.dz, {
+      building: lot.building,
+      level: lot.level,
+      terrain: lot.terrain ?? "GRASS",
+    });
+  }
+
+  return settled;
 }
 
 export function handleInteraction(state: GridizenState, x: number, z: number): GridizenState {
@@ -94,11 +215,40 @@ export function handleInteraction(state: GridizenState, x: number, z: number): G
 }
 
 export function tickGame(state: GridizenState): GridizenState {
+  return evaluateCityState(state, { advanceClock: true, collectTaxes: true, growZones: true });
+}
+
+export function refreshCityServices(state: GridizenState): GridizenState {
+  return evaluateCityState(state, { advanceClock: false, collectTaxes: false, growZones: false });
+}
+
+export function getGrowthSignal(tile: GridTile, time: number, population: number): number {
+  const signal =
+    Math.sin((tile.id + 1) * 12.9898 + time * 78.233 + population * 0.017) * 43758.5453;
+  return signal - Math.floor(signal);
+}
+
+export function shouldGrowTile(tile: GridTile, time: number, population: number): boolean {
+  const threshold = GROWTH_THRESHOLDS[tile.building] ?? 0;
+  return threshold > 0 && getGrowthSignal(tile, time, population) < threshold;
+}
+
+export function shouldDeclineTile(tile: GridTile, time: number, population: number): boolean {
+  return getGrowthSignal(tile, time + 11, population + 37) < DECLINE_THRESHOLD;
+}
+
+interface EvaluationOptions {
+  advanceClock: boolean;
+  collectTaxes: boolean;
+  growZones: boolean;
+}
+
+function evaluateCityState(state: GridizenState, options: EvaluationOptions): GridizenState {
   const { grid } = state;
   if (grid.length === 0) return state;
 
   const newGrid: GridTile[] = grid.map((t) => ({ ...t }));
-  const time = (state.time + 1) % 24;
+  const time = options.advanceClock ? (state.time + 1) % 24 : state.time;
 
   let pMax = 0;
   let pUse = 0;
@@ -121,9 +271,6 @@ export function tickGame(state: GridizenState): GridizenState {
       wMax += 200;
       waterSources.push(i);
     }
-    if (t.building === "RESIDENTIAL" && t.level > 0) pop += t.level * 4;
-    if ((t.building === "COMMERCIAL" || t.building === "INDUSTRIAL") && t.level > 0)
-      jobs += t.level * 4;
     if (t.building !== "NONE" && t.building !== "ROAD") upkeep += 2;
   }
 
@@ -166,14 +313,21 @@ export function tickGame(state: GridizenState): GridizenState {
   if (pMax > 0) runBFS(powerSources, poweredSet);
   if (wMax > 0) runBFS(waterSources, wateredSet);
 
-  let globalHap = 100;
-  if (pUse > pMax) globalHap -= 20;
-  if (wUse > wMax) globalHap -= 20;
+  for (const tile of newGrid) {
+    const demand = getTileDemand(tile);
+    pUse += demand.power;
+    wUse += demand.water;
+  }
+
+  const powerAvailable = pMax >= pUse;
+  const waterAvailable = wMax >= wUse;
+  let civicHappinessTotal = 0;
+  let civicHappinessCount = 0;
 
   for (let i = 0; i < newGrid.length; i++) {
     const t = newGrid[i];
     if (!t) continue;
-    let localHap = 50;
+    let localHap = 62;
     const { x, z } = t;
     const neighbors: [number, number][] = [
       [x + 1, z],
@@ -181,6 +335,8 @@ export function tickGame(state: GridizenState): GridizenState {
       [x, z + 1],
       [x, z - 1],
       [x + 1, z + 1],
+      [x + 1, z - 1],
+      [x - 1, z + 1],
       [x - 1, z - 1],
     ];
     let hasRoad = false;
@@ -197,26 +353,48 @@ export function tickGame(state: GridizenState): GridizenState {
     t.happiness = Math.max(0, Math.min(100, localHap));
     if (t.building === "NONE" || t.building === "ROAD") continue;
     t.roadAccess = hasRoad;
-    t.powered = poweredSet.has(i) && pMax > pUse;
-    t.watered = wateredSet.has(i) && wMax > wUse;
-    pUse += (t.level || 1) * 2;
-    wUse += (t.level || 1) * 2;
+    t.powered = t.building === "POWER" || (poweredSet.has(i) && powerAvailable);
+    t.watered = t.building === "WATER_PUMP" || (wateredSet.has(i) && waterAvailable);
     t.warning = "NONE";
     if (!t.roadAccess) t.warning = "NO_ROAD";
-    else if (!t.powered && t.building !== "PARK") t.warning = "NO_POWER";
-    else if (!t.watered && t.building !== "PARK") t.warning = "NO_WATER";
+    else if (requiresPower(t) && !t.powered) t.warning = "NO_POWER";
+    else if (requiresWater(t) && !t.watered) t.warning = "NO_WATER";
     if (
       t.building === "RESIDENTIAL" ||
       t.building === "COMMERCIAL" ||
       t.building === "INDUSTRIAL"
     ) {
-      if (t.roadAccess && t.powered && t.watered && t.happiness > 40) {
-        if (Math.random() < 0.1 && t.level < 5) t.level++;
-      } else if (Math.random() < 0.05 && t.level > 0) {
+      if (
+        options.growZones &&
+        t.roadAccess &&
+        t.powered &&
+        t.watered &&
+        t.happiness > 40 &&
+        shouldGrowTile(t, time, state.population) &&
+        t.level < 5
+      ) {
+        t.level++;
+      } else if (
+        options.growZones &&
+        (!t.roadAccess || !t.powered || !t.watered || t.happiness <= 40) &&
+        shouldDeclineTile(t, time, state.population) &&
+        t.level > 0
+      ) {
         t.level--;
       }
     }
+
+    if (t.building === "RESIDENTIAL" && t.level > 0) pop += t.level * 4;
+    if ((t.building === "COMMERCIAL" || t.building === "INDUSTRIAL") && t.level > 0)
+      jobs += t.level * 4;
+    civicHappinessTotal += t.happiness;
+    civicHappinessCount++;
   }
+
+  let globalHap =
+    civicHappinessCount > 0 ? Math.round(civicHappinessTotal / civicHappinessCount) : 100;
+  if (pUse > pMax) globalHap -= 20;
+  if (wUse > wMax) globalHap -= 20;
 
   let newMilestone = state.milestone;
   for (let i = MILESTONES.length - 1; i >= 0; i--) {
@@ -228,7 +406,7 @@ export function tickGame(state: GridizenState): GridizenState {
   }
 
   let funds = state.funds;
-  if (time === 0) {
+  if (options.collectTaxes && time === 0) {
     const taxes = pop * 5 + jobs * 8;
     funds += taxes - upkeep;
   }
@@ -247,4 +425,32 @@ export function tickGame(state: GridizenState): GridizenState {
     waterMax: wMax,
     milestone: newMilestone,
   };
+}
+
+function getTileDemand(tile: GridTile): { power: number; water: number } {
+  if (tile.building === "NONE" || tile.building === "ROAD") return { power: 0, water: 0 };
+  const level = Math.max(1, tile.level);
+  if (tile.building === "POWER" || tile.building === "WATER_PUMP") return { power: 0, water: 0 };
+  if (tile.building === "PARK") return { power: 1, water: 2 };
+  if (tile.building === "INDUSTRIAL") return { power: level * 5, water: level * 4 };
+  if (tile.building === "COMMERCIAL") return { power: level * 3, water: level * 2 };
+  return { power: level * 2, water: level * 2 };
+}
+
+function requiresPower(tile: GridTile): boolean {
+  return (
+    tile.building === "RESIDENTIAL" ||
+    tile.building === "COMMERCIAL" ||
+    tile.building === "INDUSTRIAL" ||
+    tile.building === "PARK"
+  );
+}
+
+function requiresWater(tile: GridTile): boolean {
+  return (
+    tile.building === "RESIDENTIAL" ||
+    tile.building === "COMMERCIAL" ||
+    tile.building === "INDUSTRIAL" ||
+    tile.building === "PARK"
+  );
 }

@@ -85,8 +85,9 @@ function GridizenApp() {
 
   return (
     <GameViewport
+      data-browser-screenshot-mode="page"
       style={{
-        background: "#1e293b",
+        background: "#dce5df",
       }}
     >
       <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
@@ -94,7 +95,7 @@ function GridizenApp() {
       {phase.phase === "menu" ? (
         <StartScreen
           title="Gridizen"
-          subtitle="A procedurally-generated city builder. Place roads, zones, and utilities to grow your settlement from a Camp to a City."
+          subtitle="A model-table city builder. Place roads, zones, and utilities to grow a river settlement from a Camp to a City."
           primaryAction={
             <OverlayButton type="button" onClick={handleStart}>
               Found a Settlement

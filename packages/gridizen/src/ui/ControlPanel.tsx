@@ -1,3 +1,4 @@
+import { useResponsive } from "@arcade-cabinet/shared";
 import { setTool } from "../engine/logic";
 import { BUILDINGS, type GridizenState, MILESTONES } from "../engine/types";
 
@@ -8,16 +9,20 @@ interface ControlPanelProps {
 
 export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
   const { selectedTool, milestone } = state;
+  const { isMobile } = useResponsive();
   const allowedTools = MILESTONES.filter((m) => m.tier <= milestone).flatMap((m) => m.unlocks);
+  const buttonSize = isMobile ? "3.65rem" : "4.75rem";
+  const utilityButtonSize = isMobile ? "3.35rem" : "4rem";
+  const labelSize = isMobile ? "9px" : "10px";
 
   return (
     <div
       style={{
         background: "rgba(15,23,42,0.8)",
         backdropFilter: "blur(24px)",
-        paddingBottom: "1.5rem",
-        paddingTop: "1rem",
-        borderRadius: "1.5rem 1.5rem 0 0",
+        paddingBottom: isMobile ? "0.65rem" : "1rem",
+        paddingTop: isMobile ? "0.65rem" : "0.85rem",
+        borderRadius: "8px 8px 0 0",
         boxShadow: "0 -10px 40px rgba(0,0,0,0.3)",
         pointerEvents: "auto",
         borderTop: "1px solid rgba(255,255,255,0.1)",
@@ -27,11 +32,11 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
       <div
         style={{
           display: "flex",
-          gap: "0.75rem",
+          gap: isMobile ? "0.45rem" : "0.65rem",
           overflowX: "auto",
-          paddingLeft: "1rem",
-          paddingRight: "1rem",
-          paddingBottom: "0.5rem",
+          paddingLeft: isMobile ? "0.6rem" : "1rem",
+          paddingRight: isMobile ? "0.6rem" : "1rem",
+          paddingBottom: "0.35rem",
         }}
       >
         <button
@@ -43,9 +48,9 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            width: "4rem",
-            height: "4rem",
-            borderRadius: "1rem",
+            width: utilityButtonSize,
+            height: utilityButtonSize,
+            borderRadius: 8,
             border: selectedTool === "INSPECT" ? "2px solid #60a5fa" : "2px solid transparent",
             background:
               selectedTool === "INSPECT" ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.05)",
@@ -53,8 +58,21 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
             cursor: "pointer",
           }}
         >
-          <span style={{ fontSize: "1.25rem" }}>🔍</span>
-          <span style={{ fontSize: "10px", marginTop: "0.25rem", fontWeight: "bold" }}>
+          <span
+            style={{
+              display: "grid",
+              placeItems: "center",
+              width: "1.35rem",
+              height: "1.35rem",
+              border: "2px solid currentColor",
+              borderRadius: "50%",
+              fontSize: "0.7rem",
+              fontWeight: 800,
+            }}
+          >
+            i
+          </span>
+          <span style={{ fontSize: labelSize, marginTop: "0.25rem", fontWeight: "bold" }}>
             Inspect
           </span>
         </button>
@@ -67,9 +85,9 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            width: "4rem",
-            height: "4rem",
-            borderRadius: "1rem",
+            width: utilityButtonSize,
+            height: utilityButtonSize,
+            borderRadius: 8,
             border: selectedTool === "BULLDOZE" ? "2px solid #ef4444" : "2px solid transparent",
             background:
               selectedTool === "BULLDOZE" ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.05)",
@@ -77,13 +95,28 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
             cursor: "pointer",
           }}
         >
-          <span style={{ fontSize: "1.25rem" }}>🚜</span>
-          <span style={{ fontSize: "10px", marginTop: "0.25rem", fontWeight: "bold" }}>Clear</span>
+          <span
+            style={{
+              display: "grid",
+              placeItems: "center",
+              width: "1.35rem",
+              height: "1.35rem",
+              border: "2px solid currentColor",
+              borderRadius: 4,
+              fontSize: "0.85rem",
+              fontWeight: 800,
+            }}
+          >
+            X
+          </span>
+          <span style={{ fontSize: labelSize, marginTop: "0.25rem", fontWeight: "bold" }}>
+            Clear
+          </span>
         </button>
         <div
           style={{
             width: "1px",
-            height: "3rem",
+            height: isMobile ? "2.5rem" : "3rem",
             background: "rgba(255,255,255,0.1)",
             margin: "auto 0.25rem",
             flexShrink: 0,
@@ -104,9 +137,9 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "5rem",
-                  height: "5rem",
-                  borderRadius: "1rem",
+                  width: buttonSize,
+                  height: buttonSize,
+                  borderRadius: 8,
                   border: isSelected ? "2px solid #4ade80" : "2px solid transparent",
                   background: isSelected ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)",
                   color: isSelected ? "white" : "rgba(255,255,255,0.8)",
@@ -115,9 +148,9 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
               >
                 <div
                   style={{
-                    width: "1.5rem",
-                    height: "1.5rem",
-                    borderRadius: "0.375rem",
+                    width: isMobile ? "1.15rem" : "1.45rem",
+                    height: isMobile ? "1.15rem" : "1.45rem",
+                    borderRadius: 6,
                     marginBottom: "0.25rem",
                     boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
                     backgroundColor: data.color,
@@ -125,7 +158,7 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
                 />
                 <span
                   style={{
-                    fontSize: "10px",
+                    fontSize: labelSize,
                     fontWeight: "bold",
                     color: "white",
                     textAlign: "center",
@@ -138,7 +171,7 @@ export function ControlPanel({ state, onSetTool }: ControlPanelProps) {
                 </span>
                 <span
                   style={{
-                    fontSize: "9px",
+                    fontSize: isMobile ? "8px" : "9px",
                     color: "rgba(255,255,255,0.5)",
                     marginTop: "0.125rem",
                   }}

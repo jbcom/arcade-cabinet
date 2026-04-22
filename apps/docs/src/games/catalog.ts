@@ -66,17 +66,17 @@ export const games = [
   {
     slug: "gridizen",
     title: "GRIDIZEN",
-    description: "Found a settlement, route data, and keep a living grid online.",
+    description: "Found a river settlement and keep roads, power, water, and residents in balance.",
     tags: ["r3f", "strategy", "city"],
     color: "#22c55e",
     gradient: "linear-gradient(135deg, #22c55e, #155e75)",
     pillars: ["City legibility", "Infrastructure feedback", "Calm civic iteration"],
     presentation:
-      "Gridizen should read as a model-table city: terrain, roads, utilities, and warnings must be distinguishable even on a phone.",
+      "Gridizen reads as a model-table city: a seeded starter district, utility landmarks, roads, parks, terrain, and warnings stay distinguishable even on a phone.",
     sceneDirection:
-      "A restrained civic palette, day/night lighting, and icon-like warnings keep the terrain scannable while still giving the city a living rhythm.",
+      "Muted civic terrain, lane markings, composite utility silhouettes, bounded orbit controls, and day/night lighting turn the grid into a playable planning diorama.",
     responsiveDirection:
-      "The camera targets the city center and allows zoom without panning away from the model, preserving control on touch and mouse.",
+      "The Astro cabinet island, standalone web app, and Android shell share the same parent-filling viewport; page-mode Vitest Browser captures prove both HUD and model on desktop and mobile.",
   },
   {
     slug: "mega-track",

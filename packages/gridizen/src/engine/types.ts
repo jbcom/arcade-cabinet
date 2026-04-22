@@ -29,20 +29,20 @@ export interface BuildingDef {
 
 export const BUILDINGS: Record<string, BuildingDef> = {
   NONE: { cost: 0, color: "#000", type: "infra", name: "None" },
-  ROAD: { cost: 10, color: "#555555", type: "infra", name: "Road" },
-  RESIDENTIAL: { cost: 50, color: "#2ecc71", type: "zone", name: "Residential" },
-  COMMERCIAL: { cost: 100, color: "#3498db", type: "zone", name: "Commercial" },
-  INDUSTRIAL: { cost: 150, color: "#f1c40f", type: "zone", name: "Industrial" },
-  POWER: { cost: 500, color: "#e74c3c", type: "util", name: "Power Plant" },
-  WATER_PUMP: { cost: 300, color: "#85c1e9", type: "util", name: "Water Pump" },
-  PARK: { cost: 200, color: "#27ae60", type: "serv", name: "Park" },
+  ROAD: { cost: 10, color: "#475569", type: "infra", name: "Road" },
+  RESIDENTIAL: { cost: 50, color: "#7dd3a8", type: "zone", name: "Residential" },
+  COMMERCIAL: { cost: 100, color: "#60a5fa", type: "zone", name: "Commercial" },
+  INDUSTRIAL: { cost: 150, color: "#d8913d", type: "zone", name: "Industrial" },
+  POWER: { cost: 500, color: "#c7534b", type: "util", name: "Power Plant" },
+  WATER_PUMP: { cost: 300, color: "#69b7d8", type: "util", name: "Water Pump" },
+  PARK: { cost: 200, color: "#4d8a43", type: "serv", name: "Park" },
 };
 
 export const PALETTE: Record<string, string> = {
-  GRASS: "#4ade80",
-  WATER: "#3b82f6",
-  SAND: "#fcd34d",
-  FOREST: "#166534",
+  GRASS: "#6ea35f",
+  WATER: "#347ca3",
+  SAND: "#d7bd73",
+  FOREST: "#2e5a3d",
 };
 
 export type TerrainType = "GRASS" | "WATER" | "SAND" | "FOREST";
@@ -128,8 +128,8 @@ function noiseGet(x: number, y: number): number {
   );
 }
 
-export function generateMap(): GridTile[] {
-  noiseInit(Math.random() * 99999);
+export function generateMap(seed = 73421): GridTile[] {
+  noiseInit(seed);
   const grid: GridTile[] = [];
   for (let z = 0; z < GRID_SIZE; z++) {
     for (let x = 0; x < GRID_SIZE; x++) {
