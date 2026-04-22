@@ -10,7 +10,7 @@ import {
   useGameLoop,
 } from "@arcade-cabinet/shared";
 import { useTrait, WorldProvider } from "koota/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createInitialState,
   didLose,
@@ -26,7 +26,7 @@ import { EntropyTrait } from "./store/traits";
 import { entropyEntity, entropyWorld } from "./store/world";
 import { HUD } from "./ui/HUD";
 
-function useMovementInput(): Vec2 {
+function useKeyboardMovementInput(): Vec2 {
   const [input, setInput] = useState<Vec2>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -60,6 +60,106 @@ function useMovementInput(): Vec2 {
   return input;
 }
 
+function DirectionIcon({ direction }: { direction: "up" | "right" | "down" | "left" }) {
+  const rotations = {
+    down: 90,
+    left: 180,
+    right: 0,
+    up: -90,
+  };
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 32 32"
+      style={{
+        height: 24,
+        transform: `rotate(${rotations[direction]}deg)`,
+        width: 24,
+      }}
+    >
+      <path
+        d="M10 6 L23 16 L10 26"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="4"
+      />
+    </svg>
+  );
+}
+
+function TouchMoveControls({ onChange }: { onChange: (next: Vec2) => void }) {
+  const buttonStyle = {
+    alignItems: "center",
+    background: "rgba(6, 18, 30, 0.72)",
+    border: "1px solid rgba(103, 232, 249, 0.28)",
+    borderRadius: 999,
+    color: "#67e8f9",
+    display: "flex",
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  };
+  const directions: Array<{
+    label: string;
+    direction: "up" | "right" | "down" | "left";
+    value: Vec2;
+    style: CSSProperties;
+  }> = [
+    {
+      direction: "up",
+      label: "Move north",
+      style: { gridColumn: 2, gridRow: 1 },
+      value: { x: 0, y: -1 },
+    },
+    {
+      direction: "left",
+      label: "Move west",
+      style: { gridColumn: 1, gridRow: 2 },
+      value: { x: -1, y: 0 },
+    },
+    {
+      direction: "right",
+      label: "Move east",
+      style: { gridColumn: 3, gridRow: 2 },
+      value: { x: 1, y: 0 },
+    },
+    {
+      direction: "down",
+      label: "Move south",
+      style: { gridColumn: 2, gridRow: 3 },
+      value: { x: 0, y: 1 },
+    },
+  ];
+
+  return (
+    <div
+      className="absolute bottom-20 left-1/2 z-[80] grid -translate-x-1/2 grid-cols-3 grid-rows-3 gap-2 sm:hidden"
+      style={{ touchAction: "none" }}
+    >
+      {directions.map((item) => (
+        <button
+          aria-label={item.label}
+          key={item.direction}
+          onPointerCancel={() => onChange({ x: 0, y: 0 })}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            onChange(item.value);
+          }}
+          onPointerLeave={() => onChange({ x: 0, y: 0 })}
+          onPointerUp={() => onChange({ x: 0, y: 0 })}
+          style={{ ...buttonStyle, ...item.style }}
+          type="button"
+        >
+          <DirectionIcon direction={item.direction} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function EntropyApp() {
   const mountRef = useRef<HTMLDivElement>(null);
   const initialState = useMemo(() => createInitialState(), []);
@@ -75,7 +175,10 @@ function EntropyApp() {
     | { value: number; label: string }
     | undefined) ?? { value: 0, label: "SCORE" };
 
-  const movement = useMovementInput();
+  const keyboardMovement = useKeyboardMovementInput();
+  const [touchMovement, setTouchMovement] = useState<Vec2>({ x: 0, y: 0 });
+  const movement =
+    touchMovement.x !== 0 || touchMovement.y !== 0 ? touchMovement : keyboardMovement;
   useContainerSize(mountRef);
 
   const readState = useCallback(
@@ -113,13 +216,13 @@ function EntropyApp() {
   const isPlaying = phase === "playing";
 
   return (
-    <GameViewport ref={mountRef} background="#060d1a">
+    <GameViewport ref={mountRef} background="#060d1a" data-browser-screenshot-mode="page">
       <EdgeScene state={state} isPlaying={isPlaying} />
 
       {phase === "menu" ? (
         <StartScreen
           title="Entropy's Edge"
-          subtitle="Reality is fracturing. Navigate the grid with WASD or Arrow keys to reach glowing Anchors before Sector Stability collapses. Secure anchors quickly to build Resonance for bonus points."
+          subtitle="Reality is fracturing. Navigate the grid to reach glowing anchors before sector stability collapses. Secure anchors quickly to build Resonance for bonus points."
           primaryAction={
             <OverlayButton
               onClick={() => {
@@ -134,6 +237,7 @@ function EntropyApp() {
       ) : null}
 
       {phase === "playing" ? <HUD state={state} /> : null}
+      {phase === "playing" ? <TouchMoveControls onChange={setTouchMovement} /> : null}
 
       {phase === "win" ? (
         <GameOverScreen

@@ -1,34 +1,172 @@
 import type { EntropyState, FallingBlock, GridNode, Shockwave, Vec2 } from "./types";
 
 export const GRID_HALF = 5;
+export const GRID_SIZE = GRID_HALF * 2 + 1;
 const COMBO_WINDOW_MS = 800;
 const MOVE_COOLDOWN_MS = 200;
 const BLOCK_SPAWN_HEIGHT = 18;
 const TIME_BONUS_PER_ANCHOR_MS = 15_000;
 
-let _idCounter = 0;
-function nextId(): string {
-  _idCounter += 1;
-  return _idCounter.toString(36);
-}
+const ANCHOR_SEQUENCE: Vec2[] = [
+  { x: -4, y: -2 },
+  { x: 3, y: -4 },
+  { x: 4, y: 3 },
+  { x: -3, y: 4 },
+  { x: 0, y: -5 },
+  { x: 5, y: 0 },
+  { x: -5, y: 1 },
+  { x: 1, y: 5 },
+  { x: -2, y: -4 },
+  { x: 4, y: -1 },
+  { x: 2, y: 3 },
+  { x: -4, y: 2 },
+];
+
+const BLOCKED_SEQUENCE: Vec2[] = [
+  { x: -2, y: 1 },
+  { x: 2, y: -1 },
+  { x: -4, y: 0 },
+  { x: 4, y: 1 },
+  { x: 0, y: 4 },
+  { x: 1, y: -4 },
+  { x: -5, y: -3 },
+  { x: 5, y: 4 },
+  { x: -1, y: 3 },
+  { x: 3, y: 2 },
+];
+
+const FALLING_SEQUENCE: Vec2[] = [
+  { x: -3, y: -3 },
+  { x: 3, y: 3 },
+  { x: -1, y: -5 },
+  { x: 5, y: -2 },
+  { x: -5, y: 4 },
+  { x: 2, y: 5 },
+  { x: -4, y: 3 },
+  { x: 4, y: -4 },
+];
 
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
 
-function generateNode(excludedKeys: string[], fromX: number, fromZ: number): GridNode {
+export function cellKey(x: number, z: number): string {
+  return `${x},${z}`;
+}
+
+export function parseCellKey(key: string): Vec2 {
+  const [x, z] = key.split(",").map(Number);
+  return { x: x ?? 0, y: z ?? 0 };
+}
+
+function createEventId(s: EntropyState, prefix: string): string {
+  s.eventCount += 1;
+  return `${prefix}-${s.level}-${s.eventCount}`;
+}
+
+export function generateNode(
+  excludedKeys: string[],
+  fromX: number,
+  fromZ: number,
+  level = 1,
+  sequenceIndex = 0
+): GridNode {
   const minDist = 3;
-  let attempts = 0;
-  while (attempts < 60) {
-    const x = Math.floor(Math.random() * (GRID_HALF * 2 + 1)) - GRID_HALF;
-    const z = Math.floor(Math.random() * (GRID_HALF * 2 + 1)) - GRID_HALF;
-    const dist = Math.abs(x - fromX) + Math.abs(z - fromZ);
-    if (dist >= minDist && !excludedKeys.includes(`${x},${z}`)) {
-      return { id: `node-${nextId()}`, gridX: x, gridZ: z };
-    }
-    attempts += 1;
+  const excluded = new Set(excludedKeys);
+  const candidates = ANCHOR_SEQUENCE.filter((candidate) => {
+    const dist = Math.abs(candidate.x - fromX) + Math.abs(candidate.y - fromZ);
+    return dist >= minDist && !excluded.has(cellKey(candidate.x, candidate.y));
+  });
+
+  if (candidates.length > 0) {
+    const index = (level * 3 + sequenceIndex * 5) % candidates.length;
+    const node = candidates[index];
+    return {
+      gridX: node.x,
+      gridZ: node.y,
+      id: `node-${level}-${sequenceIndex}-${node.x}-${node.y}`,
+    };
   }
-  return { id: `node-fb-${nextId()}`, gridX: -GRID_HALF, gridZ: -GRID_HALF };
+
+  for (let ring = GRID_HALF; ring >= 0; ring--) {
+    for (let x = -ring; x <= ring; x++) {
+      for (let z = -ring; z <= ring; z++) {
+        const isPerimeter = Math.abs(x) === ring || Math.abs(z) === ring;
+        const dist = Math.abs(x - fromX) + Math.abs(z - fromZ);
+        if (isPerimeter && dist >= minDist && !excluded.has(cellKey(x, z))) {
+          return { id: `node-fb-${level}-${sequenceIndex}-${x}-${z}`, gridX: x, gridZ: z };
+        }
+      }
+    }
+  }
+
+  return { id: `node-fb-${level}-${sequenceIndex}`, gridX: -GRID_HALF, gridZ: -GRID_HALF };
+}
+
+export function createInitialBlockedCells(level: number, protectedKeys: string[]): string[] {
+  const protectedSet = new Set(protectedKeys);
+  const count = Math.min(3 + level, 8);
+
+  return BLOCKED_SEQUENCE.filter((cell) => !protectedSet.has(cellKey(cell.x, cell.y)))
+    .slice(0, count)
+    .map((cell) => cellKey(cell.x, cell.y));
+}
+
+export function createInitialFallingBlocks(level: number, protectedKeys: string[]): FallingBlock[] {
+  const protectedSet = new Set(protectedKeys);
+  const count = Math.min(1 + Math.ceil(level / 2), 5);
+
+  return FALLING_SEQUENCE.filter((cell) => !protectedSet.has(cellKey(cell.x, cell.y)))
+    .slice(0, count)
+    .map((cell, index) => ({
+      gridX: cell.x,
+      gridZ: cell.y,
+      id: `blk-seed-${level}-${index}`,
+      velocity: 0,
+      worldY: BLOCK_SPAWN_HEIGHT - index * 2.5,
+    }));
+}
+
+export function createSectorCells() {
+  const cells: Array<{ key: string; x: number; z: number; ring: number; unstable: boolean }> = [];
+
+  for (let x = -GRID_HALF; x <= GRID_HALF; x++) {
+    for (let z = -GRID_HALF; z <= GRID_HALF; z++) {
+      const ring = Math.max(Math.abs(x), Math.abs(z));
+      cells.push({
+        key: cellKey(x, z),
+        ring,
+        unstable: ring >= GRID_HALF - 1 || (x * 7 + z * 11) % 9 === 0,
+        x,
+        z,
+      });
+    }
+  }
+
+  return cells;
+}
+
+export function getTargetVector(state: EntropyState) {
+  if (!state.targetNode) {
+    return { distance: 0, dx: 0, dz: 0, label: "Anchor synced" };
+  }
+
+  const dx = state.targetNode.gridX - state.playerGridX;
+  const dz = state.targetNode.gridZ - state.playerGridZ;
+  const distance = Math.abs(dx) + Math.abs(dz);
+
+  return {
+    distance,
+    dx,
+    dz,
+    label: `${distance} cells to anchor`,
+  };
+}
+
+export function getStabilityBand(timeMs: number): "stable" | "unstable" | "critical" {
+  if (timeMs < 5_000) return "critical";
+  if (timeMs < 15_000) return "unstable";
+  return "stable";
 }
 
 function buildPlayingState(
@@ -37,28 +175,33 @@ function buildPlayingState(
   score: number,
   totalAnchors: number
 ): EntropyState {
-  const node = generateNode(["0,0"], 0, 0);
+  const node = generateNode(["0,0"], 0, 0, level, totalAnchors);
+  const protectedKeys = ["0,0", cellKey(node.gridX, node.gridZ)];
+  const blockedCells = createInitialBlockedCells(level, protectedKeys);
+  const fallingBlocks = createInitialFallingBlocks(level, [...protectedKeys, ...blockedCells]);
+
   return {
-    phase: "playing",
-    level,
-    playerGridX: 0,
-    playerGridZ: 0,
-    targetNode: node,
     anchorsRequired,
     anchorsSecuredThisLevel: 0,
-    totalAnchors,
-    fallingBlocks: [],
-    blockedCells: [],
-    shockwaves: [],
-    timeMs: Math.max(10_000, 20_000 - (level - 1) * 1_500),
-    score,
-    resonance: 0,
+    blockedCells,
+    blockSpawnCooldownMs: 3_000,
+    cameraShake: 0,
+    elapsedMs: 0,
+    eventCount: 0,
+    fallingBlocks,
     isResonanceMax: false,
     lastAnchorTimeMs: 0,
-    blockSpawnCooldownMs: 3_000,
+    level,
     moveCooldownMs: 0,
-    elapsedMs: 0,
-    cameraShake: 0,
+    phase: "playing",
+    playerGridX: 0,
+    playerGridZ: 0,
+    resonance: 0,
+    score,
+    shockwaves: [],
+    targetNode: node,
+    timeMs: Math.max(10_000, 20_000 - (level - 1) * 1_500),
+    totalAnchors,
   };
 }
 
@@ -106,7 +249,7 @@ function secureNode(s: EntropyState): void {
   s.fallingBlocks = s.fallingBlocks.filter((b) => !(b.gridX === nodeX && b.gridZ === nodeZ));
 
   const sw: Shockwave = {
-    id: `sw-${nextId()}`,
+    id: createEventId(s, "sw"),
     x: s.targetNode.gridX,
     z: s.targetNode.gridZ,
     scale: 0.1,
@@ -118,37 +261,46 @@ function secureNode(s: EntropyState): void {
     s.phase = "levelcomplete";
     s.targetNode = null;
   } else {
-    const excluded = [...s.blockedCells, `${s.playerGridX},${s.playerGridZ}`];
-    s.targetNode = generateNode(excluded, s.playerGridX, s.playerGridZ);
+    const excluded = [...s.blockedCells, cellKey(s.playerGridX, s.playerGridZ)];
+    s.targetNode = generateNode(excluded, s.playerGridX, s.playerGridZ, s.level, s.totalAnchors);
   }
 }
 
-function trySpawnBlock(s: EntropyState): void {
+export function chooseFallingBlockCell(s: EntropyState): Vec2 | null {
   const excluded = new Set<string>([
     ...s.blockedCells,
-    `${s.playerGridX},${s.playerGridZ}`,
-    ...(s.targetNode ? [`${s.targetNode.gridX},${s.targetNode.gridZ}`] : []),
-    ...s.fallingBlocks.map((b) => `${b.gridX},${b.gridZ}`),
+    cellKey(s.playerGridX, s.playerGridZ),
+    ...(s.targetNode ? [cellKey(s.targetNode.gridX, s.targetNode.gridZ)] : []),
+    ...s.fallingBlocks.map((b) => cellKey(b.gridX, b.gridZ)),
   ]);
 
-  const candidates: Array<[number, number]> = [];
+  const candidates: Vec2[] = [];
   for (let x = -GRID_HALF; x <= GRID_HALF; x++) {
     for (let z = -GRID_HALF; z <= GRID_HALF; z++) {
-      if (!excluded.has(`${x},${z}`)) {
-        candidates.push([x, z]);
+      if (!excluded.has(cellKey(x, z))) {
+        candidates.push({ x, y: z });
       }
     }
   }
 
-  if (candidates.length === 0) return;
+  if (candidates.length === 0) return null;
 
-  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  const bucket = Math.floor(s.elapsedMs / 1_000);
+  const index = (s.level * 17 + s.totalAnchors * 7 + bucket + s.eventCount) % candidates.length;
+
+  return candidates[index];
+}
+
+function trySpawnBlock(s: EntropyState): void {
+  const pick = chooseFallingBlockCell(s);
+  if (!pick) return;
+
   const block: FallingBlock = {
-    id: `blk-${nextId()}`,
-    gridX: pick[0],
-    gridZ: pick[1],
-    worldY: BLOCK_SPAWN_HEIGHT,
+    gridX: pick.x,
+    gridZ: pick.y,
+    id: createEventId(s, "blk"),
     velocity: 0,
+    worldY: BLOCK_SPAWN_HEIGHT,
   };
   s.fallingBlocks.push(block);
 }
@@ -204,11 +356,11 @@ export function tick(state: EntropyState, deltaMs: number, input: Vec2): Entropy
   for (let i = s.fallingBlocks.length - 1; i >= 0; i--) {
     const block = s.fallingBlocks[i];
     if (block.worldY <= 0) {
-      const key = `${block.gridX},${block.gridZ}`;
+      const key = cellKey(block.gridX, block.gridZ);
       if (!s.blockedCells.includes(key)) {
         s.blockedCells.push(key);
         s.shockwaves.push({
-          id: `sw-land-${nextId()}`,
+          id: createEventId(s, "sw-land"),
           x: block.gridX,
           z: block.gridZ,
           scale: 0.1,

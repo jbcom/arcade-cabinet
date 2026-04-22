@@ -52,4 +52,5 @@ export interface EntropyState {
   moveCooldownMs: number;
   elapsedMs: number;
   cameraShake: number;
+  eventCount: number;
 }

@@ -1,4 +1,4 @@
-import { HUDOverlay } from "@arcade-cabinet/shared";
+import { getStabilityBand, getTargetVector } from "../engine/simulation";
 import type { EntropyState } from "../engine/types";
 
 interface HUDProps {
@@ -8,110 +8,84 @@ interface HUDProps {
 export function HUD({ state }: HUDProps) {
   const timeSeconds = (state.timeMs / 1000).toFixed(1);
   const resonancePct = Math.round(state.resonance * 100);
-  const isLow = state.timeMs < 5_000;
-  const isMid = state.timeMs < 15_000 && !isLow;
+  const stabilityBand = getStabilityBand(state.timeMs);
+  const targetVector = getTargetVector(state);
+  const stabilityColor =
+    stabilityBand === "critical"
+      ? "text-red-400"
+      : stabilityBand === "unstable"
+        ? "text-amber-400"
+        : "text-slate-50";
 
   return (
-    <HUDOverlay
-      topLeft={
-        <div>
-          <div
-            style={{
-              fontSize: 12,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "#00e5ff",
-            }}
-          >
+    <div className="pointer-events-none absolute inset-0 z-50 grid grid-rows-[auto_1fr_auto] gap-3 p-3 text-slate-50 sm:p-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0 rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:max-w-[220px] sm:p-4">
+          <div className="truncate text-[0.65rem] font-bold uppercase tracking-[0.24em] text-cyan-300">
             Entropy's Edge
           </div>
-          <h2 style={{ margin: "0.35rem 0", fontSize: 24, color: "#f8fafc" }}>
-            Sector {state.level}
-          </h2>
-          <div style={{ color: "#cbd5e1", fontSize: 14 }}>
+          <h2 className="mt-2 truncate text-xl font-bold sm:text-2xl">Sector {state.level}</h2>
+          <div className="mt-2 text-xs text-slate-200 sm:text-sm">
             Anchors: {state.anchorsSecuredThisLevel} / {state.anchorsRequired}
           </div>
-          <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 4 }}>
-            Total secured: {state.totalAnchors}
+          <div className="mt-1 text-xs text-slate-400">Total secured: {state.totalAnchors}</div>
+          <div className="mt-2 truncate text-xs font-semibold text-cyan-200">
+            {targetVector.label}
           </div>
         </div>
-      }
-      topRight={
-        <div style={{ textAlign: "right" }}>
-          <div
-            style={{
-              fontSize: 13,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "#94a3b8",
-            }}
-          >
+
+        <div className="min-w-0 justify-self-end rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 text-right shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:min-w-[220px] sm:p-4">
+          <div className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-slate-400">
             Score
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#00e5ff" }}>{state.score} pts</div>
-          <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>
-            Stability:{" "}
-            <span
-              style={{
-                color: isLow ? "#ef4444" : isMid ? "#f59e0b" : "#f8fafc",
-                fontWeight: 700,
-              }}
-            >
-              {timeSeconds}s
-            </span>
+          <div className="mt-2 truncate text-2xl font-black text-cyan-300 sm:text-3xl">
+            {state.score} pts
+          </div>
+          <div className="mt-2 text-xs text-slate-400 sm:text-sm">
+            Stability <span className={`font-bold ${stabilityColor}`}>{timeSeconds}s</span>
           </div>
         </div>
-      }
-      bottomLeft={
-        <div>
-          <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6, letterSpacing: "0.12em" }}>
-            RESONANCE {resonancePct}%{state.isResonanceMax ? " — MAX" : ""}
+      </div>
+
+      <div />
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0 rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:max-w-[280px] sm:p-4">
+          <div className="mb-2 truncate text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-400">
+            RESONANCE {resonancePct}%{state.isResonanceMax ? " / MAX" : ""}
           </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 999,
-              background: "rgba(15, 23, 42, 0.6)",
-              overflow: "hidden",
-            }}
-          >
+          <div className="h-2 overflow-hidden rounded-full bg-slate-900/80">
             <div
+              className="h-full rounded-full transition-[width] duration-150"
               style={{
-                height: "100%",
-                width: `${resonancePct}%`,
                 background: state.isResonanceMax
                   ? "linear-gradient(90deg, #ffcc00, #ff6600)"
                   : "linear-gradient(90deg, #00e5ff, #0080ff)",
-                transition: "width 0.15s linear",
+                width: `${resonancePct}%`,
               }}
             />
           </div>
           {state.isResonanceMax ? (
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                color: "#ffcc00",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-              }}
-            >
-              2× MULTIPLIER ACTIVE
+            <div className="mt-2 truncate text-[0.65rem] font-bold uppercase tracking-[0.14em] text-amber-300">
+              2x multiplier active
             </div>
           ) : null}
         </div>
-      }
-      bottomRight={
-        <div style={{ textAlign: "right", fontSize: 13, color: "#94a3b8" }}>
-          <div>WASD / Arrows to move</div>
-          <div style={{ marginTop: 4 }}>Reach the glowing pillar</div>
+
+        <div className="min-w-0 justify-self-end rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 text-right text-xs shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:min-w-[220px] sm:p-4 sm:text-sm">
+          <div className="font-semibold text-slate-200">Anchor vector</div>
+          <div className="mt-1 text-slate-400">
+            X {targetVector.dx >= 0 ? "+" : ""}
+            {targetVector.dx} / Z {targetVector.dz >= 0 ? "+" : ""}
+            {targetVector.dz}
+          </div>
           {state.targetNode ? (
-            <div style={{ marginTop: 4, color: "#ff0055" }}>
+            <div className="mt-1 truncate font-semibold text-pink-400">
               Target: ({state.targetNode.gridX}, {state.targetNode.gridZ})
             </div>
           ) : null}
         </div>
-      }
-    />
+      </div>
+    </div>
   );
 }
