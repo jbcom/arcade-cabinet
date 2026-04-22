@@ -13,7 +13,7 @@ import {
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createInitialState, didLose, didWin, tick } from "./engine/simulation";
-import type { OtterlyState } from "./engine/types";
+import type { OtterlyState, Vec2 } from "./engine/types";
 import { OtterScene } from "./r3f/OtterScene";
 import { OtterlyTrait } from "./store/traits";
 import { otterlyEntity, otterlyWorld } from "./store/world";
@@ -70,7 +70,15 @@ function OtterlyApp() {
   const timer = (useTrait(otterlyEntity, TimerTrait) as
     | { elapsedMs: number; remainingMs: number; label: string }
     | undefined) ?? { elapsedMs: 0, remainingMs: 0, label: "TIMER" };
-  const movement = useMovementInput();
+  const keyboardMovement = useMovementInput();
+  const [touchMovement, setTouchMovement] = useState<Vec2>({ x: 0, y: 0 });
+  const movement = useMemo(
+    () => ({
+      x: Math.max(-1, Math.min(1, keyboardMovement.x + touchMovement.x)),
+      y: Math.max(-1, Math.min(1, keyboardMovement.y + touchMovement.y)),
+    }),
+    [keyboardMovement.x, keyboardMovement.y, touchMovement.x, touchMovement.y]
+  );
   const [barkQueued, setBarkQueued] = useState(false);
   const eventBus = useMemo(() => createEventBus<OtterEvents>(), []);
   useContainerSize(mountRef);
@@ -114,12 +122,12 @@ function OtterlyApp() {
   );
 
   return (
-    <GameViewport ref={mountRef} background="#082f49">
+    <GameViewport ref={mountRef} background="#082f49" data-browser-screenshot-mode="page">
       <OtterScene state={state} />
       {phase.phase === "menu" ? (
         <StartScreen
           title="Otterly Chaotic"
-          subtitle="The prototype is now a 3D chase: steer the otter with WASD or Arrow keys, bark to stun goats, and roll the Kudzu ball into the crater."
+          subtitle="A 3D chase arena: steer the otter with keys or the on-screen D-pad, bark to stun goats, and roll the Kudzu ball into the crater."
           primaryAction={
             <OverlayButton
               onClick={() => {
@@ -133,7 +141,11 @@ function OtterlyApp() {
         />
       ) : null}
       {phase.phase === "playing" ? (
-        <HUD state={state} onBark={() => eventBus.emit("bark", undefined)} />
+        <HUD
+          state={state}
+          onBark={() => eventBus.emit("bark", undefined)}
+          onMove={setTouchMovement}
+        />
       ) : null}
       {phase.phase === "win" ? (
         <GameOverScreen

@@ -102,11 +102,11 @@ export const games = [
     gradient: "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
     pillars: ["Protect the salad", "Readable chase triangle", "Comedic physicality"],
     presentation:
-      "The scene is a small arena where otter, goats, water, and goal are always visible enough to plan a rescue route.",
+      "The scene is a small chase arena where otter, goats, salad, water, and goal are always visible enough to plan a rescue route.",
     sceneDirection:
-      "Bright pasture, blue water, warm goal marker, and soft animal materials keep the tone playful while preserving collision readability.",
+      "Bright pasture, blue water, warm crater marker, fence rails, reeds, composite salad leaves, and soft animal materials keep the tone playful while preserving collision readability.",
     responsiveDirection:
-      "The arena camera frames all gameplay in one parent-filling canvas, avoiding hidden offscreen threats on mobile.",
+      "The fixed arena camera widens for portrait, and page-mode touch controls keep mobile and Android play equivalent to keyboard input.",
   },
   {
     slug: "primordial-ascent",

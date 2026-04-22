@@ -73,7 +73,7 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
   if (distance(next.ball, GOAL) < next.goalRadius) {
     next.objective = "The salad reached the crater.";
   } else if (next.ballHealth > 35) {
-    next.objective = "Use WASD or Arrow keys, then bark to keep the goats away.";
+    next.objective = "Move the otter, then bark to keep the goats away.";
   }
 
   return next;
