@@ -1,4 +1,4 @@
-import { GameViewport } from "@app/shared";
+import { GameViewport, RuntimeResultRecorder } from "@app/shared";
 import {
   applyShadowHit,
   applySpellCast,
@@ -136,6 +136,8 @@ export function ForestGame() {
     }
   }, [forestState, spawnWave]);
 
+  const runSummary = getForestRunSummary(forestState);
+
   return (
     <GameViewport
       className="bg-emerald-950"
@@ -143,6 +145,25 @@ export function ForestGame() {
       data-browser-screenshot-mode="page"
     >
       <ForestGradientBackground />
+      {forestState.phase === "victory" ? (
+        <RuntimeResultRecorder
+          milestones={["first-grove-sealed"]}
+          mode={forestState.sessionMode}
+          score={runSummary.healthyTrees * 1000 + runSummary.wave * 100 + runSummary.harmonyLevel}
+          slug="enchanted-forest"
+          status="completed"
+          summary={`Sealed ${runSummary.totalWaves} grove waves`}
+        />
+      ) : null}
+      {forestState.phase === "defeat" ? (
+        <RuntimeResultRecorder
+          mode={forestState.sessionMode}
+          score={runSummary.healthyTrees * 500 + runSummary.wave * 50}
+          slug="enchanted-forest"
+          status="failed"
+          summary={`Defeated at wave ${runSummary.wave}`}
+        />
+      ) : null}
       <GroveStage threatLevel={forestState.threatLevel} />
       <NoiseBackground />
       <FireflyParticles count={40} />
@@ -190,7 +211,7 @@ export function ForestGame() {
         threatLevel={forestState.threatLevel}
         harmonyLevel={forestState.harmonyLevel}
         harmonySurgeActive={forestState.harmonySurgeActive}
-        runSummary={getForestRunSummary(forestState)}
+        runSummary={runSummary}
       />
     </GameViewport>
   );

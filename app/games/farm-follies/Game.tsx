@@ -164,6 +164,13 @@ export default function Game() {
       {state.phase === "collapsed" ? (
         <GameOverScreen
           accent="#f59e0b"
+          result={{
+            mode: state.sessionMode,
+            score: summary.bankedScore,
+            slug: "farm-follies",
+            status: "failed",
+            summary: `Tower collapsed after ${summary.dropCount} drops`,
+          }}
           title="Tower Down"
           subtitle={`Banked ${summary.bankedScore}/${summary.bankTarget} points. Drop wider and bank before wobble peaks.`}
           actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}
@@ -173,6 +180,14 @@ export default function Game() {
       {state.phase === "banked" ? (
         <GameOverScreen
           accent="#84cc16"
+          result={{
+            milestones: ["first-banked-barn"],
+            mode: state.sessionMode,
+            score: summary.bankedScore,
+            slug: "farm-follies",
+            status: "completed",
+            summary: `Banked ${summary.bankedScore} points`,
+          }}
           title="Barn Banked"
           subtitle={`${summary.bankedScore} points locked after ${summary.dropCount} drops and ${summary.elapsedSeconds}s. Replay for a cleaner tower and higher merges.`}
           actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}

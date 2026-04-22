@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { RuntimeResultRecorder, type RuntimeResultRecorderProps } from "./CabinetRuntime";
 
 interface GameViewportProps extends PropsWithChildren, HTMLAttributes<HTMLDivElement> {
   background?: string;
@@ -137,10 +138,18 @@ interface ScreenProps {
   subtitle: string;
   actions?: ReactNode;
   accent?: string;
+  result?: RuntimeResultRecorderProps;
   testId?: string;
 }
 
-function ScreenShell({ title, subtitle, actions, accent = "#38bdf8", testId }: ScreenProps) {
+function ScreenShell({
+  title,
+  subtitle,
+  actions,
+  accent = "#38bdf8",
+  result,
+  testId,
+}: ScreenProps) {
   return (
     <div
       data-testid={testId}
@@ -154,6 +163,7 @@ function ScreenShell({ title, subtitle, actions, accent = "#38bdf8", testId }: S
         overflow: "hidden",
       }}
     >
+      {result ? <RuntimeResultRecorder {...result} /> : null}
       <div
         aria-hidden="true"
         style={{

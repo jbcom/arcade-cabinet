@@ -158,6 +158,18 @@ function EntropyApp() {
 
       {phase === "win" ? (
         <GameOverScreen
+          result={
+            runComplete
+              ? {
+                  milestones: ["entropy-run-complete"],
+                  mode: state.sessionMode,
+                  score: summary.score,
+                  slug: "entropy-edge",
+                  status: "completed",
+                  summary: `Stabilized ${summary.sectorsRequired} sectors`,
+                }
+              : undefined
+          }
           title={runComplete ? "Cabinet Stabilized" : "Sector Stabilized"}
           subtitle={
             runComplete
@@ -182,6 +194,13 @@ function EntropyApp() {
 
       {phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: scoreData.value,
+            slug: "entropy-edge",
+            status: "failed",
+            summary: `Collapsed in sector ${summary.sector}`,
+          }}
           title="Sector Collapsed"
           subtitle={`Stability reached zero. Total score: ${scoreData.value} pts. Total anchors secured: ${state.totalAnchors}.`}
           actions={

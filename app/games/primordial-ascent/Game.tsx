@@ -5,6 +5,7 @@ import {
   GameViewport,
   OverlayButton,
   PhaseTrait,
+  RuntimeResultRecorder,
 } from "@app/shared";
 import {
   createInitialPrimordialState,
@@ -66,6 +67,13 @@ function PrimordialApp() {
               "linear-gradient(180deg, rgba(20,2,2,0.74), rgba(2,6,8,0.94)), repeating-linear-gradient(0deg, rgba(255,51,51,0.22) 0 2px, transparent 2px 16px)",
           }}
         >
+          <RuntimeResultRecorder
+            mode={state.sessionMode}
+            score={summary.maxAltitude}
+            slug="primordial-ascent"
+            status="failed"
+            summary={`Consumed at ${summary.maxAltitude}m`}
+          />
           <h1
             className="text-5xl md:text-7xl font-black uppercase tracking-[5px] mb-12 text-center text-white"
             style={{ textShadow: "0 0 20px #ff3333, 2px 2px 0px #000" }}
@@ -102,6 +110,14 @@ function PrimordialApp() {
       {state.phase === "complete" && (
         <GameOverScreen
           accent="#00ff66"
+          result={{
+            milestones: ["first-surface-breach"],
+            mode: state.sessionMode,
+            score: summary.maxAltitude + summary.finalDistanceToLava * 10,
+            slug: "primordial-ascent",
+            status: "completed",
+            summary: `Escaped at ${summary.maxAltitude}m`,
+          }}
           title="SURFACE BREACHED"
           subtitle={`Escaped in ${summary.elapsedSeconds}s at ${summary.maxAltitude}m. Final lava gap: ${summary.finalDistanceToLava}m.`}
           actions={

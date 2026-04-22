@@ -110,6 +110,14 @@ export default function Game() {
       {state.phase === "stable" ? (
         <GameOverScreen
           accent="#67e8f9"
+          result={{
+            milestones: ["first-stable-shift"],
+            mode: state.sessionMode,
+            score: summary.coherence * 100 + summary.stableMatches * 50,
+            slug: "cognitive-dissonance",
+            status: "completed",
+            summary: `Stable ${summary.targetSeconds}s shift`,
+          }}
           title="Shift Stable"
           subtitle={`${summary.targetSeconds}s shift held at ${summary.coherence}% coherence with ${summary.tension}% tension.`}
           actions={<OverlayButton onClick={restart}>Run Another Shift</OverlayButton>}
@@ -119,6 +127,13 @@ export default function Game() {
       {state.phase === "shattered" ? (
         <GameOverScreen
           accent="#a78bfa"
+          result={{
+            mode: state.sessionMode,
+            score: summary.progressPercent * 10 + summary.stableMatches * 25,
+            slug: "cognitive-dissonance",
+            status: "failed",
+            summary: `Shattered at ${summary.progressPercent}% shift progress`,
+          }}
           title="Glass Shattered"
           subtitle={`Coherence dropped to zero after ${summary.elapsedSeconds}s (${summary.progressPercent}% of the shift). Match earlier and use rim controls as recovery.`}
           actions={<OverlayButton onClick={restart}>Reboot</OverlayButton>}

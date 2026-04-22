@@ -72,6 +72,13 @@ export default function Game() {
 
       {state.phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.score,
+            slug: "overcast-glacier",
+            status: "failed",
+            summary: `Frozen in segment ${summary.segment}`,
+          }}
           title="FROST CURSE"
           subtitle={`Segment ${summary.segment}/${summary.targetSegments}. Score ${summary.score}. Cocoa and clean kicks keep warmth recoverable.`}
           actions={<OverlayButton onClick={() => start(state.sessionMode)}>Warm Up</OverlayButton>}
@@ -81,6 +88,14 @@ export default function Game() {
 
       {state.phase === "finished" ? (
         <GameOverScreen
+          result={{
+            milestones: ["first-glacier-clear"],
+            mode: state.sessionMode,
+            score: summary.score,
+            slug: "overcast-glacier",
+            status: "completed",
+            summary: `Cleared ${summary.segmentsCleared} glacier segments`,
+          }}
           title="GLACIER CLEARED"
           subtitle={`${summary.segmentsCleared} segments, ${summary.score} points, ${summary.warmth}% warmth remaining.`}
           actions={

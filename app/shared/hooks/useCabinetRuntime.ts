@@ -1,7 +1,10 @@
 import {
   createActiveSaveSlot,
   createEmptyProgress,
+  createGameResult,
   type GameProgress,
+  type GameResult,
+  type GameRunStatus,
   type GameSaveSlot,
   type GameSettings,
   type LaunchGameSlug,
@@ -10,6 +13,7 @@ import {
   normalizeGameSaveSlot,
   normalizeGameSettings,
   normalizeSessionMode,
+  recordGameResult,
   type SerializableValue,
   type SessionMode,
 } from "@logic/shared";
@@ -18,6 +22,16 @@ import { useCallback, useEffect, useState } from "react";
 const SETTINGS_KEY = "arcade-cabinet:v1:settings";
 const PROGRESS_PREFIX = "arcade-cabinet:v1:progress:";
 const SAVE_PREFIX = "arcade-cabinet:v1:save:";
+
+export interface FinishGameRunInput {
+  mode: SessionMode;
+  status: Exclude<GameRunStatus, "active">;
+  score: number;
+  summary?: string;
+  stats?: Record<string, number | string | boolean>;
+  milestones?: readonly string[];
+  now?: Date;
+}
 
 export function readCabinetSettings(storage = getStorage()): GameSettings {
   return normalizeGameSettings(readJson<GameSettings>(SETTINGS_KEY, storage));
@@ -77,6 +91,32 @@ export function beginGameRun(
   writeGameSaveSlot(slot, storage);
 
   return { progress, slot };
+}
+
+export function finishGameRun(
+  slug: LaunchGameSlug,
+  input: FinishGameRunInput,
+  storage = getStorage()
+): { progress: GameProgress; result: GameResult } {
+  const saveSlot = readGameSaveSlot(slug, storage);
+  const progress = readGameProgress(slug, storage) ?? createEmptyProgress(slug, input.mode);
+  const now = input.now ?? new Date();
+  const result = createGameResult({
+    endedAt: now,
+    mode: input.mode,
+    score: input.score,
+    slug,
+    startedAt: saveSlot?.startedAt ?? now,
+    status: input.status,
+    summary: input.summary,
+    stats: input.stats,
+  });
+  const nextProgress = recordGameResult(progress, result, input.milestones ?? []);
+
+  writeGameProgress(nextProgress, storage);
+  clearGameSaveSlot(slug, storage);
+
+  return { progress: nextProgress, result };
 }
 
 export function useCabinetRuntime(slug?: LaunchGameSlug) {
@@ -147,9 +187,21 @@ export function useCabinetRuntime(slug?: LaunchGameSlug) {
     setSaveSlotState(undefined);
   }, [slug]);
 
+  const finishRun = useCallback(
+    (input: FinishGameRunInput) => {
+      if (!slug) return undefined;
+      const result = finishGameRun(slug, input);
+      setProgressState(result.progress);
+      setSaveSlotState(undefined);
+      return result;
+    },
+    [slug]
+  );
+
   return {
     beginRun,
     clearRun,
+    finishRun,
     progress,
     saveRun,
     saveSlot,

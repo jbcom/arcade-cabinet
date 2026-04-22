@@ -120,6 +120,14 @@ function MegaTrackApp() {
 
       {phase.phase === "win" ? (
         <GameOverScreen
+          result={{
+            milestones: ["first-cup"],
+            mode: state.sessionMode,
+            score: summary.distanceMeters + summary.integrity * 10,
+            slug: "mega-track",
+            status: "completed",
+            summary: `Cup complete in ${summary.elapsedSeconds}s`,
+          }}
           title="Cup Complete"
           subtitle={`Three legs cleared in ${summary.elapsedSeconds}s with ${summary.integrity}% integrity and ${summary.impactCount} impacts.`}
           actions={
@@ -132,6 +140,13 @@ function MegaTrackApp() {
 
       {phase.phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.distanceMeters,
+            slug: "mega-track",
+            status: "failed",
+            summary: `Wrecked at ${summary.progressPercent}% cup progress`,
+          }}
           title="Wrecked"
           subtitle={`Leg ${summary.cupLeg}/${summary.cupLegCount}, ${summary.progressPercent}% of the cup complete. Chain clean passes to rebuild overdrive before hazards close in.`}
           actions={

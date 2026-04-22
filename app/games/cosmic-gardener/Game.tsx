@@ -1,4 +1,10 @@
-import { CartridgeStartScreen, GameViewport, type SessionMode, useResponsive } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  GameViewport,
+  RuntimeResultRecorder,
+  type SessionMode,
+  useResponsive,
+} from "@app/shared";
 import {
   findMatchedPointId,
   getNextConstellationPreview,
@@ -464,6 +470,17 @@ export default function Game({ className }: { className?: string }) {
       <CosmicDust particleCount={150} />
       <CosmicTableDeck />
 
+      {gameState === "zenMode" && (
+        <RuntimeResultRecorder
+          milestones={["first-cosmic-garden"]}
+          mode={sessionMode}
+          score={score}
+          slug="cosmic-gardener"
+          status="completed"
+          summary={`Cultivated ${constellationsCompleted} constellations`}
+        />
+      )}
+
       <AnimatePresence>
         {launchPulse > 0 && (
           <motion.div
@@ -835,6 +852,13 @@ export default function Game({ className }: { className?: string }) {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
             >
+              <RuntimeResultRecorder
+                mode={sessionMode}
+                score={score}
+                slug="cosmic-gardener"
+                status="failed"
+                summary={`Garden ended at ${score} score`}
+              />
               <h2 className="text-4xl font-light text-white mb-4">Game Over</h2>
               <p className="text-amber-400 text-3xl mb-2">{score.toLocaleString()}</p>
               <p className="text-white/60 mb-2">Final Score</p>

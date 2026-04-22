@@ -913,6 +913,13 @@ export default function Game() {
           <motion.div key="gameover" className="absolute inset-0" exit={{ opacity: 0 }}>
             <GameOverScreen
               accent="#4ecdc4"
+              result={{
+                mode: sessionMode,
+                score: finalScore,
+                slug: "bioluminescent-sea",
+                status: "failed",
+                summary: `Dive logged at ${finalScore} score`,
+              }}
               title="Dive Logged"
               subtitle={`Score ${finalScore}. The route remains recoverable: follow beacon chains before oxygen or predators close in.`}
               actions={
@@ -925,6 +932,14 @@ export default function Game() {
           <motion.div key="complete" className="absolute inset-0" exit={{ opacity: 0 }}>
             <GameOverScreen
               accent="#4ecdc4"
+              result={{
+                milestones: ["living-map-complete"],
+                mode: sessionMode,
+                score: finalScore,
+                slug: "bioluminescent-sea",
+                status: "completed",
+                summary: `Recovered ${finalSummary.totalBeacons} beacons`,
+              }}
               title="Living Map Complete"
               subtitle={`All ${finalSummary.totalBeacons} beacons recovered. Score ${finalScore}. Replay for cleaner chains and deeper landmark mastery.`}
               actions={

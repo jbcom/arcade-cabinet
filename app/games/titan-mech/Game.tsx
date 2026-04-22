@@ -58,6 +58,13 @@ function TitanApp() {
 
       {phase === "gameover" && (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.score,
+            slug: "titan-mech",
+            status: "failed",
+            summary: `Chassis destroyed with ${summary.credits} credits`,
+          }}
           title="CHASSIS DESTROYED"
           subtitle={`Final Scrap: ${summary.scrap}. Credits ${summary.credits}/${summary.contractCreditsTarget}. Heat discipline keeps the contract recoverable.`}
           actions={
@@ -68,6 +75,14 @@ function TitanApp() {
 
       {phase === "upgrade" && (
         <GameOverScreen
+          result={{
+            milestones: ["first-contract-extracted"],
+            mode: state.sessionMode,
+            score: summary.score,
+            slug: "titan-mech",
+            status: "completed",
+            summary: `Extracted ${summary.credits} credits`,
+          }}
           title="CONTRACT EXTRACTED"
           subtitle={`${summary.credits} credits banked, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Coolant cycles held at ${summary.hp} HP.`}
           actions={

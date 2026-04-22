@@ -174,6 +174,14 @@ export default function Game() {
       {state.phase === "escaped" ? (
         <GameOverScreen
           accent="#22d3ee"
+          result={{
+            milestones: ["beppo-escaped"],
+            mode: state.sessionMode,
+            score: summary.roomsMapped * 100 + summary.composure,
+            slug: "beppo-laughs",
+            status: "completed",
+            summary: `Escaped after mapping ${summary.roomsMapped} rooms`,
+          }}
           title="Escaped"
           subtitle={`You left after mapping ${summary.roomsMapped}/${summary.routeMemoryTarget} rooms with ${summary.composure}% composure.`}
           actions={<OverlayButton onClick={restart}>Run Again</OverlayButton>}
@@ -183,6 +191,13 @@ export default function Game() {
       {state.phase === "lost" ? (
         <GameOverScreen
           accent="#f97316"
+          result={{
+            mode: state.sessionMode,
+            score: summary.roomsMapped * 50,
+            slug: "beppo-laughs",
+            status: "failed",
+            summary: `Lost after mapping ${summary.roomsMapped} rooms`,
+          }}
           title="The Laugh Wins"
           subtitle="Composure hit zero. Choose cleaner routes and breathe after a mistake."
           actions={<OverlayButton onClick={restart}>Try Again</OverlayButton>}

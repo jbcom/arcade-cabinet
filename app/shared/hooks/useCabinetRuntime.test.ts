@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import {
   beginGameRun,
   clearGameSaveSlot,
+  finishGameRun,
   readCabinetSettings,
   readGameProgress,
   readGameSaveSlot,
@@ -53,5 +54,36 @@ describe("cabinet browser runtime storage", () => {
     clearGameSaveSlot("otterly-chaotic");
 
     expect(readGameSaveSlot("otterly-chaotic")).toBeUndefined();
+  });
+
+  test("finishes a run, records progress, and clears stale resume state", () => {
+    beginGameRun("mega-track", "standard", {
+      progressSummary: "Leg 2",
+      snapshot: { integrity: 74 },
+    });
+
+    const { progress, result } = finishGameRun("mega-track", {
+      milestones: ["first-cup"],
+      mode: "standard",
+      now: new Date("2026-04-22T12:12:00.000Z"),
+      score: 7200,
+      status: "completed",
+      summary: "Cup complete",
+    });
+
+    expect(result).toMatchObject({
+      mode: "standard",
+      score: 7200,
+      slug: "mega-track",
+      status: "completed",
+      summary: "Cup complete",
+    });
+    expect(progress).toMatchObject({
+      bestScore: 7200,
+      sessionsCompleted: 1,
+      sessionsStarted: 1,
+    });
+    expect(progress.milestones).toEqual(["first-cup"]);
+    expect(readGameSaveSlot("mega-track")).toBeUndefined();
   });
 });

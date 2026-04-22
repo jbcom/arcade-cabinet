@@ -1,4 +1,10 @@
-import type { GameSaveSlot, GameSettings } from "@logic/shared";
+import type {
+  GameRunStatus,
+  GameSaveSlot,
+  GameSettings,
+  LaunchGameSlug,
+  SessionMode,
+} from "@logic/shared";
 import {
   ArrowLeft,
   BookOpen,
@@ -18,8 +24,11 @@ import {
   type PropsWithChildren,
   type ReactNode,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from "react";
+import { useCabinetRuntime } from "../hooks/useCabinetRuntime";
 
 interface CabinetMenuButtonProps {
   onClick: () => void;
@@ -43,6 +52,48 @@ export function CabinetMenuButton({
       <Pause size={20} />
     </button>
   );
+}
+
+export interface RuntimeResultRecorderProps {
+  slug: LaunchGameSlug;
+  mode: SessionMode;
+  status: Exclude<GameRunStatus, "active">;
+  score: number;
+  summary?: string;
+  stats?: Record<string, number | string | boolean>;
+  milestones?: readonly string[];
+}
+
+export function RuntimeResultRecorder({
+  milestones = [],
+  mode,
+  score,
+  slug,
+  stats,
+  status,
+  summary,
+}: RuntimeResultRecorderProps) {
+  const { finishRun } = useCabinetRuntime(slug);
+  const recordedKey = useRef<string | null>(null);
+  const resultKey = useMemo(
+    () => JSON.stringify({ milestones, mode, score, slug, stats, status, summary }),
+    [milestones, mode, score, slug, stats, status, summary]
+  );
+
+  useEffect(() => {
+    if (recordedKey.current === resultKey) return;
+    recordedKey.current = resultKey;
+    finishRun({
+      milestones,
+      mode,
+      score,
+      stats,
+      status,
+      summary,
+    });
+  }, [finishRun, milestones, mode, resultKey, score, stats, status, summary]);
+
+  return null;
 }
 
 interface CabinetPauseMenuProps {

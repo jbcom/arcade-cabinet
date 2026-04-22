@@ -167,6 +167,14 @@ function OtterlyApp() {
       ) : null}
       {phase.phase === "win" ? (
         <GameOverScreen
+          result={{
+            milestones: ["first-salad-rescue"],
+            mode: state.sessionMode,
+            score: summary.rescuesCompleted * 1000 + summary.health * 10,
+            slug: "otterly-chaotic",
+            status: "completed",
+            summary: `Rescued ${summary.rescuesCompleted} salad pieces`,
+          }}
           title="Salad Saved"
           subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued with ${summary.health}% integrity after ${summary.elapsedSeconds}s.`}
           actions={
@@ -176,6 +184,13 @@ function OtterlyApp() {
       ) : null}
       {phase.phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.rescuesCompleted * 750,
+            slug: "otterly-chaotic",
+            status: "failed",
+            summary: `Munched after ${summary.rescuesCompleted} rescues`,
+          }}
           title="Munched"
           subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued. Bark earlier and keep the otter between goats and salad next run.`}
           actions={<OverlayButton onClick={() => startRun(state.sessionMode)}>Retry</OverlayButton>}
