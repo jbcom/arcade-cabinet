@@ -75,6 +75,23 @@ export function CavernGuide() {
         </group>
       ))}
 
+      <group position={[0, 24, -32]}>
+        {[0, 1, 2, 3].map((index) => (
+          <mesh
+            key={`route-ring-${index}`}
+            position={[0, index * 13, -index * 18]}
+            rotation={[Math.PI / 2, 0, 0]}
+          >
+            <torusGeometry args={[7.6 + index * 0.6, 0.07, 8, 56]} />
+            <meshBasicMaterial color="#36fbd1" transparent opacity={0.34 - index * 0.045} />
+          </mesh>
+        ))}
+        <mesh position={[0, -5, 10]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[9.5, 12.5, 48]} />
+          <meshBasicMaterial color="#ff6a2a" transparent opacity={0.24} />
+        </mesh>
+      </group>
+
       <mesh position={[0, 92, -98]} rotation={[0.35, 0.2, 0]}>
         <coneGeometry args={[4.8, 18, 5]} />
         <meshStandardMaterial

@@ -37,7 +37,7 @@ export function Player({ onChunkChange }: { onChunkChange: (chunk: ChunkCoords) 
 
   useEffect(() => {
     camera.position.set(CONFIG.PLAYER_START.x, CONFIG.PLAYER_START.y + 0.75, CONFIG.PLAYER_START.z);
-    camera.lookAt(5.5, 1.8, 13);
+    camera.lookAt(0, 0.4, -12);
   }, [camera]);
 
   useEffect(() => {

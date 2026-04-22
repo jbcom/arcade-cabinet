@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 const CAMERA_PITCH = 0.18;
+const UNLOCKED_LOOK_AHEAD = new THREE.Vector3(0, 8, -42);
 
 export function Player() {
   const { camera, raycaster, scene } = useThree();
@@ -61,7 +62,7 @@ export function Player() {
       CONFIG.playerStartPosition.y,
       CONFIG.playerStartPosition.z
     );
-    camera.rotation.set(CAMERA_PITCH, 0, 0);
+    camera.lookAt(0, CONFIG.playerStartPosition.y + 8, CONFIG.playerStartPosition.z - 42);
     camera.updateProjectionMatrix();
   }, [camera]);
 
@@ -239,7 +240,11 @@ export function Player() {
     }
 
     camera.position.copy(position.current);
-    camera.rotation.x = CAMERA_PITCH;
+    if (document.pointerLockElement) {
+      camera.rotation.x = CAMERA_PITCH;
+    } else {
+      camera.lookAt(position.current.clone().add(UNLOCKED_LOOK_AHEAD));
+    }
 
     primordialEntity.set(
       PrimordialTrait,
@@ -283,13 +288,13 @@ function FirstPersonHarness({ isGrappling }: { isGrappling: boolean }) {
   useFrame(() => {
     if (!groupRef.current) return;
 
-    const offset = new THREE.Vector3(0.44, -0.42, -0.92).applyQuaternion(camera.quaternion);
+    const offset = new THREE.Vector3(0.38, -0.36, -1.08).applyQuaternion(camera.quaternion);
     groupRef.current.position.copy(camera.position).add(offset);
     groupRef.current.quaternion.copy(camera.quaternion);
   });
 
   return (
-    <group ref={groupRef} scale={0.9}>
+    <group ref={groupRef} scale={0.68}>
       <mesh position={[0.05, -0.05, 0.12]} rotation={[Math.PI / 2, 0, 0.18]}>
         <cylinderGeometry args={[0.13, 0.18, 0.58, 8]} />
         <meshStandardMaterial color="#202a35" metalness={0.55} roughness={0.38} />
