@@ -110,10 +110,10 @@ export function NebulaBackground({ className }: NebulaBackgroundProps) {
 
       ctx.globalAlpha = 0.015;
       for (let i = 0; i < 80; i++) {
-        const nx = Math.random() * width;
-        const ny = Math.random() * height;
-        const hue = 260 + Math.random() * 80;
-        ctx.fillStyle = `hsl(${hue}, 60%, ${40 + Math.random() * 40}%)`;
+        const nx = normalizedHash(i, 37, 103) * width;
+        const ny = normalizedHash(i, 41, 109) * height;
+        const hue = 260 + normalizedHash(i, 29, 97) * 80;
+        ctx.fillStyle = `hsl(${hue}, 60%, ${40 + normalizedHash(i, 17, 83) * 40}%)`;
         ctx.fillRect(nx, ny, 1.5, 1.5);
       }
       ctx.globalAlpha = 1;
@@ -135,7 +135,11 @@ export function NebulaBackground({ className }: NebulaBackgroundProps) {
     <canvas
       ref={canvasRef}
       className={cn("absolute inset-0 w-full h-full", className)}
-      style={{ filter: "blur(50px)" }}
+      style={{ filter: "blur(34px)" }}
     />
   );
+}
+
+function normalizedHash(index: number, step: number, modulo: number): number {
+  return ((index * step + step * 0.5) % modulo) / modulo;
 }

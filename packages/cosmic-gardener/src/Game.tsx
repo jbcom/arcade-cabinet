@@ -11,6 +11,11 @@ import {
   getConstellationForLevel,
   type VoidZone as VoidZoneType,
 } from "./engine/constellations";
+import {
+  calculateComboMultiplier,
+  calculateStarHitScore,
+  createStarterGarden,
+} from "./engine/cosmicGardenSimulation";
 import { useEnergyRouting } from "./engine/useEnergyRouting";
 import { usePinballPhysics } from "./engine/usePinballPhysics";
 import { cn } from "./lib/utils";
@@ -35,6 +40,71 @@ type GameState =
   | "zenMode";
 
 const BALL_INDICATOR_KEYS = ["ball-1", "ball-2", "ball-3", "ball-4", "ball-5"] as const;
+
+function CosmicTableDeck() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[1]">
+      <div className="absolute inset-x-[5%] top-[10%] bottom-[6%] rounded-[2rem] border border-cyan-200/15 bg-[radial-gradient(circle_at_50%_22%,rgba(20,184,166,0.13),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.22),rgba(2,6,23,0.5))] shadow-[inset_0_0_70px_rgba(20,184,166,0.12),0_30px_80px_rgba(0,0,0,0.35)]" />
+      <svg aria-hidden="true" className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="cosmic-rail" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(125, 211, 252, 0.45)" />
+            <stop offset="52%" stopColor="rgba(251, 191, 36, 0.38)" />
+            <stop offset="100%" stopColor="rgba(236, 72, 153, 0.36)" />
+          </linearGradient>
+          <radialGradient id="cosmic-pocket" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(251, 191, 36, 0.55)" />
+            <stop offset="100%" stopColor="rgba(251, 191, 36, 0)" />
+          </radialGradient>
+        </defs>
+        <path
+          d="M 11 80 C 12 42 26 17 50 13 C 74 17 88 42 89 80"
+          fill="none"
+          stroke="url(#cosmic-rail)"
+          strokeWidth="0.6"
+        />
+        <path
+          d="M 18 83 C 27 76 37 74 47 82"
+          fill="none"
+          stroke="rgba(125, 211, 252, 0.35)"
+          strokeWidth="0.45"
+        />
+        <path
+          d="M 53 82 C 63 74 73 76 82 83"
+          fill="none"
+          stroke="rgba(236, 72, 153, 0.35)"
+          strokeWidth="0.45"
+        />
+        <path
+          d="M 90 18 L 95 29 L 95 81"
+          fill="none"
+          stroke="rgba(168, 85, 247, 0.32)"
+          strokeWidth="0.65"
+        />
+        <path
+          d="M 8 18 L 5 29 L 5 81"
+          fill="none"
+          stroke="rgba(20, 184, 166, 0.25)"
+          strokeWidth="0.5"
+        />
+        {[22, 36, 50, 64, 78].map((x) => (
+          <line
+            key={x}
+            x1={x}
+            x2={x}
+            y1="20"
+            y2="80"
+            stroke="rgba(148, 163, 184, 0.08)"
+            strokeWidth="0.2"
+          />
+        ))}
+        {[26, 50, 74].map((x) => (
+          <circle key={x} cx={x} cy="78" r="5.5" fill="url(#cosmic-pocket)" opacity="0.5" />
+        ))}
+      </svg>
+    </div>
+  );
+}
 
 export default function Game({ className }: { className?: string }) {
   const _viewport = useResponsive();
@@ -88,6 +158,7 @@ export default function Game({ className }: { className?: string }) {
     plantSeed,
     createStream,
     transferEnergy,
+    seedStars,
     resetGame,
   } = useEnergyRouting({
     onEnergyDepleted: handleEnergyDepleted,
@@ -108,15 +179,11 @@ export default function Game({ className }: { className?: string }) {
       transferEnergy(starId, 5);
 
       const now = Date.now();
-      if (now - lastHitTime < 2000) {
-        setComboMultiplier((prev) => Math.min(prev + 0.5, 5));
-      } else {
-        setComboMultiplier(1);
-      }
+      const nextMultiplier = calculateComboMultiplier(lastHitTime, now, comboMultiplier);
+      setComboMultiplier(nextMultiplier);
       setLastHitTime(now);
 
-      const basePoints = 100 * (star.growthStage + 1);
-      const points = Math.floor(basePoints * comboMultiplier);
+      const points = calculateStarHitScore(star.growthStage, nextMultiplier);
       setScore((prev) => prev + points);
 
       setShowHitEffect({ x: star.x, y: star.y, points });
@@ -152,6 +219,19 @@ export default function Game({ className }: { className?: string }) {
   });
 
   const currentPattern = getConstellationForLevel(level);
+
+  const loadLevel = useCallback(
+    (targetLevel: number) => {
+      const pattern = getConstellationForLevel(targetLevel);
+      const starterGarden = createStarterGarden(pattern, targetLevel);
+      seedStars(starterGarden.stars);
+      setCompletedPoints(starterGarden.completedPoints);
+      setCompletedConnections(new Set());
+      setStarPointMatches(starterGarden.starPointMatches);
+      setSelectedStarId(null);
+    },
+    [seedStars]
+  );
 
   useEffect(() => {
     if (gameState === "playing") {
@@ -307,16 +387,15 @@ export default function Game({ className }: { className?: string }) {
   };
 
   const startPlaying = () => {
+    loadLevel(1);
     setGameState("playing");
   };
 
   const nextLevel = () => {
-    setLevel((prev) => prev + 1);
-    setCompletedPoints(new Set());
-    setCompletedConnections(new Set());
-    setStarPointMatches(new Map());
+    const targetLevel = level + 1;
+    setLevel(targetLevel);
+    loadLevel(targetLevel);
     setBallsRemaining((prev) => Math.min(prev + 1, 5));
-    resetGame();
     setGameState("playing");
   };
 
@@ -338,6 +417,7 @@ export default function Game({ className }: { className?: string }) {
     <GameViewport
       ref={gardenRef}
       className={cn("overflow-hidden bg-[#0c0a1a]", className)}
+      data-browser-screenshot-mode="page"
       background="#0c0a1a"
       onClick={handleCanvasClick}
       onPointerDown={handlePointerDown}
@@ -347,6 +427,7 @@ export default function Game({ className }: { className?: string }) {
     >
       <NebulaBackground />
       <CosmicDust particleCount={150} />
+      <CosmicTableDeck />
 
       {(gameState === "playing" || gameState === "zenMode") && (
         <ConstellationPattern
@@ -564,9 +645,9 @@ export default function Game({ className }: { className?: string }) {
                     <span className="text-amber-400">1</span>
                   </div>
                   <div>
-                    <h3 className="text-white font-medium mb-1">Plant Your Stars</h3>
+                    <h3 className="text-white font-medium mb-1">Wake the Nursery</h3>
                     <p className="text-white/60 text-sm">
-                      Tap to plant bumper stars. They're your targets and your table.
+                      Each constellation begins with young bumper stars waiting for energy.
                     </p>
                   </div>
                 </div>
@@ -576,9 +657,9 @@ export default function Game({ className }: { className?: string }) {
                     <span className="text-pink-400">2</span>
                   </div>
                   <div>
-                    <h3 className="text-white font-medium mb-1">Launch & Flip</h3>
+                    <h3 className="text-white font-medium mb-1">Keep the Orb Alive</h3>
                     <p className="text-white/60 text-sm">
-                      Hold the plunger to charge, release to launch. Use Z and / for flippers.
+                      Bounce the orb through the nursery lanes before cosmic cold overtakes them.
                     </p>
                   </div>
                 </div>
@@ -590,7 +671,7 @@ export default function Game({ className }: { className?: string }) {
                   <div>
                     <h3 className="text-white font-medium mb-1">Grow Constellations</h3>
                     <p className="text-white/60 text-sm">
-                      Hit stars to charge them. Connect charged stars to complete patterns.
+                      Route charged stars into the pattern and cultivate the living sky.
                     </p>
                   </div>
                 </div>

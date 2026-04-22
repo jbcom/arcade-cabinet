@@ -1,9 +1,5 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import { CONSTELLATIONS, generateVoidZones, getConstellationForLevel } from "./constellations";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("constellation selection", () => {
   test("returns the first pattern for level one and clamps beyond the catalog", () => {
@@ -13,18 +9,16 @@ describe("constellation selection", () => {
 });
 
 describe("void zone generation", () => {
-  test("scales count with level and keeps zones inside the play field", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-
+  test("scales count with level and keeps deterministic zones inside the play field", () => {
     const zones = generateVoidZones(3);
 
     expect(zones).toHaveLength(3);
-    expect(zones[0]).toEqual({
-      x: 50,
-      y: 50,
-      radius: 11,
-      drainRate: 1.1,
-    });
+    expect(zones).toEqual(generateVoidZones(3));
+    expect(zones[0].x).toBeGreaterThanOrEqual(18);
+    expect(zones[0].x).toBeLessThanOrEqual(82);
+    expect(zones[0].y).toBeGreaterThanOrEqual(22);
+    expect(zones[0].y).toBeLessThanOrEqual(76);
+    expect(zones[0].drainRate).toBe(1.1);
   });
 
   test("caps generated hazards at four zones", () => {

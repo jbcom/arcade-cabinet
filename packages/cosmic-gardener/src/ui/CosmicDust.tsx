@@ -39,16 +39,16 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
       "rgba(180, 220, 255,",
     ];
 
-    const createParticle = (width: number, height: number): Particle => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      size: Math.random() * 2.5 + 0.5,
-      speedX: (Math.random() - 0.5) * 0.15,
-      speedY: (Math.random() - 0.5) * 0.15,
-      opacity: Math.random() * 0.8 + 0.2,
-      twinkleSpeed: Math.random() * 0.015 + 0.005,
-      twinklePhase: Math.random() * Math.PI * 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
+    const createParticle = (index: number, width: number, height: number): Particle => ({
+      color: colors[index % colors.length],
+      opacity: 0.2 + normalizedHash(index, 31, 89) * 0.8,
+      size: 0.5 + normalizedHash(index, 17, 71) * 2.5,
+      speedX: (normalizedHash(index, 23, 83) - 0.5) * 0.15,
+      speedY: (normalizedHash(index, 29, 79) - 0.5) * 0.15,
+      twinklePhase: normalizedHash(index, 47, 101) * Math.PI * 2,
+      twinkleSpeed: normalizedHash(index, 41, 97) * 0.015 + 0.005,
+      x: normalizedHash(index, 37, 103) * width,
+      y: normalizedHash(index, 43, 107) * height,
     });
 
     const resizeCanvas = () => {
@@ -60,8 +60,8 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
       ctx.scale(dpr, dpr);
       dimensionsRef.current = { width, height };
 
-      particlesRef.current = Array.from({ length: particleCount }, () =>
-        createParticle(width, height)
+      particlesRef.current = Array.from({ length: particleCount }, (_, index) =>
+        createParticle(index, width, height)
       );
     };
 
@@ -128,4 +128,8 @@ export function CosmicDust({ particleCount = 200, className }: CosmicDustProps) 
       className={cn("absolute inset-0 w-full h-full pointer-events-none", className)}
     />
   );
+}
+
+function normalizedHash(index: number, step: number, modulo: number): number {
+  return ((index * step + step * 0.5) % modulo) / modulo;
 }

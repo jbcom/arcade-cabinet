@@ -108,13 +108,6 @@ export function Flippers({
           background: "linear-gradient(to top, rgba(139, 69, 102, 0.6) 0%, transparent 100%)",
         }}
       />
-
-      <div className="absolute bottom-2 left-4 text-white/30 text-xs pointer-events-none z-50">
-        Z / Left
-      </div>
-      <div className="absolute bottom-2 right-4 text-white/30 text-xs pointer-events-none z-50">
-        / / Right
-      </div>
     </>
   );
 }

@@ -34,10 +34,10 @@ export function EnergyStream({ fromX, fromY, toX, toY, flowRate, active }: Energ
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    particlesRef.current = Array.from({ length: 8 }, () => ({
-      t: Math.random(),
-      speed: 0.003 + Math.random() * 0.002,
-      size: 2 + Math.random() * 2,
+    particlesRef.current = Array.from({ length: 8 }, (_, index) => ({
+      size: 2 + normalizedHash(index, 31, 71) * 2,
+      speed: 0.003 + normalizedHash(index, 23, 67) * 0.002,
+      t: normalizedHash(index, 17, 59),
     }));
 
     const animate = () => {
@@ -120,4 +120,8 @@ export function EnergyStream({ fromX, fromY, toX, toY, flowRate, active }: Energ
       transition={{ duration: 0.3 }}
     />
   );
+}
+
+function normalizedHash(index: number, step: number, modulo: number): number {
+  return ((index * step + step * 0.5) % modulo) / modulo;
 }

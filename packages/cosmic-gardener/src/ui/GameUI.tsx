@@ -74,7 +74,7 @@ export function GameUI({
         </motion.button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-between items-end pointer-events-none z-50">
+      <div className="absolute bottom-14 left-0 right-0 flex justify-between items-end p-3 pointer-events-none z-50 sm:bottom-0 sm:p-4">
         <motion.div
           className="flex flex-col gap-2"
           initial={{ opacity: 0, y: 20 }}
@@ -82,7 +82,7 @@ export function GameUI({
           transition={{ delay: 0.3 }}
         >
           <span className="text-white/60 text-xs uppercase tracking-widest">Cosmic Energy</span>
-          <div className="w-48 h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 w-36 overflow-hidden rounded-full bg-white/10 sm:w-48">
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -93,7 +93,9 @@ export function GameUI({
               transition={{ duration: 0.3 }}
             />
           </div>
-          <span className="text-white/80 text-sm font-light">{Math.floor(totalEnergy)}</span>
+          <span className="text-xs font-light text-white/80 sm:text-sm">
+            {Math.floor(totalEnergy)}
+          </span>
         </motion.div>
 
         <motion.div
@@ -103,7 +105,7 @@ export function GameUI({
           transition={{ delay: 0.4 }}
         >
           <span className="text-white/60 text-xs uppercase tracking-widest">Cosmic Cold</span>
-          <div className="w-48 h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 w-36 overflow-hidden rounded-full bg-white/10 sm:w-48">
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -121,7 +123,7 @@ export function GameUI({
           </div>
           <span
             className={cn(
-              "text-sm font-light transition-colors",
+              "text-xs font-light transition-colors sm:text-sm",
               cosmicCold > 70 ? "text-red-400" : "text-white/80"
             )}
           >
@@ -131,13 +133,13 @@ export function GameUI({
       </div>
 
       <motion.div
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center pointer-events-none"
+        className="absolute bottom-20 left-1/2 hidden -translate-x-1/2 transform text-center pointer-events-none sm:block"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
       >
         <p className="text-white/40 text-xs">
-          Click to plant stars | Drag between stars to create energy streams
+          Nursery alignment: awaken the pattern before cold reaches the core.
         </p>
       </motion.div>
 

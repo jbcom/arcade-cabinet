@@ -1,59 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  advanceEnergyNetwork,
+  COSMIC_ENERGY_CAPACITY,
+  calculateGrowthStage,
+  createEnergyStream,
+  createStarId,
+  createStarSeed,
+  type EnergyStream,
+  MAX_COSMIC_COLD,
+  type StarSeed,
+} from "./cosmicGardenSimulation";
 
-export interface StarSeed {
-  id: string;
-  x: number;
-  y: number;
-  energy: number;
-  maxEnergy: number;
-  growthStage: number; // 0-3: seed, sprout, growing, full
-  connections: string[];
-  isPlanted: boolean;
-}
-
-export interface EnergyStream {
-  id: string;
-  fromId: string;
-  toId: string;
-  flowRate: number;
-  active: boolean;
-}
+export type { EnergyStream, StarSeed } from "./cosmicGardenSimulation";
 
 interface UseEnergyRoutingProps {
   onEnergyDepleted?: () => void;
 }
 
-function getGrowthStage(energy: number, maxEnergy: number): number {
-  const percentage = energy / maxEnergy;
-  if (percentage >= 0.9) return 3;
-  if (percentage >= 0.6) return 2;
-  if (percentage >= 0.3) return 1;
-  return 0;
-}
-
 export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {}) {
   const [stars, setStars] = useState<Map<string, StarSeed>>(new Map());
   const [streams, setStreams] = useState<Map<string, EnergyStream>>(new Map());
-  const [totalEnergy, setTotalEnergy] = useState(500);
+  const [totalEnergy, setTotalEnergy] = useState(COSMIC_ENERGY_CAPACITY);
   const [cosmicCold, setCosmicCold] = useState(0);
   const animationRef = useRef<number>(null);
   const lastTimeRef = useRef<number>(0);
+  const nextStarIdRef = useRef(1);
 
   const plantSeed = useCallback(
     (x: number, y: number): string | null => {
       if (totalEnergy < 20) return null;
 
-      const id = `star-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const newStar: StarSeed = {
+      const id = createStarId(nextStarIdRef.current, x, y);
+      nextStarIdRef.current += 1;
+      const newStar = createStarSeed({
+        energy: 20,
         id,
+        maxEnergy: 100,
         x,
         y,
-        energy: 20,
-        maxEnergy: 100,
-        growthStage: 0,
-        connections: [],
-        isPlanted: true,
-      };
+      });
 
       setStars((prev) => {
         const next = new Map(prev);
@@ -74,13 +59,7 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
 
       if (streams.has(existingKey) || streams.has(reverseKey)) return null;
 
-      const stream: EnergyStream = {
-        id: existingKey,
-        fromId,
-        toId,
-        flowRate: 2,
-        active: true,
-      };
+      const stream = createEnergyStream(fromId, toId);
 
       setStreams((prev) => {
         const next = new Map(prev);
@@ -125,7 +104,7 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
         const star = next.get(starId);
         if (star) {
           const newEnergy = Math.min(star.energy + amount, star.maxEnergy);
-          const newStage = getGrowthStage(newEnergy, star.maxEnergy);
+          const newStage = calculateGrowthStage(newEnergy, star.maxEnergy);
           next.set(starId, { ...star, energy: newEnergy, growthStage: newStage });
         }
         return next;
@@ -165,42 +144,13 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
 
       setCosmicCold((prev) => {
         const newCold = prev + delta * 0.5;
-        if (newCold >= 100 && onEnergyDepleted) {
+        if (newCold >= MAX_COSMIC_COLD && onEnergyDepleted) {
           onEnergyDepleted();
         }
-        return Math.min(newCold, 100);
+        return Math.min(newCold, MAX_COSMIC_COLD);
       });
 
-      setStars((prevStars) => {
-        const next = new Map(prevStars);
-
-        streams.forEach((stream) => {
-          if (!stream.active) return;
-
-          const fromStar = next.get(stream.fromId);
-          const toStar = next.get(stream.toId);
-
-          if (fromStar && toStar && fromStar.energy > 10) {
-            const transferAmount = Math.min(stream.flowRate * delta, fromStar.energy - 10);
-            const toReceive = Math.min(transferAmount, toStar.maxEnergy - toStar.energy);
-
-            if (toReceive > 0) {
-              next.set(stream.fromId, {
-                ...fromStar,
-                energy: fromStar.energy - toReceive,
-                growthStage: getGrowthStage(fromStar.energy - toReceive, fromStar.maxEnergy),
-              });
-              next.set(stream.toId, {
-                ...toStar,
-                energy: toStar.energy + toReceive,
-                growthStage: getGrowthStage(toStar.energy + toReceive, toStar.maxEnergy),
-              });
-            }
-          }
-        });
-
-        return next;
-      });
+      setStars((prevStars) => advanceEnergyNetwork(prevStars, streams, delta));
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -214,13 +164,21 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
     };
   }, [streams, onEnergyDepleted]);
 
+  const seedStars = useCallback(
+    (seededStars: StarSeed[], energyBudget = COSMIC_ENERGY_CAPACITY) => {
+      setStars(new Map(seededStars.map((star) => [star.id, star])));
+      setStreams(new Map());
+      setTotalEnergy(energyBudget);
+      setCosmicCold(0);
+      lastTimeRef.current = 0;
+      nextStarIdRef.current = seededStars.length + 1;
+    },
+    []
+  );
+
   const resetGame = useCallback(() => {
-    setStars(new Map());
-    setStreams(new Map());
-    setTotalEnergy(500);
-    setCosmicCold(0);
-    lastTimeRef.current = 0;
-  }, []);
+    seedStars([]);
+  }, [seedStars]);
 
   return {
     stars,
@@ -232,6 +190,7 @@ export function useEnergyRouting({ onEnergyDepleted }: UseEnergyRoutingProps = {
     removeStream,
     transferEnergy,
     checkConstellationComplete,
+    seedStars,
     resetGame,
   };
 }

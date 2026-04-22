@@ -1,3 +1,5 @@
+import { createDeterministicVoidZones } from "./cosmicGardenSimulation";
+
 export interface ConstellationPoint {
   x: number;
   y: number;
@@ -147,19 +149,7 @@ export interface VoidZone {
 }
 
 export function generateVoidZones(level: number): VoidZone[] {
-  const zones: VoidZone[] = [];
-  const count = Math.min(level, 4);
-
-  for (let i = 0; i < count; i++) {
-    zones.push({
-      x: 20 + Math.random() * 60,
-      y: 20 + Math.random() * 60,
-      radius: 8 + Math.random() * 6,
-      drainRate: 0.5 + level * 0.2,
-    });
-  }
-
-  return zones;
+  return createDeterministicVoidZones(level);
 }
 
 export function getConstellationForLevel(level: number): ConstellationPattern {
