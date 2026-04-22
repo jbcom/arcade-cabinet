@@ -1,31 +1,36 @@
-const fs = require("node:fs");
+import fs from "node:fs";
 
 const pkgs = [
   "apps/docs",
-  "apps/cosmic-gardener",
   "apps/bioluminescent-sea",
-  "apps/protocol-snw",
-  "apps/titan-mech",
+  "apps/cosmic-gardener",
   "apps/enchanted-forest",
-  "apps/voxel-realms",
-  "apps/realmwalker",
-  "apps/reach-for-the-sky",
+  "apps/entropy-edge",
+  "apps/gridizen",
+  "apps/mega-track",
+  "apps/otterly-chaotic",
   "apps/primordial-ascent",
-  "packages/cosmic-gardener",
+  "apps/protocol-snw",
+  "apps/reach-for-the-sky",
+  "apps/realmwalker",
+  "apps/sim-soviet",
+  "apps/titan-mech",
+  "apps/voxel-realms",
   "packages/bioluminescent-sea",
-  "packages/gridizen",
-  "packages/protocol-snw",
-  "packages/entropy-edge",
-  "packages/titan-mech",
+  "packages/cosmic-gardener",
   "packages/enchanted-forest",
+  "packages/entropy-edge",
+  "packages/gridizen",
+  "packages/mega-track",
   "packages/otterly-chaotic",
-  "packages/voxel-realms",
+  "packages/primordial-ascent",
+  "packages/protocol-snw",
+  "packages/reach-for-the-sky",
+  "packages/realmwalker",
   "packages/shared",
   "packages/sim-soviet",
-  "packages/realmwalker",
-  "packages/reach-for-the-sky",
-  "packages/mega-track",
-  "packages/primordial-ascent",
+  "packages/titan-mech",
+  "packages/voxel-realms",
 ];
 
 const config = {
@@ -42,5 +47,5 @@ for (const pkg of pkgs) {
 }
 manifest["."] = "0.1.0"; // root
 
-fs.writeFileSync("release-please-config.json", JSON.stringify(config, null, 2));
-fs.writeFileSync(".release-please-manifest.json", JSON.stringify(manifest, null, 2));
+fs.writeFileSync("release-please-config.json", `${JSON.stringify(config, null, 2)}\n`);
+fs.writeFileSync(".release-please-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);

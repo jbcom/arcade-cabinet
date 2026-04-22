@@ -4,19 +4,11 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "apps/cosmic-gardener": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
     "apps/bioluminescent-sea": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "apps/protocol-snw": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "apps/titan-mech": {
+    "apps/cosmic-gardener": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
@@ -24,15 +16,19 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "apps/voxel-realms": {
+    "apps/entropy-edge": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "apps/realmwalker": {
+    "apps/gridizen": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "apps/reach-for-the-sky": {
+    "apps/mega-track": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/otterly-chaotic": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
@@ -40,7 +36,27 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/cosmic-gardener": {
+    "apps/protocol-snw": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/reach-for-the-sky": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/realmwalker": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/sim-soviet": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/titan-mech": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "apps/voxel-realms": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
@@ -48,19 +64,7 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/gridizen": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/protocol-snw": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/entropy-edge": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/titan-mech": {
+    "packages/cosmic-gardener": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
@@ -68,11 +72,35 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
+    "packages/entropy-edge": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/gridizen": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/mega-track": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
     "packages/otterly-chaotic": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/voxel-realms": {
+    "packages/primordial-ascent": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/protocol-snw": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/reach-for-the-sky": {
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/realmwalker": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
@@ -84,19 +112,11 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/realmwalker": {
+    "packages/titan-mech": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     },
-    "packages/reach-for-the-sky": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/mega-track": {
-      "release-type": "node",
-      "changelog-path": "CHANGELOG.md"
-    },
-    "packages/primordial-ascent": {
+    "packages/voxel-realms": {
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     }
