@@ -5,9 +5,10 @@ export interface Vec2 {
 
 export interface Obstacle {
   id: string;
+  lane: -1 | 0 | 1;
   x: number;
   z: number;
-  type: "cone" | "barrier" | "car";
+  type: "cone" | "barrier" | "pace-car";
 }
 
 export interface MegaTrackState {
@@ -16,10 +17,13 @@ export interface MegaTrackState {
   distance: number;
   currentLane: number;
   obstacles: Obstacle[];
+  nextObstacleIndex: number;
+  integrity: number;
+  impactCount: number;
+  lastImpactMs: number;
   elapsedMs: number;
   milestone: number;
-  funds: number;
-  population: number; // For consistency with other games if needed, or just remove
+  boostCharge: number;
 }
 
 export const CONFIG = {
@@ -27,4 +31,8 @@ export const CONFIG = {
   GOAL_DISTANCE: 10000,
   LANE_WIDTH: 25,
   WORLD_SIZE: 120,
+  OBSTACLE_LOOKAHEAD: 2100,
+  OBSTACLE_CLEANUP_DISTANCE: 160,
+  CAR_HALF_WIDTH: 5.4,
+  COLLISION_DEPTH: 13,
 };

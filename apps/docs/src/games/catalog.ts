@@ -81,17 +81,17 @@ export const games = [
   {
     slug: "mega-track",
     title: "MEGA TRACK",
-    description: "Race a high-speed machine through a reactive 3D track.",
+    description: "Thread a high-speed machine through a deterministic hazard ribbon.",
     tags: ["r3f", "racing", "action"],
     color: "#fb7185",
     gradient: "linear-gradient(135deg, #fb7185, #7c2d12)",
     pillars: ["Instant lane reads", "Toy-scale speed", "Impact clarity"],
     presentation:
-      "The track should feel like an exaggerated tabletop racer with bold lane color, simple obstacles, and a camera that sells speed without hiding upcoming decisions.",
+      "The track should feel like an exaggerated tabletop racer with a dark asphalt ribbon, bright rails, readable hazard choreography, and a camera that sells speed without hiding upcoming decisions.",
     sceneDirection:
-      "High-saturation track strips, a low chase camera, and forward fog make distance readable and keep the car silhouette central.",
+      "Cyan and yellow rails, checkpoint gates, composite player and pace cars, cone/barrier silhouettes, and forward fog make distance readable while keeping the car central.",
     responsiveDirection:
-      "Controls reduce to left/right lane choice and the canvas fills its parent, so the same run works in a narrow Android shell or wide cabinet slot.",
+      "Controls reduce to left/right lane choice with keyboard and page-mode touch buttons, so the same deterministic run works in a narrow Android shell or wide Astro cabinet slot.",
   },
   {
     slug: "otterly-chaotic",

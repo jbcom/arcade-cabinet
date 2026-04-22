@@ -12,6 +12,7 @@ import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createInitialState, tick } from "./engine/simulation";
 import type { MegaTrackState } from "./engine/types";
+import { CONFIG } from "./engine/types";
 import { TrackScene } from "./r3f/TrackScene";
 import { MegaTrackTrait } from "./store/traits";
 import { megaTrackEntity, megaTrackWorld } from "./store/world";
@@ -65,8 +66,9 @@ function MegaTrackApp() {
         label: "SPEED",
       });
 
-      if (next.distance >= 100000) {
-        // Win at 10km
+      if (next.integrity <= 0) {
+        megaTrackEntity.set(PhaseTrait, { phase: "gameover" });
+      } else if (next.distance >= CONFIG.GOAL_DISTANCE) {
         megaTrackEntity.set(PhaseTrait, { phase: "win" });
       }
     },
@@ -74,24 +76,28 @@ function MegaTrackApp() {
   );
 
   const handleStart = () => {
-    writeState(createInitialState());
+    const next = { ...createInitialState(), isPlaying: true };
+    writeState(next);
     megaTrackEntity.set(PhaseTrait, { phase: "playing" });
-    megaTrackEntity.set(MegaTrackTrait, { ...createInitialState(), isPlaying: true } as never);
   };
 
+  const handleLaneControl = useCallback((direction: number) => {
+    setLaneChange(direction);
+  }, []);
+
   return (
-    <GameViewport ref={mountRef} background="#082f49">
+    <GameViewport ref={mountRef} background="#07111f" data-browser-screenshot-mode="page">
       <TrackScene state={state} />
 
       {phase.phase === "menu" ? (
         <StartScreen
           title="Mega Track"
-          subtitle="Extreme racing on a procedural track. Use A/D or Arrow keys to change lanes and avoid obstacles."
+          subtitle="Arcade racing on a deterministic hazard ribbon. Use A/D, Arrow keys, or the lane controls to thread the safe line."
           primaryAction={<OverlayButton onClick={handleStart}>Start Race</OverlayButton>}
         />
       ) : null}
 
-      {phase.phase === "playing" ? <HUD state={state} /> : null}
+      {phase.phase === "playing" ? <HUD state={state} onLaneControl={handleLaneControl} /> : null}
 
       {phase.phase === "win" ? (
         <GameOverScreen

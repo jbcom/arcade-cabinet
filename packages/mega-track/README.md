@@ -1,24 +1,33 @@
 # Mega Track
 
-A high-speed lane racer about reading obstacles early and making decisive lane changes.
+A high-speed lane racer about reading a deterministic hazard ribbon early and making decisive lane changes.
 
 ## Creative Pillars
 
 - Instant lane reads: the player should know the safe lane without parsing detail.
 - Toy-scale speed: the car and track should feel exaggerated and physical.
 - Impact clarity: crashes need to be understandable, not surprising.
+- Fair opening rhythm: early hazards teach side-lane reads before the center lane becomes dangerous.
+
+## Systems Contract
+
+- `createInitialState` seeds an authored obstacle run so screenshots and Android boots never start on an empty track.
+- `createObstacle(index)` is deterministic and replaces all random spawning.
+- `tick` owns acceleration, lane clamps, obstacle cleanup/spawn extension, swept collision checks, integrity, impact count, and boost charge.
+- Browser and engine tests must not mock `Math.random`; the game should be reproducible from pure inputs.
 
 ## Presentation Direction
 
-Mega Track is an arcade tabletop racer. Bold lane colors, an aggressive chase camera, forward fog, and simple obstacle silhouettes should sell speed while keeping upcoming decisions visible.
+Mega Track is an arcade tabletop racer staged as a dark asphalt ribbon suspended in bright air. Cyan and yellow rails frame the safe play space, checkpoint gates sell speed, and composite cars/cones/barriers replace POC cubes while keeping obstacle silhouettes readable.
 
 ## Responsive and Android Contract
 
 - The root fills its parent with `GameViewport`.
-- Input reduces to left/right lane choice, which maps cleanly to keyboard, swipe, or future touch buttons.
+- Input reduces to left/right lane choice, mapped to keyboard and on-screen pointer controls.
 - The package has a standalone Vite/Capacitor app shell.
-- The scene must remain readable in portrait and landscape.
+- The fixed chase camera widens for portrait while keeping the player car, lane markers, and next hazards visible.
+- Vitest Browser captures page-mode desktop and mobile screenshots through the shared harness.
 
 ## Stack
 
-React Three Fiber
+React Three Fiber, Vitest Browser
