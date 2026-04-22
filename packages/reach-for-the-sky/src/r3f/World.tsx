@@ -71,16 +71,14 @@ export function World() {
         position={[-36, 42, -34]}
         opacity={0.3}
         speed={0.08}
-        width={28}
-        depth={8}
+        bounds={[28, 8, 8]}
         segments={12}
       />
       <Cloud
         position={[32, 54, -48]}
         opacity={0.24}
         speed={0.06}
-        width={34}
-        depth={10}
+        bounds={[34, 10, 10]}
         segments={14}
       />
       <ContactShadows position={[0, -0.06, 0]} opacity={0.4} scale={70} blur={2.5} />
