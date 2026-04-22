@@ -1,4 +1,4 @@
-import { useResponsive } from "@arcade-cabinet/shared";
+import { GameViewport, useResponsive } from "@arcade-cabinet/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -28,6 +28,8 @@ type GameState =
   | "levelComplete"
   | "gameOver"
   | "zenMode";
+
+const BALL_INDICATOR_KEYS = ["ball-1", "ball-2", "ball-3", "ball-4", "ball-5"] as const;
 
 export default function Game({ className }: { className?: string }) {
   const _viewport = useResponsive();
@@ -315,12 +317,10 @@ export default function Game({ className }: { className?: string }) {
   };
 
   return (
-    <div
+    <GameViewport
       ref={gardenRef}
-      className={cn(
-        "relative w-full h-[100svh] overflow-hidden bg-[#0c0a1a] touch-none select-none",
-        className
-      )}
+      className={cn("overflow-hidden bg-[#0c0a1a]", className)}
+      background="#0c0a1a"
       onClick={handleCanvasClick}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -340,7 +340,9 @@ export default function Game({ className }: { className?: string }) {
 
       <AnimatePresence>
         {gameState === "playing" &&
-          voidZones.map((zone, index) => <VoidZone key={`void-${index}`} zone={zone} />)}
+          voidZones.map((zone) => (
+            <VoidZone key={`void-${zone.x.toFixed(2)}-${zone.y.toFixed(2)}`} zone={zone} />
+          ))}
       </AnimatePresence>
 
       {Array.from(streams.values()).map((stream) => {
@@ -362,7 +364,7 @@ export default function Game({ className }: { className?: string }) {
       })}
 
       {isDragging && dragStart && dragEnd && selectedStarId && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-15">
+        <svg aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none z-15">
           <line
             x1={`${dragStart.x}%`}
             y1={`${dragStart.y}%`}
@@ -462,9 +464,9 @@ export default function Game({ className }: { className?: string }) {
           </motion.div>
 
           <div className="absolute top-4 right-20 flex gap-1 pointer-events-none z-50">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {BALL_INDICATOR_KEYS.map((key, i) => (
               <div
-                key={i}
+                key={key}
                 className={cn(
                   "w-3 h-3 rounded-full transition-all duration-300",
                   i < ballsRemaining
@@ -649,6 +651,6 @@ export default function Game({ className }: { className?: string }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </GameViewport>
   );
 }

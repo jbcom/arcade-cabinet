@@ -1,4 +1,11 @@
-import { OverlayButton, PhaseTrait, StartScreen, useGameLoop } from "@arcade-cabinet/shared";
+import {
+  browserTestCanvasGlOptions,
+  GameViewport,
+  OverlayButton,
+  PhaseTrait,
+  StartScreen,
+  useGameLoop,
+} from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { useState } from "react";
@@ -9,7 +16,7 @@ import { skyEntity, skyWorld } from "./store/world";
 import { HUD } from "./ui/HUD";
 
 function SkyApp() {
-  const phase = (useTrait(skyEntity, PhaseTrait) as any)?.phase ?? "menu";
+  const phase = (useTrait(skyEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
   const [selectedTool, setSelectedTool] = useState<BuildingId | null>(null);
 
   useGameLoop(
@@ -46,7 +53,7 @@ function SkyApp() {
     skyEntity.set(PhaseTrait, { phase: "playing" });
   };
 
-  const handlePointerDown = (_e: any) => {
+  const handlePointerDown = () => {
     if (!selectedTool || phase !== "playing") return;
 
     // Simple grid placement logic for the prototype
@@ -67,16 +74,18 @@ function SkyApp() {
       };
 
       skyEntity.set(TowerTrait, { buildings: [...tower.buildings, newBuilding] });
-      const state = skyEntity.get(SkyTrait)!;
+      const state = skyEntity.get(SkyTrait);
+      if (!state) return;
       skyEntity.set(SkyTrait, { ...state, funds: state.funds - info.cost });
     }
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#000" }}>
+    <GameViewport background="#050816">
       <Canvas
         shadows
         camera={{ position: [0, 50, 100], fov: 45 }}
+        gl={browserTestCanvasGlOptions}
         onPointerDown={handlePointerDown}
       >
         {phase === "playing" && <World />}
@@ -91,7 +100,7 @@ function SkyApp() {
       )}
 
       {phase === "playing" && <HUD onSelectTool={setSelectedTool} selectedTool={selectedTool} />}
-    </div>
+    </GameViewport>
   );
 }
 

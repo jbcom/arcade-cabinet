@@ -1,4 +1,10 @@
-import { GameOverScreen, OverlayButton, StartScreen } from "@arcade-cabinet/shared";
+import {
+  browserTestCanvasGlOptions,
+  GameOverScreen,
+  GameViewport,
+  OverlayButton,
+  StartScreen,
+} from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -14,8 +20,8 @@ function VoxelApp() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#87ceeb" }}>
-      <Canvas shadows camera={{ fov: 75 }}>
+    <GameViewport background="#7dd3fc">
+      <Canvas shadows camera={{ fov: 75 }} gl={browserTestCanvasGlOptions}>
         {state.phase === "playing" && <World />}
       </Canvas>
 
@@ -54,7 +60,7 @@ function VoxelApp() {
           actions={<OverlayButton onClick={handleStart}>Respawn</OverlayButton>}
         />
       )}
-    </div>
+    </GameViewport>
   );
 }
 

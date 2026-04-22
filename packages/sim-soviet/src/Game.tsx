@@ -1,6 +1,7 @@
 import {
   createEventBus,
   GameOverScreen,
+  GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
@@ -113,17 +114,7 @@ function SimSovietApp() {
   );
 
   return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        minHeight: 720,
-        overflow: "hidden",
-        background: "#020617",
-      }}
-    >
+    <GameViewport ref={mountRef} background="#020617">
       <CityScene state={state} onCellClick={(x, y) => eventBus.emit("grid:click", { x, y })} />
       {phase.phase === "menu" ? (
         <StartScreen
@@ -146,7 +137,7 @@ function SimSovietApp() {
           actions={<OverlayButton onClick={() => window.location.reload()}>Restart</OverlayButton>}
         />
       ) : null}
-    </div>
+    </GameViewport>
   );
 }
 

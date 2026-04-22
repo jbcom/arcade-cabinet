@@ -1,3 +1,4 @@
+import { browserTestCanvasGlOptions } from "@arcade-cabinet/shared";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
@@ -96,7 +97,7 @@ function Obstacles({ obstacles, distance }: { obstacles: Obstacle[]; distance: n
 
 export function TrackScene({ state }: TrackSceneProps) {
   return (
-    <Canvas shadows>
+    <Canvas shadows gl={browserTestCanvasGlOptions}>
       <color attach="background" args={["#87ceeb"]} />
       <PerspectiveCamera makeDefault position={[0, 40, 60]} fov={75} />
       <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.1} />

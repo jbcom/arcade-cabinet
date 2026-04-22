@@ -113,13 +113,11 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
   const requestedChunks = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    console.log("Initializing Voxel TerrainWorker...");
     workerRef.current = new TerrainWorker();
 
     workerRef.current.onmessage = (e) => {
       const data = e.data as ChunkData;
       const key = `${data.cx},${data.cz}`;
-      console.log(`Received chunk data for ${key}:`, data.blocks.length, "blocks");
       setChunks((prev) => {
         const next = new Map(prev);
         next.set(key, data);
@@ -144,7 +142,6 @@ export function TerrainManager({ playerPos }: { playerPos: THREE.Vector3 }) {
         const key = `${cx},${cz}`;
         currentVisibleKeys.add(key);
         if (!requestedChunks.current.has(key)) {
-          console.log(`Requesting chunk ${key}...`);
           requestedChunks.current.add(key);
           workerRef.current.postMessage({ cx, cz, config: CONFIG });
         }

@@ -1,4 +1,10 @@
-import { GameOverScreen, OverlayButton, StartScreen } from "@arcade-cabinet/shared";
+import {
+  browserTestCanvasGlOptions,
+  GameOverScreen,
+  GameViewport,
+  OverlayButton,
+  StartScreen,
+} from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -25,8 +31,8 @@ function SNWApp() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#020205" }}>
-      <Canvas shadows camera={{ fov: 55 }}>
+    <GameViewport background="#020205">
+      <Canvas shadows camera={{ position: [0, 34, 18], fov: 55 }} gl={browserTestCanvasGlOptions}>
         {state.phase === "playing" && <World />}
       </Canvas>
 
@@ -78,7 +84,7 @@ function SNWApp() {
           actions={<OverlayButton onClick={handleStart}>Retry</OverlayButton>}
         />
       )}
-    </div>
+    </GameViewport>
   );
 }
 

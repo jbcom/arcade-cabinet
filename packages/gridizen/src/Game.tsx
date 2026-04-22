@@ -1,5 +1,6 @@
 import {
   GameOverScreen,
+  GameViewport,
   OverlayButton,
   PhaseTrait,
   StartScreen,
@@ -83,17 +84,9 @@ function GridizenApp() {
   }, [readState, writeState]);
 
   return (
-    <div
+    <GameViewport
       style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        minHeight: 720,
-        overflow: "hidden",
         background: "#1e293b",
-        userSelect: "none",
-        touchAction: "none",
-        fontFamily: "sans-serif",
       }}
     >
       <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
@@ -146,7 +139,7 @@ function GridizenApp() {
           }
         />
       ) : null}
-    </div>
+    </GameViewport>
   );
 }
 

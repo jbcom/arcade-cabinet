@@ -1,6 +1,7 @@
 import {
   createEventBus,
   GameOverScreen,
+  GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
@@ -113,17 +114,7 @@ function OtterlyApp() {
   );
 
   return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100svh",
-        minHeight: 720,
-        overflow: "hidden",
-        background: "#082f49",
-      }}
-    >
+    <GameViewport ref={mountRef} background="#082f49">
       <OtterScene state={state} />
       {phase.phase === "menu" ? (
         <StartScreen
@@ -160,7 +151,7 @@ function OtterlyApp() {
           actions={<OverlayButton onClick={() => window.location.reload()}>Retry</OverlayButton>}
         />
       ) : null}
-    </div>
+    </GameViewport>
   );
 }
 

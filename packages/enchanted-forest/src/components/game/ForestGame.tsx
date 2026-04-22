@@ -1,4 +1,4 @@
-import { useResponsive } from "@arcade-cabinet/shared";
+import { GameViewport, useResponsive } from "@arcade-cabinet/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { forestAudio } from "../../lib/forestAudio";
 import type { RunePattern } from "../../lib/runePatterns";
@@ -12,9 +12,9 @@ import { ToneDrawer } from "./ToneDrawer";
 
 const MAX_WAVES = 5;
 const TREE_POSITIONS = [
-  { x: 30, y: 70 },
-  { x: 50, y: 75 },
-  { x: 70, y: 70 },
+  { id: "left-grove", x: 30, y: 70 },
+  { id: "heart-tree", x: 50, y: 75 },
+  { id: "right-grove", x: 70, y: 70 },
 ];
 
 export function ForestGame() {
@@ -109,14 +109,14 @@ export function ForestGame() {
   }, [shadows, trees, wave, gameState, spawnWave]);
 
   return (
-    <div className="relative w-full h-[100svh] overflow-hidden bg-emerald-950">
+    <GameViewport className="bg-emerald-950" background="#064e3b">
       <ForestGradientBackground />
       <NoiseBackground />
       <FireflyParticles count={40} />
 
       {trees.map((tree, i) => (
         <SacredTree
-          key={i}
+          key={TREE_POSITIONS[i].id}
           id={i}
           {...tree}
           position={TREE_POSITIONS[i]}
@@ -150,6 +150,6 @@ export function ForestGame() {
         onRestart={() => window.location.reload()}
         lastRune={lastRune}
       />
-    </div>
+    </GameViewport>
   );
 }

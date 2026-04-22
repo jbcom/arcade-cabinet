@@ -1,4 +1,46 @@
-import type { CSSProperties, PropsWithChildren, ReactNode } from "react";
+import {
+  type CSSProperties,
+  forwardRef,
+  type HTMLAttributes,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
+
+interface GameViewportProps extends PropsWithChildren, HTMLAttributes<HTMLDivElement> {
+  background?: string;
+  testId?: string;
+}
+
+export const GameViewport = forwardRef<HTMLDivElement, GameViewportProps>(function GameViewport(
+  { background = "#020617", className, style, testId = "game-viewport", children, ...props },
+  ref
+) {
+  return (
+    <div
+      {...props}
+      ref={ref}
+      className={className}
+      data-testid={testId}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
+        background,
+        color: "#f8fafc",
+        userSelect: "none",
+        touchAction: "none",
+        isolation: "isolate",
+        fontFamily:
+          "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+});
 
 const overlayStyle: CSSProperties = {
   position: "absolute",

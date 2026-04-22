@@ -1,4 +1,4 @@
-import { PhaseTrait } from "@arcade-cabinet/shared";
+import { browserTestCanvasGlOptions, GameViewport, PhaseTrait } from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -9,7 +9,6 @@ import { HUD } from "./ui/HUD";
 
 function PrimordialApp() {
   const state = useTrait(primordialEntity, PrimordialTrait);
-  const _phase = (useTrait(primordialEntity, PhaseTrait) as any)?.phase ?? "menu";
 
   const handleStart = () => {
     primordialEntity.set(PhaseTrait, { phase: "playing" });
@@ -25,8 +24,8 @@ function PrimordialApp() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#020608" }}>
-      <Canvas>{state.phase === "playing" && <World />}</Canvas>
+    <GameViewport background="#020608">
+      <Canvas gl={browserTestCanvasGlOptions}>{state.phase === "playing" && <World />}</Canvas>
 
       {state.phase === "menu" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020608]/90 backdrop-blur-md z-20 text-white">
@@ -53,6 +52,7 @@ function PrimordialApp() {
             <br />
           </div>
           <button
+            type="button"
             onClick={handleStart}
             className="px-12 py-4 text-xl font-bold uppercase tracking-[3px] text-[#00eeff] bg-[#00eeff]/10 border-2 border-[#00eeff] rounded hover:bg-[#00eeff] hover:text-black transition-all duration-200"
             style={{
@@ -94,6 +94,7 @@ function PrimordialApp() {
           </div>
 
           <button
+            type="button"
             onClick={handleStart}
             className="px-12 py-4 text-xl font-bold uppercase tracking-[3px] text-[#ff3333] bg-[#ff3333]/10 border-2 border-[#ff3333] rounded hover:bg-[#ff3333] hover:text-black transition-all duration-200"
             style={{
@@ -104,7 +105,7 @@ function PrimordialApp() {
           </button>
         </div>
       )}
-    </div>
+    </GameViewport>
   );
 }
 

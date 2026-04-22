@@ -1,3 +1,4 @@
+import { browserTestCanvasGlOptions } from "@arcade-cabinet/shared";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import type { ReactElement } from "react";
@@ -137,6 +138,7 @@ export function EdgeScene({ state, isPlaying }: EdgeSceneProps) {
       camera={{ position: [18, 16, 18], fov: 45 }}
       style={{ width: "100%", height: "100%" }}
       data-testid="entropy-edge-canvas"
+      gl={browserTestCanvasGlOptions}
     >
       <color attach="background" args={["#060d1a"]} />
       <fog attach="fog" args={["#060d1a", 30, 80]} />

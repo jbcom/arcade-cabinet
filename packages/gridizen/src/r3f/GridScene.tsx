@@ -1,3 +1,4 @@
+import { browserTestCanvasGlOptions } from "@arcade-cabinet/shared";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
@@ -217,8 +218,6 @@ interface InteractionPlaneProps {
 
 function InteractionPlane({ onInteraction }: InteractionPlaneProps) {
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: three.js mesh
-    // biome-ignore lint/a11y/useKeyWithClickEvents: three.js mesh
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
       position={[GRID_SIZE / 2, 0.5, GRID_SIZE / 2]}
@@ -255,6 +254,7 @@ export function GridScene({ state, onInteraction }: GridSceneProps) {
       camera={{ position: [GRID_SIZE / 2, 40, GRID_SIZE / 2 + 30], fov: 40 }}
       style={{ width: "100%", height: "100%" }}
       data-testid="gridizen-canvas"
+      gl={browserTestCanvasGlOptions}
     >
       <Lighting time={state.time} />
       <WorldMeshes grid={state.grid} heatmap={state.heatmap} time={state.time} />

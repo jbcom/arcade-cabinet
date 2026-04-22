@@ -1,3 +1,4 @@
+import { browserTestCanvasGlOptions } from "@arcade-cabinet/shared";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { GOAL, WATER_ZONE } from "../engine/simulation";
@@ -118,6 +119,7 @@ export function OtterScene({ state }: OtterSceneProps) {
       camera={{ position: [0, 8.5, 7], fov: 48 }}
       style={{ width: "100%", height: "100%" }}
       data-testid="otterly-chaotic-canvas"
+      gl={browserTestCanvasGlOptions}
     >
       <color attach="background" args={["#082f49"]} />
       <ambientLight intensity={0.75} />

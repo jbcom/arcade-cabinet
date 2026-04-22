@@ -94,7 +94,7 @@ export function Player({ onPositionChange }: { onPositionChange: (pos: THREE.Vec
       .subVectors(frontVector, sideVector)
       .normalize()
       .multiplyScalar(speed)
-      .applyEuler(camera.quaternion);
+      .applyQuaternion(camera.quaternion);
 
     const currentVel = rbRef.current.linvel();
     rbRef.current.setLinvel({ x: direction.x, y: currentVel.y, z: direction.z }, true);

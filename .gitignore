@@ -154,6 +154,7 @@ coverage/
 .vitest-attachments/
 **/__screenshots__/
 packages/*/src/test-screenshots/
+test-screenshots/
 
 # Browser test artifacts
 playwright-report/

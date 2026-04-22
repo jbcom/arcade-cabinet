@@ -1,4 +1,10 @@
-import { GameOverScreen, OverlayButton, PhaseTrait } from "@arcade-cabinet/shared";
+import {
+  browserTestCanvasGlOptions,
+  GameOverScreen,
+  GameViewport,
+  OverlayButton,
+  PhaseTrait,
+} from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -8,7 +14,8 @@ import { HUD } from "./ui/HUD";
 
 function TitanApp() {
   const state = useTrait(titanEntity, TitanTrait);
-  const phase = (useTrait(titanEntity, PhaseTrait) as any)?.phase ?? "menu";
+  const phase =
+    (useTrait(titanEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
 
   const handleStart = () => {
     titanEntity.set(PhaseTrait, { phase: "playing" });
@@ -24,8 +31,8 @@ function TitanApp() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#020617" }}>
-      <Canvas shadows camera={{ fov: 60 }}>
+    <GameViewport background="#020617">
+      <Canvas shadows camera={{ fov: 60 }} gl={browserTestCanvasGlOptions}>
         {phase === "playing" && <World />}
       </Canvas>
 
@@ -54,6 +61,7 @@ function TitanApp() {
             constructs. Accumulate scrap for hardware iterations.
           </div>
           <button
+            type="button"
             onClick={handleStart}
             className="px-12 py-4 text-2xl font-bold uppercase tracking-[5px] bg-[#00ffcc]/10 border-2 border-[#00ffcc] hover:bg-[#00ffcc] hover:text-black transition-all duration-300"
             style={{ boxShadow: "0 0 20px rgba(0,255,204,0.2)" }}
@@ -72,7 +80,7 @@ function TitanApp() {
           actions={<OverlayButton onClick={handleStart}>Reboot OS</OverlayButton>}
         />
       )}
-    </div>
+    </GameViewport>
   );
 }
 

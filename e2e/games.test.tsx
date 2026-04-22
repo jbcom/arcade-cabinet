@@ -16,12 +16,15 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, describe, test } from "vitest";
 import {
   type BrowserGameStartFlow,
+  type BrowserGameViewport,
+  captureBrowserGameScreenshot,
   verifyBrowserGameStartFlow,
 } from "../src/test/browserGameHarness";
 
-const gameCases: (BrowserGameStartFlow & { name: string })[] = [
+const gameCases: (BrowserGameStartFlow & { name: string; slug: string })[] = [
   {
     name: "Bioluminescent Sea",
+    slug: "bioluminescent-sea",
     Component: BioluminescentSea,
     title: "COLLECTOR",
     startFlow: ["Start Descent"],
@@ -30,6 +33,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Cosmic Gardener",
+    slug: "cosmic-gardener",
     Component: CosmicGardener,
     title: "Cosmic Gardener",
     startFlow: ["Begin the Journey", "Play Ball"],
@@ -37,6 +41,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Enchanted Forest",
+    slug: "enchanted-forest",
     Component: EnchantedForest,
     title: "START",
     startFlow: ["START"],
@@ -44,6 +49,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Entropy Edge",
+    slug: "entropy-edge",
     Component: EntropyEdge,
     title: "Entropy's Edge",
     startFlow: ["Initialize Link"],
@@ -52,6 +58,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Gridizen",
+    slug: "gridizen",
     Component: Gridizen,
     title: "Gridizen",
     startFlow: ["Found a Settlement"],
@@ -60,6 +67,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Mega Track",
+    slug: "mega-track",
     Component: MegaTrack,
     title: "Mega Track",
     startFlow: ["Start Race"],
@@ -68,6 +76,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Otterly Chaotic",
+    slug: "otterly-chaotic",
     Component: OtterlyChaotic,
     title: "Otterly Chaotic",
     startFlow: ["Start Sprint"],
@@ -76,6 +85,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Primordial Ascent",
+    slug: "primordial-ascent",
     Component: PrimordialAscent,
     title: "PRIMORDIAL ASCENT",
     startFlow: ["Initiate Sequence"],
@@ -84,6 +94,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Protocol SNW",
+    slug: "protocol-snw",
     Component: ProtocolSnw,
     title: "PROTOCOL: SILENT NIGHT",
     startFlow: ["Engage"],
@@ -92,6 +103,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Reach for the Sky",
+    slug: "reach-for-the-sky",
     Component: ReachForTheSky,
     title: "REACH FOR THE SKY",
     startFlow: ["Break Ground"],
@@ -100,6 +112,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Realmwalker",
+    slug: "realmwalker",
     Component: Realmwalker,
     title: "REALMWALKER",
     startFlow: ["Enter the Shifting Realm"],
@@ -108,6 +121,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Sim Soviet",
+    slug: "sim-soviet",
     Component: SimSoviet,
     title: "Sim Soviet 3000",
     startFlow: ["Begin the Plan"],
@@ -116,6 +130,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Titan Mech",
+    slug: "titan-mech",
     Component: TitanMech,
     title: "TITAN MECH OS",
     startFlow: ["Engage Chassis"],
@@ -124,6 +139,7 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
   {
     name: "Voxel Realms",
+    slug: "voxel-realms",
     Component: VoxelRealms,
     title: "Voxel Realms",
     startFlow: ["Enter Realm"],
@@ -132,12 +148,37 @@ const gameCases: (BrowserGameStartFlow & { name: string })[] = [
   },
 ];
 
+const screenshotViewports: BrowserGameViewport[] = [
+  { name: "desktop", width: 1280, height: 720 },
+  { name: "mobile", width: 390, height: 844 },
+];
+
 afterEach(() => {
-  cleanup();
+  cleanupBrowserRender();
 });
 
-describe("browser game e2e smoke flows", () => {
-  test.each(gameCases)("$name reaches gameplay through the public start flow", async (game) => {
-    await verifyBrowserGameStartFlow(game);
-  });
+describe("browser game e2e flows and visual captures", () => {
+  test.each(
+    gameCases
+  )("$name reaches gameplay and captures responsive screenshots", async (game) => {
+    const { host, rootElement } = await verifyBrowserGameStartFlow(game);
+
+    for (const viewport of screenshotViewports) {
+      await captureBrowserGameScreenshot(
+        host,
+        rootElement,
+        viewport,
+        `test-screenshots/games/${game.slug}-${viewport.name}.png`
+      );
+    }
+  }, 90_000);
 });
+
+function cleanupBrowserRender() {
+  for (const canvas of document.querySelectorAll("canvas")) {
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+  }
+
+  cleanup();
+}

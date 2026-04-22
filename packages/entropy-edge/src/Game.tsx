@@ -1,5 +1,6 @@
 import {
   GameOverScreen,
+  GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
@@ -112,17 +113,7 @@ function EntropyApp() {
   const isPlaying = phase === "playing";
 
   return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        minHeight: 720,
-        overflow: "hidden",
-        background: "#060d1a",
-      }}
-    >
+    <GameViewport ref={mountRef} background="#060d1a">
       <EdgeScene state={state} isPlaying={isPlaying} />
 
       {phase === "menu" ? (
@@ -179,7 +170,7 @@ function EntropyApp() {
           }
         />
       ) : null}
-    </div>
+    </GameViewport>
   );
 }
 

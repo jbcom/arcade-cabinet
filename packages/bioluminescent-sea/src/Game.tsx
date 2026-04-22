@@ -1,4 +1,4 @@
-import { useResponsive } from "@arcade-cabinet/shared";
+import { GameViewport } from "@arcade-cabinet/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameLoop } from "./hooks/useGameLoop";
@@ -73,8 +73,97 @@ const CREATURE_POINTS: Record<CreatureType, number> = {
   fish: 50,
 };
 
+interface SceneState {
+  creatures: Creature[];
+  particles: Particle[];
+  pirates: Pirate[];
+  player: Player;
+  predators: Predator[];
+}
+
+function drawCreature(ctx: CanvasRenderingContext2D, c: Creature) {
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  const glowSize = c.size * 1.5 * c.glowIntensity;
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+  glow.addColorStop(0, `${c.glowColor}60`);
+  glow.addColorStop(1, "transparent");
+  ctx.fillStyle = glow;
+  ctx.fillRect(-glowSize, -glowSize, glowSize * 2, glowSize * 2);
+  ctx.fillStyle = c.color;
+  ctx.beginPath();
+  ctx.arc(0, 0, c.size * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPredator(ctx: CanvasRenderingContext2D, p: Predator) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.fillStyle = "#1a1a2e";
+  ctx.beginPath();
+  ctx.arc(0, 0, p.size * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ff0000";
+  ctx.beginPath();
+  ctx.arc(p.size * 0.2, -p.size * 0.1, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPirate(ctx: CanvasRenderingContext2D, p: Pirate) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.angle);
+  ctx.fillStyle = "#2c3e50";
+  ctx.fillRect(-20, -10, 40, 20);
+  ctx.restore();
+}
+
+function drawPlayer(ctx: CanvasRenderingContext2D, p: Player) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.angle);
+  ctx.fillStyle = "#4ecdc4";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 30, 15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function renderScene(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  scene: SceneState
+) {
+  ctx.clearRect(0, 0, width, height);
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, "#0c1929");
+  gradient.addColorStop(1, "#030810");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  scene.particles.forEach((particle) => {
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(180, 220, 255, ${particle.opacity})`;
+    ctx.fill();
+  });
+
+  scene.creatures.forEach((creature) => {
+    drawCreature(ctx, creature);
+  });
+  scene.predators.forEach((predator) => {
+    drawPredator(ctx, predator);
+  });
+  scene.pirates.forEach((pirate) => {
+    drawPirate(ctx, pirate);
+  });
+  drawPlayer(ctx, scene.player);
+}
+
 function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
-  const _viewport = useResponsive();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
@@ -102,11 +191,19 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
 
   useEffect(() => {
     const updateDimensions = () => {
-      setDimensions({ width: window.innerWidth, height: window.innerHeight });
+      const rect = containerRef.current?.getBoundingClientRect();
+      setDimensions({
+        width: Math.max(320, Math.round(rect?.width ?? window.innerWidth)),
+        height: Math.max(320, Math.round(rect?.height ?? window.innerHeight)),
+      });
     };
+
     updateDimensions();
-    window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+
+    const observer = new ResizeObserver(updateDimensions);
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -325,87 +422,16 @@ function DeepSeaGame({ onGameOver }: { onGameOver: (score: number) => void }) {
         }
       }
 
-      renderScene(ctx, width, height, totalTime);
+      renderScene(ctx, width, height, {
+        creatures: creaturesRef.current,
+        particles: particlesRef.current,
+        pirates: piratesRef.current,
+        player: playerRef.current,
+        predators: predatorsRef.current,
+      });
     },
     [dimensions, input, timeLeft, multiplier, isGameOver, onGameOver]
   );
-
-  function renderScene(ctx: CanvasRenderingContext2D, width: number, height: number, time: number) {
-    ctx.clearRect(0, 0, width, height);
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#0c1929");
-    gradient.addColorStop(1, "#030810");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    particlesRef.current.forEach((p) => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(180, 220, 255, ${p.opacity})`;
-      ctx.fill();
-    });
-
-    creaturesRef.current.forEach((c) => {
-      drawCreature(ctx, c, time);
-    });
-    predatorsRef.current.forEach((p) => {
-      drawPredator(ctx, p, time);
-    });
-    piratesRef.current.forEach((p) => {
-      drawPirate(ctx, p, time);
-    });
-    drawPlayer(ctx, playerRef.current, time);
-  }
-
-  const drawCreature = (ctx: CanvasRenderingContext2D, c: Creature, _time: number) => {
-    ctx.save();
-    ctx.translate(c.x, c.y);
-    const glowSize = c.size * 1.5 * c.glowIntensity;
-    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
-    glow.addColorStop(0, `${c.glowColor}60`);
-    glow.addColorStop(1, "transparent");
-    ctx.fillStyle = glow;
-    ctx.fillRect(-glowSize, -glowSize, glowSize * 2, glowSize * 2);
-    ctx.fillStyle = c.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, c.size * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
-
-  const drawPredator = (ctx: CanvasRenderingContext2D, p: Predator, _time: number) => {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.fillStyle = "#1a1a2e";
-    ctx.beginPath();
-    ctx.arc(0, 0, p.size * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ff0000";
-    ctx.beginPath();
-    ctx.arc(p.size * 0.2, -p.size * 0.1, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
-
-  const drawPirate = (ctx: CanvasRenderingContext2D, p: Pirate, _time: number) => {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.angle);
-    ctx.fillStyle = "#2c3e50";
-    ctx.fillRect(-20, -10, 40, 20);
-    ctx.restore();
-  };
-
-  const drawPlayer = (ctx: CanvasRenderingContext2D, p: Player, _time: number) => {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.angle);
-    ctx.fillStyle = "#4ecdc4";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 30, 15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
 
   useGameLoop(gameLoop, !isGameOver);
 
@@ -438,7 +464,7 @@ export default function Game() {
   const [finalScore, setFinalScore] = useState(0);
 
   return (
-    <div className="w-full h-[100svh] relative bg-[#050d15]">
+    <GameViewport background="#050d15">
       <AnimatePresence mode="wait">
         {gameState === "landing" && (
           <motion.div key="landing" className="absolute inset-0" exit={{ opacity: 0 }}>
@@ -476,6 +502,6 @@ export default function Game() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </GameViewport>
   );
 }

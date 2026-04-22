@@ -1,5 +1,6 @@
 import {
   GameOverScreen,
+  GameViewport,
   OverlayButton,
   PhaseTrait,
   ScoreTrait,
@@ -79,17 +80,7 @@ function MegaTrackApp() {
   };
 
   return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        minHeight: 720,
-        overflow: "hidden",
-        background: "#082f49",
-      }}
-    >
+    <GameViewport ref={mountRef} background="#082f49">
       <TrackScene state={state} />
 
       {phase.phase === "menu" ? (
@@ -121,7 +112,7 @@ function MegaTrackApp() {
           }
         />
       ) : null}
-    </div>
+    </GameViewport>
   );
 }
 

@@ -1,4 +1,10 @@
-import { GameOverScreen, OverlayButton, PhaseTrait } from "@arcade-cabinet/shared";
+import {
+  browserTestCanvasGlOptions,
+  GameOverScreen,
+  GameViewport,
+  OverlayButton,
+  PhaseTrait,
+} from "@arcade-cabinet/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -8,7 +14,8 @@ import { HUD } from "./ui/HUD";
 
 function RealmApp() {
   const state = useTrait(realmEntity, RealmTrait);
-  const phase = (useTrait(realmEntity, PhaseTrait) as any)?.phase ?? "menu";
+  const phase =
+    (useTrait(realmEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
 
   const handleStart = () => {
     realmEntity.set(PhaseTrait, { phase: "playing" });
@@ -24,8 +31,8 @@ function RealmApp() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100svh", position: "relative", background: "#050505" }}>
-      <Canvas shadows camera={{ fov: 45 }}>
+    <GameViewport background="#050505">
+      <Canvas shadows camera={{ fov: 45 }} gl={browserTestCanvasGlOptions}>
         {phase === "playing" && <World />}
       </Canvas>
 
@@ -51,6 +58,7 @@ function RealmApp() {
             </div>
           </div>
           <button
+            type="button"
             onClick={handleStart}
             className="group relative px-16 py-5 text-2xl font-bold uppercase tracking-[6px] overflow-hidden rounded-lg transition-all"
           >
@@ -69,7 +77,7 @@ function RealmApp() {
           actions={<OverlayButton onClick={handleStart}>Walk Again</OverlayButton>}
         />
       )}
-    </div>
+    </GameViewport>
   );
 }
 

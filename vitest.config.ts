@@ -33,7 +33,11 @@ export default defineConfig({
       headless: true,
     },
     setupFiles: "./src/test/setup.ts",
-    include: ["packages/*/src/**/*.test.{ts,tsx}", "e2e/**/*.test.{ts,tsx}"],
+    include: [
+      "packages/*/src/**/*.test.{ts,tsx}",
+      "apps/docs/src/**/*.test.{ts,tsx}",
+      "e2e/**/*.test.{ts,tsx}",
+    ],
   },
   resolve: {
     alias: {
@@ -69,6 +73,7 @@ export default defineConfig({
       "koota",
       "@react-three/rapier",
       "framer-motion",
+      "simplex-noise",
       "@testing-library/jest-dom/vitest",
     ],
   },

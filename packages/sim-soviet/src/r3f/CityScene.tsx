@@ -1,3 +1,4 @@
+import { browserTestCanvasGlOptions } from "@arcade-cabinet/shared";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { BUILDINGS } from "../engine/BuildingTypes";
@@ -24,8 +25,6 @@ function CityCellMesh({
   const buildingInfo = building ? BUILDINGS[building] : null;
   return (
     <group position={[x - 4.5, elevation / 2, y - 4.5]}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: three.js meshes are not keyboard-focusable DOM nodes. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: three.js mesh — not a DOM element. */}
       <mesh receiveShadow castShadow onClick={onClick}>
         <boxGeometry args={[0.92, 0.08 + elevation, 0.92]} />
         <meshStandardMaterial color={building ? "#1e293b" : "#334155"} />
@@ -47,6 +46,7 @@ export function CityScene({ state, onCellClick }: CitySceneProps) {
       camera={{ position: [8, 11, 8], fov: 45 }}
       style={{ width: "100%", height: "100%" }}
       data-testid="sim-soviet-canvas"
+      gl={browserTestCanvasGlOptions}
     >
       <color attach="background" args={["#020617"]} />
       <ambientLight intensity={0.6} />

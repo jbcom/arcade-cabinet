@@ -6,7 +6,7 @@ import { SNWTrait } from "../store/traits";
 import { snwEntity } from "../store/world";
 
 export function Player() {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const rbRef = useRef<RapierRigidBody>(null);
   const position = useRef(new THREE.Vector3());
   const pointer = useRef(new THREE.Vector2());
@@ -94,8 +94,14 @@ export function Player() {
 
     if (movement.current.dash) movement.current.dash = false;
 
-    // Camera follow (Top Down)
-    camera.position.lerp(new THREE.Vector3(position.current.x, 40, position.current.z + 20), 0.1);
+    const isPortrait = size.height > size.width;
+    const cameraHeight = isPortrait ? 30 : 40;
+    const cameraOffset = isPortrait ? 13 : 20;
+
+    camera.position.lerp(
+      new THREE.Vector3(position.current.x, cameraHeight, position.current.z + cameraOffset),
+      0.16
+    );
     camera.lookAt(position.current);
 
     // Mesh rotation towards mouse

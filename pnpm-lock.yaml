@@ -83,6 +83,9 @@ importers:
       react-dom:
         specifier: ^19.2.5
         version: 19.2.5(react@19.2.5)
+      simplex-noise:
+        specifier: ^4.0.3
+        version: 4.0.3
       tailwindcss:
         specifier: ^4.2.4
         version: 4.2.4
@@ -196,9 +199,15 @@ importers:
       '@arcade-cabinet/enchanted-forest':
         specifier: workspace:*
         version: link:../../packages/enchanted-forest
+      '@arcade-cabinet/entropy-edge':
+        specifier: workspace:*
+        version: link:../../packages/entropy-edge
       '@arcade-cabinet/gridizen':
         specifier: workspace:*
         version: link:../../packages/gridizen
+      '@arcade-cabinet/mega-track':
+        specifier: workspace:*
+        version: link:../../packages/mega-track
       '@arcade-cabinet/otterly-chaotic':
         specifier: workspace:*
         version: link:../../packages/otterly-chaotic
@@ -275,6 +284,178 @@ importers:
       '@arcade-cabinet/enchanted-forest':
         specifier: workspace:*
         version: link:../../packages/enchanted-forest
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.6.2
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: ^7.0.1
+        version: 7.6.2
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.2.4(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.7.0
+        version: 4.7.0(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.2.4
+        version: 4.2.4
+      vite:
+        specifier: ^6.4.2
+        version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
+
+  apps/entropy-edge:
+    dependencies:
+      '@arcade-cabinet/entropy-edge':
+        specifier: workspace:*
+        version: link:../../packages/entropy-edge
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.6.2
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: ^7.0.1
+        version: 7.6.2
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.2.4(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.7.0
+        version: 4.7.0(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.2.4
+        version: 4.2.4
+      vite:
+        specifier: ^6.4.2
+        version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
+
+  apps/gridizen:
+    dependencies:
+      '@arcade-cabinet/gridizen':
+        specifier: workspace:*
+        version: link:../../packages/gridizen
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.6.2
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: ^7.0.1
+        version: 7.6.2
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.2.4(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.7.0
+        version: 4.7.0(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.2.4
+        version: 4.2.4
+      vite:
+        specifier: ^6.4.2
+        version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
+
+  apps/mega-track:
+    dependencies:
+      '@arcade-cabinet/mega-track':
+        specifier: workspace:*
+        version: link:../../packages/mega-track
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.6.2
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: ^7.0.1
+        version: 7.6.2
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.2.4(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.7.0
+        version: 4.7.0(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.2.4
+        version: 4.2.4
+      vite:
+        specifier: ^6.4.2
+        version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
+
+  apps/otterly-chaotic:
+    dependencies:
+      '@arcade-cabinet/otterly-chaotic':
+        specifier: workspace:*
+        version: link:../../packages/otterly-chaotic
       '@arcade-cabinet/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -450,6 +631,49 @@ importers:
       '@arcade-cabinet/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.6.2(@capacitor/core@7.6.2)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.6.2
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: ^7.0.1
+        version: 7.6.2
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.2.4(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.7.0
+        version: 4.7.0(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.2.4
+        version: 4.2.4
+      vite:
+        specifier: ^6.4.2
+        version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(yaml@2.8.3)
+
+  apps/sim-soviet:
+    dependencies:
+      '@arcade-cabinet/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@arcade-cabinet/sim-soviet':
+        specifier: workspace:*
+        version: link:../../packages/sim-soviet
       '@capacitor/android':
         specifier: ^7.0.1
         version: 7.6.2(@capacitor/core@7.6.2)
