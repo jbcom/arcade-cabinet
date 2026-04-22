@@ -1,0 +1,29 @@
+{
+  "name": "@arcade-cabinet/otterly-chaotic",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@arcade-cabinet/shared": "workspace:*",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "koota": "^0.6.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/three": "^0.176.0",
+    "react": "^19.0.0",
+    "three": "^0.176.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "three": "^0.176.0"
+  }
+}
