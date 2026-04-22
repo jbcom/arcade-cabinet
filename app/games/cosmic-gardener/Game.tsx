@@ -1,9 +1,11 @@
 import {
   CartridgeStartScreen,
+  type GameSaveSlot,
   GameViewport,
   RuntimeResultRecorder,
   type SessionMode,
   useResponsive,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   findMatchedPointId,
@@ -52,7 +54,35 @@ type GameState =
   | "gameOver"
   | "zenMode";
 
+interface CosmicRunSnapshot {
+  ballsRemaining: number;
+  comboMultiplier: number;
+  completedConnections: string[];
+  completedPoints: string[];
+  constellationsCompleted: number;
+  gameState: GameState;
+  level: number;
+  score: number;
+  sessionMode: SessionMode;
+  starPointMatches: [string, string][];
+}
+
 const BALL_INDICATOR_KEYS = ["ball-1", "ball-2", "ball-3", "ball-4", "ball-5"] as const;
+
+function isCosmicSnapshot(snapshot: unknown): snapshot is CosmicRunSnapshot {
+  const value = snapshot as Partial<CosmicRunSnapshot> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.level === "number" &&
+      typeof value.score === "number" &&
+      typeof value.ballsRemaining === "number" &&
+      typeof value.comboMultiplier === "number" &&
+      Array.isArray(value.completedPoints) &&
+      Array.isArray(value.completedConnections) &&
+      Array.isArray(value.starPointMatches)
+  );
+}
 
 function CosmicTableDeck() {
   return (
@@ -406,7 +436,24 @@ export default function Game({ className }: { className?: string }) {
     [orbs.size, launchOrb]
   );
 
-  const startGame = (mode: SessionMode = sessionMode) => {
+  const startGame = (mode: SessionMode = sessionMode, saveSlot?: GameSaveSlot) => {
+    const snapshot = saveSlot?.snapshot;
+    if (isCosmicSnapshot(snapshot)) {
+      setSessionMode(mode);
+      resetGame();
+      loadLevel(snapshot.level);
+      setLevel(snapshot.level);
+      setConstellationsCompleted(snapshot.constellationsCompleted);
+      setCompletedPoints(new Set(snapshot.completedPoints));
+      setCompletedConnections(new Set(snapshot.completedConnections));
+      setStarPointMatches(new Map(snapshot.starPointMatches));
+      setScore(snapshot.score);
+      setBallsRemaining(snapshot.ballsRemaining);
+      setComboMultiplier(snapshot.comboMultiplier);
+      setGameState(snapshot.gameState === "tutorial" ? "tutorial" : "playing");
+      return;
+    }
+
     const tuning = getCosmicModeTuning(mode);
     setSessionMode(mode);
     resetGame();
@@ -420,6 +467,24 @@ export default function Game({ className }: { className?: string }) {
     setComboMultiplier(1);
     setGameState("tutorial");
   };
+
+  useRunSnapshotAutosave({
+    active: ["tutorial", "playing", "paused", "levelComplete"].includes(gameState),
+    progressSummary: `Level ${level} · ${score} score`,
+    slug: "cosmic-gardener",
+    snapshot: {
+      ballsRemaining,
+      comboMultiplier,
+      completedConnections: Array.from(completedConnections),
+      completedPoints: Array.from(completedPoints),
+      constellationsCompleted,
+      gameState,
+      level,
+      score,
+      sessionMode,
+      starPointMatches: Array.from(starPointMatches.entries()),
+    } satisfies CosmicRunSnapshot,
+  });
 
   const startPlaying = () => {
     loadLevel(1);

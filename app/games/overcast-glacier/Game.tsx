@@ -5,6 +5,7 @@ import {
   GameViewport,
   isCabinetRuntimePaused,
   OverlayButton,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   advanceOvercastState,
@@ -16,7 +17,7 @@ import type {
   OvercastEntity,
   OvercastState,
 } from "@logic/games/overcast-glacier/engine/types";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import {
   type Dispatch,
   type MutableRefObject,
@@ -36,14 +37,23 @@ export default function Game() {
   const [state, setState] = useState<OvercastState>(() => createInitialOvercastState("menu"));
   const controlsRef = useRef<Partial<OvercastControls>>({});
 
-  const start = (mode: SessionMode = state.sessionMode) => {
+  const start = (mode: SessionMode = state.sessionMode, saveSlot?: GameSaveSlot) => {
     controlsRef.current = {};
-    setState(createInitialOvercastState("playing", mode));
+    setState(resolveOvercastStartState(mode, saveSlot));
   };
 
   useKeyboardControls(controlsRef);
   useOvercastLoop(state.phase, controlsRef, setState);
   const summary = getOvercastRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `Segment ${summary.segment}/${summary.targetSegments} · ${Math.round(
+      state.warmth
+    )}% warmth`,
+    slug: "overcast-glacier",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#0f172a">
@@ -108,6 +118,33 @@ export default function Game() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveOvercastStartState(mode: SessionMode, saveSlot?: GameSaveSlot): OvercastState {
+  const snapshot = saveSlot?.snapshot;
+  if (isOvercastSnapshot(snapshot)) {
+    const restored = snapshot as OvercastState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialOvercastState("playing", mode);
+}
+
+function isOvercastSnapshot(snapshot: unknown): snapshot is OvercastState {
+  const value = snapshot as Partial<OvercastState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.timeMs === "number" &&
+      typeof value.warmth === "number" &&
+      typeof value.score === "number" &&
+      typeof value.segmentIndex === "number" &&
+      Array.isArray(value.entities)
   );
 }
 

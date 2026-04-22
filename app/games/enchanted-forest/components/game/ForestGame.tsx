@@ -1,4 +1,9 @@
-import { GameViewport, isCabinetRuntimePaused, RuntimeResultRecorder } from "@app/shared";
+import {
+  GameViewport,
+  isCabinetRuntimePaused,
+  RuntimeResultRecorder,
+  useRunSnapshotAutosave,
+} from "@app/shared";
 import {
   applyShadowHit,
   applySpellCast,
@@ -9,6 +14,7 @@ import {
   clearRuneFeedback,
   clearShield,
   createInitialForestState,
+  type ForestState,
   getForestModeTuning,
   getForestRunSummary,
   getForestTransition,
@@ -21,7 +27,7 @@ import {
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { forestAudio } from "@logic/games/enchanted-forest/lib/forestAudio";
 import type { RunePattern } from "@logic/games/enchanted-forest/lib/runePatterns";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CorruptionWave } from "./CorruptionWave";
 import { FireflyParticles } from "./FireflyParticles";
@@ -54,9 +60,16 @@ export function ForestGame() {
     [forestState.sessionMode]
   );
 
-  const startGame = async (mode: SessionMode) => {
+  const startGame = async (mode: SessionMode, saveSlot?: GameSaveSlot) => {
     await forestAudio.initialize();
     forestAudio.startAmbient();
+    const restored = resolveForestStartState(mode, saveSlot);
+    if (restored) {
+      shadowIdRef.current = getNextShadowId(restored);
+      setForestState(restored);
+      return;
+    }
+
     const wave = spawnCorruptionWave(1, 0, mode);
     shadowIdRef.current = wave.nextShadowId;
     forestAudio.playWaveStart(1);
@@ -140,6 +153,13 @@ export function ForestGame() {
 
   const runSummary = getForestRunSummary(forestState);
 
+  useRunSnapshotAutosave({
+    active: forestState.phase === "playing",
+    progressSummary: `Wave ${runSummary.wave}/${runSummary.totalWaves} · ${runSummary.healthyTrees} trees`,
+    slug: "enchanted-forest",
+    snapshot: forestState,
+  });
+
   return (
     <GameViewport
       className="bg-emerald-950"
@@ -217,6 +237,35 @@ export function ForestGame() {
       />
     </GameViewport>
   );
+}
+
+function resolveForestStartState(mode: SessionMode, saveSlot?: GameSaveSlot): ForestState | null {
+  const snapshot = saveSlot?.snapshot;
+  if (!isForestSnapshot(snapshot)) return null;
+
+  const restored = snapshot as ForestState;
+  return {
+    ...restored,
+    phase: "playing",
+    sessionMode: mode,
+  };
+}
+
+function isForestSnapshot(snapshot: unknown): snapshot is ForestState {
+  const value = snapshot as Partial<ForestState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.wave === "number" &&
+      typeof value.mana === "number" &&
+      Array.isArray(value.trees) &&
+      Array.isArray(value.shadows)
+  );
+}
+
+function getNextShadowId(state: ForestState) {
+  return state.shadows.reduce((next, shadow) => Math.max(next, shadow.id + 1), 0);
 }
 
 function isTreeTargeted(treeIndex: number, shadows: CorruptionShadow[]): boolean {

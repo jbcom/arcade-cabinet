@@ -4,6 +4,7 @@ import {
   GameViewport,
   isCabinetRuntimePaused,
   OverlayButton,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   advanceCognitiveState,
@@ -14,7 +15,7 @@ import type {
   CognitivePattern,
   CognitiveState,
 } from "@logic/games/cognitive-dissonance/engine/types";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -66,15 +67,22 @@ export default function Game() {
     };
   }, []);
 
-  const start = (mode: SessionMode) => {
+  const start = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
     heldPattern.current = null;
-    setState(createInitialCognitiveState(mode, "playing"));
+    setState(resolveCognitiveStartState(mode, saveSlot));
   };
 
   const restart = () => {
     setState(createInitialCognitiveState(state.sessionMode, "menu"));
   };
   const summary = getCognitiveRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `${summary.elapsedSeconds}s · ${Math.round(state.coherence)}% coherence`,
+    slug: "cognitive-dissonance",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#060712" data-browser-screenshot-mode="page">
@@ -148,6 +156,33 @@ export default function Game() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveCognitiveStartState(mode: SessionMode, saveSlot?: GameSaveSlot): CognitiveState {
+  const snapshot = saveSlot?.snapshot;
+  if (isCognitiveSnapshot(snapshot)) {
+    const restored = snapshot as CognitiveState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialCognitiveState(mode, "playing");
+}
+
+function isCognitiveSnapshot(snapshot: unknown): snapshot is CognitiveState {
+  const value = snapshot as Partial<CognitiveState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.coherence === "number" &&
+      typeof value.tension === "number" &&
+      typeof value.currentPattern === "string" &&
+      Array.isArray(value.patterns)
   );
 }
 

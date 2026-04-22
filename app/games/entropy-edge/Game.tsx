@@ -9,6 +9,7 @@ import {
   TimerTrait,
   useContainerSize,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialState,
@@ -24,6 +25,7 @@ import {
 import type { EntropyState, Vec2 } from "@logic/games/entropy-edge/engine/types";
 import { EntropyTrait } from "@logic/games/entropy-edge/store/traits";
 import { entropyEntity, entropyWorld } from "@logic/games/entropy-edge/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EdgeScene } from "./r3f/EdgeScene";
@@ -120,6 +122,13 @@ function EntropyApp() {
   const summary = getEntropyRunSummary(state);
   const runComplete = isRunComplete(state);
 
+  useRunSnapshotAutosave({
+    active: phase === "playing",
+    progressSummary: `Sector ${summary.sector}/${summary.sectorsRequired} · ${summary.score} score`,
+    slug: "entropy-edge",
+    snapshot: state,
+  });
+
   return (
     <GameViewport ref={mountRef} background="#060d1a" data-browser-screenshot-mode="page">
       <EdgeScene state={state} isPlaying={isPlaying} />
@@ -132,9 +141,16 @@ function EntropyApp() {
           gameSlug="entropy-edge"
           kicker="Resonance Cartridge"
           motif="entropy"
-          onStart={(mode) => {
-            writeState(startGame(readState(), mode));
+          onStart={(mode, saveSlot) => {
+            const next = resolveEntropyStartState(mode, saveSlot, readState());
+            writeState(next);
             entropyEntity.set(PhaseTrait, { phase: "playing" });
+            entropyEntity.set(ScoreTrait, { value: next.score, label: "SCORE" });
+            entropyEntity.set(TimerTrait, {
+              elapsedMs: next.elapsedMs,
+              remainingMs: next.timeMs,
+              label: "STABILITY",
+            });
           }}
           rules={[
             "Secure glowing anchors before stability runs out.",
@@ -217,6 +233,38 @@ function EntropyApp() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveEntropyStartState(
+  mode: SessionMode,
+  saveSlot: GameSaveSlot | undefined,
+  current: EntropyState
+): EntropyState {
+  const snapshot = saveSlot?.snapshot;
+  if (isEntropySnapshot(snapshot)) {
+    const restored = snapshot as EntropyState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return startGame(current, mode);
+}
+
+function isEntropySnapshot(snapshot: unknown): snapshot is EntropyState {
+  const value = snapshot as Partial<EntropyState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.level === "number" &&
+      typeof value.playerGridX === "number" &&
+      typeof value.playerGridZ === "number" &&
+      typeof value.timeMs === "number" &&
+      Array.isArray(value.fallingBlocks) &&
+      Array.isArray(value.blockedCells)
   );
 }
 

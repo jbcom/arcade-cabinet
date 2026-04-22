@@ -4,6 +4,7 @@ import {
   GameViewport,
   isCabinetRuntimePaused,
   OverlayButton,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   bankFarmScore,
@@ -17,7 +18,7 @@ import type {
   FarmStackAnimal,
   FarmState,
 } from "@logic/games/farm-follies/engine/types";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useState } from "react";
 
 const ANIMAL_EMOJI: Record<FarmAnimal, string> = {
@@ -57,14 +58,21 @@ export default function Game() {
     return () => cancelAnimationFrame(frame);
   }, [state.phase]);
 
-  const start = (mode: SessionMode) => {
-    setState(createInitialFarmState(mode, "playing"));
+  const start = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    setState(resolveFarmStartState(mode, saveSlot));
   };
 
   const restart = () => {
     setState(createInitialFarmState(state.sessionMode, "menu"));
   };
   const summary = getFarmRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `${state.dropCount} drops · ${state.score + state.bankedScore} score`,
+    slug: "farm-follies",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#16230f" data-browser-screenshot-mode="page">
@@ -202,6 +210,33 @@ export default function Game() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveFarmStartState(mode: SessionMode, saveSlot?: GameSaveSlot): FarmState {
+  const snapshot = saveSlot?.snapshot;
+  if (isFarmSnapshot(snapshot)) {
+    const restored = snapshot as FarmState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialFarmState(mode, "playing");
+}
+
+function isFarmSnapshot(snapshot: unknown): snapshot is FarmState {
+  const value = snapshot as Partial<FarmState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.score === "number" &&
+      typeof value.bankedScore === "number" &&
+      typeof value.nextAnimal === "string" &&
+      Array.isArray(value.stack)
   );
 }
 

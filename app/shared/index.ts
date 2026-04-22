@@ -4,6 +4,7 @@ export * from "./hooks/useContainerSize";
 export * from "./hooks/useDevice";
 export * from "./hooks/useGameLoop";
 export * from "./hooks/useResponsive";
+export * from "./hooks/useRunSnapshotAutosave";
 export * from "./ui/atoms";
 export * from "./ui/CabinetRuntime";
 export * from "./ui/Cartridge";

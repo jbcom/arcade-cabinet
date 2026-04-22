@@ -9,6 +9,7 @@ import {
   TimerTrait,
   useContainerSize,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialState,
@@ -20,7 +21,7 @@ import {
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 import { OtterlyTrait } from "@logic/games/otterly-chaotic/store/traits";
 import { otterlyEntity, otterlyWorld } from "@logic/games/otterly-chaotic/store/world";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OtterScene } from "./r3f/OtterScene";
@@ -95,15 +96,27 @@ function OtterlyApp() {
     otterlyEntity.set(OtterlyTrait, next as never);
   }, []);
   const startRun = useCallback(
-    (mode: SessionMode = state.sessionMode) => {
-      writeState(createInitialState(mode));
+    (mode: SessionMode = state.sessionMode, saveSlot?: GameSaveSlot) => {
+      const next = resolveOtterlyStartState(mode, saveSlot);
+      writeState(next);
       otterlyEntity.set(PhaseTrait, { phase: "playing" });
-      otterlyEntity.set(ScoreTrait, { value: 100, label: "SALAD" });
-      otterlyEntity.set(TimerTrait, { elapsedMs: 0, remainingMs: 0, label: "BARK" });
+      otterlyEntity.set(ScoreTrait, { value: Math.round(next.ballHealth), label: "SALAD" });
+      otterlyEntity.set(TimerTrait, {
+        elapsedMs: next.elapsedMs,
+        remainingMs: next.barkCooldownMs,
+        label: "BARK",
+      });
     },
     [state.sessionMode, writeState]
   );
   const summary = getOtterlyRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: phase.phase === "playing",
+    progressSummary: `${summary.rescuesCompleted}/${summary.targetRescues} rescues · ${summary.health}% salad`,
+    slug: "otterly-chaotic",
+    snapshot: state,
+  });
 
   useEffect(() => {
     const handleBark = () => setBarkQueued(true);
@@ -197,6 +210,35 @@ function OtterlyApp() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveOtterlyStartState(mode: SessionMode, saveSlot?: GameSaveSlot): OtterlyState {
+  const snapshot = saveSlot?.snapshot;
+  if (isOtterlySnapshot(snapshot)) {
+    const restored = snapshot as OtterlyState;
+    return {
+      ...restored,
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialState(mode);
+}
+
+function isOtterlySnapshot(snapshot: unknown): snapshot is OtterlyState {
+  const value = snapshot as Partial<OtterlyState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.ballHealth === "number" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.rescuesCompleted === "number" &&
+      Array.isArray(value.goats) &&
+      value.otter &&
+      typeof value.otter === "object" &&
+      value.ball &&
+      typeof value.ball === "object"
   );
 }
 

@@ -16,6 +16,7 @@ import {
   recordGameResult,
   type SerializableValue,
   type SessionMode,
+  updateActiveSaveSlot,
 } from "@logic/shared";
 import { useCallback, useEffect, useState } from "react";
 
@@ -40,6 +41,13 @@ export interface AbandonGameRunInput {
   stats?: Record<string, number | string | boolean>;
   milestones?: readonly string[];
   now?: Date;
+}
+
+export interface UpdateGameRunInput {
+  label?: string;
+  mode?: SessionMode;
+  progressSummary?: string;
+  snapshot?: SerializableValue;
 }
 
 export function readCabinetSettings(storage = getStorage()): GameSettings {
@@ -75,6 +83,19 @@ export function clearGameSaveSlot(slug: LaunchGameSlug, storage = getStorage()) 
   } catch {
     return;
   }
+}
+
+export function updateGameRun(
+  slug: LaunchGameSlug,
+  patch: UpdateGameRunInput,
+  storage = getStorage()
+): GameSaveSlot | undefined {
+  const slot = readGameSaveSlot(slug, storage);
+  if (!slot) return undefined;
+
+  const next = updateActiveSaveSlot(slot, patch);
+  writeGameSaveSlot(next, storage);
+  return next;
 }
 
 export function beginGameRun(
@@ -216,6 +237,16 @@ export function useCabinetRuntime(slug?: LaunchGameSlug) {
     setSaveSlotState(slot);
   }, []);
 
+  const updateRun = useCallback(
+    (patch: UpdateGameRunInput) => {
+      if (!slug) return undefined;
+      const slot = updateGameRun(slug, patch);
+      if (slot) setSaveSlotState(slot);
+      return slot;
+    },
+    [slug]
+  );
+
   const clearRun = useCallback(() => {
     if (!slug) return;
     clearGameSaveSlot(slug);
@@ -255,6 +286,7 @@ export function useCabinetRuntime(slug?: LaunchGameSlug) {
     setProgress,
     setSettings,
     settings,
+    updateRun,
   };
 }
 

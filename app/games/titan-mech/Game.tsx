@@ -5,6 +5,7 @@ import {
   GameViewport,
   OverlayButton,
   PhaseTrait,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialTitanState,
@@ -12,6 +13,7 @@ import {
 } from "@logic/games/titan-mech/engine/titanSimulation";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity, titanWorld } from "@logic/games/titan-mech/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -23,10 +25,18 @@ function TitanApp() {
     (useTrait(titanEntity, PhaseTrait) as { phase: string } | undefined)?.phase ?? "menu";
   const summary = getTitanRunSummary(state);
 
-  const handleStart = (mode: string) => {
+  const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const next = resolveTitanStartState(mode, saveSlot);
     titanEntity.set(PhaseTrait, { phase: "playing" });
-    titanEntity.set(TitanTrait, createInitialTitanState("playing", mode));
+    titanEntity.set(TitanTrait, next);
   };
+
+  useRunSnapshotAutosave({
+    active: phase === "playing",
+    progressSummary: `${summary.credits} credits · ${summary.hp} HP`,
+    slug: "titan-mech",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#0b0f14">
@@ -93,6 +103,38 @@ function TitanApp() {
         />
       )}
     </GameViewport>
+  );
+}
+
+function resolveTitanStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
+  const snapshot = saveSlot?.snapshot;
+  if (isTitanSnapshot(snapshot)) {
+    const restored = snapshot as ReturnType<typeof createInitialTitanState>;
+    return {
+      ...restored,
+      phase: "playing" as const,
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialTitanState("playing", mode);
+}
+
+function isTitanSnapshot(
+  snapshot: unknown
+): snapshot is ReturnType<typeof createInitialTitanState> {
+  const value = snapshot as Partial<ReturnType<typeof createInitialTitanState>> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.hp === "number" &&
+      typeof value.heat === "number" &&
+      typeof value.energy === "number" &&
+      typeof value.score === "number" &&
+      value.pose &&
+      typeof value.pose === "object" &&
+      value.extraction &&
+      typeof value.extraction === "object"
   );
 }
 

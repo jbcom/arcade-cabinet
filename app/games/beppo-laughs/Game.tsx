@@ -4,6 +4,7 @@ import {
   GameViewport,
   isCabinetRuntimePaused,
   OverlayButton,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   advanceBeppoTime,
@@ -15,7 +16,7 @@ import {
   moveBeppo,
 } from "@logic/games/beppo-laughs/engine/beppoSimulation";
 import type { BeppoDirection, BeppoState } from "@logic/games/beppo-laughs/engine/types";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useMemo, useState } from "react";
 
 const DIRECTION_LABELS: Record<BeppoDirection, string> = {
@@ -46,8 +47,8 @@ export default function Game() {
     return () => cancelAnimationFrame(frame);
   }, [state.phase]);
 
-  const start = (mode: SessionMode) => {
-    setState(createInitialBeppoState(mode, "playing"));
+  const start = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    setState(resolveBeppoStartState(mode, saveSlot));
   };
 
   const restart = () => {
@@ -57,6 +58,13 @@ export default function Game() {
   const room = getCurrentBeppoRoom(state);
   const moves = useMemo(() => getAvailableBeppoMoves(state), [state]);
   const summary = getBeppoRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `${room.label} · ${Math.round(state.composure)}% composure`,
+    slug: "beppo-laughs",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#130706" data-browser-screenshot-mode="page">
@@ -212,6 +220,33 @@ export default function Game() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveBeppoStartState(mode: SessionMode, saveSlot?: GameSaveSlot): BeppoState {
+  const snapshot = saveSlot?.snapshot;
+  if (isBeppoSnapshot(snapshot)) {
+    const restored = snapshot as BeppoState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialBeppoState(mode, "playing");
+}
+
+function isBeppoSnapshot(snapshot: unknown): snapshot is BeppoState {
+  const value = snapshot as Partial<BeppoState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.currentRoomId === "string" &&
+      Array.isArray(value.visitedRoomIds) &&
+      Array.isArray(value.inventory) &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.composure === "number"
   );
 }
 

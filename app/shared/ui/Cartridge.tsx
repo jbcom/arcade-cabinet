@@ -2,6 +2,7 @@ import {
   DEFAULT_DIFFICULTY_VARIANTS,
   DEFAULT_SESSION_MODE,
   type DifficultyVariant,
+  type GameSaveSlot,
   type LaunchGameSlug,
   type SessionMode,
 } from "@logic/shared";
@@ -163,12 +164,12 @@ export function CartridgeLabel({
 interface CartridgeStartScreenProps
   extends Omit<CartridgeLabelProps, "compact" | "showRules" | "style" | "className"> {
   startLabel: string;
-  onStart: (mode: SessionMode) => void;
+  onStart: (mode: SessionMode, saveSlot?: GameSaveSlot) => void;
   gameSlug?: LaunchGameSlug;
   defaultSessionMode?: SessionMode;
   difficultyVariants?: readonly DifficultyVariant[];
   loadLabel?: string;
-  onLoad?: () => void;
+  onLoad?: (saveSlot?: GameSaveSlot) => void;
   rulesLabel?: string;
   footer?: ReactNode;
 }
@@ -206,11 +207,11 @@ export function CartridgeStartScreen({
 
   const handleLoad = () => {
     if (onLoad) {
-      onLoad();
+      onLoad(saveSlot);
       return;
     }
 
-    onStart(saveSlot?.mode ?? sessionMode);
+    onStart(saveSlot?.mode ?? sessionMode, saveSlot);
   };
 
   return (

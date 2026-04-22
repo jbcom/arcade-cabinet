@@ -7,6 +7,7 @@ import {
   readCabinetSettings,
   readGameProgress,
   readGameSaveSlot,
+  updateGameRun,
   writeCabinetSettings,
 } from "./useCabinetRuntime";
 
@@ -86,6 +87,27 @@ describe("cabinet browser runtime storage", () => {
     });
     expect(progress.milestones).toEqual(["first-cup"]);
     expect(readGameSaveSlot("mega-track")).toBeUndefined();
+  });
+
+  test("updates the active save slot with resumable run details", () => {
+    beginGameRun("overcast-glacier", "standard", {
+      progressSummary: "Segment 1",
+    });
+
+    const slot = updateGameRun("overcast-glacier", {
+      progressSummary: "Segment 3 · 76% warmth",
+      snapshot: { segmentIndex: 2, warmth: 76 },
+    });
+
+    expect(slot).toMatchObject({
+      progressSummary: "Segment 3 · 76% warmth",
+      snapshot: { segmentIndex: 2, warmth: 76 },
+      status: "active",
+    });
+    expect(readGameSaveSlot("overcast-glacier")).toMatchObject({
+      progressSummary: "Segment 3 · 76% warmth",
+      snapshot: { segmentIndex: 2, warmth: 76 },
+    });
   });
 
   test("abandons an active run from the pause menu and records it as progress", () => {

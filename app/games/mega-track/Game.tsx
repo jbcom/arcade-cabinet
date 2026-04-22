@@ -7,6 +7,7 @@ import {
   ScoreTrait,
   TimerTrait,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialState,
@@ -17,7 +18,7 @@ import {
 import type { MegaTrackState } from "@logic/games/mega-track/engine/types";
 import { MegaTrackTrait } from "@logic/games/mega-track/store/traits";
 import { megaTrackEntity, megaTrackWorld } from "@logic/games/mega-track/store/world";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TrackScene } from "./r3f/TrackScene";
@@ -80,13 +81,26 @@ function MegaTrackApp() {
     [phase.phase, laneChange]
   );
 
-  const handleStart = (mode: SessionMode) => {
-    const next = { ...createInitialState(mode), isPlaying: true };
+  const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const next = resolveMegaTrackStartState(mode, saveSlot);
     writeState(next);
     megaTrackEntity.set(PhaseTrait, { phase: "playing" });
+    megaTrackEntity.set(ScoreTrait, { value: Math.floor(next.distance / 10), label: "METERS" });
+    megaTrackEntity.set(TimerTrait, {
+      elapsedMs: next.elapsedMs,
+      remainingMs: 0,
+      label: "SPEED",
+    });
   };
 
   const summary = getMegaTrackRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: phase.phase === "playing",
+    progressSummary: `Leg ${summary.cupLeg}/${summary.cupLegCount} · ${summary.integrity}% integrity`,
+    slug: "mega-track",
+    snapshot: state,
+  });
 
   const handleLaneControl = useCallback((direction: number) => {
     setLaneChange(direction);
@@ -155,6 +169,32 @@ function MegaTrackApp() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveMegaTrackStartState(mode: SessionMode, saveSlot?: GameSaveSlot): MegaTrackState {
+  const snapshot = saveSlot?.snapshot;
+  if (isMegaTrackSnapshot(snapshot)) {
+    const restored = snapshot as MegaTrackState;
+    return {
+      ...restored,
+      isPlaying: true,
+      sessionMode: mode,
+    };
+  }
+
+  return { ...createInitialState(mode), isPlaying: true };
+}
+
+function isMegaTrackSnapshot(snapshot: unknown): snapshot is MegaTrackState {
+  const value = snapshot as Partial<MegaTrackState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.distance === "number" &&
+      typeof value.integrity === "number" &&
+      typeof value.elapsedMs === "number" &&
+      Array.isArray(value.obstacles)
   );
 }
 

@@ -6,6 +6,7 @@ import {
   OverlayButton,
   PhaseTrait,
   RuntimeResultRecorder,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialPrimordialState,
@@ -13,6 +14,7 @@ import {
 } from "@logic/games/primordial-ascent/engine/primordialSimulation";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity, primordialWorld } from "@logic/games/primordial-ascent/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -23,10 +25,18 @@ function PrimordialApp() {
   const state = useTrait(primordialEntity, PrimordialTrait);
   const summary = getPrimordialRunSummary(state);
 
-  const handleStart = (mode: string) => {
+  const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const next = resolvePrimordialStartState(mode, saveSlot);
     primordialEntity.set(PhaseTrait, { phase: "playing" });
-    primordialEntity.set(PrimordialTrait, createInitialPrimordialState("playing", mode));
+    primordialEntity.set(PrimordialTrait, next);
   };
+
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `${Math.round(state.altitude)}m · ${Math.round(state.distToLava)}m lava gap`,
+    slug: "primordial-ascent",
+    snapshot: state,
+  });
 
   return (
     <GameViewport background="#020608">
@@ -128,6 +138,34 @@ function PrimordialApp() {
         />
       )}
     </GameViewport>
+  );
+}
+
+function resolvePrimordialStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
+  const snapshot = saveSlot?.snapshot;
+  if (isPrimordialSnapshot(snapshot)) {
+    const restored = snapshot as ReturnType<typeof createInitialPrimordialState>;
+    return {
+      ...restored,
+      phase: "playing" as const,
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialPrimordialState("playing", mode);
+}
+
+function isPrimordialSnapshot(
+  snapshot: unknown
+): snapshot is ReturnType<typeof createInitialPrimordialState> {
+  const value = snapshot as Partial<ReturnType<typeof createInitialPrimordialState>> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.altitude === "number" &&
+      typeof value.maxAltitude === "number" &&
+      typeof value.timeSurvived === "number" &&
+      typeof value.distToLava === "number"
   );
 }
 

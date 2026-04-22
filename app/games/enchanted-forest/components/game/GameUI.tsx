@@ -1,6 +1,6 @@
 import { CartridgeStartScreen } from "@app/shared";
 import { RUNE_PATTERNS } from "@logic/games/enchanted-forest/lib/runePatterns";
-import type { SessionMode } from "@logic/shared";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -24,7 +24,7 @@ interface GameUIProps {
   maxMana: number;
   isPaused: boolean;
   gameState: "intro" | "tutorial" | "playing" | "victory" | "defeat";
-  onStart: (mode: SessionMode) => void;
+  onStart: (mode: SessionMode, saveSlot?: GameSaveSlot) => void;
   onRestart: () => void;
   lastRune?: string | null;
   objective: string;

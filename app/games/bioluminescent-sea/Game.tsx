@@ -1,9 +1,12 @@
 import {
   CartridgeStartScreen,
   GameOverScreen,
+  type GameSaveSlot,
   GameViewport,
   OverlayButton,
+  type SerializableValue,
   type SessionMode,
+  useCabinetRuntime,
 } from "@app/shared";
 import {
   advanceScene,
@@ -32,6 +35,16 @@ interface CollectionBurst {
   color: string;
   size: number;
   startedAt: number;
+}
+
+interface DeepSeaRunSnapshot {
+  lastCollectTime: number;
+  mode: SessionMode;
+  multiplier: number;
+  scene: SceneState;
+  score: number;
+  telemetry: DiveTelemetry;
+  timeLeft: number;
 }
 
 function drawCreature(ctx: CanvasRenderingContext2D, creature: Creature) {
@@ -581,30 +594,36 @@ function formatThreatDistance(distance: number) {
 }
 
 function DeepSeaGame({
+  initialSnapshot,
   mode,
   onComplete,
   onGameOver,
 }: {
+  initialSnapshot?: DeepSeaRunSnapshot | null;
   mode: SessionMode;
   onComplete: (score: number) => void;
   onGameOver: (score: number) => void;
 }) {
   const durationSeconds = getDiveDurationSeconds(mode);
+  const { updateRun } = useCabinetRuntime("bioluminescent-sea");
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const initialSceneRef = useRef<SceneState | null>(null);
   if (!initialSceneRef.current) {
-    initialSceneRef.current = createInitialScene({ height: 600, width: 800 });
+    initialSceneRef.current = initialSnapshot
+      ? cloneSceneState(initialSnapshot.scene)
+      : createInitialScene({ height: 600, width: 800 });
   }
 
   const initialScene = initialSceneRef.current;
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(durationSeconds);
-  const [multiplier, setMultiplier] = useState(1);
+  const [score, setScore] = useState(initialSnapshot?.score ?? 0);
+  const [timeLeft, setTimeLeft] = useState(initialSnapshot?.timeLeft ?? durationSeconds);
+  const [multiplier, setMultiplier] = useState(initialSnapshot?.multiplier ?? 1);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [isGameOver, setIsGameOver] = useState(false);
-  const [telemetry, setTelemetry] = useState<DiveTelemetry>(() =>
-    getDiveTelemetry(initialScene, durationSeconds, durationSeconds)
+  const [telemetry, setTelemetry] = useState<DiveTelemetry>(
+    () =>
+      initialSnapshot?.telemetry ?? getDiveTelemetry(initialScene, durationSeconds, durationSeconds)
   );
 
   const playerRef = useRef<Player>(initialScene.player);
@@ -613,9 +632,10 @@ function DeepSeaGame({
   const piratesRef = useRef<Pirate[]>(initialScene.pirates);
   const particlesRef = useRef<Particle[]>(initialScene.particles);
   const collectionBurstsRef = useRef<CollectionBurst[]>([]);
-  const lastCollectTimeRef = useRef(0);
-  const multiplierRef = useRef(1);
-  const scoreRef = useRef(0);
+  const lastCollectTimeRef = useRef(initialSnapshot?.lastCollectTime ?? 0);
+  const multiplierRef = useRef(initialSnapshot?.multiplier ?? 1);
+  const scoreRef = useRef(initialSnapshot?.score ?? 0);
+  const elapsedOffsetRef = useRef(durationSeconds - (initialSnapshot?.timeLeft ?? durationSeconds));
 
   const input = useTouchInput(containerRef);
 
@@ -637,14 +657,60 @@ function DeepSeaGame({
   }, []);
 
   useEffect(() => {
-    const nextScene = createInitialScene(dimensions);
-    playerRef.current = nextScene.player;
-    creaturesRef.current = nextScene.creatures;
-    predatorsRef.current = nextScene.predators;
-    piratesRef.current = nextScene.pirates;
-    particlesRef.current = nextScene.particles;
-    setTelemetry(getDiveTelemetry(nextScene, durationSeconds, durationSeconds));
-  }, [dimensions, durationSeconds]);
+    setTelemetry(
+      getDiveTelemetry(
+        {
+          creatures: creaturesRef.current,
+          particles: particlesRef.current,
+          pirates: piratesRef.current,
+          player: playerRef.current,
+          predators: predatorsRef.current,
+        },
+        timeLeft,
+        durationSeconds
+      )
+    );
+  }, [durationSeconds, timeLeft]);
+
+  const buildSnapshot = useCallback(
+    (): DeepSeaRunSnapshot => ({
+      lastCollectTime: lastCollectTimeRef.current,
+      mode,
+      multiplier: multiplierRef.current,
+      scene: cloneSceneState({
+        creatures: creaturesRef.current,
+        particles: particlesRef.current,
+        pirates: piratesRef.current,
+        player: playerRef.current,
+        predators: predatorsRef.current,
+      }),
+      score: scoreRef.current,
+      telemetry,
+      timeLeft,
+    }),
+    [mode, telemetry, timeLeft]
+  );
+
+  const writeSnapshot = useCallback(() => {
+    const snapshot = buildSnapshot();
+    updateRun({
+      progressSummary: `${snapshot.timeLeft}s · ${snapshot.score} score`,
+      snapshot: cloneSerializableSnapshot(snapshot),
+    });
+  }, [buildSnapshot, updateRun]);
+
+  useEffect(() => {
+    if (isGameOver) return undefined;
+
+    const initial = window.setTimeout(writeSnapshot, 400);
+    const interval = window.setInterval(writeSnapshot, 2_500);
+
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+      writeSnapshot();
+    };
+  }, [isGameOver, writeSnapshot]);
 
   const gameLoop = useCallback(
     (deltaTime: number, totalTime: number) => {
@@ -656,7 +722,8 @@ function DeepSeaGame({
 
       const { width, height } = dimensions;
 
-      const newTimeLeft = Math.max(0, durationSeconds - Math.floor(totalTime));
+      const effectiveTotalTime = elapsedOffsetRef.current + totalTime;
+      const newTimeLeft = Math.max(0, durationSeconds - Math.floor(effectiveTotalTime));
       if (newTimeLeft !== timeLeft) {
         setTimeLeft(newTimeLeft);
         if (newTimeLeft === 0) {
@@ -676,7 +743,7 @@ function DeepSeaGame({
         },
         input,
         dimensions,
-        totalTime,
+        effectiveTotalTime,
         deltaTime,
         lastCollectTimeRef.current,
         multiplierRef.current,
@@ -694,15 +761,15 @@ function DeepSeaGame({
         collectionBurstsRef.current.push(
           ...result.collection.collected.map((creature) => ({
             color: creature.glowColor,
-            id: `${creature.id}-${Math.round(totalTime * 1000)}`,
+            id: `${creature.id}-${Math.round(effectiveTotalTime * 1000)}`,
             size: creature.size,
-            startedAt: totalTime,
+            startedAt: effectiveTotalTime,
             x: creature.x,
             y: creature.y,
           }))
         );
         collectionBurstsRef.current = collectionBurstsRef.current.filter(
-          (burst) => totalTime - burst.startedAt < 0.95
+          (burst) => effectiveTotalTime - burst.startedAt < 0.95
         );
         multiplierRef.current = result.collection.multiplier;
         lastCollectTimeRef.current = result.collection.lastCollectTime;
@@ -728,7 +795,14 @@ function DeepSeaGame({
         return;
       }
 
-      renderScene(ctx, width, height, result.scene, totalTime, collectionBurstsRef.current);
+      renderScene(
+        ctx,
+        width,
+        height,
+        result.scene,
+        effectiveTotalTime,
+        collectionBurstsRef.current
+      );
     },
     [dimensions, input, timeLeft, isGameOver, onGameOver, onComplete, durationSeconds, mode]
   );
@@ -850,11 +924,58 @@ function DeepSeaGame({
   );
 }
 
+function resolveDeepSeaSnapshot(saveSlot?: GameSaveSlot): DeepSeaRunSnapshot | null {
+  const snapshot = saveSlot?.snapshot;
+  if (!isDeepSeaSnapshot(snapshot)) return null;
+
+  const restored = snapshot as DeepSeaRunSnapshot;
+  return {
+    ...restored,
+    scene: cloneSceneState(restored.scene),
+  };
+}
+
+function isDeepSeaSnapshot(snapshot: unknown): snapshot is DeepSeaRunSnapshot {
+  const value = snapshot as Partial<DeepSeaRunSnapshot> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.score === "number" &&
+      typeof value.timeLeft === "number" &&
+      typeof value.multiplier === "number" &&
+      typeof value.lastCollectTime === "number" &&
+      isSceneSnapshot(value.scene)
+  );
+}
+
+function isSceneSnapshot(scene: unknown): scene is SceneState {
+  const value = scene as Partial<SceneState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      value.player &&
+      typeof value.player === "object" &&
+      Array.isArray(value.creatures) &&
+      Array.isArray(value.predators) &&
+      Array.isArray(value.pirates) &&
+      Array.isArray(value.particles)
+  );
+}
+
+function cloneSceneState(scene: SceneState): SceneState {
+  return JSON.parse(JSON.stringify(scene)) as SceneState;
+}
+
+function cloneSerializableSnapshot(snapshot: DeepSeaRunSnapshot): SerializableValue {
+  return JSON.parse(JSON.stringify(snapshot)) as SerializableValue;
+}
+
 export default function Game() {
   const [gameState, setGameState] = useState<"landing" | "playing" | "gameover" | "complete">(
     "landing"
   );
   const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
+  const [initialSnapshot, setInitialSnapshot] = useState<DeepSeaRunSnapshot | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const finalSummary = getDiveRunSummary(
     createInitialScene({ height: 600, width: 800 }),
@@ -874,8 +995,9 @@ export default function Game() {
               gameSlug="bioluminescent-sea"
               kicker="Deep Sea Cartridge"
               motif="sea"
-              onStart={(mode) => {
+              onStart={(mode, saveSlot) => {
                 setSessionMode(mode);
+                setInitialSnapshot(resolveDeepSeaSnapshot(saveSlot));
                 setGameState("playing");
               }}
               rules={[
@@ -897,12 +1019,15 @@ export default function Game() {
             animate={{ opacity: 1 }}
           >
             <DeepSeaGame
+              initialSnapshot={initialSnapshot}
               mode={sessionMode}
               onComplete={(s) => {
+                setInitialSnapshot(null);
                 setFinalScore(s);
                 setGameState("complete");
               }}
               onGameOver={(s) => {
+                setInitialSnapshot(null);
                 setFinalScore(s);
                 setGameState("gameover");
               }}
@@ -923,7 +1048,14 @@ export default function Game() {
               title="Dive Logged"
               subtitle={`Score ${finalScore}. The route remains recoverable: follow beacon chains before oxygen or predators close in.`}
               actions={
-                <OverlayButton onClick={() => setGameState("landing")}>Dive Again</OverlayButton>
+                <OverlayButton
+                  onClick={() => {
+                    setInitialSnapshot(null);
+                    setGameState("landing");
+                  }}
+                >
+                  Dive Again
+                </OverlayButton>
               }
             />
           </motion.div>
@@ -943,7 +1075,12 @@ export default function Game() {
               title="Living Map Complete"
               subtitle={`All ${finalSummary.totalBeacons} beacons recovered. Score ${finalScore}. Replay for cleaner chains and deeper landmark mastery.`}
               actions={
-                <OverlayButton onClick={() => setGameState("landing")}>
+                <OverlayButton
+                  onClick={() => {
+                    setInitialSnapshot(null);
+                    setGameState("landing");
+                  }}
+                >
                   Chart Another Route
                 </OverlayButton>
               }
