@@ -15,6 +15,7 @@ import {
   createInitialState,
   didLose,
   didWin,
+  getEntropyCompletionCue,
   getEntropyRunSummary,
   isRunComplete,
   nextLevel,
@@ -121,6 +122,7 @@ function EntropyApp() {
   const isPlaying = phase === "playing";
   const summary = getEntropyRunSummary(state);
   const runComplete = isRunComplete(state);
+  const completionCue = getEntropyCompletionCue(state);
 
   useRunSnapshotAutosave({
     active: phase === "playing",
@@ -182,15 +184,20 @@ function EntropyApp() {
                   score: summary.score,
                   slug: "entropy-edge",
                   status: "completed",
-                  summary: `Stabilized ${summary.sectorsRequired} sectors`,
+                  stats: {
+                    anchors: summary.totalAnchors,
+                    rating: completionCue.rating,
+                    stabilitySeconds: completionCue.stabilityCarrySeconds,
+                  },
+                  summary: `${completionCue.rating}: stabilized ${summary.sectorsRequired} sectors`,
                 }
               : undefined
           }
-          title={runComplete ? "Cabinet Stabilized" : "Sector Stabilized"}
+          title={completionCue.title}
           subtitle={
             runComplete
-              ? `All ${summary.sectorsRequired} sectors stabilized. Score: ${summary.score} pts. ${summary.totalAnchors} anchors held.`
-              : `Sector ${summary.sector}/${summary.sectorsRequired} secured. Score: ${scoreData.value} pts. Prepare for the next sector.`
+              ? `${completionCue.message} ${completionCue.rating}. Score: ${summary.score} pts.`
+              : `${completionCue.message} ${completionCue.stabilityCarrySeconds}s reserve carried forward. ${completionCue.nextAction}`
           }
           actions={
             <OverlayButton

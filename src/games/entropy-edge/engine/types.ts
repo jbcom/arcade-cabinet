@@ -46,6 +46,16 @@ export interface EntropySectorCue {
   surgeReady: boolean;
 }
 
+export interface EntropyCompletionCue {
+  message: string;
+  nextAction: string;
+  rating: string;
+  sectorPulseCount: number;
+  stabilityCarrySeconds: number;
+  status: "sector" | "run";
+  title: string;
+}
+
 export type EntropyPhase = "menu" | "playing" | "gameover" | "levelcomplete";
 
 export interface EntropyState {

@@ -5,6 +5,7 @@ import {
   GRID_HALF,
   GRID_SIZE,
   parseCellKey,
+  RUN_SECTORS_REQUIRED,
 } from "@logic/games/entropy-edge/engine/simulation";
 import type {
   EntropyState,
@@ -429,6 +430,60 @@ function SurgeClearMarker({ cellKey }: { cellKey: string | null }) {
   );
 }
 
+function SectorStabilizationEffect({ state }: { state: EntropyState }) {
+  if (state.phase !== "levelcomplete") return null;
+
+  const runComplete = state.level >= RUN_SECTORS_REQUIRED;
+  const pulseCount = runComplete ? RUN_SECTORS_REQUIRED : state.anchorsSecuredThisLevel;
+  const color = runComplete ? "#fef08a" : "#67e8f9";
+  const pulses = Array.from({ length: Math.max(1, pulseCount) }, (_, index) => ({
+    id: `stable-pulse-${state.level}-${state.totalAnchors}-${index}`,
+    index,
+  }));
+
+  return (
+    <group>
+      {[0, 1, 2].map((index) => (
+        <mesh
+          key={`stable-ring-${index}`}
+          position={[0, 0.34 + index * 0.04, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          scale={1 + index * 0.42}
+        >
+          <torusGeometry args={[GRID_HALF + 0.78 + index * 0.36, 0.06, 8, 96]} />
+          <meshBasicMaterial color={color} transparent opacity={0.46 - index * 0.1} />
+        </mesh>
+      ))}
+      {pulses.map((pulse) => {
+        const angle = (pulse.index / Math.max(1, pulseCount)) * Math.PI * 2;
+        const radius = GRID_HALF + 1.15;
+        return (
+          <group
+            key={pulse.id}
+            position={[Math.cos(angle) * radius, 1.3, Math.sin(angle) * radius]}
+          >
+            <mesh>
+              <octahedronGeometry args={[0.32, 0]} />
+              <meshStandardMaterial
+                color={color}
+                emissive={color}
+                emissiveIntensity={1.4}
+                metalness={0.2}
+                roughness={0.18}
+              />
+            </mesh>
+            <pointLight color={color} intensity={1.7} distance={7} />
+          </group>
+        );
+      })}
+      <mesh position={[0, 0.48, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[GRID_HALF + 0.35, 96]} />
+        <meshBasicMaterial color={runComplete ? "#facc15" : "#22d3ee"} transparent opacity={0.12} />
+      </mesh>
+    </group>
+  );
+}
+
 function ResonanceBands({ state }: { state: EntropyState }) {
   const strength = state.isResonanceMax ? 1 : state.resonance;
   if (strength <= 0.04) return null;
@@ -546,6 +601,7 @@ export function EdgeScene({ state, isPlaying }: EdgeSceneProps) {
       <RouteBeacons state={state} />
       <ResonanceBands state={state} />
       <SurgeClearMarker cellKey={state.lastSurgeClearedKey} />
+      <SectorStabilizationEffect state={state} />
 
       {state.blockedCells.map((key) => (
         <BlockedCell key={key} cellKey={key} />

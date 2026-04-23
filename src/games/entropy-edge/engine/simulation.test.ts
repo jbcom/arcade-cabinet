@@ -9,6 +9,7 @@ import {
   didWin,
   findNearestBlockedCell,
   generateNode,
+  getEntropyCompletionCue,
   getEntropyRunSummary,
   getEntropySectorCue,
   getStabilityBand,
@@ -94,6 +95,32 @@ describe("entropy simulation", () => {
       sectorsRequired: RUN_SECTORS_REQUIRED,
       totalAnchors: 12,
     });
+    expect(getEntropyCompletionCue(sectorComplete)).toMatchObject({
+      rating: "Calm Resonance",
+      status: "run",
+      title: "Cabinet Stabilized",
+    });
+  });
+
+  test("builds sector completion cues from stability reserve and anchors", () => {
+    const sectorComplete = {
+      ...startGame({} as never),
+      anchorsSecuredThisLevel: 4,
+      phase: "levelcomplete" as const,
+      timeMs: 145_000,
+      totalAnchors: 7,
+    };
+    const cue = getEntropyCompletionCue(sectorComplete);
+
+    expect(cue).toMatchObject({
+      nextAction: "Carry the stability reserve into the next sector.",
+      rating: "Held Field",
+      sectorPulseCount: 4,
+      stabilityCarrySeconds: 145,
+      status: "sector",
+      title: "Sector Stabilized",
+    });
+    expect(cue.message).toContain("Sector 1/3");
   });
 
   test("chooses deterministic anchors and blocked cell layouts", () => {

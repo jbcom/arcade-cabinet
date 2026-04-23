@@ -1,5 +1,6 @@
 import { getSessionPressureScale, normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
+  EntropyCompletionCue,
   EntropyRoutePressure,
   EntropySectorCue,
   EntropyStabilityBand,
@@ -557,5 +558,31 @@ export function getEntropyRunSummary(state: EntropyState) {
     sectorsRequired: RUN_SECTORS_REQUIRED,
     stabilitySeconds: Math.round(state.timeMs / 1000),
     totalAnchors: state.totalAnchors,
+  };
+}
+
+export function getEntropyCompletionCue(state: EntropyState): EntropyCompletionCue {
+  const summary = getEntropyRunSummary(state);
+  const fullRun = isRunComplete(state);
+  const stabilityCarrySeconds = Math.max(0, summary.stabilitySeconds);
+  const rating =
+    stabilityCarrySeconds >= 180
+      ? "Calm Resonance"
+      : stabilityCarrySeconds >= 90
+        ? "Held Field"
+        : "Emergency Latch";
+
+  return {
+    message: fullRun
+      ? `${summary.sectorsRequired} sectors stabilized with ${summary.totalAnchors} anchors held.`
+      : `Sector ${summary.sector}/${summary.sectorsRequired} stabilized with ${summary.anchorsThisSector} anchors.`,
+    nextAction: fullRun
+      ? "Restart the cabinet field with stricter routing."
+      : "Carry the stability reserve into the next sector.",
+    rating,
+    sectorPulseCount: fullRun ? summary.sectorsRequired : summary.anchorsThisSector,
+    stabilityCarrySeconds,
+    status: fullRun ? "run" : "sector",
+    title: fullRun ? "Cabinet Stabilized" : "Sector Stabilized",
   };
 }
