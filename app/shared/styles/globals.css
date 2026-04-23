@@ -204,6 +204,24 @@ html[data-reduced-motion="true"] *::after {
   transition-duration: 1ms;
 }
 
+.cabinet-hud-panel {
+  box-sizing: border-box;
+  max-width: min(24rem, calc(100vw - 2rem));
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .cabinet-hud-row {
+    min-width: 0;
+  }
+
+  .cabinet-hud-panel {
+    flex: 1 1 0;
+    max-width: calc(50vw - 0.75rem);
+    min-width: 0;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

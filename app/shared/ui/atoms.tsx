@@ -53,7 +53,7 @@ const overlayStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  padding: "1rem",
+  padding: "clamp(0.5rem, 2vw, 1rem)",
   color: "#f8fafc",
   fontFamily: "Inter, system-ui, sans-serif",
 };
@@ -64,6 +64,14 @@ const panelStyle: CSSProperties = {
   borderRadius: "8px",
   boxShadow: "0 20px 45px rgba(15, 23, 42, 0.28)",
   backdropFilter: "blur(12px)",
+};
+
+const hudPanelStyle: CSSProperties = {
+  ...panelStyle,
+  maxWidth: "calc(100vw - 1rem)",
+  minWidth: "min(220px, calc(50vw - 0.75rem))",
+  padding: "clamp(0.65rem, 2vw, 0.9rem) clamp(0.7rem, 2vw, 1rem)",
+  pointerEvents: "auto",
 };
 
 interface HUDOverlayProps extends PropsWithChildren {
@@ -81,50 +89,44 @@ export function HUDOverlay({
   children,
 }: HUDOverlayProps) {
   return (
-    <div style={overlayStyle} data-testid="hud-overlay">
+    <div className="cabinet-hud-overlay" style={overlayStyle} data-testid="hud-overlay">
       <div
+        className="cabinet-hud-row cabinet-hud-row--top"
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: "1rem",
+          gap: "clamp(0.5rem, 2vw, 1rem)",
           alignItems: "flex-start",
         }}
       >
         {topLeft ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {topLeft}
           </div>
         ) : null}
         {topRight ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {topRight}
           </div>
         ) : null}
       </div>
       {children ? <div style={{ flex: 1, position: "relative" }}>{children}</div> : null}
       <div
+        className="cabinet-hud-row cabinet-hud-row--bottom"
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: "1rem",
+          gap: "clamp(0.5rem, 2vw, 1rem)",
           alignItems: "flex-end",
         }}
       >
         {bottomLeft ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {bottomLeft}
           </div>
         ) : null}
         {bottomRight ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {bottomRight}
           </div>
         ) : null}

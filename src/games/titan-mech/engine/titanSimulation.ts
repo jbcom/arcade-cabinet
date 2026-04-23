@@ -8,7 +8,10 @@ import type {
   ArenaObstacleData,
   DriveForces,
   ExtractionFeedbackState,
+  TitanContractCue,
   TitanControls,
+  TitanExtractionState,
+  TitanPose,
   TitanState,
   Vec3,
 } from "./types";
@@ -26,6 +29,20 @@ export function createInitialTitanState(
   phase: TitanState["phase"] = "menu",
   mode: string | null | undefined = "standard"
 ): TitanState {
+  const pose: TitanPose = {
+    position: { x: 0, y: 5.4, z: 0 },
+    heading: 0,
+    velocity: { x: 0, y: 0, z: 0 },
+  };
+  const extraction: TitanExtractionState = {
+    hopperLoad: 0,
+    hopperCapacity: CONFIG.HOPPER_CAPACITY,
+    credits: 0,
+    rareIsotopes: 0,
+    lastExtractionEventMs: 0,
+    feedback: "idle",
+  };
+
   return {
     phase,
     sessionMode: normalizeSessionMode(mode),
@@ -43,25 +60,20 @@ export function createInitialTitanState(
     objective: "Survey ore pylons, grind the vein, and keep the chassis inside thermal limits.",
     objectiveProgress: 0,
     controls: { ...DEFAULT_CONTROLS },
-    pose: {
-      position: { x: 0, y: 5.4, z: 0 },
-      heading: 0,
-      velocity: { x: 0, y: 0, z: 0 },
-    },
+    pose,
     systems: {
       reactor: 100,
       servos: 100,
       targeting: 100,
     },
     weaponFeedback: "idle",
-    extraction: {
-      hopperLoad: 0,
-      hopperCapacity: CONFIG.HOPPER_CAPACITY,
-      credits: 0,
-      rareIsotopes: 0,
-      lastExtractionEventMs: 0,
-      feedback: "idle",
-    },
+    contractCue: calculateTitanContractCue({
+      extraction,
+      heat: 0,
+      objectiveProgress: 0,
+      position: pose.position,
+    }),
+    extraction,
   };
 }
 
@@ -185,6 +197,12 @@ export function advanceTitanSystems(
       : extraction.next.credits >= CONFIG.CONTRACT_CREDITS_TARGET
         ? "upgrade"
         : state.phase;
+  const contractCue = calculateTitanContractCue({
+    extraction: extraction.next,
+    heat,
+    objectiveProgress,
+    position,
+  });
 
   return {
     ...state,
@@ -205,20 +223,12 @@ export function advanceTitanSystems(
     scrap: state.scrap + extraction.scrapGain,
     score: Math.max(state.score, distanceScore + extraction.next.credits),
     objectiveProgress,
-    objective:
-      objectiveProgress >= 100
-        ? extraction.next.feedback === "ejecting"
-          ? "Ore cube ejected to silo. Sweep the next pylon vein."
-          : "Pylon vein aligned. Hold extractor to fill the hopper."
-        : coolantActive
-          ? "Coolant burst venting. Keep braced until the thermal spike breaks."
-          : extraction.next.feedback === "grinding"
-            ? "Extractor grinding. Heat climbs while the hopper fills."
-            : extraction.next.feedback === "blocked"
-              ? "Extractor blocked. Move into a pylon ring and manage heat."
-              : stressed
-                ? "Thermal pressure rising. Brace and let coolant cycles recover."
-                : "Survey ore pylons, grind the vein, and keep the chassis inside thermal limits.",
+    objective: describeTitanObjective(
+      contractCue,
+      coolantActive,
+      extraction.next.feedback,
+      stressed
+    ),
     pose: {
       position: { ...position },
       heading,
@@ -234,6 +244,7 @@ export function advanceTitanSystems(
       ),
     },
     weaponFeedback: finalWeaponFeedback,
+    contractCue,
     extraction: extraction.next,
   };
 }
@@ -309,6 +320,71 @@ export function advanceExtractionState({
   };
 }
 
+export function calculateTitanContractCue({
+  extraction,
+  heat,
+  objectiveProgress,
+  position,
+}: {
+  extraction: TitanExtractionState;
+  heat: number;
+  objectiveProgress: number;
+  position: Vec3;
+}): TitanContractCue {
+  const layout = createArenaLayout();
+  const nearest = layout.beacons
+    .map((beacon) => ({
+      beacon,
+      distance: Math.hypot(position.x - beacon.position[0], position.z - beacon.position[2]),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0];
+  const distance = nearest?.distance ?? null;
+  const inRing = nearest ? distance !== null && distance <= nearest.beacon.radius : false;
+  const extractorReady = inRing && objectiveProgress >= 72;
+  const heatWarning = heat >= CONFIG.OVERHEAT_THRESHOLD * 0.78;
+  const bearing = nearest
+    ? normalize2({
+        x: nearest.beacon.position[0] - position.x,
+        y: 0,
+        z: nearest.beacon.position[2] - position.z,
+      })
+    : { x: 0, y: 0, z: 0 };
+
+  let stage: TitanContractCue["stage"] = "survey";
+  let label = nearest
+    ? `Route to ${nearest.beacon.label} pylon, ${Math.round(distance ?? 0)}m.`
+    : "Contract complete. Return to the cabinet telemetry frame.";
+
+  if (extraction.credits >= CONFIG.CONTRACT_CREDITS_TARGET) {
+    stage = "complete";
+    label = "Contract target met. Bank the run and choose the next extraction.";
+  } else if (heatWarning) {
+    stage = "cool";
+    label = "Heat spike. Brace coolant before pushing the extractor.";
+  } else if (extraction.feedback === "ejecting") {
+    stage = "eject";
+    label = "Ore cube ejected. Sweep to the next pylon route.";
+  } else if (extractorReady) {
+    stage = "extract";
+    label = "Pylon lock strong. Hold extractor and watch heat.";
+  } else if (inRing || objectiveProgress > 0) {
+    stage = "align";
+    label = `Align inside ${nearest?.beacon.label ?? "pylon"} ring until lock reaches 100%.`;
+  }
+
+  return {
+    stage,
+    label,
+    nextBeaconId: nearest?.beacon.id ?? null,
+    nextBeaconLabel: nearest?.beacon.label ?? null,
+    distanceToBeacon: distance === null ? null : round(distance),
+    inRing,
+    extractorReady,
+    heatWarning,
+    bearing,
+  };
+}
+
 export function getWeaponFeedbackState({
   coolantActive,
   energy,
@@ -328,6 +404,31 @@ export function getWeaponFeedbackState({
   if (heat >= CONFIG.OVERHEAT_THRESHOLD) return "overheated";
   if (energy <= CONFIG.FIRE_ENERGY_PER_SECOND * 0.18) return "dry";
   return "idle";
+}
+
+function describeTitanObjective(
+  contractCue: TitanContractCue,
+  coolantActive: boolean,
+  extractionFeedback: ExtractionFeedbackState,
+  stressed: boolean
+) {
+  if (coolantActive) {
+    return "Coolant burst venting. Keep braced until the thermal spike breaks.";
+  }
+
+  if (extractionFeedback === "grinding") {
+    return "Extractor grinding. Heat climbs while the hopper fills.";
+  }
+
+  if (extractionFeedback === "blocked") {
+    return "Extractor blocked. Move into a pylon ring and manage heat.";
+  }
+
+  if (stressed || contractCue.stage === "cool") {
+    return "Thermal pressure rising. Brace and let coolant cycles recover.";
+  }
+
+  return contractCue.label;
 }
 
 export function createArenaLayout(): ArenaLayout {
@@ -427,6 +528,20 @@ export function calculateObjectiveProgress(position: Vec3, layout: ArenaLayout):
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function normalize2(vector: Vec3): Vec3 {
+  const length = Math.hypot(vector.x, vector.z);
+
+  if (length <= Number.EPSILON) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  return {
+    x: round(vector.x / length),
+    y: 0,
+    z: round(vector.z / length),
+  };
 }
 
 function round(value: number) {

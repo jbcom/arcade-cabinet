@@ -45,6 +45,13 @@ export function HUD() {
           <div style={{ color: extractorColor, fontSize: 12, marginTop: 3 }}>
             EXTRACTOR {state.extraction.feedback.toUpperCase()}
           </div>
+          <div style={{ color: "#e2e8f0", fontSize: 12, marginTop: 8, maxWidth: 300 }}>
+            CONTRACT {state.contractCue.stage.toUpperCase()}
+            {state.contractCue.nextBeaconLabel ? ` · ${state.contractCue.nextBeaconLabel}` : ""}
+            {state.contractCue.distanceToBeacon !== null
+              ? ` · ${Math.round(state.contractCue.distanceToBeacon)}M`
+              : ""}
+          </div>
         </div>
       }
       topRight={
@@ -52,7 +59,8 @@ export function HUD() {
           style={{
             color: "#e6fffb",
             fontFamily: "ui-monospace, SFMono-Regular, monospace",
-            minWidth: 190,
+            minWidth: 0,
+            width: "100%",
           }}
         >
           <Gauge label="SYSTEM INTEGRITY" value={state.hp} max={state.maxHp} color={accent} />
@@ -82,6 +90,19 @@ export function HUD() {
         >
           <div style={{ color: warning, fontSize: 11, textTransform: "uppercase" }}>Objective</div>
           <div style={{ fontSize: 13, lineHeight: 1.35 }}>{state.objective}</div>
+          <div
+            style={{
+              border: `1px solid ${state.contractCue.heatWarning ? danger : "rgba(45,212,191,0.5)"}`,
+              color: state.contractCue.heatWarning ? "#ffe4e6" : "#d8fff8",
+              fontSize: 12,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              marginTop: 8,
+              padding: "0.4rem 0.5rem",
+            }}
+          >
+            {state.contractCue.label}
+          </div>
           {state.coolantBurstMs > 0 ? (
             <div style={{ color: "#67e8f9", fontSize: 12, marginTop: 6 }}>
               COOLANT BURST {(state.coolantBurstMs / 1000).toFixed(1)}s
@@ -228,7 +249,7 @@ function ControlButton({
       style={{
         width: 44,
         height: 44,
-        minWidth: hot ? 74 : 64,
+        minWidth: hot ? "clamp(3rem, 15vw, 4.6rem)" : "clamp(2.8rem, 14vw, 4rem)",
         border: `1px solid ${hot ? danger : "rgba(45,212,191,0.65)"}`,
         background: hot ? "rgba(244,63,94,0.22)" : "rgba(13,148,136,0.18)",
         color: hot ? "#ffe4e6" : "#d8fff8",

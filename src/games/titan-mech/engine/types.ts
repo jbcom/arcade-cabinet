@@ -28,6 +28,19 @@ export interface TitanSystems {
 
 export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "cooling";
 export type ExtractionFeedbackState = "idle" | "grinding" | "ejecting" | "blocked";
+export type TitanContractStage = "survey" | "align" | "extract" | "eject" | "cool" | "complete";
+
+export interface TitanContractCue {
+  stage: TitanContractStage;
+  label: string;
+  nextBeaconId: string | null;
+  nextBeaconLabel: string | null;
+  distanceToBeacon: number | null;
+  inRing: boolean;
+  extractorReady: boolean;
+  heatWarning: boolean;
+  bearing: Vec3;
+}
 
 export interface TitanExtractionState {
   hopperLoad: number;
@@ -58,6 +71,7 @@ export interface TitanState {
   pose: TitanPose;
   systems: TitanSystems;
   weaponFeedback: WeaponFeedbackState;
+  contractCue: TitanContractCue;
   extraction: TitanExtractionState;
 }
 

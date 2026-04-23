@@ -18,9 +18,10 @@ Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat ove
 
 - Weapon feedback now exposes firing, cooling, dry, and overheated states from pure simulation.
 - Overheat extraction state now exposes hopper load, credits, rare isotope finds, extractor feedback, and ore-to-scrap conversion.
+- Contract cue state now exposes the next pylon, distance, bearing, extraction readiness, and heat-priority stage so the HUD and arena route agree.
 - Firing consumes energy and heat budget while the scene renders muzzle flash, reticle, and overheat feedback.
 - Extracting inside pylon rings consumes energy, raises heat, fills the hopper, and ejects a credit/scrap payout when full.
-- Objective rings, pylon progress, damage vignette, and brighter threat hierarchy improve the mobile combat read.
+- Objective rings, active route chevrons, pylon beams, damage vignette, and brighter threat markers improve the mobile combat read.
 - The cabinet landing uses the shared cartridge frame with an Overheat label, play control, and rules drawer.
 
 ## Responsive and Android Contract

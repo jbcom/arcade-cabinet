@@ -8,6 +8,7 @@ import {
   useRunSnapshotAutosave,
 } from "@app/shared";
 import {
+  calculateTitanContractCue,
   createInitialTitanState,
   getTitanRunSummary,
 } from "@logic/games/titan-mech/engine/titanSimulation";
@@ -39,7 +40,7 @@ function TitanApp() {
   });
 
   return (
-    <GameViewport background="#0b0f14">
+    <GameViewport background="#0b0f14" data-browser-screenshot-mode="page">
       <Canvas shadows camera={{ fov: 48, position: [0, 20, -42] }} gl={browserTestCanvasGlOptions}>
         {phase === "playing" && <World />}
       </Canvas>
@@ -114,6 +115,14 @@ function resolveTitanStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
       ...restored,
       phase: "playing" as const,
       sessionMode: mode,
+      contractCue:
+        restored.contractCue ??
+        calculateTitanContractCue({
+          extraction: restored.extraction,
+          heat: restored.heat,
+          objectiveProgress: restored.objectiveProgress,
+          position: restored.pose.position,
+        }),
     };
   }
 

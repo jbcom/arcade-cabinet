@@ -3,6 +3,7 @@ import {
   advanceTitanSystems,
   calculateDriveForces,
   calculateObjectiveProgress,
+  calculateTitanContractCue,
   createArenaLayout,
   createInitialTitanState,
   getTitanRunSummary,
@@ -31,6 +32,9 @@ describe("titan simulation", () => {
     expect(state.coolantCharge).toBe(100);
     expect(state.coolantBurstMs).toBe(0);
     expect(state.weaponFeedback).toBe("idle");
+    expect(state.contractCue.stage).toBe("survey");
+    expect(state.contractCue.nextBeaconId).toBe("pylon-beta");
+    expect(state.contractCue.distanceToBeacon).toBeGreaterThan(0);
     expect(state.extraction.hopperLoad).toBe(0);
     expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
     expect(state.extraction.feedback).toBe("idle");
@@ -107,6 +111,46 @@ describe("titan simulation", () => {
     ]);
     expect(calculateObjectiveProgress({ x: 44, y: 0, z: 44 }, layout)).toBe(100);
     expect(calculateObjectiveProgress({ x: 0, y: 0, z: 0 }, layout)).toBe(0);
+  });
+
+  test("describes contract route, extraction readiness, and cooling priority", () => {
+    const base = createInitialTitanState("playing");
+    const survey = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 0,
+      objectiveProgress: 0,
+      position: base.pose.position,
+    });
+    const ready = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 24,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+    const hot = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 86,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+    const complete = calculateTitanContractCue({
+      extraction: {
+        ...base.extraction,
+        credits: CONFIG.CONTRACT_CREDITS_TARGET,
+      },
+      heat: 20,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+
+    expect(survey.stage).toBe("survey");
+    expect(survey.nextBeaconLabel).toBe("BETA");
+    expect(survey.bearing.z).toBeGreaterThan(0);
+    expect(ready.stage).toBe("extract");
+    expect(ready.extractorReady).toBe(true);
+    expect(hot.stage).toBe("cool");
+    expect(hot.heatWarning).toBe(true);
+    expect(complete.stage).toBe("complete");
   });
 
   test("vents a coolant burst from a defensive brace at high heat", () => {
@@ -221,7 +265,7 @@ describe("titan simulation", () => {
     expect(grinding.extraction.hopperLoad).toBeGreaterThan(0);
     expect(grinding.energy).toBeLessThan(state.energy);
     expect(grinding.heat).toBeGreaterThan(state.heat);
-    expect(grinding.objective).toContain("Pylon vein");
+    expect(grinding.objective).toContain("Extractor grinding");
 
     const nearlyFull = {
       ...grinding,
