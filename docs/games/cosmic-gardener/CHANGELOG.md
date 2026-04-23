@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added deterministic recovery bloom ball-save rules for standard and cozy sessions.
+- Added recovery bloom pulse feedback and HUD save count.
 - Added constellation completion rewards with resonance bloom score bonus and next-pattern preview.
 - Added pulsing active constellation edges, stronger launch/drain feedback, and shared cartridge landing identity.
 

@@ -27,6 +27,7 @@ import {
 } from "@logic/games/cosmic-gardener/engine/cosmicGardenSimulation";
 import {
   getCosmicModeTuning,
+  resolveCosmicDrainRecovery,
   tuneVoidZonesForMode,
 } from "@logic/games/cosmic-gardener/engine/cosmicSession";
 import { useEnergyRouting } from "@logic/games/cosmic-gardener/engine/useEnergyRouting";
@@ -62,6 +63,7 @@ interface CosmicRunSnapshot {
   constellationsCompleted: number;
   gameState: GameState;
   level: number;
+  recoveryBloomsUsed: number;
   score: number;
   sessionMode: SessionMode;
   starPointMatches: [string, string][];
@@ -176,6 +178,11 @@ export default function Game({ className }: { className?: string }) {
     points: number;
     connectionCount: number;
   } | null>(null);
+  const [recoveryBloom, setRecoveryBloom] = useState<{
+    message: string;
+    points: number;
+  } | null>(null);
+  const [recoveryBloomsUsed, setRecoveryBloomsUsed] = useState(0);
   const [launchPulse, setLaunchPulse] = useState(0);
   const [drainPulse, setDrainPulse] = useState(0);
 
@@ -241,14 +248,29 @@ export default function Game({ className }: { className?: string }) {
   const handleDrain = useCallback(() => {
     setDrainPulse((prev) => prev + 1);
     setBallsRemaining((prev) => {
-      const newCount = prev - 1;
+      const recovery = resolveCosmicDrainRecovery({
+        ballsRemaining: prev,
+        completedConnections: completedConnections.size,
+        cosmicCold,
+        mode: sessionMode,
+        recoveryBloomsUsed,
+      });
+      if (recovery.saved) {
+        setRecoveryBloomsUsed(recovery.recoveryBloomsUsed);
+        setScore((score) => score + recovery.scoreBonus);
+        setRecoveryBloom({ message: recovery.message, points: recovery.scoreBonus });
+        setTimeout(() => setRecoveryBloom(null), 1400);
+        return recovery.ballsRemaining;
+      }
+
+      const newCount = recovery.ballsRemaining;
       if (newCount <= 0) {
         setGameState("gameOver");
       }
       return Math.max(0, newCount);
     });
     setComboMultiplier(1);
-  }, []);
+  }, [completedConnections.size, cosmicCold, recoveryBloomsUsed, sessionMode]);
 
   const {
     orbs,
@@ -450,6 +472,7 @@ export default function Game({ className }: { className?: string }) {
       setScore(snapshot.score);
       setBallsRemaining(snapshot.ballsRemaining);
       setComboMultiplier(snapshot.comboMultiplier);
+      setRecoveryBloomsUsed(snapshot.recoveryBloomsUsed ?? 0);
       setGameState(snapshot.gameState === "tutorial" ? "tutorial" : "playing");
       return;
     }
@@ -465,6 +488,8 @@ export default function Game({ className }: { className?: string }) {
     setScore(0);
     setBallsRemaining(tuning.startingBalls);
     setComboMultiplier(1);
+    setRecoveryBloomsUsed(0);
+    setRecoveryBloom(null);
     setGameState("tutorial");
   };
 
@@ -480,6 +505,7 @@ export default function Game({ className }: { className?: string }) {
       constellationsCompleted,
       gameState,
       level,
+      recoveryBloomsUsed,
       score,
       sessionMode,
       starPointMatches: Array.from(starPointMatches.entries()),
@@ -710,6 +736,9 @@ export default function Game({ className }: { className?: string }) {
             <div className="mt-1 text-[0.68rem] font-medium uppercase tracking-[0.18em] text-cyan-100/70">
               Links {completedConnections.size}/{currentPattern.connections.length}
             </div>
+            <div className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-amber-200/70">
+              Recovery blooms {recoveryBloomsUsed}
+            </div>
           </motion.div>
 
           <AnimatePresence>
@@ -737,6 +766,34 @@ export default function Game({ className }: { className?: string }) {
                   <div className="text-xs text-cyan-100/70">
                     {resonanceBloom.connectionCount} pattern links aligned
                   </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {recoveryBloom && (
+              <>
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-[16%] bottom-[8%] z-40 h-20 rounded-full border border-cyan-200/45 bg-cyan-400/8"
+                  initial={{ opacity: 0.9, scaleX: 0.42 }}
+                  animate={{ opacity: 0, scaleX: 1.18, y: -36 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.05 }}
+                  style={{ boxShadow: "0 0 52px rgba(103,232,249,0.48)" }}
+                />
+                <motion.div
+                  className="pointer-events-none absolute left-1/2 bottom-[20%] z-50 -translate-x-1/2 rounded-md border border-cyan-200/40 bg-slate-950/76 px-4 py-2 text-center shadow-2xl shadow-cyan-900/30 backdrop-blur-md"
+                  initial={{ opacity: 0, scale: 0.86, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -16 }}
+                >
+                  <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-cyan-200">
+                    Recovery Bloom
+                  </div>
+                  <div className="text-xl font-black text-white">+{recoveryBloom.points}</div>
+                  <div className="text-xs text-cyan-100/70">{recoveryBloom.message}</div>
                 </motion.div>
               </>
             )}

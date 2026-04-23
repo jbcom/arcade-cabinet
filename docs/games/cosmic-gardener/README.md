@@ -18,13 +18,16 @@ Browser screenshots use page capture instead of selecting the largest canvas bec
 ## Current Feature and Polish Pass
 
 - Constellation completion now exposes the next-pattern preview and rewards completion with a resonance bloom bonus.
+- Standard and cozy sessions now have deterministic recovery blooms that can save the last ball after real constellation progress or high cold pressure.
 - Active constellation edges pulse by completion state, while completed links gain stronger glow.
 - Launch and drain pulses make lower-table feedback more visible before the next ball action.
+- Recovery bloom pulses and the HUD save counter make the ball-save valve visible without changing challenge mode.
 - The cabinet landing uses the shared cartridge frame with a cosmic label, play control, and rules drawer before the tutorial step.
 
 ## Gameplay Systems
 
 - `src/engine/cosmicGardenSimulation.ts` owns deterministic starter gardens, star growth stages, energy transfer, void-zone placement, pinball orb creation, flipper stepping, drain detection, and bumper collision response.
+- `src/engine/cosmicSession.ts` owns session-mode tuning, void-zone scaling, and last-ball recovery bloom rules.
 - `useEnergyRouting` and `usePinballPhysics` orchestrate React state around those pure systems instead of generating gameplay IDs and layouts with runtime randomness.
 - Starter stars are mapped directly to constellation points, while completion still requires routing the authored pattern connections.
 

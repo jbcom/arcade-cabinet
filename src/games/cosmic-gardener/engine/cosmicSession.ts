@@ -8,6 +8,22 @@ export interface CosmicModeTuning {
   voidZoneScale: number;
 }
 
+export interface CosmicDrainRecoveryInput {
+  mode: string | null | undefined;
+  ballsRemaining: number;
+  completedConnections: number;
+  cosmicCold: number;
+  recoveryBloomsUsed: number;
+}
+
+export interface CosmicDrainRecoveryResult {
+  ballsRemaining: number;
+  message: string;
+  recoveryBloomsUsed: number;
+  saved: boolean;
+  scoreBonus: number;
+}
+
 const COSMIC_MODE_TUNING: Record<SessionMode, CosmicModeTuning> = {
   challenge: {
     maxBalls: 4,
@@ -48,6 +64,41 @@ export function tuneVoidZonesForMode(
     drainRate: round(zone.drainRate * tuning.voidZoneScale, 3),
     radius: round(zone.radius * tuning.voidZoneScale, 2),
   }));
+}
+
+export function resolveCosmicDrainRecovery({
+  ballsRemaining,
+  completedConnections,
+  cosmicCold,
+  mode,
+  recoveryBloomsUsed,
+}: CosmicDrainRecoveryInput): CosmicDrainRecoveryResult {
+  const sessionMode = normalizeSessionMode(mode);
+  const maxRecoveryBlooms = sessionMode === "cozy" ? 2 : sessionMode === "standard" ? 1 : 0;
+  const canSave =
+    ballsRemaining <= 1 &&
+    recoveryBloomsUsed < maxRecoveryBlooms &&
+    (completedConnections > 0 || cosmicCold >= 72);
+
+  if (!canSave) {
+    return {
+      ballsRemaining: Math.max(0, ballsRemaining - 1),
+      message: "Orb drained. Spend the next launch carefully.",
+      recoveryBloomsUsed,
+      saved: false,
+      scoreBonus: 0,
+    };
+  }
+
+  const scoreBonus = 300 + Math.max(1, completedConnections) * 175;
+
+  return {
+    ballsRemaining,
+    message: "Recovery bloom catches the last orb and cools the garden.",
+    recoveryBloomsUsed: recoveryBloomsUsed + 1,
+    saved: true,
+    scoreBonus,
+  };
 }
 
 function round(value: number, decimals = 2): number {
