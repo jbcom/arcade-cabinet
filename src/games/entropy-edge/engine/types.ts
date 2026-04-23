@@ -27,6 +27,25 @@ export interface Shockwave {
   life: number;
 }
 
+export type EntropyStabilityBand = "stable" | "unstable" | "critical";
+export type EntropyRoutePressure = "clear" | "falling" | "blocked" | "critical";
+
+export interface EntropySectorCue {
+  sectorLabel: string;
+  objective: string;
+  routeLabel: string;
+  recommendedMove: string;
+  targetDistance: number;
+  targetBearing: string;
+  stabilityBand: EntropyStabilityBand;
+  pressure: EntropyRoutePressure;
+  fallingThreats: number;
+  blockedCells: number;
+  nearestFallingDistance: number | null;
+  nearestFallingKey: string | null;
+  surgeReady: boolean;
+}
+
 export type EntropyPhase = "menu" | "playing" | "gameover" | "levelcomplete";
 
 export interface EntropyState {

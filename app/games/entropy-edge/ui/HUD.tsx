@@ -1,4 +1,4 @@
-import { getStabilityBand, getTargetVector } from "@logic/games/entropy-edge/engine/simulation";
+import { getEntropySectorCue, getStabilityBand } from "@logic/games/entropy-edge/engine/simulation";
 import type { EntropyState } from "@logic/games/entropy-edge/engine/types";
 
 interface HUDProps {
@@ -9,7 +9,7 @@ export function HUD({ state }: HUDProps) {
   const timeSeconds = (state.timeMs / 1000).toFixed(1);
   const resonancePct = Math.round(state.resonance * 100);
   const stabilityBand = getStabilityBand(state.timeMs);
-  const targetVector = getTargetVector(state);
+  const sectorCue = getEntropySectorCue(state);
   const stabilityColor =
     stabilityBand === "critical"
       ? "text-red-400"
@@ -24,13 +24,13 @@ export function HUD({ state }: HUDProps) {
           <div className="truncate text-[0.65rem] font-bold uppercase tracking-[0.24em] text-cyan-300">
             Entropy's Edge
           </div>
-          <h2 className="mt-2 truncate text-xl font-bold sm:text-2xl">Sector {state.level}</h2>
+          <h2 className="mt-2 truncate text-xl font-bold sm:text-2xl">{sectorCue.sectorLabel}</h2>
           <div className="mt-2 text-xs text-slate-200 sm:text-sm">
             Anchors: {state.anchorsSecuredThisLevel} / {state.anchorsRequired}
           </div>
           <div className="mt-1 text-xs text-slate-400">Total secured: {state.totalAnchors}</div>
-          <div className="mt-2 truncate text-xs font-semibold text-cyan-200">
-            {targetVector.label}
+          <div className="mt-2 line-clamp-2 text-xs font-semibold leading-snug text-cyan-100">
+            {sectorCue.objective}
           </div>
         </div>
 
@@ -78,11 +78,13 @@ export function HUD({ state }: HUDProps) {
         </div>
 
         <div className="min-w-0 justify-self-end rounded-md border border-cyan-200/20 bg-slate-950/72 p-3 text-right text-xs shadow-2xl shadow-cyan-950/25 backdrop-blur-md sm:min-w-[220px] sm:p-4 sm:text-sm">
-          <div className="font-semibold text-slate-200">Anchor vector</div>
+          <div className="font-semibold uppercase tracking-[0.12em] text-cyan-200">Route cue</div>
           <div className="mt-1 text-slate-400">
-            X {targetVector.dx >= 0 ? "+" : ""}
-            {targetVector.dx} / Z {targetVector.dz >= 0 ? "+" : ""}
-            {targetVector.dz}
+            {sectorCue.routeLabel} · {sectorCue.recommendedMove}
+          </div>
+          <div className="mt-1 text-slate-500">
+            Pressure {sectorCue.pressure} · {sectorCue.fallingThreats} falling ·{" "}
+            {sectorCue.blockedCells} blocked
           </div>
           {state.targetNode ? (
             <div className="mt-1 truncate font-semibold text-pink-400">

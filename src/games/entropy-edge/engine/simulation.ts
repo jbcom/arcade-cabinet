@@ -1,5 +1,14 @@
 import { getSessionPressureScale, normalizeSessionMode, type SessionMode } from "@logic/shared";
-import type { EntropyState, FallingBlock, GridNode, Shockwave, Vec2 } from "./types";
+import type {
+  EntropyRoutePressure,
+  EntropySectorCue,
+  EntropyStabilityBand,
+  EntropyState,
+  FallingBlock,
+  GridNode,
+  Shockwave,
+  Vec2,
+} from "./types";
 
 export const GRID_HALF = 5;
 export const GRID_SIZE = GRID_HALF * 2 + 1;
@@ -170,10 +179,93 @@ export function getTargetVector(state: EntropyState) {
   };
 }
 
-export function getStabilityBand(timeMs: number): "stable" | "unstable" | "critical" {
+export function getStabilityBand(timeMs: number): EntropyStabilityBand {
   if (timeMs < 5_000) return "critical";
   if (timeMs < 15_000) return "unstable";
   return "stable";
+}
+
+function getRouteBearing(dx: number, dz: number): string {
+  if (dx === 0 && dz === 0) return "ANCHOR LOCK";
+
+  const eastWest = dx === 0 ? "" : `${dx > 0 ? "E" : "W"}${Math.abs(dx)}`;
+  const northSouth = dz === 0 ? "" : `${dz > 0 ? "S" : "N"}${Math.abs(dz)}`;
+
+  return [eastWest, northSouth].filter(Boolean).join(" / ");
+}
+
+function getRecommendedMove(dx: number, dz: number): string {
+  if (dx === 0 && dz === 0) return "hold anchor";
+
+  if (Math.abs(dx) >= Math.abs(dz) && dx !== 0) {
+    return dx > 0 ? "step east" : "step west";
+  }
+
+  return dz > 0 ? "step south" : "step north";
+}
+
+function getNearestFallingBlock(state: EntropyState): {
+  distance: number;
+  key: string;
+} | null {
+  if (state.fallingBlocks.length === 0) return null;
+
+  return state.fallingBlocks.reduce<{ distance: number; key: string } | null>((nearest, block) => {
+    const distance =
+      Math.abs(block.gridX - state.playerGridX) + Math.abs(block.gridZ - state.playerGridZ);
+    if (!nearest || distance < nearest.distance) {
+      return { distance, key: cellKey(block.gridX, block.gridZ) };
+    }
+    return nearest;
+  }, null);
+}
+
+export function getEntropySectorCue(state: EntropyState): EntropySectorCue {
+  const targetVector = getTargetVector(state);
+  const stabilityBand = getStabilityBand(state.timeMs);
+  const nearestFalling = getNearestFallingBlock(state);
+  const blockedCells = state.blockedCells.length;
+  let pressure: EntropyRoutePressure = "clear";
+
+  if (stabilityBand === "critical") {
+    pressure = "critical";
+  } else if (nearestFalling && nearestFalling.distance <= 2) {
+    pressure = "falling";
+  } else if (blockedCells >= 7 && !state.isResonanceMax) {
+    pressure = "blocked";
+  }
+
+  let objective = "Follow the cyan beacons to the anchor.";
+  if (!state.targetNode) {
+    objective = "Sector stabilized. Carry reserve forward.";
+  } else if (state.isResonanceMax) {
+    objective = "Secure the anchor to discharge a surge.";
+  } else if (pressure === "critical") {
+    objective = "Use the shortest safe vector before collapse.";
+  } else if (pressure === "falling") {
+    objective = "Sidestep the falling cell, then take the route.";
+  } else if (pressure === "blocked") {
+    objective = "Chain anchors to build a route-clearing surge.";
+  }
+
+  return {
+    blockedCells,
+    fallingThreats: state.fallingBlocks.length,
+    nearestFallingDistance: nearestFalling?.distance ?? null,
+    nearestFallingKey: nearestFalling?.key ?? null,
+    objective,
+    pressure,
+    recommendedMove: getRecommendedMove(targetVector.dx, targetVector.dz),
+    routeLabel:
+      targetVector.distance === 0
+        ? "Anchor synchronized"
+        : `${targetVector.distance} cells · ${getRouteBearing(targetVector.dx, targetVector.dz)}`,
+    sectorLabel: `Sector ${state.level}/${RUN_SECTORS_REQUIRED}`,
+    stabilityBand,
+    surgeReady: state.isResonanceMax,
+    targetBearing: getRouteBearing(targetVector.dx, targetVector.dz),
+    targetDistance: targetVector.distance,
+  };
 }
 
 function buildPlayingState(

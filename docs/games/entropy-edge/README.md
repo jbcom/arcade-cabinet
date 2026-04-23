@@ -7,7 +7,7 @@ A 3D pressure puzzle about stabilizing a collapsing grid before sector stability
 - Spatial logic under pressure: movement, falling blocks, and targets must be readable at speed. The route line, highlighted tiles, and vector HUD make the next anchor legible from the first frame.
 - Collapsing-system tension: timer, shake, seeded falling geometry, landed blocks, and shockwaves create urgency without hiding the board.
 - Readable anchor objectives: anchors should always stand apart from hazards. Deterministic placement protects the player cell and current anchor while still filling the sector with pressure.
-- Tactical diorama: the sector should read as a failing machine table with rails, rift pillars, guide seams, and suspended blocks rather than a flat diamond.
+- Tactical diorama: the sector should read as a failing machine table with rails, rift pillars, guide seams, route beacons, hazard marks, and suspended blocks rather than a flat diamond.
 
 ## Presentation Direction
 
@@ -18,13 +18,15 @@ Browser screenshots use page capture so the R3F canvas, HUD, vector readout, and
 ## Current Feature and Polish Pass
 
 - Max resonance now produces a deterministic surge event that clears or weakens a nearby blocked cell.
+- The pure engine exposes a sector cue with objective text, pressure state, route bearing, recommended move, and nearest falling-cell metadata.
+- Route beacons, brighter hazard markings, responsive portrait camera framing, and a stronger sector frame make the board readable in desktop and mobile screenshots.
 - Resonance bands around the player make stability state readable without relying only on HUD text.
 - Three.js color alpha usage was replaced with explicit opacity so R3F rendering is stable.
 - The cabinet landing uses the shared cartridge frame with an abstract grid label, play control, and rules drawer.
 
 ## Gameplay Systems
 
-- `src/engine/simulation.ts` owns deterministic anchor selection, seeded block fields, falling-block spawn choice, movement cooldowns, stability bands, target vectors, scoring, resonance, shockwaves, and win/loss transitions.
+- `src/engine/simulation.ts` owns deterministic anchor selection, seeded block fields, falling-block spawn choice, movement cooldowns, stability bands, sector cues, target vectors, scoring, resonance, shockwaves, and win/loss transitions.
 - The React layer owns input capture, Koota state synchronization, and rendering orchestration.
 - Runtime randomness is avoided in gameplay placement and camera shake so unit tests, browser screenshots, cabinet routes, and Android builds reproduce the same sector composition.
 

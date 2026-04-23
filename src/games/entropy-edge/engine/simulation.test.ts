@@ -10,6 +10,7 @@ import {
   findNearestBlockedCell,
   generateNode,
   getEntropyRunSummary,
+  getEntropySectorCue,
   getStabilityBand,
   getTargetVector,
   isRunComplete,
@@ -130,5 +131,41 @@ describe("entropy simulation", () => {
     expect(getStabilityBand(20_000)).toBe("stable");
     expect(getStabilityBand(8_000)).toBe("unstable");
     expect(getStabilityBand(3_000)).toBe("critical");
+  });
+
+  test("builds deterministic sector cues for route, pressure, and surge readability", () => {
+    const state = startGame({} as never);
+    state.targetNode = { id: "anchor", gridX: 4, gridZ: -2 };
+    state.playerGridX = 1;
+    state.playerGridZ = -2;
+    state.fallingBlocks = [{ gridX: 2, gridZ: -2, id: "threat", velocity: 0, worldY: 8 }];
+    state.blockedCells = ["-1,0", "0,4", "4,4"];
+
+    const fallingCue = getEntropySectorCue(state);
+
+    expect(fallingCue).toMatchObject({
+      nearestFallingDistance: 1,
+      nearestFallingKey: "2,-2",
+      pressure: "falling",
+      recommendedMove: "step east",
+      routeLabel: "3 cells · E3",
+      sectorLabel: `Sector 1/${RUN_SECTORS_REQUIRED}`,
+      targetBearing: "E3",
+    });
+    expect(fallingCue.objective).toContain("falling cell");
+
+    const surgeCue = getEntropySectorCue({
+      ...state,
+      fallingBlocks: [],
+      isResonanceMax: true,
+      resonance: 1,
+    });
+    expect(surgeCue.pressure).toBe("clear");
+    expect(surgeCue.surgeReady).toBe(true);
+    expect(surgeCue.objective).toContain("surge");
+
+    const criticalCue = getEntropySectorCue({ ...state, fallingBlocks: [], timeMs: 3_000 });
+    expect(criticalCue.pressure).toBe("critical");
+    expect(criticalCue.stabilityBand).toBe("critical");
   });
 });
