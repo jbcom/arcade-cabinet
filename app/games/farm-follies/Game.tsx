@@ -12,6 +12,7 @@ import {
   dropFarmAnimal,
   getFarmModeTuning,
   getFarmRunSummary,
+  getFarmStackCue,
   getFarmWobbleBand,
   getFarmWobbleRatio,
   tickFarmState,
@@ -65,6 +66,7 @@ export default function Game() {
     setState(createInitialFarmState(state.sessionMode, "menu"));
   };
   const summary = getFarmRunSummary(state);
+  const farmCue = getFarmStackCue(state);
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -109,7 +111,7 @@ export default function Game() {
           <Hud state={state} />
           <section className="grid min-h-0 gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
             <BarnStack state={state} />
-            <aside className="hidden min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 rounded-md border border-lime-200/18 bg-black/42 p-3 shadow-2xl md:grid">
+            <aside className="hidden min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 rounded-md border border-lime-200/18 bg-black/42 p-3 shadow-2xl md:grid">
               <div>
                 <div className="font-mono text-[0.62rem] font-black uppercase tracking-[0.22em] text-lime-100/52">
                   Next Drop
@@ -134,20 +136,20 @@ export default function Game() {
                   </p>
                 </div>
               ) : null}
-              <div className="rounded-md border border-white/12 bg-white/[0.05] p-3">
+              <div className="min-h-0 overflow-hidden rounded-md border border-white/12 bg-white/[0.05] p-3">
                 <div className="font-mono text-[0.6rem] font-black uppercase tracking-[0.2em] text-white/48">
                   Objective
                 </div>
-                <p className="mt-1 text-sm font-bold leading-snug text-white/82">
+                <p className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-white/82">
                   {state.objective}
                 </p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-amber-100/78">
+                <p className="mt-2 line-clamp-2 text-xs font-semibold uppercase tracking-[0.08em] text-amber-100/78">
                   {state.lastEvent}
                 </p>
               </div>
               <button
                 type="button"
-                className="self-end rounded-md border border-amber-200/40 bg-amber-300/18 px-4 py-4 text-lg font-black uppercase tracking-[0.12em] text-amber-50 shadow-2xl transition hover:-translate-y-0.5 focus:outline-none focus:ring-2"
+                className="self-end rounded-md border border-amber-200/40 bg-amber-300/18 px-4 py-2 text-base font-black uppercase tracking-[0.12em] text-amber-50 shadow-2xl transition hover:-translate-y-0.5 focus:outline-none focus:ring-2"
                 onClick={() => setState((current) => bankFarmScore(current))}
               >
                 Bank Score
@@ -162,7 +164,7 @@ export default function Game() {
               <div className="mt-1 flex items-center gap-2">
                 <AnimalToken animal={state.nextAnimal} tier={state.nextTier} size="small" />
                 <div className="min-w-0 truncate text-sm font-black uppercase text-white">
-                  {state.nextAnimal} / {state.objective}
+                  {state.nextAnimal} / Best {farmCue.recommendedLaneLabel}
                 </div>
               </div>
             </div>
@@ -180,6 +182,14 @@ export default function Game() {
                 key={lane}
                 type="button"
                 className="min-h-16 rounded-md border border-lime-200/28 bg-lime-300/14 px-3 py-2 font-black uppercase tracking-[0.12em] text-lime-50 shadow-xl transition hover:-translate-y-0.5 focus:outline-none focus:ring-2"
+                style={{
+                  background:
+                    lane === farmCue.recommendedLane
+                      ? "linear-gradient(135deg, rgba(250,204,21,0.26), rgba(132,204,22,0.22))"
+                      : undefined,
+                  borderColor:
+                    lane === farmCue.recommendedLane ? "rgba(250,204,21,0.58)" : undefined,
+                }}
                 onClick={() => setState((current) => dropFarmAnimal(current, lane))}
               >
                 Drop {lane < 0 ? "Left" : lane > 0 ? "Right" : "Center"}
@@ -253,13 +263,24 @@ function isFarmSnapshot(snapshot: unknown): snapshot is FarmState {
 }
 
 function Hud({ state }: { state: FarmState }) {
+  const cue = getFarmStackCue(state);
+
   return (
-    <header className="grid gap-2 rounded-md border border-lime-200/18 bg-black/46 p-3 shadow-2xl sm:grid-cols-5">
+    <header className="grid grid-cols-3 gap-2 rounded-md border border-lime-200/18 bg-black/46 p-3 shadow-2xl sm:grid-cols-6">
       <Metric label="Score" value={`${state.score}`} accent="#fef08a" />
       <Metric label="Banked" value={`${state.bankedScore}`} accent="#f59e0b" />
       <Metric label="Lives" value={`${state.lives}`} accent="#86efac" />
       <Metric label="Wobble" value={`${Math.round(state.wobble)}%`} accent="#f9a8d4" />
+      <Metric label="Bank Ready" value={`${cue.bankProgressPercent}%`} accent="#facc15" />
       <Metric label="Mode" value={state.sessionMode} accent="#84cc16" />
+      <div className="col-span-3 rounded-md border border-white/12 bg-white/[0.04] p-2 sm:col-span-6">
+        <div className="font-mono text-[0.58rem] font-black uppercase tracking-[0.2em] text-white/45">
+          Best Lane · {cue.recommendedLaneLabel}
+        </div>
+        <div className="mt-1 text-sm font-black uppercase text-lime-50">
+          {cue.recommendedAction}
+        </div>
+      </div>
     </header>
   );
 }
@@ -355,6 +376,7 @@ function AnimalToken({
 }
 
 function BarnStack({ state }: { state: FarmState }) {
+  const cue = getFarmStackCue(state);
   const wobbleBand = getFarmWobbleBand(state);
   const wobbleRatio = getFarmWobbleRatio(state);
   const stack = state.stack;
@@ -388,6 +410,38 @@ function BarnStack({ state }: { state: FarmState }) {
       />
       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-lime-600/55 to-lime-900" />
       <div className="absolute inset-x-[12%] bottom-14 h-[70%] rounded-t-md border-x-8 border-t-8 border-red-900/76 bg-red-950/18" />
+      {([-1, 0, 1] as const).map((lane) => {
+        const isRecommended = lane === cue.recommendedLane;
+        return (
+          <div
+            key={`lane-guide-${lane}`}
+            aria-hidden="true"
+            className="absolute bottom-14 top-20 w-24 -translate-x-1/2 rounded-t-md border-x"
+            style={{
+              background: isRecommended
+                ? "linear-gradient(180deg, rgba(250,204,21,0.18), rgba(132,204,22,0.12))"
+                : "rgba(255,255,255,0.025)",
+              borderColor: isRecommended ? "rgba(250,204,21,0.48)" : "rgba(255,255,255,0.08)",
+              left: `calc(50% + ${lane * 34}px)`,
+              opacity: isRecommended ? 1 : 0.42,
+            }}
+          />
+        );
+      })}
+      <div
+        aria-hidden="true"
+        className="absolute top-20 grid -translate-x-1/2 place-items-center"
+        style={{
+          left: `calc(50% + ${cue.recommendedLane * 34}px)`,
+          opacity: cue.wobbleBand === "danger" ? 0.96 : 0.72,
+          transform: `translateX(-50%) rotate(${(wobbleRatio - 0.5) * 4}deg)`,
+        }}
+      >
+        <AnimalToken animal={state.nextAnimal} tier={state.nextTier} size="small" />
+        <div className="mt-1 rounded-sm bg-black/64 px-2 py-1 font-mono text-[0.52rem] font-black uppercase tracking-[0.14em] text-amber-100">
+          Best Drop
+        </div>
+      </div>
       <div
         aria-hidden="true"
         className="absolute inset-x-[16%] bottom-14 h-[70%] rounded-t-md border-x-2 border-dashed"
@@ -418,7 +472,9 @@ function BarnStack({ state }: { state: FarmState }) {
         })}
       </div>
       <div className="absolute left-4 top-4 rounded-md border border-white/12 bg-black/54 px-3 py-2 font-mono text-[0.62rem] font-black uppercase tracking-[0.18em] text-white/66">
-        Merge same lane pairs
+        {cue.mergePreviewAnimal
+          ? `Merge toward ${cue.mergePreviewAnimal}`
+          : `Build ${cue.recommendedLaneLabel}`}
       </div>
       <div className="absolute right-4 top-4 grid w-28 gap-1 rounded-md border border-white/12 bg-black/54 p-2">
         <div className="flex items-center justify-between font-mono text-[0.55rem] font-black uppercase tracking-[0.16em] text-white/52">

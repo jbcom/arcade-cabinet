@@ -2,8 +2,10 @@ import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
   FarmAbilityEvent,
   FarmAnimal,
+  FarmLane,
   FarmModeTuning,
   FarmStackAnimal,
+  FarmStackCue,
   FarmState,
   FarmWobbleBand,
 } from "./types";
@@ -164,11 +166,85 @@ export function getFarmRunSummary(state: FarmState) {
   };
 }
 
+export function getFarmStackCue(state: FarmState): FarmStackCue {
+  const wobbleBand = getFarmWobbleBand(state);
+  const collapseRiskPercent = Math.round(getFarmWobbleRatio(state) * 100);
+  const projectedBank = state.bankedScore + Math.floor(state.score * 0.45);
+  const bankProgressPercent = Math.min(100, Math.round((projectedBank / FARM_BANK_TARGET) * 100));
+  const bankReady = projectedBank >= FARM_BANK_TARGET && state.elapsedMs >= FARM_MIN_RUN_MS;
+  const laneHeights = getLaneHeights(state.stack);
+  const mergeLane = findMergeLane(state);
+  const recommendedLane =
+    wobbleBand === "danger"
+      ? getShortestLane(laneHeights)
+      : (mergeLane ?? getShortestLane(laneHeights));
+  const mergePreviewAnimal = mergeLane !== null ? nextAnimalForTier(state.nextTier + 1) : null;
+
+  return {
+    bankProgressPercent,
+    bankReady,
+    collapseRiskPercent,
+    laneHeights,
+    mergePreviewAnimal,
+    recommendedAction: describeStackCueAction(
+      state,
+      recommendedLane,
+      mergeLane,
+      bankReady,
+      wobbleBand
+    ),
+    recommendedLane,
+    recommendedLaneLabel: laneLabel(recommendedLane),
+    wobbleBand,
+  };
+}
+
 export function getFarmWobbleBand(state: FarmState): FarmWobbleBand {
   const ratio = getFarmWobbleRatio(state);
   if (ratio >= 0.78) return "danger";
   if (ratio >= 0.52) return "sway";
   return "steady";
+}
+
+function getLaneHeights(stack: FarmStackAnimal[]): Record<FarmLane, number> {
+  return stack.reduce<Record<FarmLane, number>>(
+    (heights, animal) => {
+      heights[animal.lane] += 1;
+      return heights;
+    },
+    { "-1": 0, 0: 0, 1: 0 }
+  );
+}
+
+function findMergeLane(state: FarmState): FarmLane | null {
+  const lanes: FarmLane[] = [-1, 0, 1];
+
+  return (
+    lanes.find((lane) => {
+      const top = [...state.stack].reverse().find((animal) => animal.lane === lane);
+      return top?.tier === state.nextTier;
+    }) ?? null
+  );
+}
+
+function getShortestLane(laneHeights: Record<FarmLane, number>): FarmLane {
+  const lanes: FarmLane[] = [-1, 0, 1];
+  return lanes.sort((a, b) => laneHeights[a] - laneHeights[b] || Math.abs(a) - Math.abs(b))[0] ?? 0;
+}
+
+function describeStackCueAction(
+  state: FarmState,
+  recommendedLane: FarmLane,
+  mergeLane: FarmLane | null,
+  bankReady: boolean,
+  wobbleBand: FarmWobbleBand
+) {
+  if (bankReady) return "Bank now to lock the auction quota.";
+  if (wobbleBand === "danger")
+    return `Danger sway. Drop ${laneLabel(recommendedLane)} or bank before the next tilt.`;
+  if (mergeLane !== null)
+    return `Drop ${labelAnimal(state.nextAnimal)} ${laneLabel(mergeLane)} to merge into ${labelAnimal(nextAnimalForTier(state.nextTier + 1))}.`;
+  return `Build the ${laneLabel(recommendedLane)} for a wider tower.`;
 }
 
 export function getFarmWobbleRatio(state: FarmState) {
@@ -283,7 +359,7 @@ function labelAnimal(animal: FarmAnimal) {
   return animal.replace("-", " ");
 }
 
-function laneLabel(lane: -1 | 0 | 1) {
+function laneLabel(lane: FarmLane) {
   if (lane < 0) return "left";
   if (lane > 0) return "right";
   return "center";

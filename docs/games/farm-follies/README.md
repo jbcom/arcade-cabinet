@@ -15,9 +15,11 @@ Drop animals into lanes, merge matching tiers, let the tower get a little danger
 ## 1.0 Polish Notes
 
 - Same-lane merges now fire deterministic animal abilities: goats headbutt sway, pigs cushion drops, cows brace the beam, and horses kick the tower upright.
+- The pure stack cue forecasts best lane, merge preview, bank readiness, lane heights, and collapse risk so guidance is deterministic instead of UI-only.
 - The standard drop sequence opens with pair-friendly tiers so the player learns the merge rule immediately instead of waiting for a rare setup.
-- The playfield renders distinct animal tokens instead of letter blocks, with tier badges, species silhouettes, and a live sway meter.
+- The playfield renders distinct animal tokens instead of letter blocks, with tier badges, species silhouettes, a best-drop ghost token, highlighted lane, and live sway meter.
 - Wobble has steady/sway/danger bands so mobile players can read when to widen drops or bank before collapse.
+- Desktop and mobile HUDs now keep the bank button and best-lane forecast readable without covering the stack.
 
 ## Responsive and Android Contract
 

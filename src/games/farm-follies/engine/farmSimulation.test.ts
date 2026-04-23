@@ -7,6 +7,7 @@ import {
   FARM_MIN_RUN_MS,
   getFarmModeTuning,
   getFarmRunSummary,
+  getFarmStackCue,
   getFarmWobbleBand,
   tickFarmState,
 } from "./farmSimulation";
@@ -81,6 +82,40 @@ describe("Farm Follies stack and bank loop", () => {
     expect(banked.bankedScore).toBeGreaterThan(0);
     expect(banked.wobble).toBeLessThan(state.wobble);
     expect(banked.phase).toBe("playing");
+  });
+
+  test("stack cue recommends merge lanes, bank readiness, and danger recovery", () => {
+    const mergeState = {
+      ...createInitialFarmState("standard", "playing"),
+      nextAnimal: "goat" as const,
+      nextTier: 1,
+      stack: [
+        { animal: "goat" as const, id: "left-goat", lane: -1 as const, tier: 1 },
+        { animal: "chick" as const, id: "center-chick", lane: 0 as const, tier: 0 },
+      ],
+    };
+    const mergeCue = getFarmStackCue(mergeState);
+
+    expect(mergeCue.recommendedLane).toBe(-1);
+    expect(mergeCue.mergePreviewAnimal).toBe("pig");
+    expect(mergeCue.recommendedAction).toContain("merge");
+    expect(mergeCue.laneHeights[-1]).toBe(1);
+
+    const bankCue = getFarmStackCue({
+      ...mergeState,
+      bankedScore: FARM_BANK_TARGET,
+      elapsedMs: FARM_MIN_RUN_MS,
+    });
+    expect(bankCue.bankReady).toBe(true);
+    expect(bankCue.recommendedAction).toContain("Bank now");
+
+    const dangerCue = getFarmStackCue({
+      ...mergeState,
+      stack: [],
+      wobble: getFarmModeTuning("standard").wobbleLimit * 0.86,
+    });
+    expect(dangerCue.wobbleBand).toBe("danger");
+    expect(dangerCue.recommendedAction).toContain("Danger sway");
   });
 
   test("banks a complete standard run only after quota and couch loop time", () => {
