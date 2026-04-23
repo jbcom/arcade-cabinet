@@ -3,7 +3,9 @@ import {
   advanceOvercastState,
   createInitialOvercastState,
   createOvercastSegmentCue,
+  getOvercastFinishCue,
   getOvercastRunSummary,
+  getOvercastSpawnProfile,
   normalizeOvercastControls,
 } from "./overcastSimulation";
 import { OVERCAST_CONFIG } from "./types";
@@ -40,9 +42,38 @@ describe("overcast glacier simulation", () => {
     expect(cue.label).toBe("Blizzard Arcade");
     expect(cue.weather).toBe("blizzard");
     expect(cue.progressLabel).toContain("64%");
+    expect(cue.trafficLevel).toBe("storm");
     expect(cue.nearestKind).toBe("snowman");
     expect(cue.warmthWarning).toBe(true);
     expect(coldCue.warmthWarning).toBe(true);
+  });
+
+  test("ramps late-route traffic without making standard harsher than challenge", () => {
+    const opening = getOvercastSpawnProfile(0, "standard");
+    const late = getOvercastSpawnProfile(OVERCAST_CONFIG.SEGMENT_DURATION_MS * 4, "standard");
+    const lateChallenge = getOvercastSpawnProfile(
+      OVERCAST_CONFIG.SEGMENT_DURATION_MS * 4,
+      "challenge"
+    );
+
+    expect(opening.trafficLevel).toBe("gentle");
+    expect(late.trafficLevel).toBe("storm");
+    expect(late.intervalMs).toBeLessThan(opening.intervalMs);
+    expect(lateChallenge.intervalMs).toBeLessThan(late.intervalMs);
+    expect(late.maxEntities).toBeLessThanOrEqual(OVERCAST_CONFIG.MAX_ENTITIES);
+  });
+
+  test("biases late-route low-warmth spawns toward recovery cocoa", () => {
+    const lateCold = {
+      ...createInitialOvercastState("playing", "standard"),
+      entities: [],
+      warmth: 30,
+      timeMs: OVERCAST_CONFIG.SEGMENT_DURATION_MS * 4,
+    };
+    const next = advanceOvercastState(lateCold, 900, {});
+
+    expect(next.entities.some((entity) => entity.kind === "cocoa")).toBe(true);
+    expect(next.segmentCue.trafficLevel).toBe("storm");
   });
 
   test("standard mode keeps passive warmth loss couch-friendly for the first minute", () => {
@@ -69,10 +100,25 @@ describe("overcast glacier simulation", () => {
     expect(targetMinutes).toBeLessThanOrEqual(15);
     expect(finished.phase).toBe("finished");
     expect(finished.segmentsCleared).toBe(OVERCAST_CONFIG.TARGET_SEGMENTS);
+    expect(finished.finishCue?.rating).toBe("Hot Cocoa Victory");
+    expect(finished.finishCue?.scoreBonus).toBeGreaterThan(OVERCAST_CONFIG.TARGET_SEGMENTS * 100);
     expect(getOvercastRunSummary(finished)).toMatchObject({
       segment: OVERCAST_CONFIG.TARGET_SEGMENTS,
       targetSegments: OVERCAST_CONFIG.TARGET_SEGMENTS,
     });
+  });
+
+  test("creates readable finish cues for cold clears", () => {
+    const state = {
+      ...createInitialOvercastState("finished", "standard"),
+      warmth: 24,
+      segmentsCleared: OVERCAST_CONFIG.TARGET_SEGMENTS,
+    };
+    const cue = getOvercastFinishCue(state);
+
+    expect(cue.rating).toBe("Shivering Clear");
+    expect(cue.routeLights).toBe(OVERCAST_CONFIG.TARGET_SEGMENTS);
+    expect(cue.nextAction).toContain("cocoa");
   });
 
   test("normalizes steering and action controls", () => {

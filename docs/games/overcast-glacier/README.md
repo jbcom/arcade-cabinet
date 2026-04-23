@@ -17,8 +17,10 @@ The player should understand the run from the cartridge label and first frame: K
 ## Current Cabinet Pass
 
 - Added a deterministic pure simulation for warmth drain, lane steering, cocoa collection, snowman kick/hit resolution, glitch photos, scoring, combo, and spawning.
-- Added deterministic segment cue state for named glacier segments, weather, nearest hazards, lane warning, and warmth pressure.
-- Added a React presentation with shared cartridge landing, touch-anywhere joystick, action buttons, three-lane slope, weather bands, lane warnings, richer cocoa/snowman/glitch tokens, kitten silhouette, segment gate, and warmth HUD.
+- Added deterministic segment cue state for named glacier segments, weather, traffic intensity, nearest hazards, lane warning, and warmth pressure.
+- Added late-route spawn profiles that increase traffic by segment while keeping standard mode below challenge density and preserving cocoa recovery when warmth drops.
+- Added deterministic finish cue ratings, bonus scoring, route lights, and a React aurora/runout celebration for completed 8-15 minute routes.
+- Added a React presentation with shared cartridge landing, touch-anywhere joystick, action buttons, three-lane slope, weather bands, lane warnings, richer cocoa/snowman/glitch tokens, kitten silhouette, segment gate, finish lights, and warmth HUD.
 - Added unit and browser start-flow coverage.
 
 ## Responsive and Android Contract

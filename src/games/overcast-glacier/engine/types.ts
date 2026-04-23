@@ -22,10 +22,22 @@ export interface OvercastSegmentCue {
   label: string;
   weather: OvercastWeather;
   progressLabel: string;
+  trafficLabel: string;
+  trafficLevel: "gentle" | "busy" | "storm";
   nearestKind: OvercastEntityKind | null;
   nearestLane: -1 | 0 | 1 | null;
   nearestDistance: number | null;
   warmthWarning: boolean;
+}
+
+export interface OvercastFinishCue {
+  title: string;
+  rating: string;
+  message: string;
+  nextAction: string;
+  routeLights: number;
+  scoreBonus: number;
+  warmthGrade: "warm" | "steady" | "shivering";
 }
 
 export interface OvercastState {
@@ -45,6 +57,7 @@ export interface OvercastState {
   speed: number;
   entities: OvercastEntity[];
   segmentCue: OvercastSegmentCue;
+  finishCue: OvercastFinishCue | null;
   lastEvent: OvercastEvent;
   lastEventMs: number;
   objective: string;

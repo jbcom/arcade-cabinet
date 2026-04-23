@@ -6,6 +6,7 @@ import {
 import type {
   OvercastControls,
   OvercastEntity,
+  OvercastFinishCue,
   OvercastSegmentCue,
   OvercastState,
   OvercastWeather,
@@ -35,6 +36,10 @@ const SEGMENT_WEATHER: readonly OvercastWeather[] = [
   "blizzard",
   "clear",
 ];
+
+const STANDARD_SEGMENT_INTERVALS = [2350, 2250, 2150, 2050, 1975, 1900] as const;
+const CHALLENGE_SEGMENT_INTERVALS = [1950, 1825, 1700, 1575, 1475, 1375] as const;
+const COZY_SEGMENT_INTERVALS = [2700, 2600, 2500, 2400, 2325, 2250] as const;
 
 export function createInitialOvercastState(
   phase: OvercastState["phase"] = "menu",
@@ -66,6 +71,7 @@ export function createInitialOvercastState(
       segmentProgress: 0,
       warmth: 100,
     }),
+    finishCue: null,
     lastEvent: "idle",
     lastEventMs: 0,
     objective: "Stay warm, kick snowmen, and photograph glitches.",
@@ -114,14 +120,11 @@ export function advanceOvercastState(
     standard: 0.72,
   });
   const resolved = resolveCollision(state, controls, collision);
-  const spawned = spawnEntities(remainingEntities, nextTime);
   const warmth = clamp(
     resolved.warmth - OVERCAST_CONFIG.WARMTH_DRAIN_PER_SECOND * pressureScale * (deltaMs / 1000),
     0,
     state.maxWarmth
   );
-  const distanceScore = state.scoreRemainder + deltaMs * speed;
-  const wholeDistanceScore = Math.floor(distanceScore);
   const segmentIndex = Math.min(
     OVERCAST_CONFIG.TARGET_SEGMENTS - 1,
     Math.floor(nextTime / OVERCAST_CONFIG.SEGMENT_DURATION_MS)
@@ -130,12 +133,28 @@ export function advanceOvercastState(
     OVERCAST_CONFIG.TARGET_SEGMENTS,
     Math.floor(nextTime / OVERCAST_CONFIG.SEGMENT_DURATION_MS)
   );
+  const spawned = spawnEntities(remainingEntities, nextTime, state.sessionMode, warmth);
+  const distanceScore = state.scoreRemainder + deltaMs * speed;
+  const wholeDistanceScore = Math.floor(distanceScore);
+  const phase =
+    nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS ? "finished" : warmth <= 0 ? "gameover" : "playing";
+  const finishCue =
+    phase === "finished"
+      ? getOvercastFinishCue({
+          ...state,
+          phase,
+          timeMs: nextTime,
+          warmth,
+          score: resolved.score + wholeDistanceScore,
+          combo: resolved.combo,
+          segmentsCleared,
+        })
+      : null;
+  const finishScoreBonus = finishCue?.scoreBonus ?? 0;
   const segmentProgress =
     nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS
       ? 1
       : (nextTime % OVERCAST_CONFIG.SEGMENT_DURATION_MS) / OVERCAST_CONFIG.SEGMENT_DURATION_MS;
-  const phase =
-    nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS ? "finished" : warmth <= 0 ? "gameover" : "playing";
   const segmentCue = createOvercastSegmentCue({
     entities: spawned,
     playerLane,
@@ -150,7 +169,7 @@ export function advanceOvercastState(
     timeMs: nextTime,
     playerLane,
     warmth,
-    score: resolved.score + wholeDistanceScore,
+    score: resolved.score + wholeDistanceScore + finishScoreBonus,
     scoreRemainder: distanceScore - wholeDistanceScore,
     combo: resolved.combo,
     segmentIndex,
@@ -160,6 +179,7 @@ export function advanceOvercastState(
     speed,
     entities: spawned,
     segmentCue,
+    finishCue,
     lastEvent: resolved.lastEvent,
     lastEventMs: resolved.lastEvent === "idle" ? state.lastEventMs : nextTime,
     objective: describeObjective(warmth, spawned, playerLane),
@@ -175,6 +195,66 @@ export function getOvercastRunSummary(state: OvercastState) {
     segmentsCleared: state.segmentsCleared,
     targetSegments: OVERCAST_CONFIG.TARGET_SEGMENTS,
     warmth: Math.round(state.warmth),
+  };
+}
+
+export function getOvercastSpawnProfile(timeMs: number, mode = "standard") {
+  const sessionMode = normalizeSessionMode(mode);
+  const segmentIndex = Math.min(
+    OVERCAST_CONFIG.TARGET_SEGMENTS - 1,
+    Math.floor(Math.max(0, timeMs) / OVERCAST_CONFIG.SEGMENT_DURATION_MS)
+  );
+  const intervals =
+    sessionMode === "challenge"
+      ? CHALLENGE_SEGMENT_INTERVALS
+      : sessionMode === "cozy"
+        ? COZY_SEGMENT_INTERVALS
+        : STANDARD_SEGMENT_INTERVALS;
+  const baseMax = sessionMode === "challenge" ? 9 : sessionMode === "cozy" ? 5 : 7;
+
+  return {
+    intervalMs: intervals[segmentIndex] ?? intervals[intervals.length - 1],
+    maxEntities: Math.min(baseMax, 4 + Math.ceil((segmentIndex + 1) / 2)),
+    segmentIndex,
+    spawnDistance: OVERCAST_CONFIG.SPAWN_DISTANCE + segmentIndex * 5,
+    trafficLabel:
+      segmentIndex >= 4 ? "storm traffic" : segmentIndex >= 2 ? "busy traffic" : "gentle traffic",
+    trafficLevel:
+      segmentIndex >= 4
+        ? ("storm" as const)
+        : segmentIndex >= 2
+          ? ("busy" as const)
+          : ("gentle" as const),
+  };
+}
+
+export function getOvercastFinishCue(state: OvercastState): OvercastFinishCue {
+  const warmth = Math.round(state.warmth);
+  const scoreBonus = calculateOvercastFinishBonus(state);
+  const warmthGrade = warmth >= 72 ? "warm" : warmth >= 38 ? "steady" : "shivering";
+  const rating =
+    warmthGrade === "warm"
+      ? "Hot Cocoa Victory"
+      : warmthGrade === "steady"
+        ? "Clean Runout"
+        : "Shivering Clear";
+
+  return {
+    title: "Aurora Runout Cleared",
+    rating,
+    message:
+      warmthGrade === "warm"
+        ? "Kicks hits the lodge lights with cocoa heat to spare."
+        : warmthGrade === "steady"
+          ? "The glacier is cleared with enough warmth to plan a cleaner replay."
+          : "The route is open, but the last blizzard nearly took the run.",
+    nextAction:
+      warmthGrade === "warm"
+        ? "Replay for a higher combo route."
+        : "Replay and bank more cocoa before the final segment.",
+    routeLights: clamp(state.segmentsCleared, 1, OVERCAST_CONFIG.TARGET_SEGMENTS),
+    scoreBonus,
+    warmthGrade,
   };
 }
 
@@ -197,11 +277,14 @@ export function createOvercastSegmentCue({
       .sort((a, b) => Math.abs(a.distance) - Math.abs(b.distance))[0] ?? null;
   const segment = Math.min(segmentIndex, OVERCAST_CONFIG.TARGET_SEGMENTS - 1);
   const progressPercent = clamp(Math.round(segmentProgress * 100), 0, 100);
+  const profile = getOvercastSpawnProfile(segment * OVERCAST_CONFIG.SEGMENT_DURATION_MS);
 
   return {
     label: SEGMENT_LABELS[segment] ?? "Glacier Run",
     weather: SEGMENT_WEATHER[segment] ?? "clear",
     progressLabel: `Segment ${segment + 1}/${OVERCAST_CONFIG.TARGET_SEGMENTS} ${progressPercent}%`,
+    trafficLabel: profile.trafficLabel,
+    trafficLevel: profile.trafficLevel,
     nearestKind: nearest?.kind ?? null,
     nearestLane: nearest?.lane ?? null,
     nearestDistance: nearest ? Math.round(nearest.distance) : null,
@@ -275,15 +358,21 @@ function resolveCollision(
   };
 }
 
-function spawnEntities(entities: OvercastEntity[], timeMs: number) {
+function spawnEntities(
+  entities: OvercastEntity[],
+  timeMs: number,
+  mode: OvercastState["sessionMode"],
+  warmth: number
+) {
+  const profile = getOvercastSpawnProfile(timeMs, mode);
   const next = [...entities];
-  const spawnIndex = Math.floor(timeMs / 1800);
+  const spawnIndex = Math.floor(timeMs / profile.intervalMs);
   const shouldSpawn =
-    next.length < OVERCAST_CONFIG.MAX_ENTITIES &&
+    next.length < Math.min(OVERCAST_CONFIG.MAX_ENTITIES, profile.maxEntities) &&
     !next.some((entity) => entity.id === `spawn-${spawnIndex}`);
 
   if (shouldSpawn) {
-    next.push(createEntity(spawnIndex, OVERCAST_CONFIG.SPAWN_DISTANCE));
+    next.push(createEntity(spawnIndex, profile.spawnDistance, profile.segmentIndex, warmth));
   }
 
   return next;
@@ -297,9 +386,22 @@ function createOpeningEntities(): OvercastEntity[] {
   ];
 }
 
-function createEntity(index: number, distance: number): OvercastEntity {
-  const lane = OVERCAST_CONFIG.LANES[(index * 2 + 1) % OVERCAST_CONFIG.LANES.length] ?? 0;
-  const kind = index % 5 === 0 ? "glitch" : index % 3 === 0 ? "cocoa" : "snowman";
+function createEntity(
+  index: number,
+  distance: number,
+  segmentIndex: number,
+  warmth: number
+): OvercastEntity {
+  const lane =
+    OVERCAST_CONFIG.LANES[(index * 2 + segmentIndex + 1) % OVERCAST_CONFIG.LANES.length] ?? 0;
+  const recoveryCocoa = warmth < 42 && index % 2 === 0;
+  const kind = recoveryCocoa
+    ? "cocoa"
+    : (index + segmentIndex) % 7 === 0
+      ? "glitch"
+      : (index + segmentIndex) % 4 === 0
+        ? "cocoa"
+        : "snowman";
 
   return {
     id: `spawn-${index}`,
@@ -307,6 +409,10 @@ function createEntity(index: number, distance: number): OvercastEntity {
     lane,
     distance,
   };
+}
+
+function calculateOvercastFinishBonus(state: OvercastState) {
+  return Math.round(state.segmentsCleared * 140 + Math.max(0, state.warmth) * 6 + state.combo * 45);
 }
 
 function describeObjective(warmth: number, entities: OvercastEntity[], playerLane: -1 | 0 | 1) {

@@ -11,6 +11,7 @@ import {
   advanceOvercastState,
   createInitialOvercastState,
   createOvercastSegmentCue,
+  getOvercastFinishCue,
   getOvercastRunSummary,
 } from "@logic/games/overcast-glacier/engine/overcastSimulation";
 import type {
@@ -34,6 +35,15 @@ const laneX = {
   "1": "77%",
 } as const;
 
+const finishRouteLights = [
+  "hazard-ribbon",
+  "cocoa-switchback",
+  "snowman-parade",
+  "glitch-lens",
+  "blizzard-arcade",
+  "aurora-runout",
+] as const;
+
 export default function Game() {
   const [state, setState] = useState<OvercastState>(() => createInitialOvercastState("menu"));
   const controlsRef = useRef<Partial<OvercastControls>>({});
@@ -46,6 +56,7 @@ export default function Game() {
   useKeyboardControls(controlsRef);
   useOvercastLoop(state.phase, controlsRef, setState);
   const summary = getOvercastRunSummary(state);
+  const finishCue = state.finishCue ?? getOvercastFinishCue(state);
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -106,10 +117,15 @@ export default function Game() {
             score: summary.score,
             slug: "overcast-glacier",
             status: "completed",
-            summary: `Cleared ${summary.segmentsCleared} glacier segments`,
+            summary: `${finishCue.rating}: cleared ${summary.segmentsCleared} glacier segments`,
+            stats: {
+              bonus: finishCue.scoreBonus,
+              rating: finishCue.rating,
+              warmth: summary.warmth,
+            },
           }}
-          title="GLACIER CLEARED"
-          subtitle={`${summary.segmentsCleared} segments, ${summary.score} points, ${summary.warmth}% warmth remaining.`}
+          title={finishCue.title}
+          subtitle={`${finishCue.message} ${summary.score} points, ${summary.warmth}% warmth remaining. ${finishCue.nextAction}`}
           actions={
             <OverlayButton onClick={() => start(state.sessionMode)}>
               Run Another Route
@@ -130,6 +146,7 @@ function resolveOvercastStartState(mode: SessionMode, saveSlot?: GameSaveSlot): 
       ...restored,
       phase: "playing",
       sessionMode: mode,
+      finishCue: restored.finishCue ?? null,
       segmentCue:
         restored.segmentCue ??
         createOvercastSegmentCue({
@@ -255,6 +272,9 @@ function SlopeScene({ state }: { state: OvercastState }) {
         }}
       />
       <SegmentGate label={state.segmentCue.label} progress={state.segmentProgress} />
+      {state.phase === "finished" ? (
+        <FinishCelebration cue={state.finishCue ?? getOvercastFinishCue(state)} />
+      ) : null}
       {[-1, 0, 1].map((lane) => (
         <div
           key={lane}
@@ -361,6 +381,8 @@ function OvercastHUD({
             }}
           >
             {state.segmentCue.label} · {state.segmentCue.progressLabel}
+            {" · "}
+            {state.segmentCue.trafficLabel}
             {state.segmentCue.nearestKind && state.segmentCue.nearestDistance !== null
               ? ` · ${state.segmentCue.nearestKind} ${state.segmentCue.nearestDistance}m`
               : ""}
@@ -668,6 +690,78 @@ function SegmentGate({ label, progress }: { label: string; progress: number }) {
       }}
     >
       {label} · {Math.round(progress * 100)}%
+    </div>
+  );
+}
+
+function FinishCelebration({ cue }: { cue: NonNullable<OvercastState["finishCue"]> }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "14%",
+          width: "min(72vw, 34rem)",
+          height: 86,
+          transform: "translateX(-50%)",
+          border: "2px solid rgba(254,240,138,0.82)",
+          borderBottomWidth: 8,
+          borderRadius: "8px 8px 18px 18px",
+          background:
+            "linear-gradient(90deg, rgba(15,23,42,0.78), rgba(20,184,166,0.32), rgba(15,23,42,0.78))",
+          boxShadow: "0 0 42px rgba(250,204,21,0.38)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "7%",
+          width: "min(88vw, 46rem)",
+          height: 180,
+          transform: "translateX(-50%)",
+          borderRadius: "50%",
+          background:
+            cue.warmthGrade === "warm"
+              ? "radial-gradient(ellipse, rgba(250,204,21,0.44), rgba(125,211,252,0.18) 42%, transparent 72%)"
+              : "radial-gradient(ellipse, rgba(125,211,252,0.36), rgba(16,185,129,0.18) 42%, transparent 72%)",
+          filter: "blur(4px)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "23%",
+          display: "flex",
+          gap: 8,
+          transform: "translateX(-50%)",
+        }}
+      >
+        {finishRouteLights.slice(0, cue.routeLights).map((lightId, index) => (
+          <span
+            key={lightId}
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              background: index % 2 === 0 ? "#facc15" : "#7dd3fc",
+              border: "2px solid rgba(15,23,42,0.72)",
+              boxShadow:
+                index % 2 === 0
+                  ? "0 0 18px rgba(250,204,21,0.7)"
+                  : "0 0 18px rgba(125,211,252,0.7)",
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
