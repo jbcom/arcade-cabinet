@@ -21,6 +21,7 @@ import {
   type Pirate,
   type Player,
   type Predator,
+  resolveDiveThreatImpact,
   type SceneState,
 } from "@logic/games/bioluminescent-sea/engine/deepSeaSimulation";
 import { useGameLoop } from "@logic/games/bioluminescent-sea/hooks/useGameLoop";
@@ -35,6 +36,16 @@ interface CollectionBurst {
   color: string;
   size: number;
   startedAt: number;
+}
+
+interface OxygenPulse {
+  bonusSeconds: number;
+  id: string;
+}
+
+interface ImpactPulse {
+  id: string;
+  penaltySeconds: number;
 }
 
 interface DeepSeaRunSnapshot {
@@ -593,6 +604,15 @@ function formatThreatDistance(distance: number) {
   return `${Math.round(distance)}m`;
 }
 
+function getInitialDiveDimensions() {
+  if (typeof window === "undefined") return { height: 600, width: 800 };
+
+  return {
+    height: Math.max(320, Math.round(window.innerHeight)),
+    width: Math.max(320, Math.round(window.innerWidth)),
+  };
+}
+
 function DeepSeaGame({
   initialSnapshot,
   mode,
@@ -608,19 +628,22 @@ function DeepSeaGame({
   const { updateRun } = useCabinetRuntime("bioluminescent-sea");
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const initialDimensionsRef = useRef(getInitialDiveDimensions());
   const initialSceneRef = useRef<SceneState | null>(null);
   if (!initialSceneRef.current) {
     initialSceneRef.current = initialSnapshot
       ? cloneSceneState(initialSnapshot.scene)
-      : createInitialScene({ height: 600, width: 800 });
+      : createInitialScene(initialDimensionsRef.current);
   }
 
   const initialScene = initialSceneRef.current;
   const [score, setScore] = useState(initialSnapshot?.score ?? 0);
   const [timeLeft, setTimeLeft] = useState(initialSnapshot?.timeLeft ?? durationSeconds);
   const [multiplier, setMultiplier] = useState(initialSnapshot?.multiplier ?? 1);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [dimensions, setDimensions] = useState(initialDimensionsRef.current);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [oxygenPulse, setOxygenPulse] = useState<OxygenPulse | null>(null);
+  const [impactPulse, setImpactPulse] = useState<ImpactPulse | null>(null);
   const [telemetry, setTelemetry] = useState<DiveTelemetry>(
     () =>
       initialSnapshot?.telemetry ?? getDiveTelemetry(initialScene, durationSeconds, durationSeconds)
@@ -636,6 +659,8 @@ function DeepSeaGame({
   const multiplierRef = useRef(initialSnapshot?.multiplier ?? 1);
   const scoreRef = useRef(initialSnapshot?.score ?? 0);
   const elapsedOffsetRef = useRef(durationSeconds - (initialSnapshot?.timeLeft ?? durationSeconds));
+  const lastImpactTimeRef = useRef(Number.NEGATIVE_INFINITY);
+  const timeModifierRef = useRef(0);
 
   const input = useTouchInput(containerRef);
 
@@ -699,6 +724,22 @@ function DeepSeaGame({
     });
   }, [buildSnapshot, updateRun]);
 
+  const showOxygenPulse = useCallback((bonusSeconds: number, totalTime: number) => {
+    const id = `oxygen-${Math.round(totalTime * 1000)}`;
+    setOxygenPulse({ bonusSeconds, id });
+    window.setTimeout(() => {
+      setOxygenPulse((current) => (current?.id === id ? null : current));
+    }, 1_200);
+  }, []);
+
+  const showImpactPulse = useCallback((penaltySeconds: number, totalTime: number) => {
+    const id = `impact-${Math.round(totalTime * 1000)}`;
+    setImpactPulse({ id, penaltySeconds });
+    window.setTimeout(() => {
+      setImpactPulse((current) => (current?.id === id ? null : current));
+    }, 1_300);
+  }, []);
+
   useEffect(() => {
     if (isGameOver) return undefined;
 
@@ -723,7 +764,15 @@ function DeepSeaGame({
       const { width, height } = dimensions;
 
       const effectiveTotalTime = elapsedOffsetRef.current + totalTime;
-      const newTimeLeft = Math.max(0, durationSeconds - Math.floor(effectiveTotalTime));
+      const getAdjustedTimeLeft = () =>
+        Math.max(
+          0,
+          Math.min(
+            durationSeconds,
+            Math.floor(durationSeconds - effectiveTotalTime + timeModifierRef.current)
+          )
+        );
+      let newTimeLeft = getAdjustedTimeLeft();
       if (newTimeLeft !== timeLeft) {
         setTimeLeft(newTimeLeft);
         if (newTimeLeft === 0) {
@@ -776,6 +825,20 @@ function DeepSeaGame({
         scoreRef.current += result.collection.scoreDelta;
         setMultiplier(result.collection.multiplier);
         setScore(scoreRef.current);
+
+        if (result.collection.oxygenBonusSeconds > 0) {
+          const cappedBonus = Math.min(
+            result.collection.oxygenBonusSeconds,
+            Math.max(0, durationSeconds - newTimeLeft)
+          );
+
+          if (cappedBonus > 0) {
+            timeModifierRef.current += cappedBonus;
+            newTimeLeft = getAdjustedTimeLeft();
+            setTimeLeft(newTimeLeft);
+            showOxygenPulse(cappedBonus, effectiveTotalTime);
+          }
+        }
       }
 
       if (isDiveComplete(result.scene)) {
@@ -790,9 +853,28 @@ function DeepSeaGame({
       });
 
       if (result.collidedWithPredator) {
-        setIsGameOver(true);
-        onGameOver(scoreRef.current);
-        return;
+        const impact = resolveDiveThreatImpact({
+          collided: result.collidedWithPredator,
+          lastImpactTimeSeconds: lastImpactTimeRef.current,
+          mode,
+          timeLeft: newTimeLeft,
+          totalTimeSeconds: effectiveTotalTime,
+        });
+
+        if (impact.type !== "none") {
+          lastImpactTimeRef.current = effectiveTotalTime;
+        }
+
+        if (impact.type === "oxygen-penalty") {
+          timeModifierRef.current -= impact.oxygenPenaltySeconds;
+          newTimeLeft = impact.timeLeft;
+          setTimeLeft(newTimeLeft);
+          showImpactPulse(impact.oxygenPenaltySeconds, effectiveTotalTime);
+        } else if (impact.type === "dive-failed") {
+          setIsGameOver(true);
+          onGameOver(scoreRef.current);
+          return;
+        }
       }
 
       renderScene(
@@ -804,7 +886,18 @@ function DeepSeaGame({
         collectionBurstsRef.current
       );
     },
-    [dimensions, input, timeLeft, isGameOver, onGameOver, onComplete, durationSeconds, mode]
+    [
+      dimensions,
+      input,
+      timeLeft,
+      isGameOver,
+      onGameOver,
+      onComplete,
+      durationSeconds,
+      mode,
+      showOxygenPulse,
+      showImpactPulse,
+    ]
   );
 
   useGameLoop(gameLoop, !isGameOver);
@@ -830,6 +923,30 @@ function DeepSeaGame({
           opacity: threatAlert ? 1 : 0.72,
         }}
       />
+      <AnimatePresence>
+        {oxygenPulse && (
+          <motion.div
+            key={oxygenPulse.id}
+            className="pointer-events-none absolute left-1/2 top-[5.35rem] z-20 -translate-x-1/2 rounded-md border border-cyan-200/30 bg-cyan-950/80 px-4 py-2 text-center font-black uppercase text-cyan-100 shadow-2xl shadow-cyan-400/20 backdrop-blur sm:top-20"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          >
+            Oxygen +{oxygenPulse.bonusSeconds}s
+          </motion.div>
+        )}
+        {impactPulse && (
+          <motion.div
+            key={impactPulse.id}
+            className="pointer-events-none absolute left-1/2 top-[8.35rem] z-20 -translate-x-1/2 rounded-md border border-red-200/35 bg-red-950/80 px-4 py-2 text-center font-black uppercase text-red-100 shadow-2xl shadow-red-500/25 backdrop-blur sm:top-32"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          >
+            Hull shock -{impactPulse.penaltySeconds}s
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="pointer-events-none absolute inset-x-3 top-3 grid grid-cols-3 gap-2 sm:inset-x-auto sm:left-4 sm:flex sm:gap-3">
         <div className="min-w-0 rounded-md border border-cyan-200/15 bg-slate-950/58 p-2.5 shadow-2xl shadow-cyan-950/30 backdrop-blur-md sm:min-w-28 sm:p-3">
           <div className="mb-1 truncate font-semibold text-[0.62rem] uppercase tracking-widest text-cyan-300">
@@ -984,7 +1101,7 @@ export default function Game() {
   );
 
   return (
-    <GameViewport background="#050d15">
+    <GameViewport background="#050d15" data-browser-screenshot-mode="page">
       <AnimatePresence mode="wait">
         {gameState === "landing" && (
           <motion.div key="landing" className="absolute inset-0" exit={{ opacity: 0 }}>

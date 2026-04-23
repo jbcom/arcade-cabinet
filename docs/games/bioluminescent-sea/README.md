@@ -19,6 +19,10 @@ The HUD stays compact: score, time, and chain sit at the top edge, while the div
 
 ## Current Feature and Polish Pass
 
+- Standard and cozy predator contact now costs oxygen with a short grace window instead of ending the dive immediately; challenge mode keeps hard collision pressure.
+- Collected creatures now restore oxygen by type, making beacon chains a true recovery route rather than score-only pickups.
+- Gameplay screenshots now use full page capture so HUD, oxygen, route, and pressure evidence are verified alongside the canvas scene.
+- The dive initializes from the actual viewport size so mobile starts with the submersible and route in frame.
 - Route landmark beacons now expose deterministic bearing, distance, and label telemetry from pure dive logic.
 - The route HUD adds a compass readout so the player can follow trench markers instead of reading the objective as prose only.
 - Collection bursts, a stronger headlamp cone, deeper silhouettes, and threat warning glints make pickups and danger readable in desktop and mobile captures.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added oxygen recovery from collected creatures and recoverable standard/cozy predator contact with a collision grace window.
+- Switched gameplay evidence to full page screenshots and initialized the dive scene from the actual viewport for mobile framing.
 - Added route landmark beacon telemetry and objective text tied to trench markers.
 - Added collection burst rings, stronger headlamp/depth treatment, warning glints, and shared cartridge landing identity.
 

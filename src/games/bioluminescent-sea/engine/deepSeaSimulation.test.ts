@@ -21,6 +21,7 @@ import {
   isDiveComplete,
   type Player,
   type Predator,
+  resolveDiveThreatImpact,
   TOTAL_BEACONS,
 } from "./deepSeaSimulation";
 
@@ -79,6 +80,7 @@ describe("deep sea simulation", () => {
     expect(result.collected.map((creature) => creature.id)).toEqual(["plankton", "fish"]);
     expect(result.creatures).toEqual([distant]);
     expect(result.multiplier).toBe(4);
+    expect(result.oxygenBonusSeconds).toBe(4 + 6);
     expect(result.scoreDelta).toBe(10 * 3 + 50 * 4);
     expect(result.lastCollectTime).toBe(4);
   });
@@ -122,6 +124,47 @@ describe("deep sea simulation", () => {
     expect(getDiveModeTuning("cozy").predatorSpeedScale).toBeLessThan(
       getDiveModeTuning("standard").predatorSpeedScale
     );
+    expect(getDiveModeTuning("standard").collisionEndsDive).toBe(false);
+    expect(getDiveModeTuning("challenge").collisionEndsDive).toBe(true);
+  });
+
+  test("resolves predator contact as recoverable oxygen loss outside challenge", () => {
+    const standardImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: -100,
+      mode: "standard",
+      timeLeft: 300,
+      totalTimeSeconds: 90,
+    });
+    const graceImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: 90,
+      mode: "standard",
+      timeLeft: standardImpact.timeLeft,
+      totalTimeSeconds: 92,
+    });
+    const challengeImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: -100,
+      mode: "challenge",
+      timeLeft: 300,
+      totalTimeSeconds: 90,
+    });
+
+    expect(standardImpact).toMatchObject({
+      oxygenPenaltySeconds: 45,
+      timeLeft: 255,
+      type: "oxygen-penalty",
+    });
+    expect(graceImpact).toMatchObject({
+      oxygenPenaltySeconds: 0,
+      timeLeft: 255,
+      type: "none",
+    });
+    expect(challengeImpact).toMatchObject({
+      timeLeft: 0,
+      type: "dive-failed",
+    });
   });
 
   test("wraps particles deterministically instead of using runtime randomness", () => {

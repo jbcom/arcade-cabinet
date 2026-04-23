@@ -81,6 +81,7 @@ export interface CreatureCollectionResult {
   creatures: Creature[];
   lastCollectTime: number;
   multiplier: number;
+  oxygenBonusSeconds: number;
   scoreDelta: number;
 }
 
@@ -106,10 +107,21 @@ export interface SceneAdvanceResult {
 }
 
 export interface DiveModeTuning {
+  collectionOxygenScale: number;
+  collisionEndsDive: boolean;
   durationSeconds: number;
+  impactGraceSeconds: number;
+  impactOxygenPenaltySeconds: number;
   pirateSpeedScale: number;
   predatorSpeedScale: number;
   threatRadiusScale: number;
+}
+
+export interface DiveThreatImpactResult {
+  graceUntilSeconds: number;
+  oxygenPenaltySeconds: number;
+  timeLeft: number;
+  type: "none" | "oxygen-penalty" | "dive-failed";
 }
 
 export const GAME_DURATION = 600;
@@ -126,22 +138,39 @@ export const CREATURE_POINTS: Record<CreatureType, number> = {
   jellyfish: 30,
   plankton: 10,
 };
+export const CREATURE_OXYGEN_BONUS_SECONDS: Record<CreatureType, number> = {
+  fish: 6,
+  jellyfish: 8,
+  plankton: 4,
+};
 
 const DIVE_MODE_TUNING: Record<SessionMode, DiveModeTuning> = {
   challenge: {
+    collectionOxygenScale: 0.55,
+    collisionEndsDive: true,
     durationSeconds: 480,
+    impactGraceSeconds: 0,
+    impactOxygenPenaltySeconds: 0,
     pirateSpeedScale: 1.1,
     predatorSpeedScale: 1.16,
     threatRadiusScale: 1.22,
   },
   cozy: {
+    collectionOxygenScale: 1.35,
+    collisionEndsDive: false,
     durationSeconds: 780,
+    impactGraceSeconds: 5,
+    impactOxygenPenaltySeconds: 25,
     pirateSpeedScale: 0.8,
     predatorSpeedScale: 0.78,
     threatRadiusScale: 0.72,
   },
   standard: {
+    collectionOxygenScale: 1,
+    collisionEndsDive: false,
     durationSeconds: GAME_DURATION,
+    impactGraceSeconds: 4,
+    impactOxygenPenaltySeconds: 45,
     pirateSpeedScale: 1,
     predatorSpeedScale: 1,
     threatRadiusScale: 1,
@@ -325,7 +354,14 @@ export function advanceScene(
   const particles = scene.particles.map((particle) =>
     advanceParticle(particle, dimensions, totalTime, deltaTime)
   );
-  const collection = collectCreatures(creatures, player, totalTime, lastCollectTime, multiplier);
+  const collection = collectCreatures(
+    creatures,
+    player,
+    totalTime,
+    lastCollectTime,
+    multiplier,
+    tuning.collectionOxygenScale
+  );
   const nextScene = {
     creatures: collection.creatures,
     particles,
@@ -509,11 +545,13 @@ export function collectCreatures(
   player: Player,
   totalTime: number,
   lastCollectTime: number,
-  currentMultiplier: number
+  currentMultiplier: number,
+  oxygenScale = 1
 ): CreatureCollectionResult {
   const collected: Creature[] = [];
   const remaining: Creature[] = [];
   let multiplier = currentMultiplier;
+  let oxygenBonusSeconds = 0;
   let scoreDelta = 0;
   let nextLastCollectTime = lastCollectTime;
 
@@ -522,6 +560,7 @@ export function collectCreatures(
 
     if (distance < creature.size * 0.56 + 30) {
       multiplier = calculateMultiplier(nextLastCollectTime, totalTime, multiplier);
+      oxygenBonusSeconds += CREATURE_OXYGEN_BONUS_SECONDS[creature.type] * oxygenScale;
       scoreDelta += CREATURE_POINTS[creature.type] * multiplier;
       nextLastCollectTime = totalTime;
       collected.push(creature);
@@ -535,6 +574,7 @@ export function collectCreatures(
     creatures: remaining,
     lastCollectTime: nextLastCollectTime,
     multiplier,
+    oxygenBonusSeconds: Math.round(oxygenBonusSeconds),
     scoreDelta,
   };
 }
@@ -666,6 +706,61 @@ export function getDiveModeTuning(mode: string | null | undefined): DiveModeTuni
 
 export function getDiveDurationSeconds(mode: string | null | undefined): number {
   return getDiveModeTuning(mode).durationSeconds;
+}
+
+export function resolveDiveThreatImpact({
+  collided,
+  lastImpactTimeSeconds,
+  mode,
+  timeLeft,
+  totalTimeSeconds,
+}: {
+  collided: boolean;
+  lastImpactTimeSeconds: number;
+  mode: string | null | undefined;
+  timeLeft: number;
+  totalTimeSeconds: number;
+}): DiveThreatImpactResult {
+  if (!collided) {
+    return {
+      graceUntilSeconds: lastImpactTimeSeconds,
+      oxygenPenaltySeconds: 0,
+      timeLeft,
+      type: "none",
+    };
+  }
+
+  const tuning = getDiveModeTuning(mode);
+  if (
+    tuning.impactGraceSeconds > 0 &&
+    totalTimeSeconds - lastImpactTimeSeconds < tuning.impactGraceSeconds
+  ) {
+    return {
+      graceUntilSeconds: lastImpactTimeSeconds + tuning.impactGraceSeconds,
+      oxygenPenaltySeconds: 0,
+      timeLeft,
+      type: "none",
+    };
+  }
+
+  if (tuning.collisionEndsDive) {
+    return {
+      graceUntilSeconds: totalTimeSeconds,
+      oxygenPenaltySeconds: timeLeft,
+      timeLeft: 0,
+      type: "dive-failed",
+    };
+  }
+
+  const oxygenPenaltySeconds = Math.min(timeLeft, tuning.impactOxygenPenaltySeconds);
+  const nextTimeLeft = Math.max(0, timeLeft - oxygenPenaltySeconds);
+
+  return {
+    graceUntilSeconds: totalTimeSeconds + tuning.impactGraceSeconds,
+    oxygenPenaltySeconds,
+    timeLeft: nextTimeLeft,
+    type: nextTimeLeft <= 0 ? "dive-failed" : "oxygen-penalty",
+  };
 }
 
 export function getDiveRouteLandmark(
