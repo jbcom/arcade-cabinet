@@ -27,31 +27,6 @@ export const games = [
     difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
   },
   {
-    slug: "cosmic-gardener",
-    title: "COSMIC GARDENER",
-    description: "Plant stars and build constellations in a hybrid pinball puzzle.",
-    tags: ["react", "framer-motion", "puzzle"],
-    color: "#fbbf24",
-    motif: "cosmic",
-    secondaryAccent: "#ec4899",
-    gradient: "linear-gradient(135deg, #fbbf24, #ec4899)",
-    pillars: ["Pinball energy", "Readable constellation routing", "Wonder without visual clutter"],
-    presentation:
-      "The board is a cosmic tabletop: the player reads flippers and launch power first, then star growth, then constellation goals.",
-    sceneDirection:
-      "Use warm star golds against a cool nebula field, with animated energy streams that clarify cause and effect instead of becoming decoration.",
-    responsiveDirection:
-      "All board coordinates stay percentage-based so the table composes vertically on mobile and wider as a cabinet island on desktop.",
-    coreMessage: "A garden grows when motion is guided into constellations.",
-    coreLoop:
-      "Launch, flip, plant stars, connect the active pattern, claim a resonance bloom, preview the next constellation.",
-    sessionTarget: "8-15 minute constellation set",
-    pressureType: "Ball-save and void-zone pressure, generous in standard and colder in challenge",
-    defaultControls: "Large flipper and launch buttons with keyboard parity",
-    winReplayPromise: "Complete more star patterns and chase higher bloom chains.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "enchanted-forest",
     title: "ENCHANTED FOREST",
     description: "Protect sacred trees using musical runes and spirit magic.",

@@ -80,7 +80,6 @@ export const DEFAULT_SESSION_TUNING: Record<SessionMode, SessionTuning> = {
 
 export const LAUNCH_GAME_SLUGS = [
   "bioluminescent-sea",
-  "cosmic-gardener",
   "enchanted-forest",
   "entropy-edge",
   "mega-track",
