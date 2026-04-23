@@ -82,7 +82,6 @@ export const LAUNCH_GAME_SLUGS = [
   "bioluminescent-sea",
   "mega-track",
   "overcast-glacier",
-  "primordial-ascent",
   "titan-mech",
   "beppo-laughs",
   "cognitive-dissonance",

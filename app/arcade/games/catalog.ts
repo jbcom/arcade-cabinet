@@ -79,31 +79,6 @@ export const games = [
     difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
   },
   {
-    slug: "primordial-ascent",
-    title: "PRIMORDIAL ASCENT",
-    description: "Grapple your way out of a rising lava cavern using procedural physics.",
-    tags: ["r3f", "physics", "procedural"],
-    color: "#00ff66",
-    motif: "primordial",
-    secondaryAccent: "#ff3333",
-    gradient: "linear-gradient(135deg, #00ff66, #ff3333)",
-    pillars: ["Vertical escape", "Grapple readability", "Lava pressure"],
-    presentation:
-      "The player should read the cavern as a climb: cyan grapple ceilings, green rest surfaces, and red lava pressure form the core visual grammar.",
-    sceneDirection:
-      "Low ambient light, strong emissive targets, fog, and a rising lava plane turn simple procedural geometry into a hostile vertical space.",
-    responsiveDirection:
-      "Pointer-lock play remains fullscreen-first, while the root fills the cabinet island for smoke tests and preview without imposing viewport height.",
-    coreMessage: "A controlled grapple rhythm turns panic into ascent.",
-    coreLoop:
-      "Climb anchor routes, lock tethers, rest on shelves, manage lava distance, reach air pockets.",
-    sessionTarget: "8-15 minute cavern climb",
-    pressureType: "Lava is a pacing signal in standard and a chase wall in challenge",
-    defaultControls: "Touch-anywhere joystick and grapple action, with desktop pointer parity",
-    winReplayPromise: "Climb higher routes by reading anchors and preserving recovery shelves.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "titan-mech",
     title: "TITAN MECH: OVERHEAT",
     description: "Pilot a heat-stressed extraction titan through ore pylons and reactor pressure.",
