@@ -179,6 +179,11 @@ function cleanupBrowserRender() {
 }
 
 async function verifyFloatingJoystick(rootElement: Element) {
+  await waitFor(() => {
+    expect(rootElement.querySelector('[data-floating-joystick="true"]')).not.toBeNull();
+  });
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
   const rect = rootElement.getBoundingClientRect();
   const pointerId = 41;
   const originX = rect.left + Math.min(180, rect.width * 0.42);

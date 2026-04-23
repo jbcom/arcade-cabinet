@@ -39,6 +39,9 @@ export interface MegaTrackState {
 
 export interface MegaTrackRaceCue {
   legLabel: string;
+  sceneryBand: MegaTrackSceneryCue["band"];
+  sceneryLabel: string;
+  sceneryAccent: string;
   nextHazardType: Obstacle["type"] | null;
   nextHazardLane: Obstacle["lane"] | null;
   nextHazardDistance: number | null;
@@ -48,6 +51,17 @@ export interface MegaTrackRaceCue {
   checkpointDistance: number;
   checkpointRepairActive: boolean;
   pressure: "clear" | "closing" | "danger";
+}
+
+export interface MegaTrackSceneryCue {
+  band: "harbor-switchback" | "service-canyon" | "finish-fairway";
+  label: string;
+  banner: string;
+  accent: string;
+  secondaryAccent: string;
+  skylineColor: string;
+  fogColor: string;
+  roadsideDensity: number;
 }
 
 export const CONFIG = {

@@ -3,7 +3,7 @@ import {
   getSessionRecoveryScale,
   normalizeSessionMode,
 } from "@logic/shared";
-import type { MegaTrackRaceCue, MegaTrackState } from "./types";
+import type { MegaTrackRaceCue, MegaTrackSceneryCue, MegaTrackState } from "./types";
 import { CONFIG, type Obstacle } from "./types";
 
 const LANE_PATTERN: (-1 | 0 | 1)[] = [-1, 1, -1, 1, -1, 1, -1, 1, 0, -1, 1, 0];
@@ -207,6 +207,7 @@ export function getCupLegProgress(state: MegaTrackState) {
 
 export function getMegaTrackRaceCue(state: MegaTrackState): MegaTrackRaceCue {
   const cup = getCupLegProgress(state);
+  const scenery = getMegaTrackSceneryCue(state);
   const nextHazard = getNextHazard(state);
   const nextHazardDistance = nextHazard
     ? Math.max(0, Math.round((nextHazard.z - state.distance) / 10))
@@ -232,12 +233,58 @@ export function getMegaTrackRaceCue(state: MegaTrackState): MegaTrackRaceCue {
     checkpointProgressPercent: Math.round(cup.legProgress * 100),
     checkpointRepairActive,
     legLabel: `Leg ${cup.leg}/${CUP_LEG_COUNT}`,
+    sceneryAccent: scenery.accent,
+    sceneryBand: scenery.band,
+    sceneryLabel: scenery.label,
     nextHazardDistance,
     nextHazardLane: nextHazard?.lane ?? null,
     nextHazardType: nextHazard?.type ?? null,
     pressure,
     recommendedLane,
     recommendedLaneLabel: labelLane(recommendedLane),
+  };
+}
+
+export function getMegaTrackSceneryCue(
+  state: Pick<MegaTrackState, "distance">
+): MegaTrackSceneryCue {
+  const leg = getLegForDistance(state.distance);
+
+  if (leg === 3) {
+    return {
+      accent: "#fb7185",
+      band: "finish-fairway",
+      banner: "Finish Fairway",
+      fogColor: "#f8c7d3",
+      label: "Finish Fairway",
+      roadsideDensity: 14,
+      secondaryAccent: "#facc15",
+      skylineColor: "#3f1d38",
+    };
+  }
+
+  if (leg === 2) {
+    return {
+      accent: "#f97316",
+      band: "service-canyon",
+      banner: "Service Canyon",
+      fogColor: "#ffd7a8",
+      label: "Service Canyon",
+      roadsideDensity: 12,
+      secondaryAccent: "#22d3ee",
+      skylineColor: "#3d2a24",
+    };
+  }
+
+  return {
+    accent: "#22d3ee",
+    band: "harbor-switchback",
+    banner: "Harbor Switchback",
+    fogColor: "#a7ddeb",
+    label: "Harbor Switchback",
+    roadsideDensity: 10,
+    secondaryAccent: "#facc15",
+    skylineColor: "#273449",
   };
 }
 

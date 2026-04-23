@@ -6,6 +6,7 @@ import {
   getCupLegProgress,
   getMegaTrackRaceCue,
   getMegaTrackRunSummary,
+  getMegaTrackSceneryCue,
   tick,
 } from "./simulation";
 import { CONFIG } from "./types";
@@ -164,8 +165,27 @@ describe("mega track simulation", () => {
       pressure: "danger",
       recommendedLane: -1,
       recommendedLaneLabel: "left lane",
+      sceneryBand: "harbor-switchback",
+      sceneryLabel: "Harbor Switchback",
     });
     expect(cue.checkpointProgressPercent).toBeGreaterThan(0);
+  });
+
+  test("selects authored scenery bands by cup leg", () => {
+    const legLength = CONFIG.GOAL_DISTANCE / 3;
+
+    expect(getMegaTrackSceneryCue({ distance: 2000 })).toMatchObject({
+      band: "harbor-switchback",
+      roadsideDensity: 10,
+    });
+    expect(getMegaTrackSceneryCue({ distance: legLength + 2000 })).toMatchObject({
+      band: "service-canyon",
+      roadsideDensity: 12,
+    });
+    expect(getMegaTrackSceneryCue({ distance: legLength * 2 + 2000 })).toMatchObject({
+      band: "finish-fairway",
+      roadsideDensity: 14,
+    });
   });
 
   test("reports cup legs and run summary deterministically", () => {

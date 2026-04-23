@@ -78,6 +78,9 @@ export function HUD({ state, onLaneControl }: HUDProps) {
           <div style={{ color: "#fde68a", fontSize: 12 }}>
             Checkpoint {cue.checkpointProgressPercent}%
           </div>
+          <div style={{ color: cue.sceneryAccent, fontSize: 12, fontWeight: 800 }}>
+            {cue.sceneryLabel}
+          </div>
         </div>
         <div style={{ ...panelStyle, textAlign: isMobile ? "left" : "right" }}>
           <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: "bold" }}>{distance}m</div>
