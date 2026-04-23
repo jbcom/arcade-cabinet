@@ -3,6 +3,7 @@ import {
   advanceCognitiveState,
   createInitialCognitiveState,
   getCognitiveEndingCue,
+  getCognitiveFeedbackCue,
   getCognitiveModeTuning,
   getCognitiveRunSummary,
   getCognitiveShiftCue,
@@ -144,5 +145,42 @@ describe("Cognitive Dissonance coherence loop", () => {
     });
     expect(cue.shardCount).toBeGreaterThan(10);
     expect(cue.message).toContain("phase-lock");
+  });
+
+  test("feedback cue exposes stable runtime fallback signals", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "stable"),
+      coherence: 90,
+      elapsedMs: getCognitiveModeTuning("standard").shiftDurationMs,
+      phaseLocks: 3,
+      tension: 22,
+    };
+    const cue = getCognitiveFeedbackCue(state);
+
+    expect(cue).toMatchObject({
+      label: "Clear Glass Lock",
+      tone: "stable",
+    });
+    expect(cue.eventKey).toContain("stable");
+    expect(cue.visualFallback).toContain("Glass-lock rings");
+    expect(cue.hapticPattern.length).toBeGreaterThan(0);
+  });
+
+  test("feedback cue warns on high-tension danger before shatter", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "playing"),
+      coherence: 31,
+      currentPattern: "gold" as const,
+      elapsedMs: 84_000,
+      tension: 88,
+    };
+    const cue = getCognitiveFeedbackCue(state);
+
+    expect(cue).toMatchObject({
+      label: "Tension Warning",
+      tone: "danger",
+    });
+    expect(cue.audioLabel).toContain("warning");
+    expect(cue.visualFallback).toContain("Red glass rails");
   });
 });

@@ -1,6 +1,7 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
   CognitiveEndingCue,
+  CognitiveFeedbackCue,
   CognitiveModeTuning,
   CognitivePattern,
   CognitiveShiftCue,
@@ -246,6 +247,86 @@ export function getCognitiveEndingCue(state: CognitiveState): CognitiveEndingCue
     statusLabel,
     title: "Shift Stable",
     tone: "stable",
+  };
+}
+
+export function getCognitiveFeedbackCue(state: CognitiveState): CognitiveFeedbackCue {
+  if (state.phase === "stable") {
+    const ending = getCognitiveEndingCue(state);
+    return {
+      accentPattern: ending.accentPattern,
+      audioLabel: "soft glass chord",
+      eventKey: `stable-${state.phaseLocks}-${Math.round(state.coherence)}`,
+      hapticPattern: [26, 40, 26],
+      intensity: ending.intensity,
+      label: ending.statusLabel,
+      tone: "stable",
+      visualFallback: "Glass-lock rings carry the stable shift feedback.",
+    };
+  }
+
+  if (state.phase === "shattered") {
+    const ending = getCognitiveEndingCue(state);
+    return {
+      accentPattern: ending.accentPattern,
+      audioLabel: "fracture snap",
+      eventKey: `shatter-${Math.round(state.elapsedMs)}-${Math.round(state.tension)}`,
+      hapticPattern: [55, 25, 90],
+      intensity: ending.intensity,
+      label: ending.statusLabel,
+      tone: "shatter",
+      visualFallback: "Fracture shards carry the failed shift feedback.",
+    };
+  }
+
+  if (state.phaseLockPulseMs > 0) {
+    return {
+      accentPattern: state.currentPattern,
+      audioLabel: "phase-lock chime",
+      eventKey: `phase-lock-${state.phaseLocks}`,
+      hapticPattern: [18, 28, 18],
+      intensity: 0.78 + state.phaseLocks * 0.08,
+      label: "Phase Lock",
+      tone: "phase-lock",
+      visualFallback: "Phase-lock halo and rim glow confirm the recovery pulse.",
+    };
+  }
+
+  if (state.coherence < 38 || state.tension > 76) {
+    return {
+      accentPattern: state.currentPattern,
+      audioLabel: "tension warning",
+      eventKey: `danger-${Math.floor(state.elapsedMs / 2000)}-${state.currentPattern}`,
+      hapticPattern: [30],
+      intensity: clamp(0.62 + state.tension / 160, 0.68, 1.2),
+      label: "Tension Warning",
+      tone: "danger",
+      visualFallback: "Red glass rails and pattern rain carry the warning feedback.",
+    };
+  }
+
+  if (state.stableMatches > 0) {
+    return {
+      accentPattern: state.currentPattern,
+      audioLabel: `${labelPattern(state.currentPattern)} match pulse`,
+      eventKey: `match-${state.currentPattern}-${state.stableMatches}`,
+      hapticPattern: [10],
+      intensity: clamp(0.36 + state.stableHoldMs / PHASE_LOCK_THRESHOLD_MS, 0.38, 0.92),
+      label: "Match Pulse",
+      tone: "match",
+      visualFallback: "Rim glow and phase-lock meter carry the match feedback.",
+    };
+  }
+
+  return {
+    accentPattern: state.currentPattern,
+    audioLabel: "silent scan",
+    eventKey: `idle-${state.currentPattern}`,
+    hapticPattern: [],
+    intensity: 0.28,
+    label: "Listening",
+    tone: "idle",
+    visualFallback: "Pattern rain and rim labels carry idle feedback.",
   };
 }
 

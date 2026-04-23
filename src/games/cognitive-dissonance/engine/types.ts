@@ -45,6 +45,25 @@ export interface CognitiveEndingCue {
   intensity: number;
 }
 
+export type CognitiveFeedbackTone =
+  | "danger"
+  | "idle"
+  | "match"
+  | "phase-lock"
+  | "shatter"
+  | "stable";
+
+export interface CognitiveFeedbackCue {
+  tone: CognitiveFeedbackTone;
+  eventKey: string;
+  label: string;
+  audioLabel: string;
+  hapticPattern: number[];
+  visualFallback: string;
+  accentPattern: CognitivePattern;
+  intensity: number;
+}
+
 export interface CognitiveState {
   phase: CognitivePhase;
   sessionMode: SessionMode;

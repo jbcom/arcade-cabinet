@@ -4,17 +4,20 @@ import {
   GameViewport,
   isCabinetRuntimePaused,
   OverlayButton,
+  useCabinetRuntime,
   useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   advanceCognitiveState,
   createInitialCognitiveState,
   getCognitiveEndingCue,
+  getCognitiveFeedbackCue,
   getCognitiveRunSummary,
   getCognitiveShiftCue,
 } from "@logic/games/cognitive-dissonance/engine/cognitiveSimulation";
 import type {
   CognitiveEndingCue,
+  CognitiveFeedbackCue,
   CognitivePattern,
   CognitiveState,
 } from "@logic/games/cognitive-dissonance/engine/types";
@@ -29,10 +32,20 @@ const PATTERN_COLORS: Record<CognitivePattern, string> = {
 };
 
 export default function Game() {
+  const { settings } = useCabinetRuntime("cognitive-dissonance");
   const [state, setState] = useState<CognitiveState>(() =>
     createInitialCognitiveState("standard", "menu")
   );
+  const [feedbackStatus, setFeedbackStatus] = useState<{
+    audio: "live" | "visual";
+    haptics: "live" | "visual";
+  }>({
+    audio: "live",
+    haptics: "live",
+  });
   const heldPattern = useRef<CognitivePattern | null>(null);
+  const lastFeedbackEventRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (state.phase !== "playing") return undefined;
@@ -83,6 +96,46 @@ export default function Game() {
     state.phase === "stable" || state.phase === "shattered"
       ? getCognitiveEndingCue(state)
       : undefined;
+  const feedbackCue = getCognitiveFeedbackCue(state);
+
+  useEffect(() => {
+    if (state.phase === "menu") {
+      lastFeedbackEventRef.current = null;
+      setFeedbackStatus((current) =>
+        current.audio === "live" && current.haptics === "live"
+          ? current
+          : { audio: "live", haptics: "live" }
+      );
+      return;
+    }
+    if (lastFeedbackEventRef.current === feedbackCue.eventKey) return;
+    lastFeedbackEventRef.current = feedbackCue.eventKey;
+
+    const audioStatus = playFeedbackTone(settings.soundEnabled, feedbackCue, audioContextRef)
+      ? "live"
+      : "visual";
+    const hapticsStatus =
+      settings.hapticsEnabled && playFeedbackHaptics(feedbackCue.hapticPattern) ? "live" : "visual";
+
+    setFeedbackStatus({
+      audio: audioStatus,
+      haptics: hapticsStatus,
+    });
+  }, [
+    feedbackCue,
+    feedbackCue.eventKey,
+    settings.hapticsEnabled,
+    settings.soundEnabled,
+    state.phase,
+  ]);
+
+  useEffect(
+    () => () => {
+      audioContextRef.current?.close().catch(() => undefined);
+      audioContextRef.current = null;
+    },
+    []
+  );
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -117,7 +170,7 @@ export default function Game() {
 
       {state.phase === "playing" ? (
         <>
-          <Hud state={state} />
+          <Hud feedbackCue={feedbackCue} feedbackStatus={feedbackStatus} state={state} />
           <RimControls
             active={state.currentPattern}
             onHold={(pattern) => {
@@ -186,6 +239,76 @@ function resolveCognitiveStartState(mode: SessionMode, saveSlot?: GameSaveSlot):
   }
 
   return createInitialCognitiveState(mode, "playing");
+}
+
+function playFeedbackHaptics(pattern: number[]) {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
+    return false;
+  }
+
+  try {
+    return navigator.vibrate(pattern);
+  } catch {
+    return false;
+  }
+}
+
+function playFeedbackTone(
+  enabled: boolean,
+  cue: CognitiveFeedbackCue,
+  contextRef: { current: AudioContext | null }
+) {
+  if (!enabled || cue.tone === "idle") return false;
+
+  const AudioContextCtor =
+    globalThis.AudioContext ||
+    ((globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext ??
+      null);
+  if (!AudioContextCtor) return false;
+
+  try {
+    const context = contextRef.current ?? new AudioContextCtor();
+    contextRef.current = context;
+    if (context.state === "suspended") {
+      void context.resume().catch(() => undefined);
+    }
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const now = context.currentTime;
+    const duration = 0.08 + cue.intensity * 0.02;
+    oscillator.type = cue.tone === "danger" || cue.tone === "shatter" ? "sawtooth" : "sine";
+    oscillator.frequency.setValueAtTime(feedbackFrequency(cue), now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.045 + cue.intensity * 0.018, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function feedbackFrequency(cue: CognitiveFeedbackCue) {
+  switch (cue.tone) {
+    case "danger":
+      return 176;
+    case "match":
+      return 392;
+    case "phase-lock":
+      return 523.25;
+    case "stable":
+      return 659.25;
+    case "shatter":
+      return 220;
+    default:
+      return 261.63;
+  }
 }
 
 function isCognitiveSnapshot(snapshot: unknown): snapshot is CognitiveState {
@@ -630,7 +753,18 @@ function CognitiveEndingBackdrop({ cue }: { cue: CognitiveEndingCue }) {
   );
 }
 
-function Hud({ state }: { state: CognitiveState }) {
+function Hud({
+  feedbackCue,
+  feedbackStatus,
+  state,
+}: {
+  feedbackCue: CognitiveFeedbackCue;
+  feedbackStatus: {
+    audio: "live" | "visual";
+    haptics: "live" | "visual";
+  };
+  state: CognitiveState;
+}) {
   const summary = getCognitiveRunSummary(state);
   const cue = getCognitiveShiftCue(state);
 
@@ -651,6 +785,25 @@ function Hud({ state }: { state: CognitiveState }) {
         </div>
         <div className="mt-1 text-sm font-bold text-violet-50">{cue.instruction}</div>
         <div className="mt-1 text-xs font-semibold text-violet-100/70">{state.lastEvent}</div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div
+            className="rounded-md border px-2 py-2 font-mono text-[0.64rem] font-black uppercase tracking-[0.18em]"
+            style={{
+              borderColor: `${PATTERN_COLORS[feedbackCue.accentPattern]}55`,
+              color: PATTERN_COLORS[feedbackCue.accentPattern],
+            }}
+          >
+            {feedbackCue.label} · {feedbackCue.visualFallback}
+          </div>
+          <div className="rounded-md border border-white/12 px-2 py-2 font-mono text-[0.58rem] font-black uppercase tracking-[0.18em] text-white/68">
+            {feedbackStatus.audio === "live"
+              ? `Audio ${feedbackCue.audioLabel}`
+              : "Visual audio fallback"}
+          </div>
+          <div className="rounded-md border border-white/12 px-2 py-2 font-mono text-[0.58rem] font-black uppercase tracking-[0.18em] text-white/68">
+            {feedbackStatus.haptics === "live" ? "Haptic live" : "Visual haptic fallback"}
+          </div>
+        </div>
       </div>
     </header>
   );

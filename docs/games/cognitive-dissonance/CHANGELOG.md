@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added deterministic runtime feedback cues and visual fallback messaging for audio/haptic states.
 - Added stable glass-lock and shattered fracture ending cues with deterministic Three and overlay payoffs.
 - Added phase-lock recovery for sustained correct pattern matching.
 - Added deterministic shift cue state for stage, next pattern, urgency, phase-lock charge, and instruction text.

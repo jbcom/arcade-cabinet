@@ -1,26 +1,40 @@
+title: Engine Pillar
+updated: 2026-04-23
+status: current
+domain: technical
 ---
-title: Engineering Pillar
-description: The core ECS and loop architecture for Arcade Cabinet games.
----
 
-# Engineering Pillar: Koota ECS & Game Loops
+# Engine Pillar
 
-Arcade Cabinet uses a unified **Entity Component System (ECS)** powered by `koota`.
+This document owns the pure-simulation side of the cabinet.
 
-## Philosophy
-To ensure all games are predictable, performant, and easily testable, game state is strictly decoupled from React's rendering lifecycle. We do not use sprawling `useState` or `useContext` hooks to track high-frequency game variables (like player velocity or health).
+## Core Rule
 
-## Koota Implementation
-Every game initializes a `WorldProvider`. Inside the game, entities are spawned with specific `Traits` (components).
+If it changes scoring, progression, win/loss state, route choice, or difficulty,
+it belongs in `src/`, not `app/`.
 
-- **Traits**: Small, typed data structures (e.g., `PhaseTrait`, `ScoreTrait`, `OtterlyTrait`).
-- **Systems**: Standard `useFrame` or `useGameLoop` hooks that read/write from Traits without triggering expensive React re-renders.
+## What Lives Here
 
-Example:
-```typescript
-// Updating state safely without React renders
-useFrame((state, delta) => {
-    const current = entity.get(ScoreTrait);
-    entity.set(ScoreTrait, { value: current.value + 1 });
-});
-```
+- session-mode tuning,
+- deterministic start state,
+- scoring,
+- objective routing,
+- AI or hazard rules,
+- save snapshots,
+- event telemetry needed by UI/R3F,
+- recoverability and failure rules.
+
+## What Does Not Live Here
+
+- decorative particles,
+- camera sway,
+- one-off animation timing with no gameplay effect,
+- CSS-only state,
+- label presentation copy.
+
+## Cabinet Guidance
+
+Not every game uses the same internal pattern. Some use a small deterministic
+reducer-style loop, some use Three/Rapier orchestration, and some still keep a
+limited ECS bridge. The standard is not one engine framework. The standard is
+deterministic logic with test ownership in `src/games/<slug>`.

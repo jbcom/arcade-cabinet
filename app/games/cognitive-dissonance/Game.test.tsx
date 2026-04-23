@@ -22,7 +22,7 @@ test("Cognitive Dissonance reaches gameplay from the mode-aware cartridge start"
   await verifyBrowserGameStartFlow({
     Component: Game,
     expectsCanvas: true,
-    ready: "Phase Lock",
+    ready: "Listening",
     startFlow: ["Stabilize Shift"],
     title: "COGNITIVE DISSONANCE",
   });
