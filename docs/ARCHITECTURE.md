@@ -39,7 +39,24 @@ public/                 # wasm, static assets, icons, favicons, generated labels
 android/                # single Capacitor Android app built from dist/
 e2e/                    # Vitest Browser cabinet, landing, and gameplay coverage
 docs/                   # product, technical, testing, visual, and release ownership docs
+reference/              # archived pre-migration source snapshots for salvage/reference
 ```
+
+## Asset Layout
+
+```text
+public/assets/
+  cabinet/              # shared cabinet art such as the social/hero image
+  games/<slug>/
+    labels/             # cartridge label art and presentation textures
+    previews/           # runtime previews used by the cabinet shell
+    reference/          # non-runtime reference art kept with the active game
+    wasm/               # game-specific wasm payloads when required
+  reference/            # archived public artifacts from pre-migration branches
+```
+
+Runtime assets belong in `public/assets`. Screenshot evidence belongs in
+`test-screenshots/`. Archived branch assets belong in `public/assets/reference/`.
 
 ## Runtime Contracts
 
@@ -88,6 +105,10 @@ The cabinet 1.0 launch scope is fixed to 12 cartridges:
 
 No Astro routes, package workspaces, or per-game shells are part of the current
 architecture. Voxel Realms remains out of cabinet scope.
+
+Pre-migration workspace code that still matters for archaeology has been copied
+into `reference/copilot-setup-vite-biome-typescript-stack/`. That tree is
+reference-only and must not be treated as live runtime code.
 
 ## Shared Technical Rules
 

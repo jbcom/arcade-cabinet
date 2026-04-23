@@ -7,7 +7,7 @@ last_updated: 2026-04-23
 
 # Arcade Cabinet
 
-![Arcade Cabinet Hero](public/hero.png)
+![Arcade Cabinet Hero](public/assets/cabinet/hero.png)
 
 Arcade Cabinet is one React, Vite, and Capacitor app that contains every playable game. The same codepath serves desktop web, mobile web, GitHub Pages, and Android.
 
@@ -31,6 +31,8 @@ The launch track is currently fixed to 12 cartridges:
 - `app/`: routes, cabinet views, React components, R3F scenes, HUDs, styles, and browser-facing presentation.
 - `src/`: game logic, state, systems, math, procedural generation, input logic, and pure shared utilities.
 - `public/`: static assets, generated previews, wasm, and shared public files.
+- `reference/`: archived pre-migration source snapshots that remain available for
+  reconstruction work but are not part of the live runtime.
 - `android/`: the single Capacitor Android shell generated from the root app.
 
 ## Docs Map
@@ -42,6 +44,7 @@ The launch track is currently fixed to 12 cartridges:
 - [docs/VISUAL_REVIEW.md](./docs/VISUAL_REVIEW.md): screenshot and visual acceptance rules
 - [docs/LAUNCH_READINESS.md](./docs/LAUNCH_READINESS.md): manual release checklist
 - [docs/PRODUCTION.md](./docs/PRODUCTION.md): remaining 1.0 release blockers
+- [docs/REPOSITORY_MAP.md](./docs/REPOSITORY_MAP.md): live vs archived code and asset ownership
 
 ## Development
 

@@ -1,0 +1,17 @@
+import { cleanup } from "@testing-library/react";
+import { afterEach, test } from "vitest";
+import { verifyBrowserGameStartFlow } from "../../../src/test/browserGameHarness";
+import Game from "./Game";
+
+afterEach(() => {
+  cleanup();
+});
+
+test("Enchanted Forest reaches gameplay from the start screen", async () => {
+  await verifyBrowserGameStartFlow({
+    Component: Game,
+    title: "START",
+    startFlow: ["START"],
+    ready: /WAVE/,
+  });
+});

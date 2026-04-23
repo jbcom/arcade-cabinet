@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Otterly Chaotic</string>
+    <string name="title_activity_main">Otterly Chaotic</string>
+    <string name="package_name">com.arcade.otterlychaotic</string>
+    <string name="custom_url_scheme">com.arcade.otterlychaotic</string>
+</resources>

@@ -65,7 +65,16 @@ Shared 1.0 rules:
 Documentation expectations:
 
 - Root docs in `docs/` own architecture, design, state, testing, visual review, launch readiness, and production blockers.
+- `docs/REPOSITORY_MAP.md` owns the canonical map of live runtime code, runtime assets, verification artifacts, and archived pre-migration source snapshots.
 - Per-game docs under `docs/games/<slug>/` should explain identity, loop, current polish, and remaining work.
 - Keep docs aligned to the real codebase. Do not leave migration-era future tense in place once a game is already imported.
+
+Source-of-truth rules:
+
+- `app/games/<slug>` is the live React/presentation entry for an active cartridge.
+- `src/games/<slug>` is the live deterministic mechanics/source of truth for that cartridge.
+- `public/assets/games/<slug>` is the live runtime asset root for that cartridge. Organize assets under `labels/`, `previews/`, `reference/`, and `wasm/`.
+- `test-screenshots/` is the canonical checked-in screenshot evidence tree. Do not treat it as runtime art.
+- `reference/` and `public/assets/reference/` are archival only. They exist so future agents can salvage old package-era implementations without hunting old branches.
 
 Voxel Realms has left the cabinet. It now lives in `arcade-cabinet/voxel-realms` as a standalone public repo, with Bok carrying a note to evaluate its techniques later. Keep Voxel Realms out of active cabinet launch planning unless there is a new explicit owner decision.

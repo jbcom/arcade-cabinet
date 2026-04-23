@@ -1,0 +1,114 @@
+{
+  "updated": "2026-04-23",
+  "cabinet": {
+    "hero": "assets/cabinet/hero.png"
+  },
+  "games": [
+    {
+      "slug": "beppo-laughs",
+      "labels": "assets/games/beppo-laughs/labels",
+      "previews": "assets/games/beppo-laughs/previews",
+      "reference": "assets/games/beppo-laughs/reference",
+      "wasm": "assets/games/beppo-laughs/wasm",
+      "files": []
+    },
+    {
+      "slug": "bioluminescent-sea",
+      "labels": "assets/games/bioluminescent-sea/labels",
+      "previews": "assets/games/bioluminescent-sea/previews",
+      "reference": "assets/games/bioluminescent-sea/reference",
+      "wasm": "assets/games/bioluminescent-sea/wasm",
+      "files": []
+    },
+    {
+      "slug": "cognitive-dissonance",
+      "labels": "assets/games/cognitive-dissonance/labels",
+      "previews": "assets/games/cognitive-dissonance/previews",
+      "reference": "assets/games/cognitive-dissonance/reference",
+      "wasm": "assets/games/cognitive-dissonance/wasm",
+      "files": []
+    },
+    {
+      "slug": "cosmic-gardener",
+      "labels": "assets/games/cosmic-gardener/labels",
+      "previews": "assets/games/cosmic-gardener/previews",
+      "reference": "assets/games/cosmic-gardener/reference",
+      "wasm": "assets/games/cosmic-gardener/wasm",
+      "files": []
+    },
+    {
+      "slug": "enchanted-forest",
+      "labels": "assets/games/enchanted-forest/labels",
+      "previews": "assets/games/enchanted-forest/previews",
+      "reference": "assets/games/enchanted-forest/reference",
+      "wasm": "assets/games/enchanted-forest/wasm",
+      "files": []
+    },
+    {
+      "slug": "entropy-edge",
+      "labels": "assets/games/entropy-edge/labels",
+      "previews": "assets/games/entropy-edge/previews",
+      "reference": "assets/games/entropy-edge/reference",
+      "wasm": "assets/games/entropy-edge/wasm",
+      "files": []
+    },
+    {
+      "slug": "farm-follies",
+      "labels": "assets/games/farm-follies/labels",
+      "previews": "assets/games/farm-follies/previews",
+      "reference": "assets/games/farm-follies/reference",
+      "wasm": "assets/games/farm-follies/wasm",
+      "files": []
+    },
+    {
+      "slug": "mega-track",
+      "labels": "assets/games/mega-track/labels",
+      "previews": "assets/games/mega-track/previews",
+      "reference": "assets/games/mega-track/reference",
+      "wasm": "assets/games/mega-track/wasm",
+      "files": []
+    },
+    {
+      "slug": "otterly-chaotic",
+      "labels": "assets/games/otterly-chaotic/labels",
+      "previews": "assets/games/otterly-chaotic/previews",
+      "reference": "assets/games/otterly-chaotic/reference",
+      "wasm": "assets/games/otterly-chaotic/wasm",
+      "files": []
+    },
+    {
+      "slug": "overcast-glacier",
+      "labels": "assets/games/overcast-glacier/labels",
+      "previews": "assets/games/overcast-glacier/previews",
+      "reference": "assets/games/overcast-glacier/reference",
+      "wasm": "assets/games/overcast-glacier/wasm",
+      "files": []
+    },
+    {
+      "slug": "primordial-ascent",
+      "labels": "assets/games/primordial-ascent/labels",
+      "previews": "assets/games/primordial-ascent/previews",
+      "reference": "assets/games/primordial-ascent/reference",
+      "wasm": "assets/games/primordial-ascent/wasm",
+      "files": [
+        "assets/games/primordial-ascent/reference/primordial-start-screen.png",
+        "assets/games/primordial-ascent/wasm/rapier_wasm3d_bg.wasm"
+      ]
+    },
+    {
+      "slug": "titan-mech",
+      "labels": "assets/games/titan-mech/labels",
+      "previews": "assets/games/titan-mech/previews",
+      "reference": "assets/games/titan-mech/reference",
+      "wasm": "assets/games/titan-mech/wasm",
+      "files": [
+        "assets/games/titan-mech/wasm/rapier_wasm3d_bg.wasm"
+      ]
+    }
+  ],
+  "reference": {
+    "copilotSetupViteBiomeTypescriptStack": {
+      "publicArtifacts": "assets/reference/copilot-setup-vite-biome-typescript-stack"
+    }
+  }
+}
