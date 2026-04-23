@@ -4,7 +4,6 @@ import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
 import OvercastGlacier from "@app/games/overcast-glacier";
-import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
 import {
   type BrowserGameStartFlow,
@@ -46,16 +45,6 @@ const gameCases: (BrowserGameStartFlow & {
     title: "OVERCAST: GLACIER",
     startFlow: ["Drop In"],
     ready: "Warmth",
-    expectsJoystick: true,
-  },
-  {
-    name: "Primordial Ascent",
-    slug: "primordial-ascent",
-    Component: PrimordialAscent,
-    title: "PRIMORDIAL ASCENT",
-    startFlow: ["Initiate Sequence"],
-    ready: "Altitude",
-    expectsCanvas: true,
     expectsJoystick: true,
   },
   {

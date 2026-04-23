@@ -4,7 +4,6 @@ import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
 import OvercastGlacier from "@app/games/overcast-glacier";
-import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
 import type { TextMatcher } from "@app/test/browserGameHarness";
 import { cleanup, render } from "@testing-library/react";
@@ -31,11 +30,6 @@ const landingCases: {
     Component: OvercastGlacier,
     slug: "overcast-glacier",
     title: "OVERCAST: GLACIER",
-  },
-  {
-    Component: PrimordialAscent,
-    slug: "primordial-ascent",
-    title: "PRIMORDIAL ASCENT",
   },
   {
     Component: TitanMech,

@@ -6,7 +6,6 @@ const expectedSlugs = [
   "bioluminescent-sea",
   "mega-track",
   "overcast-glacier",
-  "primordial-ascent",
   "titan-mech",
   "beppo-laughs",
   "cognitive-dissonance",

@@ -10,7 +10,6 @@ const gameComponents = {
   "farm-follies": lazy(() => import("@app/games/farm-follies")),
   "mega-track": lazy(() => import("@app/games/mega-track")),
   "overcast-glacier": lazy(() => import("@app/games/overcast-glacier")),
-  "primordial-ascent": lazy(() => import("@app/games/primordial-ascent")),
   "titan-mech": lazy(() => import("@app/games/titan-mech")),
 } satisfies Record<GameSlug, GameComponent>;
 
