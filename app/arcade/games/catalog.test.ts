@@ -4,7 +4,6 @@ import { games } from "./catalog";
 
 const expectedSlugs = [
   "bioluminescent-sea",
-  "entropy-edge",
   "mega-track",
   "overcast-glacier",
   "otterly-chaotic",

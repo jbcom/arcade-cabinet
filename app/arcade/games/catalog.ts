@@ -27,36 +27,6 @@ export const games = [
     difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
   },
   {
-    slug: "entropy-edge",
-    title: "ENTROPY EDGE",
-    description: "Hold a collapsing resonance field together at the edge of failure.",
-    tags: ["r3f", "simulation", "systems"],
-    color: "#38bdf8",
-    motif: "entropy",
-    secondaryAccent: "#ff0055",
-    gradient: "linear-gradient(135deg, #38bdf8, #312e81)",
-    pillars: [
-      "Spatial logic under pressure",
-      "Collapsing-system tension",
-      "Readable anchor objectives",
-    ],
-    presentation:
-      "The grid is a failing machine room in abstract space: the player sphere, falling blocks, and anchors each need distinct silhouette and glow priority.",
-    sceneDirection:
-      "Camera orbit, low fog, cyan player light, and magenta anchors should create a readable tactical diorama rather than a flat board.",
-    responsiveDirection:
-      "The camera distance and orbit controls frame the full grid in a parent-sized canvas, allowing cabinet, desktop, and Android WebView containers to share the same scene.",
-    coreMessage: "Stability is earned by choosing when to secure and when to surge.",
-    coreLoop:
-      "Move through sectors, secure anchors, build resonance, spend surges to clear routes, carry reserves forward.",
-    sessionTarget: "8-15 minute multi-sector stabilization run",
-    pressureType:
-      "Stability reserve pressure instead of short forced timers; challenge restores tighter decay",
-    defaultControls: "Touch-anywhere joystick with keyboard movement parity",
-    winReplayPromise: "Chain anchors and resonance clears across deeper sectors.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "mega-track",
     title: "MEGA TRACK",
     description: "Thread a high-speed machine through a deterministic hazard ribbon.",
