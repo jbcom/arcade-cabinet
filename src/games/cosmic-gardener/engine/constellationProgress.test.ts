@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   findMatchedPointId,
+  getCosmicZenTransitionCue,
   getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
@@ -54,5 +55,18 @@ describe("constellation progress", () => {
     expect(getNextConstellationPreview(CONSTELLATIONS.length)).toBeNull();
     expect(isGardenCompleteLevel(CONSTELLATIONS.length - 1)).toBe(false);
     expect(isGardenCompleteLevel(CONSTELLATIONS.length)).toBe(true);
+  });
+
+  test("describes the all-constellations zen transition payoff", () => {
+    const cue = getCosmicZenTransitionCue({
+      constellationsCompleted: CONSTELLATIONS.length,
+      score: 52_000,
+    });
+
+    expect(cue.title).toBe("Zen Garden Bloom");
+    expect(cue.completionLabel).toBe("5/5 constellations awake");
+    expect(cue.intensity).toBe(1);
+    expect(cue.bloomRings).toBeGreaterThanOrEqual(6);
+    expect(cue.replayPromise).toContain("Cultivate freely");
   });
 });
