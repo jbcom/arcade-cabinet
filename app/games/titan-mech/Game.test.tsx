@@ -21,6 +21,7 @@ test("Titan Mech reaches gameplay from the start screen", async () => {
 
   expect(rootElement.textContent).toContain("CONTRACT");
   expect(rootElement.textContent).toContain("BETA");
+  expect(rootElement.textContent).toContain("ENEMY");
 
   await captureBrowserGameScreenshot(
     host,

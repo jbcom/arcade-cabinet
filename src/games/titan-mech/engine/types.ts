@@ -30,7 +30,9 @@ export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "co
 export type ExtractionFeedbackState = "idle" | "grinding" | "ejecting" | "blocked";
 export type TitanContractStage = "survey" | "align" | "extract" | "eject" | "cool" | "complete";
 export type TitanThreatLevel = "clear" | "tracking" | "warning" | "impact";
+export type TitanEnemyBehavior = "mine-lock" | "rail-volley" | "reactor-pulse" | "sentinel-scan";
 export type TitanDeliveryState = "idle" | "grinding" | "ejecting" | "banked" | "complete";
+export type TitanUpgradeId = "coolant-loop" | "heat-sinks" | "targeting-rig" | "wide-hopper";
 
 export interface TitanContractCue {
   stage: TitanContractStage;
@@ -47,12 +49,17 @@ export interface TitanContractCue {
 export interface TitanThreatCue {
   level: TitanThreatLevel;
   label: string;
+  behavior: TitanEnemyBehavior;
+  behaviorLabel: string;
+  behaviorIntensity: number;
+  counter: string;
   sourceId: string | null;
   sourceKind: ArenaObstacleKind | null;
   sourcePosition: [number, number, number] | null;
   distance: number | null;
   bearing: Vec3;
   warningRadius: number;
+  cycleMs: number;
 }
 
 export interface TitanDeliveryCue {
@@ -72,9 +79,21 @@ export interface TitanExtractionState {
   feedback: ExtractionFeedbackState;
 }
 
+export interface TitanUpgradeOption {
+  id: TitanUpgradeId;
+  title: string;
+  summary: string;
+  effects: string[];
+  accent: string;
+}
+
 export interface TitanState {
   phase: "menu" | "playing" | "gameover" | "upgrade";
   sessionMode: SessionMode;
+  elapsedMs: number;
+  contractNumber: number;
+  upgrades: TitanUpgradeId[];
+  pendingUpgrades: TitanUpgradeOption[];
   hp: number;
   maxHp: number;
   energy: number;
@@ -92,6 +111,7 @@ export interface TitanState {
   pose: TitanPose;
   systems: TitanSystems;
   weaponFeedback: WeaponFeedbackState;
+  lastThreatEventMs: number;
   contractCue: TitanContractCue;
   deliveryCue: TitanDeliveryCue;
   threatCue: TitanThreatCue;

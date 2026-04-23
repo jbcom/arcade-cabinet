@@ -8,12 +8,14 @@ import {
   useRunSnapshotAutosave,
 } from "@app/shared";
 import {
+  applyTitanUpgrade,
   calculateTitanContractCue,
   calculateTitanDeliveryCue,
   calculateTitanThreatCue,
   createInitialTitanState,
   getTitanRunSummary,
 } from "@logic/games/titan-mech/engine/titanSimulation";
+import type { TitanUpgradeId } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity, titanWorld } from "@logic/games/titan-mech/store/world";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
@@ -30,6 +32,12 @@ function TitanApp() {
 
   const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
     const next = resolveTitanStartState(mode, saveSlot);
+    titanEntity.set(PhaseTrait, { phase: "playing" });
+    titanEntity.set(TitanTrait, next);
+  };
+
+  const handleUpgrade = (upgradeId: TitanUpgradeId) => {
+    const next = applyTitanUpgrade(state, upgradeId);
     titanEntity.set(PhaseTrait, { phase: "playing" });
     titanEntity.set(TitanTrait, next);
   };
@@ -97,11 +105,30 @@ function TitanApp() {
             summary: `Extracted ${summary.credits} credits`,
           }}
           title="CONTRACT EXTRACTED"
-          subtitle={`Target banked: ${summary.credits}/${summary.contractCreditsTarget} credits, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Coolant cycles held at ${summary.hp} HP.`}
+          subtitle={`Contract ${summary.contractNumber} banked: ${summary.credits}/${summary.contractCreditsTarget} credits, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Install one chassis upgrade before the next extraction.`}
           actions={
-            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
-              Accept Next Contract
-            </OverlayButton>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+              {state.pendingUpgrades.map((upgrade) => (
+                <OverlayButton
+                  key={upgrade.id}
+                  aria-label={`Install ${upgrade.title}`}
+                  onClick={() => handleUpgrade(upgrade.id)}
+                  style={{
+                    borderColor: upgrade.accent,
+                    boxShadow: `0 0 18px ${upgrade.accent}55`,
+                    maxWidth: 230,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ display: "block", fontSize: 13, fontWeight: 900 }}>
+                    {upgrade.title}
+                  </span>
+                  <span style={{ display: "block", fontSize: 11, lineHeight: 1.25, opacity: 0.82 }}>
+                    {upgrade.effects.join(" / ")}
+                  </span>
+                </OverlayButton>
+              ))}
+            </div>
           }
         />
       )}
@@ -137,6 +164,11 @@ function resolveTitanStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
           phase: "playing",
         }),
       threatCue: restored.threatCue ?? calculateTitanThreatCue(restored.pose.position),
+      contractNumber: restored.contractNumber ?? 1,
+      elapsedMs: restored.elapsedMs ?? 0,
+      lastThreatEventMs: restored.lastThreatEventMs ?? 0,
+      pendingUpgrades: restored.pendingUpgrades ?? [],
+      upgrades: restored.upgrades ?? [],
     };
   }
 

@@ -37,7 +37,8 @@ export function HUD() {
           </div>
           <div style={{ fontSize: 24, fontWeight: 900 }}>CREDITS {state.extraction.credits}</div>
           <div style={{ color: "#94a3b8", fontSize: 12 }}>
-            SCRAP {state.scrap} / ISOTOPES {state.extraction.rareIsotopes}
+            CONTRACT {state.contractNumber} / SCRAP {state.scrap} / ISOTOPES{" "}
+            {state.extraction.rareIsotopes}
           </div>
           <div style={{ color: weaponColor, fontSize: 12, marginTop: 6 }}>
             WEAPON {state.weaponFeedback.toUpperCase()}
@@ -59,6 +60,9 @@ export function HUD() {
           >
             THREAT {state.threatCue.level.toUpperCase()}
             {state.threatCue.distance !== null ? ` · ${Math.round(state.threatCue.distance)}M` : ""}
+          </div>
+          <div style={{ color: "#fed7aa", fontSize: 12, marginTop: 3 }}>
+            ENEMY {state.threatCue.behaviorLabel.toUpperCase()}
           </div>
           <div style={{ color: "#e2e8f0", fontSize: 12, marginTop: 8, maxWidth: 300 }}>
             CONTRACT {state.contractCue.stage.toUpperCase()}
@@ -149,7 +153,12 @@ export function HUD() {
                 padding: "0.4rem 0.5rem",
               }}
             >
-              {state.threatCue.label}
+              {state.threatCue.label} {state.threatCue.counter}
+            </div>
+          ) : null}
+          {state.lastThreatEventMs > 0 ? (
+            <div style={{ color: danger, fontSize: 12, marginTop: 6 }}>
+              HOSTILE PRESSURE {(state.lastThreatEventMs / 1000).toFixed(1)}s
             </div>
           ) : null}
           {state.coolantBurstMs > 0 ? (

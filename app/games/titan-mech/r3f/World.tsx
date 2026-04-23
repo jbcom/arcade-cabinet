@@ -1,5 +1,10 @@
 import { createArenaLayout } from "@logic/games/titan-mech/engine/titanSimulation";
-import type { ArenaBeaconData, ArenaObstacleData } from "@logic/games/titan-mech/engine/types";
+import type {
+  ArenaBeaconData,
+  ArenaObstacleData,
+  TitanEnemyBehavior,
+  TitanThreatCue,
+} from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
 import { ContactShadows, Grid, Line, Sparkles, Stars } from "@react-three/drei";
@@ -61,6 +66,12 @@ function ArenaFloor() {
           .map((obstacle) => (
             <ThreatMarker
               key={`${obstacle.id}-threat`}
+              behavior={
+                state.threatCue.sourceId === obstacle.id ? state.threatCue.behavior : undefined
+              }
+              intensity={
+                state.threatCue.sourceId === obstacle.id ? state.threatCue.behaviorIntensity : 0
+              }
               obstacle={obstacle}
               tracked={
                 state.threatCue.sourceId === obstacle.id && state.threatCue.level !== "clear"
@@ -315,11 +326,22 @@ function ContractRoute() {
   );
 }
 
-function ThreatMarker({ obstacle, tracked }: { obstacle: ArenaObstacleData; tracked: boolean }) {
+function ThreatMarker({
+  behavior,
+  intensity,
+  obstacle,
+  tracked,
+}: {
+  behavior?: TitanEnemyBehavior;
+  intensity: number;
+  obstacle: ArenaObstacleData;
+  tracked: boolean;
+}) {
   const color = tracked ? "#fb7185" : obstacle.threat >= 3 ? "#f43f5e" : "#f59e0b";
+  const markerScale = 1 + intensity * 0.32;
 
   return (
-    <group position={[obstacle.position[0], 0.18, obstacle.position[2]]}>
+    <group position={[obstacle.position[0], 0.18, obstacle.position[2]]} scale={markerScale}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[obstacle.threat * 3.3, obstacle.threat * 3.3 + 0.34, 48]} />
         <meshBasicMaterial color={color} transparent opacity={tracked ? 0.62 : 0.32} />
@@ -334,9 +356,15 @@ function ThreatMarker({ obstacle, tracked }: { obstacle: ArenaObstacleData; trac
       </mesh>
       <pointLight
         color={color}
-        intensity={obstacle.threat * 0.9}
+        intensity={obstacle.threat * (0.9 + intensity * 0.7)}
         distance={20 + obstacle.threat * 5}
       />
+      {tracked && behavior === "reactor-pulse" ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[obstacle.threat * 6.2, obstacle.threat * 6.6, 72]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.28 + intensity * 0.3} />
+        </mesh>
+      ) : null}
     </group>
   );
 }
@@ -379,8 +407,80 @@ function ThreatTelegraph() {
         <sphereGeometry args={[1.2, 12, 8]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.05} />
       </mesh>
+      <EnemyBehaviorTelegraph cue={cue} color={color} source={source} target={target} />
     </group>
   );
+}
+
+function EnemyBehaviorTelegraph({
+  color,
+  cue,
+  source,
+  target,
+}: {
+  color: string;
+  cue: TitanThreatCue;
+  source: [number, number, number];
+  target: [number, number, number];
+}) {
+  if (cue.behavior === "rail-volley") {
+    const offset = Math.max(1.2, cue.behaviorIntensity * 3.2);
+
+    return (
+      <>
+        {[-1, 1].map((side) => (
+          <Line
+            key={`rail-volley-${side}`}
+            points={[
+              [source[0] + side * offset, source[1] - 1.2, source[2]],
+              [target[0] + side * offset * 0.4, target[1], target[2]],
+            ]}
+            color="#f59e0b"
+            lineWidth={1.4 + cue.behaviorIntensity * 2.2}
+            transparent
+            opacity={0.34 + cue.behaviorIntensity * 0.32}
+          />
+        ))}
+      </>
+    );
+  }
+
+  if (cue.behavior === "reactor-pulse") {
+    return (
+      <mesh position={[source[0], 0.28, source[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry
+          args={[10 + cue.behaviorIntensity * 7, 10.55 + cue.behaviorIntensity * 7, 72]}
+        />
+        <meshBasicMaterial
+          color="#f97316"
+          transparent
+          opacity={0.24 + cue.behaviorIntensity * 0.28}
+        />
+      </mesh>
+    );
+  }
+
+  if (cue.behavior === "mine-lock") {
+    return (
+      <mesh
+        position={[
+          source[0] + (target[0] - source[0]) * 0.45,
+          1.2,
+          source[2] + (target[2] - source[2]) * 0.45,
+        ]}
+        rotation={[-Math.PI / 2, 0, Math.atan2(target[0] - source[0], target[2] - source[2])]}
+      >
+        <coneGeometry args={[2.2 + cue.behaviorIntensity * 1.2, 6.2, 3]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.22 + cue.behaviorIntensity * 0.26}
+        />
+      </mesh>
+    );
+  }
+
+  return null;
 }
 
 export function World() {
