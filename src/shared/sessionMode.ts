@@ -78,16 +78,16 @@ export const DEFAULT_SESSION_TUNING: Record<SessionMode, SessionTuning> = {
   },
 };
 
-export const LAUNCH_GAME_SLUGS = [
-  "mega-track",
-  "overcast-glacier",
-  "titan-mech",
-  "beppo-laughs",
-  "cognitive-dissonance",
-  "farm-follies",
-] as const;
+/**
+ * Every game has moved to its own standalone repo under
+ * `arcade-cabinet/<slug>`. The cabinet's launch slug list is empty,
+ * and `LaunchGameSlug` is widened to `string` so legacy runtime
+ * fixtures that still reference historical slugs keep typechecking
+ * until the cabinet is fully dissolved.
+ */
+export const LAUNCH_GAME_SLUGS = [] as const;
 
-export type LaunchGameSlug = (typeof LAUNCH_GAME_SLUGS)[number];
+export type LaunchGameSlug = string;
 
 export const LAUNCH_GAME_SESSION_TUNING: Record<
   LaunchGameSlug,

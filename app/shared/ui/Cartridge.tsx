@@ -11,19 +11,13 @@ import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useCabinetRuntime } from "../hooks/useCabinetRuntime";
 
-export type CartridgeMotif =
-  | "sea"
-  | "cosmic"
-  | "forest"
-  | "entropy"
-  | "track"
-  | "otter"
-  | "primordial"
-  | "mech"
-  | "voxel"
-  | "circus"
-  | "mind"
-  | "farm";
+/**
+ * Historically the motif union enumerated every game's cartridge
+ * art. The cabinet is being dissolved, so this is widened to
+ * `string` — the dispatch in `renderMotif` falls through to the
+ * default motif for any unknown value.
+ */
+export type CartridgeMotif = string;
 
 const VOXEL_LABEL_BLOCKS = [
   { id: "shore", x: 18, y: 34, tone: "accent", opacity: 0.48 },
