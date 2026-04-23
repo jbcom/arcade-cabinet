@@ -18,13 +18,16 @@ The color script is deliberately split: cyan for grappleable ceilings, green for
 ## Current Feature and Polish Pass
 
 - Grapple target state now reports in-range, locked, missed, and tension from pure logic.
+- Route cue state now reports the next anchor, recovery shelf, target altitude, distance, and bearing so the HUD and R3F scene speak the same climb language.
+- A deterministic grip guide now teaches first contact, missed grips, in-range locks, taut release timing, lava urgency, and moss recovery without relying on hidden input state.
 - The crosshair, HUD grip control, tether beam, and target reticle respond to the same grapple state.
-- Heat shimmer near lava and stronger upward route composition make portrait screenshots read as a climb.
+- The crosshair now carries a compact input hint and pulse ring, and the next anchor emits guide markers when the player needs first-contact or missed-grip help.
+- Heat shimmer near lava, route beacons, brighter anchor halos, recovery shelf rings, and a surface air shaft make portrait screenshots read as a guided climb instead of a dark void.
 - The cabinet landing uses the shared cartridge frame with a lava-ascent label, play control, and rules drawer.
 
 ## Simulation and Test Boundaries
 
-`src/engine/primordialSimulation.ts` owns the deterministic state transitions: initial boot state, lava rise, altitude, objective progress, air-control impulses, jump impulse, tether impulses, and the authored route layout. React Three Fiber components consume those helpers instead of duplicating gameplay formulas.
+`src/engine/primordialSimulation.ts` owns the deterministic state transitions: initial boot state, lava rise, altitude, objective progress, route cue selection, air-control impulses, jump impulse, tether impulses, and the authored route layout. React Three Fiber components consume those helpers instead of duplicating gameplay formulas.
 
 Coverage is split between pure Vitest simulation tests and Vitest Browser plugin start-flow/e2e screenshots. Browser verification is intentionally routed through the Vitest browser provider; there are no direct Playwright test commands in the game package.
 

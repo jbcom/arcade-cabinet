@@ -7,12 +7,18 @@ import {
   ScoreTrait,
   TimerTrait,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
-import { createInitialState, tick } from "@logic/games/mega-track/engine/simulation";
+import {
+  createInitialState,
+  didFinishCup,
+  getMegaTrackRunSummary,
+  tick,
+} from "@logic/games/mega-track/engine/simulation";
 import type { MegaTrackState } from "@logic/games/mega-track/engine/types";
-import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { MegaTrackTrait } from "@logic/games/mega-track/store/traits";
 import { megaTrackEntity, megaTrackWorld } from "@logic/games/mega-track/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TrackScene } from "./r3f/TrackScene";
@@ -68,18 +74,33 @@ function MegaTrackApp() {
 
       if (next.integrity <= 0) {
         megaTrackEntity.set(PhaseTrait, { phase: "gameover" });
-      } else if (next.distance >= CONFIG.GOAL_DISTANCE) {
+      } else if (didFinishCup(next)) {
         megaTrackEntity.set(PhaseTrait, { phase: "win" });
       }
     },
     [phase.phase, laneChange]
   );
 
-  const handleStart = () => {
-    const next = { ...createInitialState(), isPlaying: true };
+  const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const next = resolveMegaTrackStartState(mode, saveSlot);
     writeState(next);
     megaTrackEntity.set(PhaseTrait, { phase: "playing" });
+    megaTrackEntity.set(ScoreTrait, { value: Math.floor(next.distance / 10), label: "METERS" });
+    megaTrackEntity.set(TimerTrait, {
+      elapsedMs: next.elapsedMs,
+      remainingMs: 0,
+      label: "SPEED",
+    });
   };
+
+  const summary = getMegaTrackRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: phase.phase === "playing",
+    progressSummary: `Leg ${summary.cupLeg}/${summary.cupLegCount} · ${summary.integrity}% integrity`,
+    slug: "mega-track",
+    snapshot: state,
+  });
 
   const handleLaneControl = useCallback((direction: number) => {
     setLaneChange(direction);
@@ -94,6 +115,7 @@ function MegaTrackApp() {
           accent="#fb7185"
           cartridgeId="Slot 05"
           description="Thread a high-speed machine through a deterministic hazard ribbon."
+          gameSlug="mega-track"
           kicker="Race Cartridge"
           motif="track"
           onStart={handleStart}
@@ -112,24 +134,70 @@ function MegaTrackApp() {
 
       {phase.phase === "win" ? (
         <GameOverScreen
-          title="Victory!"
-          subtitle={`You completed the track in ${(state.elapsedMs / 1000).toFixed(1)} seconds.`}
+          result={{
+            milestones: ["first-cup"],
+            mode: state.sessionMode,
+            score: summary.distanceMeters + summary.integrity * 10,
+            slug: "mega-track",
+            status: "completed",
+            summary: `Cup complete in ${summary.elapsedSeconds}s`,
+          }}
+          title="Cup Complete"
+          subtitle={`Three legs cleared in ${summary.elapsedSeconds}s with ${summary.integrity}% integrity and ${summary.impactCount} impacts.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
+              Run the Cup Again
+            </OverlayButton>
           }
         />
       ) : null}
 
       {phase.phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.distanceMeters,
+            slug: "mega-track",
+            status: "failed",
+            summary: `Wrecked at ${summary.progressPercent}% cup progress`,
+          }}
           title="Wrecked"
-          subtitle="Your car couldn't handle the impact."
+          subtitle={`Leg ${summary.cupLeg}/${summary.cupLegCount}, ${summary.progressPercent}% of the cup complete. Chain clean passes to rebuild overdrive before hazards close in.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Try Again</OverlayButton>
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>Try Again</OverlayButton>
           }
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveMegaTrackStartState(mode: SessionMode, saveSlot?: GameSaveSlot): MegaTrackState {
+  const snapshot = saveSlot?.snapshot;
+  if (isMegaTrackSnapshot(snapshot)) {
+    const restored = snapshot as MegaTrackState;
+    return {
+      ...restored,
+      checkpointRepairs: restored.checkpointRepairs ?? 0,
+      isPlaying: true,
+      lastCheckpointLeg: restored.lastCheckpointLeg ?? 1,
+      lastCheckpointMs: restored.lastCheckpointMs ?? Number.NEGATIVE_INFINITY,
+      sessionMode: mode,
+    };
+  }
+
+  return { ...createInitialState(mode), isPlaying: true };
+}
+
+function isMegaTrackSnapshot(snapshot: unknown): snapshot is MegaTrackState {
+  const value = snapshot as Partial<MegaTrackState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.distance === "number" &&
+      typeof value.integrity === "number" &&
+      typeof value.elapsedMs === "number" &&
+      Array.isArray(value.obstacles)
   );
 }
 

@@ -1,4 +1,9 @@
-import { GameViewport } from "@app/shared";
+import {
+  GameViewport,
+  isCabinetRuntimePaused,
+  RuntimeResultRecorder,
+  useRunSnapshotAutosave,
+} from "@app/shared";
 import {
   applyShadowHit,
   applySpellCast,
@@ -9,6 +14,11 @@ import {
   clearRuneFeedback,
   clearShield,
   createInitialForestState,
+  type ForestState,
+  getForestModeTuning,
+  getForestRitualCue,
+  getForestRunSummary,
+  getForestSpellCadenceCue,
   getForestTransition,
   getShadowIntentPath,
   MAX_WAVES,
@@ -17,8 +27,10 @@ import {
   spawnCorruptionWave,
   TREE_POSITIONS,
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
+import type { ForestAudioStatus } from "@logic/games/enchanted-forest/lib/forestAudio";
 import { forestAudio } from "@logic/games/enchanted-forest/lib/forestAudio";
 import type { RunePattern } from "@logic/games/enchanted-forest/lib/runePatterns";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CorruptionWave } from "./CorruptionWave";
 import { FireflyParticles } from "./FireflyParticles";
@@ -31,31 +43,43 @@ import { ToneDrawer } from "./ToneDrawer";
 
 export function ForestGame() {
   const [forestState, setForestState] = useState(createInitialForestState);
+  const [audioStatus, setAudioStatus] = useState<ForestAudioStatus>(forestAudio.getStatus());
   const [isDrawing, setIsDrawing] = useState(false);
   const [spiritPos, setSpiritPos] = useState({ x: 0, y: 0 });
   const shadowIdRef = useRef(0);
 
-  const spawnWave = useCallback((waveNum: number) => {
-    const wave = spawnCorruptionWave(waveNum, shadowIdRef.current);
-    shadowIdRef.current = wave.nextShadowId;
-    forestAudio.playWaveStart(waveNum);
-    setForestState((prev) => ({
-      ...prev,
-      wave: waveNum,
-      shadows: wave.shadows,
-      objective: `Wave ${waveNum} is entering the ward line. Draw before it reaches the roots.`,
-      threatLevel: Math.min(100, wave.shadows.length * 7),
-    }));
-  }, []);
+  const spawnWave = useCallback(
+    (waveNum: number, mode: SessionMode = forestState.sessionMode) => {
+      const wave = spawnCorruptionWave(waveNum, shadowIdRef.current, mode);
+      shadowIdRef.current = wave.nextShadowId;
+      forestAudio.playWaveStart(waveNum);
+      setForestState((prev) => ({
+        ...prev,
+        wave: waveNum,
+        shadows: wave.shadows,
+        objective: `Wave ${waveNum} is entering the ward line. Draw before it reaches the roots.`,
+        threatLevel: Math.min(100, wave.shadows.length * 7),
+      }));
+    },
+    [forestState.sessionMode]
+  );
 
-  const startGame = async () => {
-    await forestAudio.initialize();
+  const startGame = async (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const status = await forestAudio.initialize();
+    setAudioStatus(status);
     forestAudio.startAmbient();
-    const wave = spawnCorruptionWave(1, 0);
+    const restored = resolveForestStartState(mode, saveSlot);
+    if (restored) {
+      shadowIdRef.current = getNextShadowId(restored);
+      setForestState(restored);
+      return;
+    }
+
+    const wave = spawnCorruptionWave(1, 0, mode);
     shadowIdRef.current = wave.nextShadowId;
     forestAudio.playWaveStart(1);
     setForestState({
-      ...createInitialForestState("playing"),
+      ...createInitialForestState("playing", mode),
       shadows: wave.shadows,
       threatLevel: wave.shadows.length * 7,
     });
@@ -71,7 +95,11 @@ export function ForestGame() {
     if (forestState.phase !== "playing") return undefined;
 
     const manaRegen = setInterval(() => {
-      setForestState((prev) => regenerateMana(prev));
+      setForestState((prev) => {
+        if (isCabinetRuntimePaused()) return prev;
+
+        return regenerateMana(prev, getForestModeTuning(prev.sessionMode).manaRegenPerSecond);
+      });
     }, 1000);
 
     return () => clearInterval(manaRegen);
@@ -114,7 +142,7 @@ export function ForestGame() {
     const transition = getForestTransition(forestState, MAX_WAVES);
 
     if (transition.type === "next-wave" && transition.nextWave) {
-      spawnWave(transition.nextWave);
+      spawnWave(transition.nextWave, forestState.sessionMode);
     } else if (transition.type === "victory") {
       forestAudio.playSpellEffect("victory");
       setForestState((prev) => ({ ...prev, phase: "victory", objective: "The grove is sealed." }));
@@ -128,6 +156,17 @@ export function ForestGame() {
     }
   }, [forestState, spawnWave]);
 
+  const runSummary = getForestRunSummary(forestState);
+  const ritualCue = getForestRitualCue(forestState);
+  const spellCadenceCue = getForestSpellCadenceCue(forestState);
+
+  useRunSnapshotAutosave({
+    active: forestState.phase === "playing",
+    progressSummary: `Wave ${runSummary.wave}/${runSummary.totalWaves} · ${runSummary.healthyTrees} trees`,
+    slug: "enchanted-forest",
+    snapshot: forestState,
+  });
+
   return (
     <GameViewport
       className="bg-emerald-950"
@@ -135,7 +174,26 @@ export function ForestGame() {
       data-browser-screenshot-mode="page"
     >
       <ForestGradientBackground />
-      <GroveStage threatLevel={forestState.threatLevel} />
+      {forestState.phase === "victory" ? (
+        <RuntimeResultRecorder
+          milestones={["first-grove-sealed"]}
+          mode={forestState.sessionMode}
+          score={runSummary.healthyTrees * 1000 + runSummary.wave * 100 + runSummary.harmonyLevel}
+          slug="enchanted-forest"
+          status="completed"
+          summary={`Sealed ${runSummary.totalWaves} grove waves`}
+        />
+      ) : null}
+      {forestState.phase === "defeat" ? (
+        <RuntimeResultRecorder
+          mode={forestState.sessionMode}
+          score={runSummary.healthyTrees * 500 + runSummary.wave * 50}
+          slug="enchanted-forest"
+          status="failed"
+          summary={`Defeated at wave ${runSummary.wave}`}
+        />
+      ) : null}
+      <GroveStage ritualCue={ritualCue} threatLevel={forestState.threatLevel} />
       <NoiseBackground />
       <FireflyParticles count={40} />
 
@@ -146,6 +204,8 @@ export function ForestGame() {
           {...tree}
           position={TREE_POSITIONS[index]}
           isHealing={forestState.healingTreeIndex === index}
+          isRitualTarget={ritualCue.recommendedTreeIndex === index}
+          ritualRune={ritualCue.recommendedTreeIndex === index ? ritualCue.recommendedRune : null}
           isTargeted={isTreeTargeted(index, forestState.shadows)}
         />
       ))}
@@ -182,9 +242,43 @@ export function ForestGame() {
         threatLevel={forestState.threatLevel}
         harmonyLevel={forestState.harmonyLevel}
         harmonySurgeActive={forestState.harmonySurgeActive}
+        ritualCue={ritualCue}
+        spellCadenceCue={spellCadenceCue}
+        audioStatus={audioStatus}
+        runSummary={runSummary}
       />
     </GameViewport>
   );
+}
+
+function resolveForestStartState(mode: SessionMode, saveSlot?: GameSaveSlot): ForestState | null {
+  const snapshot = saveSlot?.snapshot;
+  if (!isForestSnapshot(snapshot)) return null;
+
+  const restored = snapshot as ForestState;
+  return {
+    ...restored,
+    lastSpellCastMs: restored.lastSpellCastMs ?? 0,
+    phase: "playing",
+    sessionMode: mode,
+  };
+}
+
+function isForestSnapshot(snapshot: unknown): snapshot is ForestState {
+  const value = snapshot as Partial<ForestState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.wave === "number" &&
+      typeof value.mana === "number" &&
+      Array.isArray(value.trees) &&
+      Array.isArray(value.shadows)
+  );
+}
+
+function getNextShadowId(state: ForestState) {
+  return state.shadows.reduce((next, shadow) => Math.max(next, shadow.id + 1), 0);
 }
 
 function isTreeTargeted(treeIndex: number, shadows: CorruptionShadow[]): boolean {

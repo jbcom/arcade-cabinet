@@ -1,6 +1,8 @@
+import type { CosmicLowerBoardLayout } from "@logic/games/cosmic-gardener/engine/cosmicBoardLayout";
 import { motion } from "framer-motion";
 
 interface FlippersProps {
+  layout: CosmicLowerBoardLayout;
   leftActive: boolean;
   rightActive: boolean;
   onLeftDown: () => void;
@@ -10,6 +12,7 @@ interface FlippersProps {
 }
 
 export function Flippers({
+  layout,
   leftActive,
   rightActive,
   onLeftDown,
@@ -23,17 +26,18 @@ export function Flippers({
         className="absolute bottom-0 left-0 right-0 h-[15%] pointer-events-none"
         style={{
           background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
+          height: `${layout.apronHeightPct}%`,
         }}
       />
 
       <motion.div
         className="absolute cursor-pointer z-40"
         style={{
-          left: "12%",
-          bottom: "5%",
-          width: "20%",
-          height: "4%",
+          bottom: `${layout.flipperBottomPct}%`,
+          height: `${layout.flipperHeightPct}%`,
+          left: layout.compactPortrait ? "11%" : "12%",
           transformOrigin: "15% 50%",
+          width: `${layout.flipperWidthPct}%`,
         }}
         animate={{
           rotate: leftActive ? -30 : 20,
@@ -67,11 +71,11 @@ export function Flippers({
       <motion.div
         className="absolute cursor-pointer z-40"
         style={{
-          right: "12%",
-          bottom: "5%",
-          width: "20%",
-          height: "4%",
+          bottom: `${layout.flipperBottomPct}%`,
+          height: `${layout.flipperHeightPct}%`,
+          right: layout.compactPortrait ? "11%" : "12%",
           transformOrigin: "85% 50%",
+          width: `${layout.flipperWidthPct}%`,
         }}
         animate={{
           rotate: rightActive ? 30 : -20,
@@ -103,8 +107,9 @@ export function Flippers({
       </motion.div>
 
       <div
-        className="absolute bottom-0 left-[35%] right-[35%] h-[2%] rounded-t-full"
+        className="absolute left-[35%] right-[35%] h-[2%] rounded-t-full"
         style={{
+          bottom: `${Math.max(0, layout.flipperBottomPct - 6)}%`,
           background: "linear-gradient(to top, rgba(139, 69, 102, 0.6) 0%, transparent 100%)",
         }}
       />

@@ -9,11 +9,15 @@ import {
   TimerTrait,
   useContainerSize,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialState,
   didLose,
   didWin,
+  getEntropyCompletionCue,
+  getEntropyRunSummary,
+  isRunComplete,
   nextLevel,
   restartGame,
   startGame,
@@ -22,6 +26,7 @@ import {
 import type { EntropyState, Vec2 } from "@logic/games/entropy-edge/engine/types";
 import { EntropyTrait } from "@logic/games/entropy-edge/store/traits";
 import { entropyEntity, entropyWorld } from "@logic/games/entropy-edge/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EdgeScene } from "./r3f/EdgeScene";
@@ -115,6 +120,16 @@ function EntropyApp() {
   );
 
   const isPlaying = phase === "playing";
+  const summary = getEntropyRunSummary(state);
+  const runComplete = isRunComplete(state);
+  const completionCue = getEntropyCompletionCue(state);
+
+  useRunSnapshotAutosave({
+    active: phase === "playing",
+    progressSummary: `Sector ${summary.sector}/${summary.sectorsRequired} · ${summary.score} score`,
+    slug: "entropy-edge",
+    snapshot: state,
+  });
 
   return (
     <GameViewport ref={mountRef} background="#060d1a" data-browser-screenshot-mode="page">
@@ -125,11 +140,19 @@ function EntropyApp() {
           accent="#38bdf8"
           cartridgeId="Slot 04"
           description="Hold a collapsing resonance field together at the edge of failure."
+          gameSlug="entropy-edge"
           kicker="Resonance Cartridge"
           motif="entropy"
-          onStart={() => {
-            writeState(startGame(readState()));
+          onStart={(mode, saveSlot) => {
+            const next = resolveEntropyStartState(mode, saveSlot, readState());
+            writeState(next);
             entropyEntity.set(PhaseTrait, { phase: "playing" });
+            entropyEntity.set(ScoreTrait, { value: next.score, label: "SCORE" });
+            entropyEntity.set(TimerTrait, {
+              elapsedMs: next.elapsedMs,
+              remainingMs: next.timeMs,
+              label: "STABILITY",
+            });
           }}
           rules={[
             "Secure glowing anchors before stability runs out.",
@@ -153,17 +176,40 @@ function EntropyApp() {
 
       {phase === "win" ? (
         <GameOverScreen
-          title="Sector Stabilized"
-          subtitle={`Anchors secured: ${state.anchorsRequired}. Score: ${scoreData.value} pts. Prepare for the next sector.`}
+          result={
+            runComplete
+              ? {
+                  milestones: ["entropy-run-complete"],
+                  mode: state.sessionMode,
+                  score: summary.score,
+                  slug: "entropy-edge",
+                  status: "completed",
+                  stats: {
+                    anchors: summary.totalAnchors,
+                    rating: completionCue.rating,
+                    stabilitySeconds: completionCue.stabilityCarrySeconds,
+                  },
+                  summary: `${completionCue.rating}: stabilized ${summary.sectorsRequired} sectors`,
+                }
+              : undefined
+          }
+          title={completionCue.title}
+          subtitle={
+            runComplete
+              ? `${completionCue.message} ${completionCue.rating}. Score: ${summary.score} pts.`
+              : `${completionCue.message} ${completionCue.stabilityCarrySeconds}s reserve carried forward. ${completionCue.nextAction}`
+          }
           actions={
             <OverlayButton
               type="button"
               onClick={() => {
-                writeState(nextLevel(readState()));
+                writeState(
+                  runComplete ? restartGame(readState().sessionMode) : nextLevel(readState())
+                );
                 entropyEntity.set(PhaseTrait, { phase: "playing" });
               }}
             >
-              Proceed to Next Sector
+              {runComplete ? "Stabilize Again" : "Proceed to Next Sector"}
             </OverlayButton>
           }
         />
@@ -171,13 +217,20 @@ function EntropyApp() {
 
       {phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: scoreData.value,
+            slug: "entropy-edge",
+            status: "failed",
+            summary: `Collapsed in sector ${summary.sector}`,
+          }}
           title="Sector Collapsed"
           subtitle={`Stability reached zero. Total score: ${scoreData.value} pts. Total anchors secured: ${state.totalAnchors}.`}
           actions={
             <OverlayButton
               type="button"
               onClick={() => {
-                writeState(restartGame());
+                writeState(restartGame(readState().sessionMode));
                 entropyEntity.set(PhaseTrait, { phase: "playing" });
               }}
             >
@@ -187,6 +240,38 @@ function EntropyApp() {
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveEntropyStartState(
+  mode: SessionMode,
+  saveSlot: GameSaveSlot | undefined,
+  current: EntropyState
+): EntropyState {
+  const snapshot = saveSlot?.snapshot;
+  if (isEntropySnapshot(snapshot)) {
+    const restored = snapshot as EntropyState;
+    return {
+      ...restored,
+      phase: "playing",
+      sessionMode: mode,
+    };
+  }
+
+  return startGame(current, mode);
+}
+
+function isEntropySnapshot(snapshot: unknown): snapshot is EntropyState {
+  const value = snapshot as Partial<EntropyState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.level === "number" &&
+      typeof value.playerGridX === "number" &&
+      typeof value.playerGridZ === "number" &&
+      typeof value.timeMs === "number" &&
+      Array.isArray(value.fallingBlocks) &&
+      Array.isArray(value.blockedCells)
   );
 }
 

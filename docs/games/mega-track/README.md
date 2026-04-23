@@ -13,7 +13,9 @@ A high-speed lane racer about reading a deterministic hazard ribbon early and ma
 
 - `createInitialState` seeds an authored obstacle run so screenshots and Android boots never start on an empty track.
 - `createObstacle(index)` is deterministic and replaces all random spawning.
-- `tick` owns acceleration, lane clamps, obstacle cleanup/spawn extension, swept collision checks, integrity, impact count, and boost charge.
+- `tick` owns acceleration, lane clamps, obstacle cleanup/spawn extension, swept collision checks, integrity, impact count, checkpoint repairs, and boost charge.
+- `getMegaTrackRaceCue` exposes the current cup leg, next hazard, safe lane recommendation, checkpoint progress, and repair feedback for HUD and scene effects.
+- `getMegaTrackSceneryCue` exposes the authored trackside band for each cup leg so visual variety stays deterministic and testable.
 - Browser and engine tests must not mock `Math.random`; the game should be reproducible from pure inputs.
 
 ## Presentation Direction
@@ -23,7 +25,11 @@ Mega Track is an arcade tabletop racer staged as a dark asphalt ribbon suspended
 ## Current Feature and Polish Pass
 
 - Overdrive, clean-pass, and impact timing now persist as deterministic telemetry in the pure race state.
+- Three-leg cup checkpoints now trigger deterministic integrity repair and boost recovery.
+- The pure race cue drives next-hazard HUD text, safe-lane callouts, checkpoint progress, and repair pulses.
 - The R3F scene renders overdrive lane strips, road speed lines, recent clean-pass rings, impact sparks, and differentiated hazard bases.
+- The R3F scene now changes authored trackside scenery by cup leg: Harbor Switchback buoys/signage, Service Canyon rigs, and Finish Fairway rings/flags.
+- Portrait camera framing follows the active lane enough to keep the car visible on mobile while preserving upcoming hazard reads.
 - The HUD calls out recent impact type and clean-lane feedback without obscuring the road.
 - The cabinet landing uses the shared cartridge frame with a track label, play control, and rules drawer.
 

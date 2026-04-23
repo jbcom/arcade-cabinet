@@ -9,16 +9,19 @@ import {
   TimerTrait,
   useContainerSize,
   useGameLoop,
+  useRunSnapshotAutosave,
 } from "@app/shared";
 import {
   createInitialState,
   didLose,
   didWin,
+  getOtterlyRunSummary,
   tick,
 } from "@logic/games/otterly-chaotic/engine/simulation";
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 import { OtterlyTrait } from "@logic/games/otterly-chaotic/store/traits";
 import { otterlyEntity, otterlyWorld } from "@logic/games/otterly-chaotic/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useTrait, WorldProvider } from "koota/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OtterScene } from "./r3f/OtterScene";
@@ -69,9 +72,6 @@ function OtterlyApp() {
     phase: "menu",
   };
   const state = (useTrait(otterlyEntity, OtterlyTrait) as OtterlyState | undefined) ?? initialState;
-  const score = (useTrait(otterlyEntity, ScoreTrait) as
-    | { value: number; label: string }
-    | undefined) ?? { value: 100, label: "SALAD" };
   const timer = (useTrait(otterlyEntity, TimerTrait) as
     | { elapsedMs: number; remainingMs: number; label: string }
     | undefined) ?? { elapsedMs: 0, remainingMs: 0, label: "TIMER" };
@@ -95,6 +95,28 @@ function OtterlyApp() {
   const writeState = useCallback((next: OtterlyState) => {
     otterlyEntity.set(OtterlyTrait, next as never);
   }, []);
+  const startRun = useCallback(
+    (mode: SessionMode = state.sessionMode, saveSlot?: GameSaveSlot) => {
+      const next = resolveOtterlyStartState(mode, saveSlot);
+      writeState(next);
+      otterlyEntity.set(PhaseTrait, { phase: "playing" });
+      otterlyEntity.set(ScoreTrait, { value: Math.round(next.ballHealth), label: "SALAD" });
+      otterlyEntity.set(TimerTrait, {
+        elapsedMs: next.elapsedMs,
+        remainingMs: next.barkCooldownMs,
+        label: "BARK",
+      });
+    },
+    [state.sessionMode, writeState]
+  );
+  const summary = getOtterlyRunSummary(state);
+
+  useRunSnapshotAutosave({
+    active: phase.phase === "playing",
+    progressSummary: `${summary.rescuesCompleted}/${summary.targetRescues} rescues · ${summary.health}% salad`,
+    slug: "otterly-chaotic",
+    snapshot: state,
+  });
 
   useEffect(() => {
     const handleBark = () => setBarkQueued(true);
@@ -134,16 +156,15 @@ function OtterlyApp() {
           accent="#0ea5e9"
           cartridgeId="Slot 06"
           description="Keep the salad rolling while goats try to turn the rescue into lunch."
+          gameSlug="otterly-chaotic"
           kicker="Pasture Panic Cartridge"
           motif="otter"
-          onStart={() => {
-            writeState(createInitialState());
-            otterlyEntity.set(PhaseTrait, { phase: "playing" });
-          }}
+          onStart={startRun}
           rules={[
+            "Save five salad pieces, not just one fast delivery.",
             "Stay between goats and the salad to protect its health.",
             "Bark to stun nearby goats and open a rescue window.",
-            "Push the salad toward the crater before the chase collapses.",
+            "Each crater rescue launches a new piece with goats reset for the next round.",
           ]}
           secondaryAccent="#84cc16"
           startLabel="Start Sprint"
@@ -159,21 +180,65 @@ function OtterlyApp() {
       ) : null}
       {phase.phase === "win" ? (
         <GameOverScreen
+          result={{
+            milestones: ["first-salad-rescue"],
+            mode: state.sessionMode,
+            score: summary.rescuesCompleted * 1000 + summary.health * 10,
+            slug: "otterly-chaotic",
+            status: "completed",
+            summary: `Rescued ${summary.rescuesCompleted} salad pieces`,
+          }}
           title="Salad Saved"
-          subtitle={`You delivered the Kudzu ball with ${score.value}% integrity after ${(state.elapsedMs / 1000).toFixed(1)} seconds.`}
+          subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued with ${summary.health}% integrity after ${summary.elapsedSeconds}s.`}
           actions={
-            <OverlayButton onClick={() => window.location.reload()}>Play Again</OverlayButton>
+            <OverlayButton onClick={() => startRun(state.sessionMode)}>Play Again</OverlayButton>
           }
         />
       ) : null}
       {phase.phase === "gameover" ? (
         <GameOverScreen
+          result={{
+            mode: state.sessionMode,
+            score: summary.rescuesCompleted * 750,
+            slug: "otterly-chaotic",
+            status: "failed",
+            summary: `Munched after ${summary.rescuesCompleted} rescues`,
+          }}
           title="Munched"
-          subtitle="The goats ate the entire ball. Bark earlier and keep the otter between them and the salad next run."
-          actions={<OverlayButton onClick={() => window.location.reload()}>Retry</OverlayButton>}
+          subtitle={`${summary.rescuesCompleted}/${summary.targetRescues} pieces rescued. Bark earlier and keep the otter between goats and salad next run.`}
+          actions={<OverlayButton onClick={() => startRun(state.sessionMode)}>Retry</OverlayButton>}
         />
       ) : null}
     </GameViewport>
+  );
+}
+
+function resolveOtterlyStartState(mode: SessionMode, saveSlot?: GameSaveSlot): OtterlyState {
+  const snapshot = saveSlot?.snapshot;
+  if (isOtterlySnapshot(snapshot)) {
+    const restored = snapshot as OtterlyState;
+    return {
+      ...restored,
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialState(mode);
+}
+
+function isOtterlySnapshot(snapshot: unknown): snapshot is OtterlyState {
+  const value = snapshot as Partial<OtterlyState> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.ballHealth === "number" &&
+      typeof value.elapsedMs === "number" &&
+      typeof value.rescuesCompleted === "number" &&
+      Array.isArray(value.goats) &&
+      value.otter &&
+      typeof value.otter === "object" &&
+      value.ball &&
+      typeof value.ball === "object"
   );
 }
 

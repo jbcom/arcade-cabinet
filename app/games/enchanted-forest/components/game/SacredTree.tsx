@@ -1,3 +1,4 @@
+import type { RuneType } from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { cn } from "@logic/games/enchanted-forest/lib/utils";
 import { motion, useAnimationControls } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +10,11 @@ const HEALING_PARTICLES = Array.from({ length: 8 }, (_, index) => ({
   drift: ((index * 17) % 30) - 15,
   delay: index * 0.1,
 }));
+const RITUAL_COLORS: Record<RuneType, string> = {
+  heal: "#a78bfa",
+  purify: "#fbbf24",
+  shield: "#4ade80",
+};
 
 interface SacredTreeProps {
   id: number;
@@ -18,6 +24,8 @@ interface SacredTreeProps {
   position: { x: number; y: number; canopyScale?: number };
   isTargeted?: boolean;
   isHealing?: boolean;
+  isRitualTarget?: boolean;
+  ritualRune?: RuneType | null;
 }
 
 export function SacredTree({
@@ -28,6 +36,8 @@ export function SacredTree({
   position,
   isTargeted = false,
   isHealing = false,
+  isRitualTarget = false,
+  ritualRune = null,
 }: SacredTreeProps) {
   const healthPercent = (health / maxHealth) * 100;
   const isDamaged = healthPercent < 70;
@@ -36,6 +46,7 @@ export function SacredTree({
   const [showDamage, setShowDamage] = useState(false);
   const [damageAmount, setDamageAmount] = useState(0);
   const controls = useAnimationControls();
+  const ritualColor = ritualRune ? RITUAL_COLORS[ritualRune] : "#fbbf24";
 
   const treeNames = ["神木・壱", "神木・弐", "神木・参"];
 
@@ -97,6 +108,37 @@ export function SacredTree({
             background: "radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, transparent 70%)",
           }}
         />
+      )}
+
+      {isRitualTarget && ritualRune && (
+        <motion.div
+          className="absolute inset-0 -m-12 pointer-events-none"
+          initial={{ opacity: 0, scale: 0.86 }}
+          animate={{ opacity: [0.35, 0.92, 0.35], scale: [0.94, 1.08, 0.94] }}
+          transition={{ duration: ritualRune === "shield" ? 1.1 : 1.45, repeat: Infinity }}
+        >
+          <svg aria-hidden="true" viewBox="0 0 100 100" className="h-full w-full">
+            <motion.circle
+              cx="50"
+              cy="54"
+              r="42"
+              fill="none"
+              stroke={ritualColor}
+              strokeDasharray={ritualRune === "heal" ? "2 2" : "5 2"}
+              strokeWidth="2.5"
+              style={{ filter: `drop-shadow(0 0 8px ${ritualColor})` }}
+            />
+            <motion.path
+              d="M 50 12 L 58 42 L 88 50 L 58 58 L 50 88 L 42 58 L 12 50 L 42 42 Z"
+              fill="none"
+              stroke={ritualColor}
+              strokeOpacity="0.72"
+              strokeWidth="1.4"
+              animate={{ rotate: ritualRune === "purify" ? [0, 8, 0] : [0, -5, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+            />
+          </svg>
+        </motion.div>
       )}
 
       {isShielded && (

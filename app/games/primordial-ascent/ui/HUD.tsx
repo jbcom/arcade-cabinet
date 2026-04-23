@@ -17,6 +17,7 @@ export function HUD() {
 
   const isDanger = state.distToLava < 60;
   const intensity = Math.max(0, 1.0 - state.distToLava / 60);
+  const guide = state.grappleGuideCue;
   const grappleColor =
     state.grappleTargetState === "taut"
       ? "#00ff66"
@@ -73,7 +74,7 @@ export function HUD() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, max-content))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(7.1rem, 42vw), max-content))",
             gap: "0.65rem",
             alignItems: "start",
             justifyContent: "space-between",
@@ -121,6 +122,58 @@ export function HUD() {
             </div>
             <div
               style={{
+                border: `1px solid ${guide.urgency === "high" ? "#ff7448" : grappleColor}66`,
+                background:
+                  guide.urgency === "high" ? "rgba(127, 29, 29, 0.32)" : "rgba(6, 182, 212, 0.14)",
+                borderRadius: 8,
+                color: "#f8fafc",
+                fontSize: 13,
+                fontWeight: 900,
+                lineHeight: 1.25,
+                marginTop: 8,
+                padding: "0.5rem 0.58rem",
+              }}
+            >
+              <span
+                style={{
+                  color: guide.urgency === "high" ? "#ff7448" : grappleColor,
+                  display: "block",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                }}
+              >
+                Grip Guide · {guide.inputHint}
+              </span>
+              {guide.label}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.45rem",
+                marginTop: 8,
+              }}
+            >
+              <StatusPill
+                label="Route Cue"
+                value={state.routeCue.label}
+                accent={
+                  state.routeCue.kind === "danger"
+                    ? "#ff7448"
+                    : state.routeCue.kind === "recovery"
+                      ? "#a3ff76"
+                      : "#36fbd1"
+                }
+              />
+              <StatusPill
+                label="Target"
+                value={`${state.routeCue.targetAltitude}M`}
+                accent="#00e5ff"
+              />
+              <StatusPill label="Cue" value={guide.kind.replace("-", " ")} accent={grappleColor} />
+            </div>
+            <div
+              style={{
                 color: grappleColor,
                 fontSize: 12,
                 fontWeight: 900,
@@ -156,6 +209,30 @@ export function HUD() {
         </div>
       </div>
     </>
+  );
+}
+
+function StatusPill({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        maxWidth: "100%",
+        alignItems: "center",
+        gap: "0.38rem",
+        border: `1px solid ${accent}66`,
+        background: `${accent}18`,
+        borderRadius: 999,
+        color: "#dffbff",
+        fontSize: 11,
+        fontWeight: 800,
+        lineHeight: 1.2,
+        padding: "0.3rem 0.48rem",
+      }}
+    >
+      <span style={{ color: accent, textTransform: "uppercase" }}>{label}</span>
+      <span>{value}</span>
+    </span>
   );
 }
 

@@ -1,4 +1,9 @@
-import type { MegaTrackState } from "./types";
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
+import type { MegaTrackRaceCue, MegaTrackSceneryCue, MegaTrackState } from "./types";
 import { CONFIG, type Obstacle } from "./types";
 
 const LANE_PATTERN: (-1 | 0 | 1)[] = [-1, 1, -1, 1, -1, 1, -1, 1, 0, -1, 1, 0];
@@ -13,9 +18,13 @@ const TYPE_PATTERN: Obstacle["type"][] = [
   "cone",
 ];
 
-export function createInitialState(): MegaTrackState {
+export const CUP_LEG_COUNT = 3;
+const CHECKPOINT_REPAIR_BASE = 18;
+
+export function createInitialState(mode: string | null | undefined = "standard"): MegaTrackState {
   const obstacles = createObstacleRun(0, CONFIG.OBSTACLE_LOOKAHEAD);
   return {
+    sessionMode: normalizeSessionMode(mode),
     isPlaying: false,
     speed: 0,
     distance: 0,
@@ -33,6 +42,9 @@ export function createInitialState(): MegaTrackState {
     boostCharge: 0,
     cleanPassStreak: 0,
     overdriveMs: 0,
+    checkpointRepairs: 0,
+    lastCheckpointLeg: 1,
+    lastCheckpointMs: -Infinity,
   };
 }
 
@@ -78,14 +90,41 @@ export function tick(
   const maxSpeed = next.overdriveMs > 0 ? CONFIG.MAX_SPEED * 1.32 : CONFIG.MAX_SPEED;
   const acceleration = next.overdriveMs > 0 ? 1.35 : 0.9;
   next.speed = Math.min(maxSpeed, next.speed + acceleration * seconds);
-  next.distance += next.speed * deltaMs;
+  next.distance += next.speed * deltaMs * CONFIG.DISTANCE_PER_SPEED_MS;
   next.boostCharge = Math.min(100, next.boostCharge + seconds * (next.currentLane === 0 ? 8 : 5));
+  next.integrity = Math.min(
+    100,
+    next.integrity +
+      seconds *
+        getSessionRecoveryScale(next.sessionMode, {
+          challenge: 0.2,
+          cozy: 2.4,
+          standard: 1.1,
+        })
+  );
+
+  const previousLeg = getLegForDistance(previousDistance);
+  const currentLeg = getLegForDistance(next.distance);
+  if (currentLeg > previousLeg && previousLeg < CUP_LEG_COUNT) {
+    const repairAmount =
+      CHECKPOINT_REPAIR_BASE *
+      getSessionRecoveryScale(next.sessionMode, {
+        challenge: 0.7,
+        cozy: 1.45,
+        standard: 1,
+      });
+    next.integrity = Math.min(100, next.integrity + repairAmount);
+    next.boostCharge = Math.min(100, next.boostCharge + 24);
+    next.checkpointRepairs += 1;
+    next.lastCheckpointLeg = currentLeg;
+    next.lastCheckpointMs = next.elapsedMs;
+  }
 
   if (input.laneChange !== 0) {
     next.currentLane = Math.max(-1, Math.min(1, next.currentLane + input.laneChange));
   }
 
-  while (next.nextObstacleIndex < 200) {
+  while (next.nextObstacleIndex < CONFIG.MAX_OBSTACLE_INDEX) {
     const obstacle = createObstacle(next.nextObstacleIndex);
     if (obstacle.z >= next.distance + CONFIG.OBSTACLE_LOOKAHEAD) break;
     next.obstacles.push(obstacle);
@@ -109,7 +148,16 @@ export function tick(
       dx < getObstacleHalfWidth(obs) + CONFIG.CAR_HALF_WIDTH
     ) {
       next.speed *= obs.type === "pace-car" ? 0.38 : 0.5;
-      next.integrity = Math.max(0, next.integrity - getObstacleDamage(obs));
+      next.integrity = Math.max(
+        0,
+        next.integrity -
+          getObstacleDamage(obs) *
+            getSessionPressureScale(next.sessionMode, {
+              challenge: 1.2,
+              cozy: 0.42,
+              standard: 0.62,
+            })
+      );
       next.impactCount++;
       next.lastImpactMs = next.elapsedMs;
       next.lastImpactType = obs.type;
@@ -136,6 +184,163 @@ export function tick(
   }
 
   return next;
+}
+
+export function didFinishCup(state: MegaTrackState): boolean {
+  return state.distance >= CONFIG.GOAL_DISTANCE;
+}
+
+export function getCupLegProgress(state: MegaTrackState) {
+  const clampedDistance = Math.min(CONFIG.GOAL_DISTANCE, Math.max(0, state.distance));
+  const legLength = CONFIG.GOAL_DISTANCE / CUP_LEG_COUNT;
+  const leg = getLegForDistance(clampedDistance);
+  const legStart = (leg - 1) * legLength;
+
+  return {
+    leg,
+    legRemainingDistance: Math.max(0, legLength - (clampedDistance - legStart)),
+    legProgress: Math.min(1, (clampedDistance - legStart) / legLength),
+    overallProgress: clampedDistance / CONFIG.GOAL_DISTANCE,
+    remainingDistance: Math.max(0, CONFIG.GOAL_DISTANCE - clampedDistance),
+  };
+}
+
+export function getMegaTrackRaceCue(state: MegaTrackState): MegaTrackRaceCue {
+  const cup = getCupLegProgress(state);
+  const scenery = getMegaTrackSceneryCue(state);
+  const nextHazard = getNextHazard(state);
+  const nextHazardDistance = nextHazard
+    ? Math.max(0, Math.round((nextHazard.z - state.distance) / 10))
+    : null;
+  const recommendedLane = getRecommendedLane(state, nextHazard);
+  const checkpointRepairAge = state.elapsedMs - state.lastCheckpointMs;
+  const checkpointRepairActive =
+    Number.isFinite(checkpointRepairAge) && checkpointRepairAge >= 0 && checkpointRepairAge < 1500;
+  let pressure: MegaTrackRaceCue["pressure"] = "clear";
+
+  if (
+    nextHazardDistance !== null &&
+    nextHazard?.lane === state.currentLane &&
+    nextHazardDistance < 28
+  ) {
+    pressure = "danger";
+  } else if (nextHazardDistance !== null && nextHazardDistance < 58) {
+    pressure = "closing";
+  }
+
+  return {
+    checkpointDistance: Math.max(0, Math.round(cup.legRemainingDistance / 10)),
+    checkpointProgressPercent: Math.round(cup.legProgress * 100),
+    checkpointRepairActive,
+    legLabel: `Leg ${cup.leg}/${CUP_LEG_COUNT}`,
+    sceneryAccent: scenery.accent,
+    sceneryBand: scenery.band,
+    sceneryLabel: scenery.label,
+    nextHazardDistance,
+    nextHazardLane: nextHazard?.lane ?? null,
+    nextHazardType: nextHazard?.type ?? null,
+    pressure,
+    recommendedLane,
+    recommendedLaneLabel: labelLane(recommendedLane),
+  };
+}
+
+export function getMegaTrackSceneryCue(
+  state: Pick<MegaTrackState, "distance">
+): MegaTrackSceneryCue {
+  const leg = getLegForDistance(state.distance);
+
+  if (leg === 3) {
+    return {
+      accent: "#fb7185",
+      band: "finish-fairway",
+      banner: "Finish Fairway",
+      fogColor: "#f8c7d3",
+      label: "Finish Fairway",
+      roadsideDensity: 14,
+      secondaryAccent: "#facc15",
+      skylineColor: "#3f1d38",
+    };
+  }
+
+  if (leg === 2) {
+    return {
+      accent: "#f97316",
+      band: "service-canyon",
+      banner: "Service Canyon",
+      fogColor: "#ffd7a8",
+      label: "Service Canyon",
+      roadsideDensity: 12,
+      secondaryAccent: "#22d3ee",
+      skylineColor: "#3d2a24",
+    };
+  }
+
+  return {
+    accent: "#22d3ee",
+    band: "harbor-switchback",
+    banner: "Harbor Switchback",
+    fogColor: "#a7ddeb",
+    label: "Harbor Switchback",
+    roadsideDensity: 10,
+    secondaryAccent: "#facc15",
+    skylineColor: "#273449",
+  };
+}
+
+export function getMegaTrackRunSummary(state: MegaTrackState) {
+  const cup = getCupLegProgress(state);
+
+  return {
+    checkpointRepairs: state.checkpointRepairs,
+    cupLeg: cup.leg,
+    cupLegCount: CUP_LEG_COUNT,
+    distanceMeters: Math.floor(Math.min(state.distance, CONFIG.GOAL_DISTANCE) / 10),
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    impactCount: state.impactCount,
+    integrity: Math.round(state.integrity),
+    overdrives: state.lastOverdriveStartMs > Number.NEGATIVE_INFINITY ? 1 : 0,
+    progressPercent: Math.round(cup.overallProgress * 100),
+  };
+}
+
+function getLegForDistance(distance: number): number {
+  const clampedDistance = Math.min(CONFIG.GOAL_DISTANCE, Math.max(0, distance));
+  const legLength = CONFIG.GOAL_DISTANCE / CUP_LEG_COUNT;
+  return Math.min(CUP_LEG_COUNT, Math.floor(clampedDistance / legLength) + 1);
+}
+
+function getNextHazard(state: MegaTrackState): Obstacle | null {
+  return (
+    state.obstacles
+      .filter((obstacle) => obstacle.z > state.distance)
+      .sort((a, b) => a.z - b.z)[0] ?? null
+  );
+}
+
+function getRecommendedLane(state: MegaTrackState, nextHazard: Obstacle | null): Obstacle["lane"] {
+  const lanes: Obstacle["lane"][] = [-1, 0, 1];
+  if (!nextHazard || nextHazard.lane !== state.currentLane) {
+    return clampLane(state.currentLane);
+  }
+
+  return (
+    lanes
+      .filter((lane) => lane !== nextHazard.lane)
+      .sort((a, b) => Math.abs(a - state.currentLane) - Math.abs(b - state.currentLane))[0] ?? 0
+  );
+}
+
+function clampLane(lane: number): Obstacle["lane"] {
+  if (lane < 0) return -1;
+  if (lane > 0) return 1;
+  return 0;
+}
+
+function labelLane(lane: Obstacle["lane"]): string {
+  if (lane < 0) return "left lane";
+  if (lane > 0) return "right lane";
+  return "center lane";
 }
 
 function getObstacleHalfWidth(obstacle: Obstacle): number {

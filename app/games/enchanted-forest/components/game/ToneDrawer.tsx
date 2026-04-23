@@ -168,7 +168,6 @@ export function ToneDrawer({
       if (spellType) {
         const spell = RUNE_PATTERNS.find((r) => r.type === spellType);
         if (spell) {
-          forestAudio.playSpellEffect(spellType);
           forestAudio.playGestureSequence(
             pointsRef.current.map((p) => getNormalizedPosition(p)),
             spellType

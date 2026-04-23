@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -25,10 +27,40 @@ export interface Shockwave {
   life: number;
 }
 
+export type EntropyStabilityBand = "stable" | "unstable" | "critical";
+export type EntropyRoutePressure = "clear" | "falling" | "blocked" | "critical";
+
+export interface EntropySectorCue {
+  sectorLabel: string;
+  objective: string;
+  routeLabel: string;
+  recommendedMove: string;
+  targetDistance: number;
+  targetBearing: string;
+  stabilityBand: EntropyStabilityBand;
+  pressure: EntropyRoutePressure;
+  fallingThreats: number;
+  blockedCells: number;
+  nearestFallingDistance: number | null;
+  nearestFallingKey: string | null;
+  surgeReady: boolean;
+}
+
+export interface EntropyCompletionCue {
+  message: string;
+  nextAction: string;
+  rating: string;
+  sectorPulseCount: number;
+  stabilityCarrySeconds: number;
+  status: "sector" | "run";
+  title: string;
+}
+
 export type EntropyPhase = "menu" | "playing" | "gameover" | "levelcomplete";
 
 export interface EntropyState {
   phase: EntropyPhase;
+  sessionMode: SessionMode;
   level: number;
   playerGridX: number;
   playerGridZ: number;

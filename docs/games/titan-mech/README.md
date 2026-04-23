@@ -7,6 +7,7 @@ A heavy mech extraction game about moving mass through an authored industrial ar
 - Heavy chassis control: the mech should feel powerful but not weightless.
 - Heat economy: extraction, movement, weapons, and coolant all pull against the same thermal limit.
 - Industrial extraction: pylon rings, ore rigs, hopper load, credits, and ejected ore cubes define the run objective.
+- Contract evolution: each completed contract offers a chassis upgrade so long couch sessions build a distinct mech instead of restarting a flat loop.
 
 ## Presentation Direction
 
@@ -18,9 +19,14 @@ Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat ove
 
 - Weapon feedback now exposes firing, cooling, dry, and overheated states from pure simulation.
 - Overheat extraction state now exposes hopper load, credits, rare isotope finds, extractor feedback, and ore-to-scrap conversion.
+- Contract cue state now exposes the next pylon, distance, bearing, extraction readiness, and heat-priority stage so the HUD and arena route agree.
+- Threat cue state now exposes nearest hostile structures, attack-lane warning level, distance, and bearing so world telegraphs and HUD language agree before the player is in danger.
+- Hostile structures now expose deterministic behaviors: rail volleys, reactor pulses, mine locks, and sentinel scans each have a counter-read and recoverable pressure profile.
+- Delivery cue state keeps ore cube payout visible after the instant hopper-eject frame and turns contract completion into an explicit banked target.
+- Contract completion now surfaces three deterministic upgrade choices, then starts the next extraction while preserving scrap and installed chassis traits.
 - Firing consumes energy and heat budget while the scene renders muzzle flash, reticle, and overheat feedback.
 - Extracting inside pylon rings consumes energy, raises heat, fills the hopper, and ejects a credit/scrap payout when full.
-- Objective rings, pylon progress, damage vignette, and brighter threat hierarchy improve the mobile combat read.
+- Objective rings, active route chevrons, pylon beams, damage vignette, behavior-specific threat telegraphs, and brighter attack-lane markers improve the mobile combat read.
 - The cabinet landing uses the shared cartridge frame with an Overheat label, play control, and rules drawer.
 
 ## Responsive and Android Contract
@@ -28,7 +34,7 @@ Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat ove
 - The root fills its parent with `GameViewport`.
 - Camera follow keeps the mech centered across viewport sizes.
 - Desktop keyboard/mouse and mobile touch controls both update the same `TitanControls` state.
-- The pure engine owns boot state, drive force calculation, objective progress, extraction economy, system heat, and deterministic arena layout.
+- The pure engine owns boot state, drive force calculation, objective progress, extraction economy, system heat, delivery/threat cue state, and deterministic arena layout.
 - Android packaging uses the standalone Capacitor app shell.
 
 ## Stack

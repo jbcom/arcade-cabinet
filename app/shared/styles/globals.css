@@ -77,6 +77,8 @@
   --font-display: "Syne", sans-serif;
   --font-body: "DM Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+  --cabinet-text-scale: 1;
+  --cabinet-joystick-sensitivity: 1;
 }
 
 .dark {
@@ -117,7 +119,7 @@ body,
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
+  font-size: calc(16px * var(--cabinet-text-scale, 1));
 }
 
 body {
@@ -191,6 +193,32 @@ a {
   ::view-transition-new(active-cartridge-label) {
     animation-duration: 1ms;
     animation-name: none;
+  }
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 1ms;
+  scroll-behavior: auto;
+  transition-duration: 1ms;
+}
+
+.cabinet-hud-panel {
+  box-sizing: border-box;
+  max-width: min(24rem, calc(100vw - 2rem));
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .cabinet-hud-row {
+    min-width: 0;
+  }
+
+  .cabinet-hud-panel {
+    flex: 1 1 0;
+    max-width: calc(50vw - 0.75rem);
+    min-width: 0;
   }
 }
 

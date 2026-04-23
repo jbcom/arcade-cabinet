@@ -55,6 +55,7 @@ export async function startBrowserGame(
   );
 
   await expect.element(page.getByText(title)).toBeVisible();
+  await expect.element(page.getByText("Standard")).toBeVisible();
 
   for (const label of startFlow) {
     await userEvent.click(page.getByText(label));

@@ -1,13 +1,35 @@
 import { describe, expect, test } from "vitest";
-import { createInitialState, didLose, didWin, GOAL, getGoatIntent, tick } from "./simulation";
+import {
+  createInitialState,
+  didLose,
+  didWin,
+  GOAL,
+  getGoatIntent,
+  getGoatPoseCue,
+  getOtterlyRescueCue,
+  getOtterlyRunSummary,
+  getOtterPoseCue,
+  TARGET_RESCUES,
+  tick,
+} from "./simulation";
 
 describe("otterly simulation", () => {
   test("moves the otter from player input", () => {
     const state = createInitialState();
     const next = tick(state, 250, { x: 1, y: 0 }, false);
 
+    expect(state.sessionMode).toBe("standard");
+    expect(state.targetRescues).toBe(TARGET_RESCUES);
     expect(next.otter.x).toBeGreaterThan(state.otter.x);
     expect(next.elapsedMs).toBe(250);
+  });
+
+  test("session modes tune goat pressure without changing deterministic setup", () => {
+    const cozy = createInitialState("cozy");
+    const challenge = createInitialState("challenge");
+
+    expect(challenge.goats[0].speed).toBeGreaterThan(cozy.goats[0].speed);
+    expect(challenge.goats.map((goat) => goat.id)).toEqual(cozy.goats.map((goat) => goat.id));
   });
 
   test("simulation is deterministic for the same input sequence", () => {
@@ -54,6 +76,81 @@ describe("otterly simulation", () => {
     expect(chaseIntent.alertLevel).toBeGreaterThanOrEqual(0);
   });
 
+  test("exposes expressive otter and goat pose cues from deterministic state", () => {
+    const pushing = createInitialState();
+    pushing.otter = { x: pushing.ball.x - 0.4, y: pushing.ball.y };
+    pushing.rallyMs = 0;
+    const pushPose = getOtterPoseCue(pushing);
+
+    expect(pushPose).toMatchObject({
+      label: "Shoulder push",
+      pose: "push",
+    });
+    expect(pushPose.tailLift).toBeGreaterThan(0.5);
+
+    const barked = tick(
+      {
+        ...createInitialState(),
+        goats: createInitialState().goats.map((goat) => ({
+          ...goat,
+          position: { x: -3.8, y: -3.2 },
+        })),
+      },
+      16,
+      { x: 0, y: 0 },
+      true
+    );
+    expect(getOtterPoseCue(barked).pose).toBe("bark");
+
+    const chewing = createInitialState();
+    chewing.goats[0].position = { ...chewing.ball };
+    expect(getGoatPoseCue(chewing, chewing.goats[0])).toMatchObject({
+      label: "Chewing",
+      pose: "chew",
+    });
+
+    const nearOtter = createInitialState();
+    nearOtter.goats[0].position = { ...nearOtter.otter };
+    const stunned = tick(nearOtter, 16, { x: 0, y: 0 }, true);
+    stunned.goats[0].position = { ...stunned.otter };
+    expect(getGoatPoseCue(stunned, stunned.goats[0])).toMatchObject({
+      label: "Stunned",
+      pose: "stunned",
+    });
+  });
+
+  test("summarizes rescue cue decisions from goat threat and bark readiness", () => {
+    const clear = createInitialState();
+    clear.goats = clear.goats.map((goat) => ({ ...goat, position: { x: 4, y: -4 } }));
+    const clearCue = getOtterlyRescueCue(clear);
+
+    const chewing = createInitialState();
+    chewing.goats[0].position = { ...chewing.ball };
+    const chewingCue = getOtterlyRescueCue(chewing);
+
+    const recovering = createInitialState();
+    recovering.barkCooldownMs = 900;
+    recovering.goats[0].position = { x: recovering.ball.x + 1.2, y: recovering.ball.y };
+    const recoverCue = getOtterlyRescueCue(recovering);
+
+    expect(clearCue).toMatchObject({
+      action: "push",
+      progressLabel: "1/5",
+      threatBand: "clear",
+    });
+    expect(chewingCue).toMatchObject({
+      action: "bark",
+      chewingGoats: 1,
+      threatBand: "danger",
+    });
+    expect(recoverCue).toMatchObject({
+      action: "recover",
+      barkReady: false,
+      closestGoatId: "billy",
+      threatBand: "pressure",
+    });
+  });
+
   test("double bark rallies restore salad health and damp goat damage", () => {
     const state = createInitialState();
     state.ballHealth = 90;
@@ -89,21 +186,31 @@ describe("otterly simulation", () => {
     expect(protectedNext.ballHealth).toBe(protectedState.ballHealth);
   });
 
-  test("fresh runs keep a playable opening window without immediate input", () => {
+  test("fresh standard runs keep a playable first minute without immediate input", () => {
     let state = createInitialState();
 
-    for (let elapsed = 0; elapsed < 12_000; elapsed += 250) {
+    for (let elapsed = 0; elapsed < 60_000; elapsed += 250) {
       state = tick(state, 250, { x: 0, y: 0 }, false);
     }
 
     expect(didLose(state)).toBe(false);
-    expect(state.ballHealth).toBeGreaterThan(30);
+    expect(state.ballHealth).toBeGreaterThan(20);
   });
 
-  test("detects win and loss terminal conditions", () => {
-    const won = createInitialState();
-    won.ball = { ...GOAL };
+  test("requires a full five-piece rescue run instead of one fast crater touch", () => {
+    let state = createInitialState();
+    for (let rescue = 0; rescue < TARGET_RESCUES - 1; rescue += 1) {
+      state = tick({ ...state, ball: { ...GOAL } }, 16, { x: 0, y: 0 }, false);
+      expect(didWin(state)).toBe(false);
+      expect(state.ball).not.toEqual(GOAL);
+    }
+
+    const won = tick({ ...state, ball: { ...GOAL } }, 16, { x: 0, y: 0 }, false);
+    const summary = getOtterlyRunSummary(won);
+
     expect(didWin(won)).toBe(true);
+    expect(summary.rescuesCompleted).toBe(TARGET_RESCUES);
+    expect(summary.rescueProgressPercent).toBe(100);
 
     const lost = createInitialState();
     lost.ballHealth = 0;

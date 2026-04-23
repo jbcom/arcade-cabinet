@@ -1,10 +1,13 @@
+import { withBasePath } from "../utils/basePath";
+
 const YEAR = new Date().getFullYear();
 
 const LINKS = [
   { label: "GitHub", href: "https://github.com/jbcom/arcade-cabinet" },
   { label: "Issues", href: "https://github.com/jbcom/arcade-cabinet/issues" },
   { label: "Discussions", href: "https://github.com/jbcom/arcade-cabinet/discussions" },
-];
+  { label: "Privacy", href: "/privacy" },
+] as const;
 
 const RAINBOW_COLORS = [
   "#ef4444",
@@ -63,7 +66,7 @@ export default function Footer() {
         {LINKS.map((link) => (
           <a
             key={link.label}
-            href={link.href}
+            href={resolveFooterHref(link.href)}
             target={link.href.startsWith("http") ? "_blank" : undefined}
             rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
             style={{
@@ -98,4 +101,8 @@ export default function Footer() {
       </p>
     </footer>
   );
+}
+
+function resolveFooterHref(href: (typeof LINKS)[number]["href"]) {
+  return href.startsWith("http") ? href : withBasePath(href as `/${string}`);
 }

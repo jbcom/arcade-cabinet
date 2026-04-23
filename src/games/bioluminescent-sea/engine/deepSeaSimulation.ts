@@ -1,3 +1,4 @@
+import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import { fbm, noise2D } from "../lib/perlin";
 
 export type CreatureType = "jellyfish" | "plankton" | "fish";
@@ -80,6 +81,7 @@ export interface CreatureCollectionResult {
   creatures: Creature[];
   lastCollectTime: number;
   multiplier: number;
+  oxygenBonusSeconds: number;
   scoreDelta: number;
 }
 
@@ -97,6 +99,25 @@ export interface DiveTelemetry {
   routeLandmarkLabel: string;
 }
 
+export interface DiveRunSummary {
+  beaconsRemaining: number;
+  completionPercent: number;
+  depthMeters: number;
+  durationSeconds: number;
+  elapsedSeconds: number;
+  score: number;
+  timeLeft: number;
+  totalBeacons: number;
+}
+
+export interface DiveCompletionCelebration {
+  landmarkSequence: string[];
+  message: string;
+  rating: string;
+  replayPrompt: string;
+  title: string;
+}
+
 export interface SceneAdvanceResult {
   collection: CreatureCollectionResult;
   collidedWithPredator: boolean;
@@ -104,7 +125,25 @@ export interface SceneAdvanceResult {
   telemetry: DiveTelemetry;
 }
 
-export const GAME_DURATION = 60;
+export interface DiveModeTuning {
+  collectionOxygenScale: number;
+  collisionEndsDive: boolean;
+  durationSeconds: number;
+  impactGraceSeconds: number;
+  impactOxygenPenaltySeconds: number;
+  pirateSpeedScale: number;
+  predatorSpeedScale: number;
+  threatRadiusScale: number;
+}
+
+export interface DiveThreatImpactResult {
+  graceUntilSeconds: number;
+  oxygenPenaltySeconds: number;
+  timeLeft: number;
+  type: "none" | "oxygen-penalty" | "dive-failed";
+}
+
+export const GAME_DURATION = 600;
 export const MAX_CHAIN_MULTIPLIER = 5;
 export const STREAK_WINDOW_SECONDS = 2;
 export const CREATURE_TYPES: CreatureType[] = ["jellyfish", "plankton", "fish"];
@@ -117,6 +156,44 @@ export const CREATURE_POINTS: Record<CreatureType, number> = {
   fish: 50,
   jellyfish: 30,
   plankton: 10,
+};
+export const CREATURE_OXYGEN_BONUS_SECONDS: Record<CreatureType, number> = {
+  fish: 6,
+  jellyfish: 8,
+  plankton: 4,
+};
+
+const DIVE_MODE_TUNING: Record<SessionMode, DiveModeTuning> = {
+  challenge: {
+    collectionOxygenScale: 0.55,
+    collisionEndsDive: true,
+    durationSeconds: 480,
+    impactGraceSeconds: 0,
+    impactOxygenPenaltySeconds: 0,
+    pirateSpeedScale: 1.1,
+    predatorSpeedScale: 1.16,
+    threatRadiusScale: 1.22,
+  },
+  cozy: {
+    collectionOxygenScale: 1.35,
+    collisionEndsDive: false,
+    durationSeconds: 780,
+    impactGraceSeconds: 5,
+    impactOxygenPenaltySeconds: 25,
+    pirateSpeedScale: 0.8,
+    predatorSpeedScale: 0.78,
+    threatRadiusScale: 0.72,
+  },
+  standard: {
+    collectionOxygenScale: 1,
+    collisionEndsDive: false,
+    durationSeconds: GAME_DURATION,
+    impactGraceSeconds: 4,
+    impactOxygenPenaltySeconds: 45,
+    pirateSpeedScale: 1,
+    predatorSpeedScale: 1,
+    threatRadiusScale: 1,
+  },
 };
 
 interface CreatureAnchor {
@@ -152,9 +229,11 @@ export const TOTAL_BEACONS = CREATURE_ANCHORS.length;
 
 const ROUTE_LANDMARKS = [
   { label: "Kelp Gate", threshold: 0, distanceOffset: 120 },
-  { label: "Lantern Shelf", threshold: 0.34, distanceOffset: 92 },
-  { label: "Trench Choir", threshold: 0.67, distanceOffset: 64 },
-  { label: "Living Map", threshold: 0.92, distanceOffset: 28 },
+  { label: "Lantern Shelf", threshold: 0.24, distanceOffset: 98 },
+  { label: "Whale-Fall Windows", threshold: 0.43, distanceOffset: 82 },
+  { label: "Trench Choir", threshold: 0.61, distanceOffset: 64 },
+  { label: "Abyss Orchard", threshold: 0.78, distanceOffset: 46 },
+  { label: "Living Map", threshold: 0.94, distanceOffset: 24 },
 ] as const;
 
 export function createInitialScene(dimensions: ViewportDimensions): SceneState {
@@ -279,22 +358,31 @@ export function advanceScene(
   deltaTime: number,
   lastCollectTime: number,
   multiplier: number,
-  timeLeft = GAME_DURATION
+  timeLeft = GAME_DURATION,
+  mode: string | null | undefined = "standard"
 ): SceneAdvanceResult {
+  const tuning = getDiveModeTuning(mode);
   const player = advancePlayer(scene.player, input, dimensions, totalTime, deltaTime);
   const creatures = scene.creatures.map((creature) =>
     advanceCreature(creature, dimensions, totalTime, deltaTime)
   );
   const predators = scene.predators.map((predator) =>
-    advancePredator(predator, player, dimensions, totalTime, deltaTime)
+    advancePredator(predator, player, dimensions, totalTime, deltaTime, tuning.predatorSpeedScale)
   );
   const pirates = scene.pirates.map((pirate) =>
-    advancePirate(pirate, player, dimensions, totalTime, deltaTime)
+    advancePirate(pirate, player, dimensions, totalTime, deltaTime, tuning.pirateSpeedScale)
   );
   const particles = scene.particles.map((particle) =>
     advanceParticle(particle, dimensions, totalTime, deltaTime)
   );
-  const collection = collectCreatures(creatures, player, totalTime, lastCollectTime, multiplier);
+  const collection = collectCreatures(
+    creatures,
+    player,
+    totalTime,
+    lastCollectTime,
+    multiplier,
+    tuning.collectionOxygenScale
+  );
   const nextScene = {
     creatures: collection.creatures,
     particles,
@@ -305,9 +393,9 @@ export function advanceScene(
 
   return {
     collection,
-    collidedWithPredator: hasPredatorCollision(player, predators),
+    collidedWithPredator: hasPredatorCollision(player, predators, tuning.threatRadiusScale),
     scene: nextScene,
-    telemetry: getDiveTelemetry(nextScene, timeLeft),
+    telemetry: getDiveTelemetry(nextScene, timeLeft, tuning.durationSeconds),
   };
 }
 
@@ -371,7 +459,8 @@ export function advancePredator(
   player: Player,
   { width, height }: ViewportDimensions,
   totalTime: number,
-  deltaTime: number
+  deltaTime: number,
+  speedScale = 1
 ): Predator {
   const dx = player.x - predator.x;
   const dy = player.y - predator.y;
@@ -384,7 +473,7 @@ export function advancePredator(
 
   const noiseAngle = fbm(predator.noiseOffset + totalTime * 0.3, totalTime * 0.2);
   const closingBoost = distance < 150 ? 1.52 : 0.88;
-  const speed = predator.speed * closingBoost * frameScale;
+  const speed = predator.speed * closingBoost * frameScale * speedScale;
   const drift = distance < 150 ? 0 : 0.5 * frameScale;
 
   return {
@@ -408,7 +497,8 @@ export function advancePirate(
   player: Player,
   { width, height }: ViewportDimensions,
   totalTime: number,
-  deltaTime: number
+  deltaTime: number,
+  speedScale = 1
 ): Pirate {
   const dx = player.x - pirate.x;
   const dy = player.y - pirate.y;
@@ -422,10 +512,10 @@ export function advancePirate(
   if (distance < 300 && distance > 0) {
     const targetAngle = Math.atan2(dy, dx);
     angle = interpolateAngle(pirate.angle, targetAngle, 0.05 * frameScale);
-    x += Math.cos(angle) * pirate.speed * 1.2 * frameScale;
-    y += Math.sin(angle) * pirate.speed * 1.2 * frameScale + noiseY * 0.5;
+    x += Math.cos(angle) * pirate.speed * 1.2 * frameScale * speedScale;
+    y += Math.sin(angle) * pirate.speed * 1.2 * frameScale * speedScale + noiseY * 0.5;
   } else {
-    x += Math.cos(angle) * pirate.speed * 0.5 * frameScale;
+    x += Math.cos(angle) * pirate.speed * 0.5 * frameScale * speedScale;
     y += noiseY;
   }
 
@@ -476,11 +566,13 @@ export function collectCreatures(
   player: Player,
   totalTime: number,
   lastCollectTime: number,
-  currentMultiplier: number
+  currentMultiplier: number,
+  oxygenScale = 1
 ): CreatureCollectionResult {
   const collected: Creature[] = [];
   const remaining: Creature[] = [];
   let multiplier = currentMultiplier;
+  let oxygenBonusSeconds = 0;
   let scoreDelta = 0;
   let nextLastCollectTime = lastCollectTime;
 
@@ -489,6 +581,7 @@ export function collectCreatures(
 
     if (distance < creature.size * 0.56 + 30) {
       multiplier = calculateMultiplier(nextLastCollectTime, totalTime, multiplier);
+      oxygenBonusSeconds += CREATURE_OXYGEN_BONUS_SECONDS[creature.type] * oxygenScale;
       scoreDelta += CREATURE_POINTS[creature.type] * multiplier;
       nextLastCollectTime = totalTime;
       collected.push(creature);
@@ -502,6 +595,7 @@ export function collectCreatures(
     creatures: remaining,
     lastCollectTime: nextLastCollectTime,
     multiplier,
+    oxygenBonusSeconds: Math.round(oxygenBonusSeconds),
     scoreDelta,
   };
 }
@@ -520,10 +614,14 @@ export function calculateMultiplier(
   return Math.min(currentMultiplier + 1, MAX_CHAIN_MULTIPLIER);
 }
 
-export function hasPredatorCollision(player: Player, predators: Predator[]): boolean {
+export function hasPredatorCollision(
+  player: Player,
+  predators: Predator[],
+  radiusScale = 1
+): boolean {
   return predators.some((predator) => {
     const distance = Math.hypot(predator.x - player.x, predator.y - player.y);
-    return distance < predator.size * 0.4 + 25;
+    return distance < (predator.size * 0.4 + 25) * radiusScale;
   });
 }
 
@@ -567,7 +665,11 @@ export function findNearestBeaconVector(
   };
 }
 
-export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelemetry {
+export function getDiveTelemetry(
+  scene: SceneState,
+  timeLeft: number,
+  durationSeconds = GAME_DURATION
+): DiveTelemetry {
   const nearestThreatDistance = findNearestThreatDistance(
     scene.player,
     scene.predators,
@@ -575,7 +677,7 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
   );
   const nearestBeacon = findNearestBeaconVector(scene.player, scene.creatures);
   const collectionRatio = clamp((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS, 0, 1);
-  const oxygenRatio = clamp(timeLeft / GAME_DURATION, 0, 1);
+  const oxygenRatio = clamp(timeLeft / durationSeconds, 0, 1);
   const routeLandmark = getDiveRouteLandmark(collectionRatio, nearestBeacon);
 
   return {
@@ -595,6 +697,120 @@ export function getDiveTelemetry(scene: SceneState, timeLeft: number): DiveTelem
     routeLandmarkBearingRadians: routeLandmark.bearingRadians,
     routeLandmarkDistance: routeLandmark.distance,
     routeLandmarkLabel: routeLandmark.label,
+  };
+}
+
+export function isDiveComplete(scene: SceneState): boolean {
+  return scene.creatures.length === 0;
+}
+
+export function getDiveRunSummary(
+  scene: SceneState,
+  score: number,
+  timeLeft: number,
+  durationSeconds = GAME_DURATION
+): DiveRunSummary {
+  return {
+    beaconsRemaining: scene.creatures.length,
+    completionPercent: Math.round(((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS) * 100),
+    depthMeters: getDiveTelemetry(scene, timeLeft, durationSeconds).depthMeters,
+    durationSeconds,
+    elapsedSeconds: durationSeconds - timeLeft,
+    score,
+    timeLeft,
+    totalBeacons: TOTAL_BEACONS,
+  };
+}
+
+export function getDiveCompletionCelebration(summary: DiveRunSummary): DiveCompletionCelebration {
+  const oxygenRatio = summary.durationSeconds > 0 ? summary.timeLeft / summary.durationSeconds : 0;
+  const rating =
+    summary.completionPercent >= 100 && oxygenRatio >= 0.34
+      ? "Radiant Route"
+      : summary.completionPercent >= 100 && oxygenRatio >= 0.18
+        ? "Clean Living Map"
+        : summary.completionPercent >= 100
+          ? "Narrow Ascent"
+          : "Partial Chart";
+  const title = summary.completionPercent >= 100 ? "Living Map Complete" : "Dive Logged";
+  const message =
+    summary.completionPercent >= 100
+      ? `${summary.totalBeacons} beacons recovered through ${ROUTE_LANDMARKS.at(-1)?.label}.`
+      : `${summary.completionPercent}% of the route charted before ascent.`;
+  const replayPrompt =
+    oxygenRatio >= 0.34
+      ? "Replay for faster chains and a calmer return."
+      : "Replay to bank more oxygen before the final landmark.";
+
+  return {
+    landmarkSequence: ROUTE_LANDMARKS.map((landmark) => landmark.label),
+    message,
+    rating,
+    replayPrompt,
+    title,
+  };
+}
+
+export function getDiveModeTuning(mode: string | null | undefined): DiveModeTuning {
+  return DIVE_MODE_TUNING[normalizeSessionMode(mode)];
+}
+
+export function getDiveDurationSeconds(mode: string | null | undefined): number {
+  return getDiveModeTuning(mode).durationSeconds;
+}
+
+export function resolveDiveThreatImpact({
+  collided,
+  lastImpactTimeSeconds,
+  mode,
+  timeLeft,
+  totalTimeSeconds,
+}: {
+  collided: boolean;
+  lastImpactTimeSeconds: number;
+  mode: string | null | undefined;
+  timeLeft: number;
+  totalTimeSeconds: number;
+}): DiveThreatImpactResult {
+  if (!collided) {
+    return {
+      graceUntilSeconds: lastImpactTimeSeconds,
+      oxygenPenaltySeconds: 0,
+      timeLeft,
+      type: "none",
+    };
+  }
+
+  const tuning = getDiveModeTuning(mode);
+  if (
+    tuning.impactGraceSeconds > 0 &&
+    totalTimeSeconds - lastImpactTimeSeconds < tuning.impactGraceSeconds
+  ) {
+    return {
+      graceUntilSeconds: lastImpactTimeSeconds + tuning.impactGraceSeconds,
+      oxygenPenaltySeconds: 0,
+      timeLeft,
+      type: "none",
+    };
+  }
+
+  if (tuning.collisionEndsDive) {
+    return {
+      graceUntilSeconds: totalTimeSeconds,
+      oxygenPenaltySeconds: timeLeft,
+      timeLeft: 0,
+      type: "dive-failed",
+    };
+  }
+
+  const oxygenPenaltySeconds = Math.min(timeLeft, tuning.impactOxygenPenaltySeconds);
+  const nextTimeLeft = Math.max(0, timeLeft - oxygenPenaltySeconds);
+
+  return {
+    graceUntilSeconds: totalTimeSeconds + tuning.impactGraceSeconds,
+    oxygenPenaltySeconds,
+    timeLeft: nextTimeLeft,
+    type: nextTimeLeft <= 0 ? "dive-failed" : "oxygen-penalty",
   };
 }
 

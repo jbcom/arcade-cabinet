@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useCallback, useEffect, useRef } from "react";
 
 export type GameLoopCallback = (deltaTime: number, totalTime: number) => void;
@@ -11,8 +12,10 @@ export function useGameLoop(callback: GameLoopCallback, isRunning: boolean) {
     (time: number) => {
       if (previousTimeRef.current !== undefined) {
         const deltaTime = Math.min((time - previousTimeRef.current) / 1000, 0.1);
-        totalTimeRef.current += deltaTime;
-        callback(deltaTime, totalTimeRef.current);
+        if (!isCabinetRuntimePaused()) {
+          totalTimeRef.current += deltaTime;
+          callback(deltaTime, totalTimeRef.current);
+        }
       }
       previousTimeRef.current = time;
       requestRef.current = requestAnimationFrame(animate);

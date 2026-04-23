@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { RuntimeResultRecorder, type RuntimeResultRecorderProps } from "./CabinetRuntime";
 
 interface GameViewportProps extends PropsWithChildren, HTMLAttributes<HTMLDivElement> {
   background?: string;
@@ -52,7 +53,7 @@ const overlayStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  padding: "1rem",
+  padding: "clamp(0.5rem, 2vw, 1rem)",
   color: "#f8fafc",
   fontFamily: "Inter, system-ui, sans-serif",
 };
@@ -63,6 +64,14 @@ const panelStyle: CSSProperties = {
   borderRadius: "8px",
   boxShadow: "0 20px 45px rgba(15, 23, 42, 0.28)",
   backdropFilter: "blur(12px)",
+};
+
+const hudPanelStyle: CSSProperties = {
+  ...panelStyle,
+  maxWidth: "calc(100vw - 1rem)",
+  minWidth: "min(220px, calc(50vw - 0.75rem))",
+  padding: "clamp(0.65rem, 2vw, 0.9rem) clamp(0.7rem, 2vw, 1rem)",
+  pointerEvents: "auto",
 };
 
 interface HUDOverlayProps extends PropsWithChildren {
@@ -80,50 +89,44 @@ export function HUDOverlay({
   children,
 }: HUDOverlayProps) {
   return (
-    <div style={overlayStyle} data-testid="hud-overlay">
+    <div className="cabinet-hud-overlay" style={overlayStyle} data-testid="hud-overlay">
       <div
+        className="cabinet-hud-row cabinet-hud-row--top"
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: "1rem",
+          gap: "clamp(0.5rem, 2vw, 1rem)",
           alignItems: "flex-start",
         }}
       >
         {topLeft ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {topLeft}
           </div>
         ) : null}
         {topRight ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {topRight}
           </div>
         ) : null}
       </div>
       {children ? <div style={{ flex: 1, position: "relative" }}>{children}</div> : null}
       <div
+        className="cabinet-hud-row cabinet-hud-row--bottom"
         style={{
           display: "flex",
           justifyContent: "space-between",
-          gap: "1rem",
+          gap: "clamp(0.5rem, 2vw, 1rem)",
           alignItems: "flex-end",
         }}
       >
         {bottomLeft ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {bottomLeft}
           </div>
         ) : null}
         {bottomRight ? (
-          <div
-            style={{ ...panelStyle, padding: "0.9rem 1rem", pointerEvents: "auto", minWidth: 220 }}
-          >
+          <div className="cabinet-hud-panel" style={hudPanelStyle}>
             {bottomRight}
           </div>
         ) : null}
@@ -137,10 +140,18 @@ interface ScreenProps {
   subtitle: string;
   actions?: ReactNode;
   accent?: string;
+  result?: RuntimeResultRecorderProps;
   testId?: string;
 }
 
-function ScreenShell({ title, subtitle, actions, accent = "#38bdf8", testId }: ScreenProps) {
+function ScreenShell({
+  title,
+  subtitle,
+  actions,
+  accent = "#38bdf8",
+  result,
+  testId,
+}: ScreenProps) {
   return (
     <div
       data-testid={testId}
@@ -154,6 +165,7 @@ function ScreenShell({ title, subtitle, actions, accent = "#38bdf8", testId }: S
         overflow: "hidden",
       }}
     >
+      {result ? <RuntimeResultRecorder {...result} /> : null}
       <div
         aria-hidden="true"
         style={{
@@ -245,7 +257,13 @@ export function StartScreen({ primaryAction, secondaryAction, ...props }: StartS
 }
 
 export function GameOverScreen(props: ScreenProps) {
-  return <ScreenShell {...props} testId={props.testId ?? "game-over-screen"} accent="#fb7185" />;
+  return (
+    <ScreenShell
+      {...props}
+      testId={props.testId ?? "game-over-screen"}
+      accent={props.accent ?? "#fb7185"}
+    />
+  );
 }
 
 export function OverlayButton({
@@ -373,8 +391,9 @@ export function FloatingJoystick({
       const knobX = unitX * clampedDistance;
       const knobY = unitY * clampedDistance;
       const rawMagnitude = clampedDistance / radius;
-      const magnitude =
+      const magnitudeBase =
         rawMagnitude <= deadZone ? 0 : (rawMagnitude - deadZone) / Math.max(0.01, 1 - deadZone);
+      const magnitude = Math.min(1, magnitudeBase * readJoystickSensitivity());
 
       setVisual({
         active: true,
@@ -481,4 +500,15 @@ export function FloatingJoystick({
       ) : null}
     </div>
   );
+}
+
+function readJoystickSensitivity() {
+  if (typeof window === "undefined") return 1;
+
+  const raw = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue("--cabinet-joystick-sensitivity");
+  const value = Number(raw);
+
+  return Number.isFinite(value) ? Math.min(1.6, Math.max(0.65, value)) : 1;
 }

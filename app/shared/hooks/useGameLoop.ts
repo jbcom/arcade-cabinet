@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useEffect, useRef } from "react";
 
 export function useGameLoop(
@@ -12,18 +13,21 @@ export function useGameLoop(
 
   useEffect(() => {
     let frame = 0;
-    let start = 0;
+    let elapsed = 0;
     let last = 0;
 
     const loop = (time: number) => {
-      if (start === 0) {
-        start = time;
+      if (last === 0) {
         last = time;
       }
       const delta = time - last;
-      const elapsed = time - start;
       last = time;
-      tickRef.current(delta, elapsed);
+
+      if (!isCabinetRuntimePaused()) {
+        elapsed += delta;
+        tickRef.current(delta, elapsed);
+      }
+
       frame = window.requestAnimationFrame(loop);
     };
 

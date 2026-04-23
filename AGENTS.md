@@ -19,7 +19,7 @@ This repository is actively maintained and evolved through a coalition of AI age
 2. **Visual Verification**: All games must be proven to render using Vitest browser screenshots.
 3. **No Primitives**: 2D ports require actual effort to map into 3D using composite shapes, not simple capsules.
 
-## Current Cabinet Launch Intake
+## Current Cabinet Launch State
 
 This repo is the single Vite/React/Capacitor arcade cabinet with the root split:
 
@@ -30,20 +30,42 @@ public/   # shared static assets, wasm, previews, generated labels
 android/  # single Capacitor Android app
 ```
 
-The cabinet must feel like one physical arcade cabinet with game cartridges, not a portfolio of POC descriptions. Every imported game needs:
+The cabinet must feel like one physical arcade cabinet with game cartridges, not a portfolio of POC descriptions. Every active cartridge needs:
 
 - A cartridge label identity in the cabinet browser: shared cabinet frame, shared typography/framing rules, unique label colors/art direction/title voice.
 - A playable web route under `app/games/<slug>` and deterministic logic under `src/games/<slug>`.
 - Touch-anywhere joystick or pointer/touch parity as appropriate. Do not reintroduce fixed D-pad controls.
 - Desktop and mobile Vitest Browser screenshots proving nonblank render and readable first interaction.
-- README/changelog notes that explain the core identity, loop, and mobile/Android assumptions without marketing-spec filler.
+- README/changelog notes that explain the core identity, loop, remaining work, and mobile/Android assumptions without marketing-spec filler.
 
-Incoming cabinet work:
+Current launch scope is fixed to 12 cartridges:
 
-- Beppo Laughs: import as a maze/escape cartridge only after controls, goal, pressure, and first-15-second readability are defined.
-- Cognitive Dissonance: import as an atmospheric state-intervention cartridge with legible player goal and consequences.
-- Farm Follies: import or link from the canonical stacker repo once the drop/stack/merge loop is stable enough for cabinet presentation.
-- Overcast: Glacier: import as a reduced downhill kitten arcade loop: warmth/cocoa, one snowman enemy, one kick, one photo/flash power-up, and touch controls.
-- Titan Mech / Overheat: merge Overheat's extraction, heat, cockpit, ore, hopper, cube, tractor/silo, and contract ideas into the current Titan Mech cabinet game without importing a second app shell.
+- Bioluminescent Sea
+- Cosmic Gardener
+- Enchanted Forest
+- Entropy Edge
+- Mega Track
+- Otterly Chaotic
+- Overcast Glacier
+- Primordial Ascent
+- Titan Mech: Overheat
+- Beppo Laughs
+- Cognitive Dissonance
+- Farm Follies
+
+Shared 1.0 rules:
+
+- `standard` mode targets an 8-15 minute run and must allow one recoverable mistake.
+- Touch-anywhere joystick remains the movement standard for movement games.
+- Vitest Browser remains the canonical browser/e2e/screenshot harness.
+- Direct Playwright is diagnostic only.
+- `app/` owns presentation; `src/` owns deterministic mechanics.
+- The circular gallery, cartridge label, landing frame, and pause/settings shell are one cabinet-wide identity.
+
+Documentation expectations:
+
+- Root docs in `docs/` own architecture, design, state, testing, visual review, launch readiness, and production blockers.
+- Per-game docs under `docs/games/<slug>/` should explain identity, loop, current polish, and remaining work.
+- Keep docs aligned to the real codebase. Do not leave migration-era future tense in place once a game is already imported.
 
 Voxel Realms has left the cabinet. It now lives in `arcade-cabinet/voxel-realms` as a standalone public repo, with Bok carrying a note to evaluate its techniques later. Keep Voxel Realms out of active cabinet launch planning unless there is a new explicit owner decision.

@@ -1,3 +1,4 @@
+import { isCabinetRuntimePaused } from "@app/shared";
 import {
   advanceShadowPosition,
   type CorruptionShadow,
@@ -5,7 +6,7 @@ import {
   type TreePosition,
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const VAPOR_PARTICLES = Array.from({ length: 12 }, (_, index) => ({
   id: `vapor-particle-${index + 1}`,
@@ -126,6 +127,7 @@ function CorruptionShadowEntity({
 }: CorruptionShadowEntityProps) {
   const [position, setPosition] = useState({ x: shadow.x, y: shadow.y });
   const [isVaporizing, setIsVaporizing] = useState(false);
+  const hasReachedRef = useRef(false);
 
   useEffect(() => {
     if (isVaporizing) return undefined;
@@ -146,6 +148,7 @@ function CorruptionShadowEntity({
   useEffect(() => {
     if (isVaporizing) return undefined;
     const interval = setInterval(() => {
+      if (isCabinetRuntimePaused()) return;
       setPosition((prev) => {
         const next = advanceShadowPosition(
           {
@@ -161,7 +164,10 @@ function CorruptionShadowEntity({
           treePosition
         );
         if (next.reached) {
-          onReachTree();
+          if (!hasReachedRef.current) {
+            hasReachedRef.current = true;
+            window.setTimeout(onReachTree, 0);
+          }
           return prev;
         }
         return { x: next.x, y: next.y };

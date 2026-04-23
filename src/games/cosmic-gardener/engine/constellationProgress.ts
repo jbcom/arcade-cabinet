@@ -67,3 +67,53 @@ export function getNextConstellationPreview(level: number) {
     pointCount: nextPattern.points.length,
   };
 }
+
+export function isGardenCompleteLevel(level: number): boolean {
+  return level >= CONSTELLATIONS.length;
+}
+
+export interface CosmicZenTransitionCue {
+  title: string;
+  subtitle: string;
+  completionLabel: string;
+  replayPromise: string;
+  intensity: number;
+  bloomRings: number;
+  palette: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+}
+
+export function getCosmicZenTransitionCue({
+  constellationsCompleted,
+  score,
+  totalConstellations = CONSTELLATIONS.length,
+}: {
+  constellationsCompleted: number;
+  score: number;
+  totalConstellations?: number;
+}): CosmicZenTransitionCue {
+  const completionRatio =
+    totalConstellations <= 0 ? 1 : Math.min(1, constellationsCompleted / totalConstellations);
+  const intensity = Math.max(0.35, Math.round(completionRatio * 100) / 100);
+  const bloomRings = Math.max(3, Math.min(7, Math.round(3 + completionRatio * 4)));
+
+  return {
+    bloomRings,
+    completionLabel: `${constellationsCompleted}/${totalConstellations} constellations awake`,
+    intensity,
+    palette: {
+      accent: "#fbbf24",
+      primary: "#22d3ee",
+      secondary: "#ec4899",
+    },
+    replayPromise:
+      score >= 50_000
+        ? "Cultivate freely, chase cleaner links, and keep the living table glowing."
+        : "Cultivate freely, rebuild routes, and turn the living table into a score garden.",
+    subtitle: "All constellation beds are awake. The table settles into free cultivation.",
+    title: "Zen Garden Bloom",
+  };
+}

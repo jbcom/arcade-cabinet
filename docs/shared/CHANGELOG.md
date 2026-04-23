@@ -4,6 +4,7 @@
 
 - Added shared cartridge label/start-screen components for consistent game landing identity.
 - Added label-driven circular gallery rendering and viewport-cropped cabinet screenshots.
+- Added a root documentation set for architecture, design, state, testing, visual review, launch readiness, and production tracking.
 
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/shared-v0.1.0...shared-v0.2.0) (2026-04-22)
 

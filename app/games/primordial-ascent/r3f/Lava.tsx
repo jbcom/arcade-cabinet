@@ -5,6 +5,7 @@ import {
 import { CONFIG } from "@logic/games/primordial-ascent/engine/types";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity } from "@logic/games/primordial-ascent/store/world";
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -23,13 +24,20 @@ export function Lava() {
   );
 
   useFrame((state, delta) => {
+    if (isCabinetRuntimePaused()) return;
+
     if (materialRef.current) {
       materialRef.current.uniforms.time.value = state.clock.elapsedTime;
     }
     if (meshRef.current) {
       const pState = primordialEntity.get(PrimordialTrait);
       if (pState?.phase === "playing") {
-        const newY = advanceLavaHeight(pState.lavaHeight, pState.timeSurvived, delta * 1000);
+        const newY = advanceLavaHeight(
+          pState.lavaHeight,
+          pState.timeSurvived,
+          delta * 1000,
+          pState.sessionMode
+        );
         meshRef.current.position.y = newY;
         const distToLava = calculateDistanceToLava(pState.altitude, newY);
 

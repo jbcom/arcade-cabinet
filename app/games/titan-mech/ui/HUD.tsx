@@ -37,13 +37,39 @@ export function HUD() {
           </div>
           <div style={{ fontSize: 24, fontWeight: 900 }}>CREDITS {state.extraction.credits}</div>
           <div style={{ color: "#94a3b8", fontSize: 12 }}>
-            SCRAP {state.scrap} / ISOTOPES {state.extraction.rareIsotopes}
+            CONTRACT {state.contractNumber} / SCRAP {state.scrap} / ISOTOPES{" "}
+            {state.extraction.rareIsotopes}
           </div>
           <div style={{ color: weaponColor, fontSize: 12, marginTop: 6 }}>
             WEAPON {state.weaponFeedback.toUpperCase()}
           </div>
           <div style={{ color: extractorColor, fontSize: 12, marginTop: 3 }}>
             EXTRACTOR {state.extraction.feedback.toUpperCase()}
+          </div>
+          <div
+            style={{
+              color:
+                state.threatCue.level === "clear"
+                  ? "#94a3b8"
+                  : state.threatCue.level === "tracking"
+                    ? warning
+                    : danger,
+              fontSize: 12,
+              marginTop: 3,
+            }}
+          >
+            THREAT {state.threatCue.level.toUpperCase()}
+            {state.threatCue.distance !== null ? ` · ${Math.round(state.threatCue.distance)}M` : ""}
+          </div>
+          <div style={{ color: "#fed7aa", fontSize: 12, marginTop: 3 }}>
+            ENEMY {state.threatCue.behaviorLabel.toUpperCase()}
+          </div>
+          <div style={{ color: "#e2e8f0", fontSize: 12, marginTop: 8, maxWidth: 300 }}>
+            CONTRACT {state.contractCue.stage.toUpperCase()}
+            {state.contractCue.nextBeaconLabel ? ` · ${state.contractCue.nextBeaconLabel}` : ""}
+            {state.contractCue.distanceToBeacon !== null
+              ? ` · ${Math.round(state.contractCue.distanceToBeacon)}M`
+              : ""}
           </div>
         </div>
       }
@@ -52,7 +78,8 @@ export function HUD() {
           style={{
             color: "#e6fffb",
             fontFamily: "ui-monospace, SFMono-Regular, monospace",
-            minWidth: 190,
+            minWidth: 0,
+            width: "100%",
           }}
         >
           <Gauge label="SYSTEM INTEGRITY" value={state.hp} max={state.maxHp} color={accent} />
@@ -63,6 +90,12 @@ export function HUD() {
             value={state.extraction.hopperLoad}
             max={state.extraction.hopperCapacity}
             color="#f59e0b"
+          />
+          <Gauge
+            label="CONTRACT BANK"
+            value={state.extraction.credits}
+            max={1800}
+            color={state.deliveryCue.state === "complete" ? "#a3e635" : "#f59e0b"}
           />
           <Gauge
             label="HEAT"
@@ -82,6 +115,52 @@ export function HUD() {
         >
           <div style={{ color: warning, fontSize: 11, textTransform: "uppercase" }}>Objective</div>
           <div style={{ fontSize: 13, lineHeight: 1.35 }}>{state.objective}</div>
+          <div
+            style={{
+              border: `1px solid ${state.contractCue.heatWarning ? danger : "rgba(45,212,191,0.5)"}`,
+              color: state.contractCue.heatWarning ? "#ffe4e6" : "#d8fff8",
+              fontSize: 12,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              marginTop: 8,
+              padding: "0.4rem 0.5rem",
+            }}
+          >
+            {state.contractCue.label}
+          </div>
+          <div
+            style={{
+              border: `1px solid ${state.deliveryCue.state === "ejecting" || state.deliveryCue.state === "banked" ? warning : "rgba(148,163,184,0.36)"}`,
+              color: state.deliveryCue.state === "complete" ? "#ecfccb" : "#fde68a",
+              fontSize: 12,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              marginTop: 6,
+              padding: "0.4rem 0.5rem",
+            }}
+          >
+            DELIVERY {state.deliveryCue.state.toUpperCase()} · {state.deliveryCue.label}
+          </div>
+          {state.threatCue.level === "warning" || state.threatCue.level === "impact" ? (
+            <div
+              style={{
+                border: `1px solid ${danger}`,
+                color: "#ffe4e6",
+                fontSize: 12,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                marginTop: 6,
+                padding: "0.4rem 0.5rem",
+              }}
+            >
+              {state.threatCue.label} {state.threatCue.counter}
+            </div>
+          ) : null}
+          {state.lastThreatEventMs > 0 ? (
+            <div style={{ color: danger, fontSize: 12, marginTop: 6 }}>
+              HOSTILE PRESSURE {(state.lastThreatEventMs / 1000).toFixed(1)}s
+            </div>
+          ) : null}
           {state.coolantBurstMs > 0 ? (
             <div style={{ color: "#67e8f9", fontSize: 12, marginTop: 6 }}>
               COOLANT BURST {(state.coolantBurstMs / 1000).toFixed(1)}s
@@ -228,7 +307,7 @@ function ControlButton({
       style={{
         width: 44,
         height: 44,
-        minWidth: hot ? 74 : 64,
+        minWidth: hot ? "clamp(3rem, 15vw, 4.6rem)" : "clamp(2.8rem, 14vw, 4rem)",
         border: `1px solid ${hot ? danger : "rgba(45,212,191,0.65)"}`,
         background: hot ? "rgba(244,63,94,0.22)" : "rgba(13,148,136,0.18)",
         color: hot ? "#ffe4e6" : "#d8fff8",

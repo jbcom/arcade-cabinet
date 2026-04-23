@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -26,6 +28,46 @@ export interface TitanSystems {
 
 export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "cooling";
 export type ExtractionFeedbackState = "idle" | "grinding" | "ejecting" | "blocked";
+export type TitanContractStage = "survey" | "align" | "extract" | "eject" | "cool" | "complete";
+export type TitanThreatLevel = "clear" | "tracking" | "warning" | "impact";
+export type TitanEnemyBehavior = "mine-lock" | "rail-volley" | "reactor-pulse" | "sentinel-scan";
+export type TitanDeliveryState = "idle" | "grinding" | "ejecting" | "banked" | "complete";
+export type TitanUpgradeId = "coolant-loop" | "heat-sinks" | "targeting-rig" | "wide-hopper";
+
+export interface TitanContractCue {
+  stage: TitanContractStage;
+  label: string;
+  nextBeaconId: string | null;
+  nextBeaconLabel: string | null;
+  distanceToBeacon: number | null;
+  inRing: boolean;
+  extractorReady: boolean;
+  heatWarning: boolean;
+  bearing: Vec3;
+}
+
+export interface TitanThreatCue {
+  level: TitanThreatLevel;
+  label: string;
+  behavior: TitanEnemyBehavior;
+  behaviorLabel: string;
+  behaviorIntensity: number;
+  counter: string;
+  sourceId: string | null;
+  sourceKind: ArenaObstacleKind | null;
+  sourcePosition: [number, number, number] | null;
+  distance: number | null;
+  bearing: Vec3;
+  warningRadius: number;
+  cycleMs: number;
+}
+
+export interface TitanDeliveryCue {
+  state: TitanDeliveryState;
+  label: string;
+  progress: number;
+  lastEventMs: number;
+}
 
 export interface TitanExtractionState {
   hopperLoad: number;
@@ -33,11 +75,25 @@ export interface TitanExtractionState {
   credits: number;
   rareIsotopes: number;
   lastExtractionEventMs: number;
+  lastPayoutMs: number;
   feedback: ExtractionFeedbackState;
+}
+
+export interface TitanUpgradeOption {
+  id: TitanUpgradeId;
+  title: string;
+  summary: string;
+  effects: string[];
+  accent: string;
 }
 
 export interface TitanState {
   phase: "menu" | "playing" | "gameover" | "upgrade";
+  sessionMode: SessionMode;
+  elapsedMs: number;
+  contractNumber: number;
+  upgrades: TitanUpgradeId[];
+  pendingUpgrades: TitanUpgradeOption[];
   hp: number;
   maxHp: number;
   energy: number;
@@ -55,6 +111,10 @@ export interface TitanState {
   pose: TitanPose;
   systems: TitanSystems;
   weaponFeedback: WeaponFeedbackState;
+  lastThreatEventMs: number;
+  contractCue: TitanContractCue;
+  deliveryCue: TitanDeliveryCue;
+  threatCue: TitanThreatCue;
   extraction: TitanExtractionState;
 }
 
@@ -105,6 +165,8 @@ export const CONFIG = {
   ORE_PER_SECOND: 28,
   ORE_CREDIT_VALUE: 6,
   HOPPER_CAPACITY: 100,
+  CONTRACT_CREDITS_TARGET: 1800,
   COOLING_PER_SECOND: 24,
   OVERHEAT_THRESHOLD: 92,
+  OVERHEAT_DAMAGE_PER_SECOND: 0.8,
 };

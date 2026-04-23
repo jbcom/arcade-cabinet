@@ -6,11 +6,13 @@ import {
 import type {
   ExtractionFeedbackState,
   TitanControls,
+  TitanDeliveryCue,
   WeaponFeedbackState,
 } from "@logic/games/titan-mech/engine/types";
 import { CONFIG } from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
+import { isCabinetRuntimePaused, PhaseTrait } from "@logic/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CuboidCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useTrait } from "koota/react";
@@ -94,6 +96,8 @@ export function Mech() {
   }, []);
 
   useFrame((_state, delta) => {
+    if (isCabinetRuntimePaused()) return;
+
     if (!rbRef.current) {
       return;
     }
@@ -122,14 +126,15 @@ export function Mech() {
 
     if (titanState) {
       const linvel = rbRef.current.linvel();
-      titanEntity.set(
-        TitanTrait,
-        advanceTitanSystems(titanState, delta * 1000, controls, {
-          position: { x: currentTrans.x, y: currentTrans.y, z: currentTrans.z },
-          heading,
-          velocity: { x: linvel.x, y: linvel.y, z: linvel.z },
-        })
-      );
+      const next = advanceTitanSystems(titanState, delta * 1000, controls, {
+        position: { x: currentTrans.x, y: currentTrans.y, z: currentTrans.z },
+        heading,
+        velocity: { x: linvel.x, y: linvel.y, z: linvel.z },
+      });
+      titanEntity.set(TitanTrait, next);
+      if (next.phase !== "playing") {
+        titanEntity.set(PhaseTrait, { phase: next.phase });
+      }
     }
   });
 
@@ -147,6 +152,7 @@ export function Mech() {
       <group>
         <MechChassis
           coolantActive={renderState.coolantBurstMs > 0}
+          deliveryCue={renderState.deliveryCue}
           extractionFeedback={renderState.extraction.feedback}
           weaponFeedback={renderState.weaponFeedback}
         />
@@ -157,17 +163,20 @@ export function Mech() {
 
 function MechChassis({
   coolantActive,
+  deliveryCue,
   extractionFeedback,
   weaponFeedback,
 }: {
   coolantActive: boolean;
+  deliveryCue: TitanDeliveryCue;
   extractionFeedback: ExtractionFeedbackState;
   weaponFeedback: WeaponFeedbackState;
 }) {
   const isFiring = weaponFeedback === "firing";
   const isOverheated = weaponFeedback === "overheated";
   const isExtracting = extractionFeedback === "grinding";
-  const isEjecting = extractionFeedback === "ejecting";
+  const isEjecting = deliveryCue.state === "ejecting" || extractionFeedback === "ejecting";
+  const deliveryAge = Math.min(1, deliveryCue.lastEventMs / 1800);
 
   return (
     <group>
@@ -192,10 +201,17 @@ function MechChassis({
         </group>
       ) : null}
       {isEjecting ? (
-        <mesh position={[0, 2.2, -3.25]} rotation={[0.5, 0.2, 0.1]} castShadow>
-          <boxGeometry args={[1.1, 1.1, 1.1]} />
-          <meshStandardMaterial color="#c2410c" emissive="#f97316" emissiveIntensity={0.7} />
-        </mesh>
+        <group position={[0, 2.2 + deliveryAge * 1.35, -3.25 - deliveryAge * 4.2]}>
+          <mesh rotation={[0.5 + deliveryAge, 0.2, 0.1 + deliveryAge * 0.8]} castShadow>
+            <boxGeometry args={[1.1, 1.1, 1.1]} />
+            <meshStandardMaterial color="#c2410c" emissive="#f97316" emissiveIntensity={0.78} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.55 + deliveryAge * 0.7, 0.07, 8, 32]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.72 - deliveryAge * 0.38} />
+          </mesh>
+          <pointLight color="#f59e0b" intensity={4.4 - deliveryAge * 1.6} distance={18} />
+        </group>
       ) : null}
       {coolantActive ? (
         <mesh position={[0, 1.1, -2.72]} rotation={[Math.PI / 2, 0, 0]}>

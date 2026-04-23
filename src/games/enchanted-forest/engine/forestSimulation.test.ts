@@ -7,9 +7,16 @@ import {
   applySpellCast,
   createGroveLayout,
   createInitialForestState,
+  getForestModeTuning,
+  getForestRitualCue,
+  getForestRunSummary,
+  getForestSessionTargetMinutes,
+  getForestSpellCadenceCue,
   getForestTransition,
+  getShadowHitDamage,
   getShadowIntentPath,
   MAX_WAVES,
+  regenerateMana,
   removePurifiedShadow,
   spawnCorruptionWave,
   TREE_POSITIONS,
@@ -21,6 +28,7 @@ describe("forest simulation", () => {
     const layout = createGroveLayout();
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
     expect(state.mana).toBe(state.maxMana);
     expect(state.trees).toHaveLength(3);
     expect(layout.trees).toEqual(TREE_POSITIONS);
@@ -43,6 +51,21 @@ describe("forest simulation", () => {
     expect(wave.shadows.every((shadow) => shadow.targetTreeIndex >= 0)).toBe(true);
   });
 
+  test("uses session modes for shadow pressure and mana recovery", () => {
+    const cozy = spawnCorruptionWave(3, 10, "cozy");
+    const standard = spawnCorruptionWave(3, 10, "standard");
+    const challenge = spawnCorruptionWave(3, 10, "challenge");
+
+    expect(cozy.shadows[0]?.speed).toBeLessThan(standard.shadows[0]?.speed ?? 0);
+    expect(challenge.shadows[0]?.speed).toBeGreaterThan(standard.shadows[0]?.speed ?? 0);
+    expect(getForestModeTuning("cozy").manaRegenPerSecond).toBeGreaterThan(
+      getForestModeTuning("standard").manaRegenPerSecond
+    );
+    expect(getForestModeTuning("challenge").targetMinutes).toBeLessThan(
+      getForestModeTuning("standard").targetMinutes
+    );
+  });
+
   test("exposes deterministic shadow intent paths for target telegraphs", () => {
     const wave = spawnCorruptionWave(1, 10);
     const firstShadow = wave.shadows[0];
@@ -55,6 +78,58 @@ describe("forest simulation", () => {
     expect(intent.targetX).toBeGreaterThan(0);
     expect(intent.alertLevel).toBeGreaterThanOrEqual(0);
     expect(intent.alertLevel).toBeLessThanOrEqual(1);
+  });
+
+  test("exposes ritual cues for shield, heal, and harmony decisions", () => {
+    const threatenedTree = TREE_POSITIONS[1];
+    const shadow = {
+      id: 7,
+      health: 24,
+      maxHealth: 24,
+      size: 34,
+      speed: 0.7,
+      targetTreeIndex: 1,
+      x: threatenedTree.x,
+      y: threatenedTree.y - 4,
+    };
+    const shieldCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      shadows: [shadow],
+      threatLevel: 44,
+    });
+    const healCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      mana: 20,
+      trees: [
+        { health: 35, isShielded: false, maxHealth: 100 },
+        { health: 90, isShielded: false, maxHealth: 100 },
+        { health: 100, isShielded: false, maxHealth: 100 },
+      ],
+    });
+    const harmonyCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      harmonyLevel: 2,
+      lastRuneType: "shield",
+    });
+
+    expect(shieldCue).toMatchObject({
+      highestShadowAlert: 0.96,
+      recommendedRune: "shield",
+      recommendedTreeId: "heart-tree",
+      threatBand: "critical",
+    });
+    expect(healCue).toMatchObject({
+      manaNeeded: 30,
+      manaReady: false,
+      recommendedRune: "heal",
+      recommendedTreeId: "left-grove",
+    });
+    expect(harmonyCue).toMatchObject({
+      manaNeeded: 23,
+      nextHarmonyRune: "heal",
+      recommendedRune: "heal",
+    });
+    expect(harmonyCue.harmonyText).toContain("surge");
   });
 
   test("applies spells, mana costs, shield, heal, and purify zones", () => {
@@ -97,6 +172,25 @@ describe("forest simulation", () => {
     expect(surged.harmonySurgeActive).toBe(true);
     expect(surged.purifyZone?.radius).toBe(42);
     expect(surged.mana).toBe(37);
+    expect(getForestSpellCadenceCue(shielded)).toMatchObject({
+      beatPattern: ["root", "ward", "hold"],
+      label: "Shield Chorus",
+      motif: "ring",
+      spellType: "shield",
+    });
+    expect(getForestSpellCadenceCue(healed)).toMatchObject({
+      beatPattern: ["rise", "mend", "bloom"],
+      label: "Healing Motif",
+      motif: "ascending",
+      spellType: "heal",
+    });
+    expect(getForestSpellCadenceCue(surged)).toMatchObject({
+      beatPattern: ["mark", "flash", "clear"],
+      harmonyBonusActive: true,
+      label: "Purify Rhythm",
+      motif: "zigzag",
+      spellType: "purify",
+    });
   });
 
   test("handles shadow movement, tree hits, purification, and wave transitions", () => {
@@ -114,7 +208,7 @@ describe("forest simulation", () => {
 
     expect(moved.y).toBeGreaterThan(firstShadow.y);
     expect(hit.shadows).toHaveLength(2);
-    expect(hit.trees[firstShadow.targetTreeIndex]?.health).toBe(90);
+    expect(hit.trees[firstShadow.targetTreeIndex]?.health).toBe(97);
     expect(purified.shadows).toHaveLength(2);
     expect(getForestTransition({ ...state, shadows: [] }, MAX_WAVES)).toEqual({
       type: "next-wave",
@@ -122,6 +216,64 @@ describe("forest simulation", () => {
     });
     expect(getForestTransition({ ...state, wave: MAX_WAVES, shadows: [] }, MAX_WAVES)).toEqual({
       type: "victory",
+    });
+  });
+
+  test("keeps standard opening hits recoverable while challenge keeps full pressure", () => {
+    const openingState = {
+      ...createInitialForestState("playing", "standard"),
+      elapsedMs: 30_000,
+      shadows: Array.from({ length: 24 }, (_, index) => {
+        const targetTreeIndex = index % TREE_POSITIONS.length;
+        const target = TREE_POSITIONS[targetTreeIndex] ?? {
+          canopyScale: 1,
+          id: "fallback",
+          x: 50,
+          y: 77,
+        };
+
+        return {
+          id: index,
+          health: 20,
+          maxHealth: 20,
+          size: 30,
+          speed: 0.5,
+          targetTreeIndex,
+          x: target.x,
+          y: target.y,
+        };
+      }),
+    };
+    const hitState = openingState.shadows.reduce(
+      (state, shadow) => applyShadowHit(state, shadow.id, shadow.targetTreeIndex),
+      openingState
+    );
+    const challengeState = createInitialForestState("playing", "challenge");
+    const lateState = {
+      ...createInitialForestState("playing", "standard"),
+      elapsedMs: 61_000,
+    };
+
+    expect(getShadowHitDamage(openingState)).toBe(3);
+    expect(getShadowHitDamage(lateState)).toBe(10);
+    expect(getShadowHitDamage(challengeState)).toBe(10);
+    expect(hitState.trees.every((tree) => tree.health > 0)).toBe(true);
+    expect(hitState.trees.every((tree) => tree.health >= 76)).toBe(true);
+  });
+
+  test("targets a longer couch ritual with summary telemetry", () => {
+    const state = regenerateMana(createInitialForestState("playing", "standard"), 2, 125_000);
+    const summary = getForestRunSummary({ ...state, wave: MAX_WAVES });
+
+    expect(MAX_WAVES).toBeGreaterThanOrEqual(8);
+    expect(getForestSessionTargetMinutes("standard")).toBeGreaterThanOrEqual(8);
+    expect(getForestSessionTargetMinutes("standard")).toBeLessThanOrEqual(15);
+    expect(summary).toMatchObject({
+      elapsedSeconds: 125,
+      healthyTrees: 3,
+      targetMinutes: 10,
+      totalWaves: MAX_WAVES,
+      wave: MAX_WAVES,
     });
   });
 

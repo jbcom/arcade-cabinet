@@ -1,19 +1,31 @@
 import { describe, expect, test } from "vitest";
 import {
   advanceTitanSystems,
+  applyTitanUpgrade,
   calculateDriveForces,
   calculateObjectiveProgress,
+  calculateTitanContractCue,
+  calculateTitanDeliveryCue,
+  calculateTitanThreatCue,
+  calculateTitanThreatPressure,
   createArenaLayout,
   createInitialTitanState,
+  getTitanRunSummary,
+  getTitanUpgradeOptions,
   getWeaponFeedbackState,
   normalizeTitanControls,
 } from "./titanSimulation";
+import { CONFIG } from "./types";
 
 describe("titan simulation", () => {
   test("creates a full boot state with telemetry and system reserves", () => {
     const state = createInitialTitanState("playing");
 
     expect(state.phase).toBe("playing");
+    expect(state.sessionMode).toBe("standard");
+    expect(state.elapsedMs).toBe(0);
+    expect(state.contractNumber).toBe(1);
+    expect(state.upgrades).toEqual([]);
     expect(state.hp).toBe(state.maxHp);
     expect(state.energy).toBe(state.maxEnergy);
     expect(state.controls).toEqual({
@@ -28,9 +40,29 @@ describe("titan simulation", () => {
     expect(state.coolantCharge).toBe(100);
     expect(state.coolantBurstMs).toBe(0);
     expect(state.weaponFeedback).toBe("idle");
+    expect(state.contractCue.stage).toBe("survey");
+    expect(state.contractCue.nextBeaconId).toBe("pylon-beta");
+    expect(state.contractCue.distanceToBeacon).toBeGreaterThan(0);
+    expect(state.deliveryCue.state).toBe("idle");
+    expect(state.threatCue.sourceId).toBeTruthy();
+    expect(state.threatCue.level).toBe("tracking");
+    expect(state.threatCue.behaviorLabel).toBeTruthy();
     expect(state.extraction.hopperLoad).toBe(0);
     expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
+    expect(state.extraction.lastPayoutMs).toBe(0);
     expect(state.extraction.feedback).toBe("idle");
+  });
+
+  test("session modes tune heat pressure and recovery", () => {
+    const input = { throttle: 1, fire: true };
+    const cozy = advanceTitanSystems(createInitialTitanState("playing", "cozy"), 1_000, input);
+    const challenge = advanceTitanSystems(
+      createInitialTitanState("playing", "challenge"),
+      1_000,
+      input
+    );
+
+    expect(challenge.heat).toBeGreaterThan(cozy.heat);
   });
 
   test("normalizes analog and binary control input", () => {
@@ -92,6 +124,90 @@ describe("titan simulation", () => {
     ]);
     expect(calculateObjectiveProgress({ x: 44, y: 0, z: 44 }, layout)).toBe(100);
     expect(calculateObjectiveProgress({ x: 0, y: 0, z: 0 }, layout)).toBe(0);
+  });
+
+  test("describes contract route, extraction readiness, and cooling priority", () => {
+    const base = createInitialTitanState("playing");
+    const survey = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 0,
+      objectiveProgress: 0,
+      position: base.pose.position,
+    });
+    const ready = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 24,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+    const hot = calculateTitanContractCue({
+      extraction: base.extraction,
+      heat: 86,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+    const complete = calculateTitanContractCue({
+      extraction: {
+        ...base.extraction,
+        credits: CONFIG.CONTRACT_CREDITS_TARGET,
+      },
+      heat: 20,
+      objectiveProgress: 100,
+      position: { x: 44, y: 5, z: 44 },
+    });
+
+    expect(survey.stage).toBe("survey");
+    expect(survey.nextBeaconLabel).toBe("BETA");
+    expect(survey.bearing.z).toBeGreaterThan(0);
+    expect(ready.stage).toBe("extract");
+    expect(ready.extractorReady).toBe(true);
+    expect(hot.stage).toBe("cool");
+    expect(hot.heatWarning).toBe(true);
+    expect(complete.stage).toBe("complete");
+  });
+
+  test("describes nearby threat attack lanes before impact range", () => {
+    const clear = calculateTitanThreatCue({ x: 110, y: 5, z: 110 });
+    const warning = calculateTitanThreatCue({ x: 20, y: 5, z: 55 });
+    const impact = calculateTitanThreatCue({ x: 0, y: 5, z: 72 });
+
+    expect(clear.level).toBe("clear");
+    expect(warning.level).toBe("warning");
+    expect(warning.label.toLowerCase()).toContain("attack lane");
+    expect(impact.level).toBe("impact");
+    expect(impact.bearing.z).toBeGreaterThan(0);
+    expect(warning.behaviorIntensity).toBeGreaterThan(0);
+    expect(warning.counter.length).toBeGreaterThan(12);
+  });
+
+  test("applies recoverable hostile pressure from behavior cues", () => {
+    const impactCue = calculateTitanThreatCue({ x: 0, y: 5, z: 72 }, 2_000);
+    const pressure = calculateTitanThreatPressure({
+      braced: false,
+      coolantActive: false,
+      cue: impactCue,
+      deltaSeconds: 1,
+      sessionMode: "standard",
+    });
+    const braced = calculateTitanThreatPressure({
+      braced: true,
+      coolantActive: false,
+      cue: impactCue,
+      deltaSeconds: 1,
+      sessionMode: "standard",
+    });
+    const hit = advanceTitanSystems(
+      createInitialTitanState("playing"),
+      1_000,
+      {},
+      { position: { x: 0, y: 5, z: 72 }, heading: 0, velocity: { x: 0, y: 0, z: 0 } }
+    );
+
+    expect(impactCue.level).toBe("impact");
+    expect(pressure.hpDamage).toBeGreaterThan(0);
+    expect(braced.hpDamage).toBeLessThan(pressure.hpDamage);
+    expect(hit.hp).toBeLessThan(hit.maxHp);
+    expect(hit.lastThreatEventMs).toBeGreaterThan(0);
   });
 
   test("vents a coolant burst from a defensive brace at high heat", () => {
@@ -206,7 +322,7 @@ describe("titan simulation", () => {
     expect(grinding.extraction.hopperLoad).toBeGreaterThan(0);
     expect(grinding.energy).toBeLessThan(state.energy);
     expect(grinding.heat).toBeGreaterThan(state.heat);
-    expect(grinding.objective).toContain("Pylon vein");
+    expect(grinding.objective).toContain("Extractor grinding");
 
     const nearlyFull = {
       ...grinding,
@@ -229,6 +345,87 @@ describe("titan simulation", () => {
     expect(sold.extraction.feedback).toBe("ejecting");
     expect(sold.extraction.hopperLoad).toBe(0);
     expect(sold.extraction.credits).toBeGreaterThan(grinding.extraction.credits);
+    expect(sold.extraction.lastPayoutMs).toBeGreaterThan(0);
+    expect(sold.deliveryCue.state).toBe("ejecting");
     expect(sold.scrap).toBeGreaterThan(grinding.scrap);
+
+    const bankedCue = calculateTitanDeliveryCue({
+      extraction: {
+        ...sold.extraction,
+        feedback: "idle",
+        lastPayoutMs: 2400,
+      },
+      phase: "playing",
+    });
+    expect(bankedCue.state).toBe("banked");
+    expect(bankedCue.label).toContain("Cube banked");
+  });
+
+  test("overheat damage is recoverable but can destroy the chassis if ignored", () => {
+    const hot = {
+      ...createInitialTitanState("playing"),
+      heat: 100,
+      hp: 8,
+    };
+    const destroyed = advanceTitanSystems(hot, 2_000, { throttle: 1 }, {});
+
+    expect(destroyed.hp).toBeLessThan(hot.hp);
+    expect(destroyed.phase).toBe("gameover");
+  });
+
+  test("completes a contract when enough ore credits are banked", () => {
+    const almostDone = {
+      ...createInitialTitanState("playing"),
+      extraction: {
+        ...createInitialTitanState("playing").extraction,
+        credits: CONFIG.CONTRACT_CREDITS_TARGET - CONFIG.HOPPER_CAPACITY * CONFIG.ORE_CREDIT_VALUE,
+        hopperLoad: CONFIG.HOPPER_CAPACITY - 1,
+      },
+    };
+    const completed = advanceTitanSystems(
+      almostDone,
+      1_000,
+      { extract: true },
+      {
+        position: { x: 44, y: 5, z: 44 },
+        heading: 0,
+        velocity: { x: 0, y: 0, z: 0 },
+      }
+    );
+
+    expect(completed.phase).toBe("upgrade");
+    expect(completed.deliveryCue.state).toBe("complete");
+    expect(completed.extraction.credits).toBe(CONFIG.CONTRACT_CREDITS_TARGET);
+    expect(completed.pendingUpgrades.map((upgrade) => upgrade.id)).toEqual([
+      "heat-sinks",
+      "coolant-loop",
+      "wide-hopper",
+    ]);
+    expect(getTitanRunSummary(completed)).toMatchObject({
+      contractCreditsTarget: CONFIG.CONTRACT_CREDITS_TARGET,
+      credits: CONFIG.CONTRACT_CREDITS_TARGET,
+    });
+  });
+
+  test("offers deterministic contract upgrade choices and applies the next contract", () => {
+    const completed = {
+      ...createInitialTitanState("upgrade"),
+      contractNumber: 1,
+      extraction: {
+        ...createInitialTitanState("upgrade").extraction,
+        credits: CONFIG.CONTRACT_CREDITS_TARGET,
+      },
+      pendingUpgrades: getTitanUpgradeOptions({ contractNumber: 1, upgrades: [] }),
+      scrap: 48,
+    };
+    const upgraded = applyTitanUpgrade(completed, "heat-sinks");
+
+    expect(upgraded.phase).toBe("playing");
+    expect(upgraded.contractNumber).toBe(2);
+    expect(upgraded.upgrades).toEqual(["heat-sinks"]);
+    expect(upgraded.maxHeat).toBeGreaterThan(completed.maxHeat);
+    expect(upgraded.extraction.credits).toBe(0);
+    expect(upgraded.pendingUpgrades).toEqual([]);
+    expect(upgraded.scrap).toBe(completed.scrap);
   });
 });

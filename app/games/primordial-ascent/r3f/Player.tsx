@@ -8,6 +8,7 @@ import {
 import { CONFIG, type PrimordialControls } from "@logic/games/primordial-ascent/engine/types";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity } from "@logic/games/primordial-ascent/store/world";
+import { isCabinetRuntimePaused } from "@logic/shared";
 import { useFrame, useThree } from "@react-three/fiber";
 import { type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +24,7 @@ export function Player() {
 
   const [isGrappling, setIsGrappling] = useState(false);
   const [grapplePoint, setGrapplePoint] = useState<THREE.Vector3 | null>(null);
+  const grappleAttempted = useRef(false);
   const movement = useRef<PrimordialControls>({
     forward: false,
     back: false,
@@ -71,6 +73,7 @@ export function Player() {
       const state = primordialEntity.get(PrimordialTrait);
       if (state?.phase !== "playing") return;
 
+      grappleAttempted.current = true;
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
       const hit = intersects.find(
@@ -196,11 +199,15 @@ export function Player() {
   }, [camera, raycaster, scene]);
 
   useFrame((_state, delta) => {
+    if (isCabinetRuntimePaused()) return;
+
     const pState = primordialEntity.get(PrimordialTrait);
     if (pState?.phase !== "playing" || !rbRef.current) return;
 
     const currentTrans = rbRef.current.translation();
     const currentVel = rbRef.current.linvel();
+    const attemptedGrapple = grappleAttempted.current;
+    grappleAttempted.current = false;
     position.current.set(currentTrans.x, currentTrans.y, currentTrans.z);
 
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
@@ -258,6 +265,7 @@ export function Player() {
         position: currentTrans,
         velocity: currentVel,
         lavaHeight: pState.lavaHeight,
+        grappleAttempted: attemptedGrapple,
         grappleActive: isGrappling,
         grappleDistance: hit?.distance ?? null,
         grappleTension,
@@ -294,6 +302,8 @@ function FirstPersonHarness({ isGrappling }: { isGrappling: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
+    if (isCabinetRuntimePaused()) return;
+
     if (!groupRef.current) return;
 
     const offset = new THREE.Vector3(0.38, -0.36, -1.08).applyQuaternion(camera.quaternion);

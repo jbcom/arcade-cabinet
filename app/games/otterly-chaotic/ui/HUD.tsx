@@ -1,5 +1,10 @@
 import { FloatingJoystick, OverlayButton, useResponsive } from "@app/shared";
-import { getGoatIntent } from "@logic/games/otterly-chaotic/engine/simulation";
+import {
+  getGoatIntent,
+  getGoatPoseCue,
+  getOtterlyRescueCue,
+  getOtterPoseCue,
+} from "@logic/games/otterly-chaotic/engine/simulation";
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 
 interface HUDProps {
@@ -11,6 +16,15 @@ interface HUDProps {
 export function HUD({ state, onBark, onMove }: HUDProps) {
   const { isMobile } = useResponsive();
   const goatIntents = state.goats.map((goat) => getGoatIntent(state, goat));
+  const goatPoseCues = state.goats.map((goat) => getGoatPoseCue(state, goat));
+  const otterPoseCue = getOtterPoseCue(state);
+  const rescueCue = getOtterlyRescueCue(state);
+  const cueColor =
+    rescueCue.threatBand === "danger"
+      ? "#fb7185"
+      : rescueCue.threatBand === "pressure"
+        ? "#facc15"
+        : "#86efac";
   const panelStyle = {
     background: "rgba(15,23,42,0.74)",
     border: "1px solid rgba(148,163,184,0.35)",
@@ -63,14 +77,44 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           <h2 style={{ margin: "0.25rem 0", fontSize: isMobile ? 16 : 28 }}>Salad Sprint</h2>
           <div
             style={{
-              color: "#cbd5e1",
-              fontSize: isMobile ? 11 : 14,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: isMobile ? "nowrap" : "normal",
+              alignItems: "center",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+              marginBottom: 6,
             }}
           >
-            {state.objective}
+            <span
+              style={{
+                border: `1px solid ${cueColor}66`,
+                borderRadius: 6,
+                color: cueColor,
+                fontSize: 11,
+                fontWeight: 900,
+                padding: "0.12rem 0.42rem",
+                textTransform: "uppercase",
+              }}
+            >
+              Next: {rescueCue.action}
+            </span>
+            <span style={{ color: "#bae6fd", fontSize: 11, fontWeight: 800 }}>
+              Piece {rescueCue.progressLabel}
+            </span>
+          </div>
+          <div
+            style={{
+              color: "#cbd5e1",
+              display: isMobile ? "-webkit-box" : "block",
+              fontSize: isMobile ? 11 : 14,
+              lineHeight: 1.35,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: isMobile ? 2 : undefined,
+              whiteSpace: "normal",
+            }}
+          >
+            {rescueCue.objective}
           </div>
         </div>
         <div
@@ -82,6 +126,9 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           }}
         >
           <div>Ball health: {Math.round(state.ballHealth)}%</div>
+          <div>
+            Rescues: {state.rescuesCompleted}/{state.targetRescues}
+          </div>
           <div>Time: {(state.elapsedMs / 1000).toFixed(1)}s</div>
           <div>
             Bark:{" "}
@@ -92,6 +139,12 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
             {state.rallyMs > 0 ? `${(state.rallyMs / 1000).toFixed(1)}s` : "Build with barks"}
           </div>
           <div style={{ color: "#a7f3d0" }}>Rescue streak: {state.rescueStreak}</div>
+          <div style={{ color: cueColor, fontWeight: 900 }}>
+            Cue: {rescueCue.action} · {rescueCue.threatBand}
+          </div>
+          <div style={{ color: otterPoseCue.accent, fontWeight: 900 }}>
+            Otter: {otterPoseCue.label}
+          </div>
           <div
             style={{
               display: "flex",
@@ -119,6 +172,22 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
                 }}
               >
                 {intent.goatId}: {intent.state}
+              </span>
+            ))}
+            {goatPoseCues.map((cue) => (
+              <span
+                key={`${cue.goatId}-${cue.pose}`}
+                style={{
+                  border: `1px solid ${cue.accent}55`,
+                  borderRadius: 6,
+                  color: cue.accent,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: "0.12rem 0.35rem",
+                  textTransform: "uppercase",
+                }}
+              >
+                {cue.goatId}: {cue.label}
               </span>
             ))}
           </div>

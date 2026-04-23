@@ -3,7 +3,7 @@ import {
   verifyBrowserGameStartFlow,
 } from "@app/test/browserGameHarness";
 import { cleanup } from "@testing-library/react";
-import { afterEach, test } from "vitest";
+import { afterEach, expect, test } from "vitest";
 import Game from "./Game";
 
 afterEach(() => {
@@ -18,6 +18,10 @@ test("Titan Mech reaches gameplay from the start screen", async () => {
     ready: "SYSTEM INTEGRITY",
     expectsCanvas: true,
   });
+
+  expect(rootElement.textContent).toContain("CONTRACT");
+  expect(rootElement.textContent).toContain("BETA");
+  expect(rootElement.textContent).toContain("ENEMY");
 
   await captureBrowserGameScreenshot(
     host,

@@ -1,20 +1,30 @@
----
 title: Interface Pillar
-description: Shared UI components, styling, and layout conventions.
+updated: 2026-04-23
+status: current
+domain: design-system
 ---
 
-# Interface Pillar: Tailwind & Overlays
+# Interface Pillar
 
-The UI layer is designed to be lightweight, modular, and non-intrusive to the WebGL canvases.
+This document owns the cabinet-facing UI rules.
 
-## Standards
+## Core Rule
 
-1. **Styling**: **Tailwind CSS v4** is the absolute standard. No CSS Modules, no styled-components.
-2. **Container Layout**: Every game's outermost container MUST use `height: 100svh`, `width: 100%`, and `overflow: hidden`. This prevents iOS/Android navigation bar collapsing and guarantees that Vitest Browser interactions trigger correctly without scrolling.
-3. **Shared Components**: The `@app/shared or @logic/shared` package provides standardized generic components:
-   - `<HUDOverlay>`: A 4-corner flexbox layout for game scores and timers.
-   - `<StartScreen>` & `<GameOverScreen>`: Unified menu states.
-   - `<OverlayButton>`: Reusable, accessible game buttons.
+The cabinet should feel standardized without flattening every game into the same
+label or HUD.
 
-## Reactive UI
-Because game logic lives in Koota ECS, the React UI uses `useTrait()` to subscribe to game variables. This ensures the React tree only re-renders when specific traits (like `PhaseTrait` or `ScoreTrait`) change, completely ignoring 60FPS position data.
+## Shared UI Rules
+
+1. Tailwind v4 is the shared styling baseline.
+2. The cabinet frame, typography, mode selector, rules drawer, pause menu, and
+   settings shell are shared.
+3. Game-specific visual language belongs inside the cartridge label and gameplay
+   route, not in the global cabinet chrome.
+4. Movement games use touch-anywhere joystick; do not regress to fixed D-pads.
+5. Controls and HUD must remain readable in portrait mobile play.
+
+## Current Work
+
+- Keep tightening the circular gallery, label zoom, and landing transition so
+  browsing feels like loading cartridges into one cabinet.
+- Remove residual internal-spec copy from labels and public routes.

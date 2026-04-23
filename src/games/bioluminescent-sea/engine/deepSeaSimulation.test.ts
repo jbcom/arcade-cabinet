@@ -12,11 +12,17 @@ import {
   findNearestThreatDistance,
   GAME_DURATION,
   getDeterministicWrapX,
+  getDiveCompletionCelebration,
+  getDiveDurationSeconds,
+  getDiveModeTuning,
   getDiveRouteLandmark,
+  getDiveRunSummary,
   getDiveTelemetry,
   hasPredatorCollision,
+  isDiveComplete,
   type Player,
   type Predator,
+  resolveDiveThreatImpact,
   TOTAL_BEACONS,
 } from "./deepSeaSimulation";
 
@@ -75,6 +81,7 @@ describe("deep sea simulation", () => {
     expect(result.collected.map((creature) => creature.id)).toEqual(["plankton", "fish"]);
     expect(result.creatures).toEqual([distant]);
     expect(result.multiplier).toBe(4);
+    expect(result.oxygenBonusSeconds).toBe(4 + 6);
     expect(result.scoreDelta).toBe(10 * 3 + 50 * 4);
     expect(result.lastCollectTime).toBe(4);
   });
@@ -104,6 +111,61 @@ describe("deep sea simulation", () => {
     expect(predator.x).toBe(40);
     expect(hasPredatorCollision(player, [{ ...predator, x: 170, y: 120 }])).toBe(true);
     expect(findNearestThreatDistance(player, [predator])).toBeGreaterThan(90);
+  });
+
+  test("maps session modes to recoverable dive pressure", () => {
+    expect(getDiveDurationSeconds("standard")).toBe(GAME_DURATION);
+    expect(getDiveDurationSeconds("standard")).toBeGreaterThanOrEqual(8 * 60);
+    expect(getDiveDurationSeconds("standard")).toBeLessThanOrEqual(15 * 60);
+    expect(getDiveDurationSeconds("cozy")).toBeGreaterThan(getDiveDurationSeconds("standard"));
+    expect(getDiveDurationSeconds("challenge")).toBeLessThan(getDiveDurationSeconds("standard"));
+    expect(getDiveModeTuning("challenge").threatRadiusScale).toBeGreaterThan(
+      getDiveModeTuning("standard").threatRadiusScale
+    );
+    expect(getDiveModeTuning("cozy").predatorSpeedScale).toBeLessThan(
+      getDiveModeTuning("standard").predatorSpeedScale
+    );
+    expect(getDiveModeTuning("standard").collisionEndsDive).toBe(false);
+    expect(getDiveModeTuning("challenge").collisionEndsDive).toBe(true);
+  });
+
+  test("resolves predator contact as recoverable oxygen loss outside challenge", () => {
+    const standardImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: -100,
+      mode: "standard",
+      timeLeft: 300,
+      totalTimeSeconds: 90,
+    });
+    const graceImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: 90,
+      mode: "standard",
+      timeLeft: standardImpact.timeLeft,
+      totalTimeSeconds: 92,
+    });
+    const challengeImpact = resolveDiveThreatImpact({
+      collided: true,
+      lastImpactTimeSeconds: -100,
+      mode: "challenge",
+      timeLeft: 300,
+      totalTimeSeconds: 90,
+    });
+
+    expect(standardImpact).toMatchObject({
+      oxygenPenaltySeconds: 45,
+      timeLeft: 255,
+      type: "oxygen-penalty",
+    });
+    expect(graceImpact).toMatchObject({
+      oxygenPenaltySeconds: 0,
+      timeLeft: 255,
+      type: "none",
+    });
+    expect(challengeImpact).toMatchObject({
+      timeLeft: 0,
+      type: "dive-failed",
+    });
   });
 
   test("wraps particles deterministically instead of using runtime randomness", () => {
@@ -153,14 +215,20 @@ describe("deep sea simulation", () => {
   test("describes oxygen, depth, and collection telemetry", () => {
     const scene = createInitialScene(desktop);
     const telemetry = getDiveTelemetry({ ...scene, creatures: scene.creatures.slice(0, 3) }, 10);
+    const cozyTelemetry = getDiveTelemetry(
+      { ...scene, creatures: scene.creatures.slice(0, 3) },
+      10,
+      getDiveDurationSeconds("cozy")
+    );
 
     expect(telemetry.collectionRatio).toBeGreaterThan(0.8);
     expect(telemetry.depthMeters).toBeGreaterThan(2_800);
     expect(telemetry.nearestBeaconDistance).toBeGreaterThan(0);
     expect(telemetry.beaconBearingRadians).not.toBeNull();
-    expect(telemetry.routeLandmarkLabel).toBe("Trench Choir");
+    expect(telemetry.routeLandmarkLabel).toBe("Abyss Orchard");
     expect(telemetry.routeLandmarkDistance).toBeGreaterThan(0);
-    expect(telemetry.oxygenRatio).toBeCloseTo(1 / 6);
+    expect(telemetry.oxygenRatio).toBeCloseTo(1 / 60);
+    expect(cozyTelemetry.oxygenRatio).toBeLessThan(telemetry.oxygenRatio);
     expect(["Ascent", "Hunted", "Critical", "Calm"]).toContain(telemetry.pressureLabel);
   });
 
@@ -176,12 +244,35 @@ describe("deep sea simulation", () => {
 
   test("advances route landmark telemetry with the beacon chain", () => {
     const early = getDiveRouteLandmark(0.1, { bearingRadians: 0.4, distance: 160 });
+    const mid = getDiveRouteLandmark(0.46, { bearingRadians: 0.1, distance: 120 });
     const late = getDiveRouteLandmark(0.94, { bearingRadians: -0.2, distance: 42 });
 
     expect(early.label).toBe("Kelp Gate");
     expect(early.bearingRadians).toBeCloseTo(0.4);
+    expect(mid.label).toBe("Whale-Fall Windows");
     expect(late.label).toBe("Living Map");
     expect(late.distance).toBeLessThan(early.distance);
+  });
+
+  test("reports dive completion and run summary when all beacons are recovered", () => {
+    const scene = { ...createInitialScene(desktop), creatures: [] };
+    const summary = getDiveRunSummary(scene, 12_500, 240);
+    const celebration = getDiveCompletionCelebration(summary);
+
+    expect(isDiveComplete(scene)).toBe(true);
+    expect(summary).toMatchObject({
+      beaconsRemaining: 0,
+      completionPercent: 100,
+      durationSeconds: GAME_DURATION,
+      score: 12_500,
+      timeLeft: 240,
+      totalBeacons: TOTAL_BEACONS,
+    });
+    expect(celebration).toMatchObject({
+      rating: "Radiant Route",
+      title: "Living Map Complete",
+    });
+    expect(celebration.landmarkSequence).toContain("Abyss Orchard");
   });
 });
 

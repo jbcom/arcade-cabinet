@@ -64,7 +64,7 @@ jobs:
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
 
   build-apk:
-    name: Build Android APK
+    name: Build Android APK and AAB
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     steps:
@@ -99,16 +99,20 @@ jobs:
       - name: Sync Capacitor
         run: pnpm android:sync
 
-      - name: Build APK
+      - name: Build Android artifacts
         run: |
           cd android
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug bundleRelease -PversionName=$(node -p "require('../package.json').version") -PversionCode=${{ github.run_number }}
 
       - name: Rename APK
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk arcade-cabinet-debug.apk
+        run: |
+          mv android/app/build/outputs/apk/debug/app-debug.apk arcade-cabinet-debug.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab arcade-cabinet-release.aab
 
       - name: Upload to Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
-          files: arcade-cabinet-debug.apk
+          files: |
+            arcade-cabinet-debug.apk
+            arcade-cabinet-release.aab
           tag_name: ${{ github.event.release.tag_name || inputs.release_tag }}

@@ -1,11 +1,28 @@
-import type { EntropyState, FallingBlock, GridNode, Shockwave, Vec2 } from "./types";
+import { getSessionPressureScale, normalizeSessionMode, type SessionMode } from "@logic/shared";
+import type {
+  EntropyCompletionCue,
+  EntropyRoutePressure,
+  EntropySectorCue,
+  EntropyStabilityBand,
+  EntropyState,
+  FallingBlock,
+  GridNode,
+  Shockwave,
+  Vec2,
+} from "./types";
 
 export const GRID_HALF = 5;
 export const GRID_SIZE = GRID_HALF * 2 + 1;
+export const RUN_SECTORS_REQUIRED = 3;
 const COMBO_WINDOW_MS = 800;
 const MOVE_COOLDOWN_MS = 200;
 const BLOCK_SPAWN_HEIGHT = 18;
-const TIME_BONUS_PER_ANCHOR_MS = 15_000;
+const TIME_BONUS_PER_ANCHOR_MS = 35_000;
+const BASE_STABILITY_RESERVE_MS: Record<SessionMode, number> = {
+  challenge: 55_000,
+  cozy: 300_000,
+  standard: 180_000,
+};
 
 const ANCHOR_SEQUENCE: Vec2[] = [
   { x: -4, y: -2 },
@@ -163,18 +180,103 @@ export function getTargetVector(state: EntropyState) {
   };
 }
 
-export function getStabilityBand(timeMs: number): "stable" | "unstable" | "critical" {
+export function getStabilityBand(timeMs: number): EntropyStabilityBand {
   if (timeMs < 5_000) return "critical";
   if (timeMs < 15_000) return "unstable";
   return "stable";
+}
+
+function getRouteBearing(dx: number, dz: number): string {
+  if (dx === 0 && dz === 0) return "ANCHOR LOCK";
+
+  const eastWest = dx === 0 ? "" : `${dx > 0 ? "E" : "W"}${Math.abs(dx)}`;
+  const northSouth = dz === 0 ? "" : `${dz > 0 ? "S" : "N"}${Math.abs(dz)}`;
+
+  return [eastWest, northSouth].filter(Boolean).join(" / ");
+}
+
+function getRecommendedMove(dx: number, dz: number): string {
+  if (dx === 0 && dz === 0) return "hold anchor";
+
+  if (Math.abs(dx) >= Math.abs(dz) && dx !== 0) {
+    return dx > 0 ? "step east" : "step west";
+  }
+
+  return dz > 0 ? "step south" : "step north";
+}
+
+function getNearestFallingBlock(state: EntropyState): {
+  distance: number;
+  key: string;
+} | null {
+  if (state.fallingBlocks.length === 0) return null;
+
+  return state.fallingBlocks.reduce<{ distance: number; key: string } | null>((nearest, block) => {
+    const distance =
+      Math.abs(block.gridX - state.playerGridX) + Math.abs(block.gridZ - state.playerGridZ);
+    if (!nearest || distance < nearest.distance) {
+      return { distance, key: cellKey(block.gridX, block.gridZ) };
+    }
+    return nearest;
+  }, null);
+}
+
+export function getEntropySectorCue(state: EntropyState): EntropySectorCue {
+  const targetVector = getTargetVector(state);
+  const stabilityBand = getStabilityBand(state.timeMs);
+  const nearestFalling = getNearestFallingBlock(state);
+  const blockedCells = state.blockedCells.length;
+  let pressure: EntropyRoutePressure = "clear";
+
+  if (stabilityBand === "critical") {
+    pressure = "critical";
+  } else if (nearestFalling && nearestFalling.distance <= 2) {
+    pressure = "falling";
+  } else if (blockedCells >= 7 && !state.isResonanceMax) {
+    pressure = "blocked";
+  }
+
+  let objective = "Follow the cyan beacons to the anchor.";
+  if (!state.targetNode) {
+    objective = "Sector stabilized. Carry reserve forward.";
+  } else if (state.isResonanceMax) {
+    objective = "Secure the anchor to discharge a surge.";
+  } else if (pressure === "critical") {
+    objective = "Use the shortest safe vector before collapse.";
+  } else if (pressure === "falling") {
+    objective = "Sidestep the falling cell, then take the route.";
+  } else if (pressure === "blocked") {
+    objective = "Chain anchors to build a route-clearing surge.";
+  }
+
+  return {
+    blockedCells,
+    fallingThreats: state.fallingBlocks.length,
+    nearestFallingDistance: nearestFalling?.distance ?? null,
+    nearestFallingKey: nearestFalling?.key ?? null,
+    objective,
+    pressure,
+    recommendedMove: getRecommendedMove(targetVector.dx, targetVector.dz),
+    routeLabel:
+      targetVector.distance === 0
+        ? "Anchor synchronized"
+        : `${targetVector.distance} cells · ${getRouteBearing(targetVector.dx, targetVector.dz)}`,
+    sectorLabel: `Sector ${state.level}/${RUN_SECTORS_REQUIRED}`,
+    stabilityBand,
+    surgeReady: state.isResonanceMax,
+    targetBearing: getRouteBearing(targetVector.dx, targetVector.dz),
+    targetDistance: targetVector.distance,
+  };
 }
 
 function buildPlayingState(
   level: number,
   anchorsRequired: number,
   score: number,
-  totalAnchors: number
+  totalAnchors: number,
+  mode: string | null | undefined = "standard"
 ): EntropyState {
+  const sessionMode = normalizeSessionMode(mode);
   const node = generateNode(["0,0"], 0, 0, level, totalAnchors);
   const protectedKeys = ["0,0", cellKey(node.gridX, node.gridZ)];
   const blockedCells = createInitialBlockedCells(level, protectedKeys);
@@ -199,27 +301,37 @@ function buildPlayingState(
     playerGridZ: 0,
     resonance: 0,
     score,
+    sessionMode,
     shockwaves: [],
     targetNode: node,
-    timeMs: Math.max(10_000, 20_000 - (level - 1) * 1_500),
+    timeMs: Math.max(30_000, BASE_STABILITY_RESERVE_MS[sessionMode] - (level - 1) * 8_000),
     totalAnchors,
   };
 }
 
-export function createInitialState(): EntropyState {
-  return { ...buildPlayingState(1, 3, 0, 0), phase: "menu" };
+export function createInitialState(mode: string | null | undefined = "standard"): EntropyState {
+  return { ...buildPlayingState(1, 3, 0, 0, mode), phase: "menu" };
 }
 
-export function startGame(_prev: EntropyState): EntropyState {
-  return buildPlayingState(1, 3, 0, 0);
+export function startGame(
+  prev: EntropyState,
+  mode: string | null | undefined = prev?.sessionMode ?? "standard"
+): EntropyState {
+  return buildPlayingState(1, 3, 0, 0, mode);
 }
 
 export function nextLevel(prev: EntropyState): EntropyState {
-  return buildPlayingState(prev.level + 1, prev.anchorsRequired + 1, prev.score, prev.totalAnchors);
+  return buildPlayingState(
+    prev.level + 1,
+    prev.anchorsRequired + 1,
+    prev.score,
+    prev.totalAnchors,
+    prev.sessionMode
+  );
 }
 
-export function restartGame(): EntropyState {
-  return buildPlayingState(1, 3, 0, 0);
+export function restartGame(mode: string | null | undefined = "standard"): EntropyState {
+  return buildPlayingState(1, 3, 0, 0, mode);
 }
 
 function secureNode(s: EntropyState): void {
@@ -346,7 +458,8 @@ export function tick(state: EntropyState, deltaMs: number, input: Vec2): Entropy
   const s = structuredClone(state) as EntropyState;
 
   s.elapsedMs += deltaMs;
-  s.timeMs = Math.max(0, s.timeMs - deltaMs);
+  const pressureScale = getSessionPressureScale(s.sessionMode);
+  s.timeMs = Math.max(0, s.timeMs - deltaMs * pressureScale);
   s.cameraShake = Math.max(0, s.cameraShake - deltaMs * 0.003);
 
   // Movement
@@ -376,7 +489,7 @@ export function tick(state: EntropyState, deltaMs: number, input: Vec2): Entropy
   // Spawn falling blocks
   s.blockSpawnCooldownMs -= deltaMs;
   if (s.blockSpawnCooldownMs <= 0 && s.phase === "playing") {
-    const interval = Math.max(1_200, 3_000 - s.level * 300);
+    const interval = Math.max(1_200, (3_000 - s.level * 300) / pressureScale);
     s.blockSpawnCooldownMs = interval;
     trySpawnBlock(s);
   }
@@ -431,4 +544,45 @@ export function didLose(state: EntropyState): boolean {
 
 export function didWin(state: EntropyState): boolean {
   return state.phase === "levelcomplete";
+}
+
+export function isRunComplete(state: EntropyState): boolean {
+  return state.phase === "levelcomplete" && state.level >= RUN_SECTORS_REQUIRED;
+}
+
+export function getEntropyRunSummary(state: EntropyState) {
+  return {
+    anchorsThisSector: state.anchorsSecuredThisLevel,
+    score: state.score,
+    sector: state.level,
+    sectorsRequired: RUN_SECTORS_REQUIRED,
+    stabilitySeconds: Math.round(state.timeMs / 1000),
+    totalAnchors: state.totalAnchors,
+  };
+}
+
+export function getEntropyCompletionCue(state: EntropyState): EntropyCompletionCue {
+  const summary = getEntropyRunSummary(state);
+  const fullRun = isRunComplete(state);
+  const stabilityCarrySeconds = Math.max(0, summary.stabilitySeconds);
+  const rating =
+    stabilityCarrySeconds >= 180
+      ? "Calm Resonance"
+      : stabilityCarrySeconds >= 90
+        ? "Held Field"
+        : "Emergency Latch";
+
+  return {
+    message: fullRun
+      ? `${summary.sectorsRequired} sectors stabilized with ${summary.totalAnchors} anchors held.`
+      : `Sector ${summary.sector}/${summary.sectorsRequired} stabilized with ${summary.anchorsThisSector} anchors.`,
+    nextAction: fullRun
+      ? "Restart the cabinet field with stricter routing."
+      : "Carry the stability reserve into the next sector.",
+    rating,
+    sectorPulseCount: fullRun ? summary.sectorsRequired : summary.anchorsThisSector,
+    stabilityCarrySeconds,
+    status: fullRun ? "run" : "sector",
+    title: fullRun ? "Cabinet Stabilized" : "Sector Stabilized",
+  };
 }

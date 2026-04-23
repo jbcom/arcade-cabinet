@@ -1,21 +1,41 @@
-import { CartridgeStartScreen, GameViewport, useResponsive } from "@app/shared";
+import {
+  CartridgeStartScreen,
+  type GameSaveSlot,
+  GameViewport,
+  RuntimeResultRecorder,
+  type SessionMode,
+  useResponsive,
+  useRunSnapshotAutosave,
+} from "@app/shared";
 import {
   findMatchedPointId,
+  getCosmicZenTransitionCue,
   getNextConstellationPreview,
   getPatternConnectionKey,
   isConstellationComplete,
+  isGardenCompleteLevel,
 } from "@logic/games/cosmic-gardener/engine/constellationProgress";
 import {
+  CONSTELLATIONS,
   generateVoidZones,
   getConstellationForLevel,
   type VoidZone as VoidZoneType,
 } from "@logic/games/cosmic-gardener/engine/constellations";
+import {
+  type CosmicLowerBoardLayout,
+  getCosmicLowerBoardLayout,
+} from "@logic/games/cosmic-gardener/engine/cosmicBoardLayout";
 import {
   calculateComboMultiplier,
   calculateResonanceBloomBonus,
   calculateStarHitScore,
   createStarterGarden,
 } from "@logic/games/cosmic-gardener/engine/cosmicGardenSimulation";
+import {
+  getCosmicModeTuning,
+  resolveCosmicDrainRecovery,
+  tuneVoidZonesForMode,
+} from "@logic/games/cosmic-gardener/engine/cosmicSession";
 import { useEnergyRouting } from "@logic/games/cosmic-gardener/engine/useEnergyRouting";
 import { usePinballPhysics } from "@logic/games/cosmic-gardener/engine/usePinballPhysics";
 import { cn } from "@logic/games/cosmic-gardener/lib/utils";
@@ -41,12 +61,49 @@ type GameState =
   | "gameOver"
   | "zenMode";
 
+interface CosmicRunSnapshot {
+  ballsRemaining: number;
+  comboMultiplier: number;
+  completedConnections: string[];
+  completedPoints: string[];
+  constellationsCompleted: number;
+  gameState: GameState;
+  level: number;
+  recoveryBloomsUsed: number;
+  score: number;
+  sessionMode: SessionMode;
+  starPointMatches: [string, string][];
+  zenTransitionSeen?: boolean;
+}
+
 const BALL_INDICATOR_KEYS = ["ball-1", "ball-2", "ball-3", "ball-4", "ball-5"] as const;
 
-function CosmicTableDeck() {
+function isCosmicSnapshot(snapshot: unknown): snapshot is CosmicRunSnapshot {
+  const value = snapshot as Partial<CosmicRunSnapshot> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.level === "number" &&
+      typeof value.score === "number" &&
+      typeof value.ballsRemaining === "number" &&
+      typeof value.comboMultiplier === "number" &&
+      Array.isArray(value.completedPoints) &&
+      Array.isArray(value.completedConnections) &&
+      Array.isArray(value.starPointMatches)
+  );
+}
+
+function CosmicTableDeck({ layout }: { layout: CosmicLowerBoardLayout }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-[1]">
-      <div className="absolute inset-x-[5%] top-[10%] bottom-[6%] rounded-[2rem] border border-cyan-200/15 bg-[radial-gradient(circle_at_50%_22%,rgba(20,184,166,0.13),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.22),rgba(2,6,23,0.5))] shadow-[inset_0_0_70px_rgba(20,184,166,0.12),0_30px_80px_rgba(0,0,0,0.35)]" />
+      <div
+        className="absolute top-[10%] rounded-[2rem] border border-cyan-200/15 bg-[radial-gradient(circle_at_50%_22%,rgba(20,184,166,0.13),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.22),rgba(2,6,23,0.5))] shadow-[inset_0_0_70px_rgba(20,184,166,0.12),0_30px_80px_rgba(0,0,0,0.35)]"
+        style={{
+          bottom: `${layout.tableBottomInsetPct}%`,
+          left: `${layout.railInsetXPercent}%`,
+          right: `${layout.railInsetXPercent}%`,
+        }}
+      />
       <svg aria-hidden="true" className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
         <defs>
           <linearGradient id="cosmic-rail" x1="0" x2="1" y1="0" y2="1">
@@ -108,9 +165,82 @@ function CosmicTableDeck() {
   );
 }
 
+const ZEN_RING_KEYS = ["inner", "middle", "outer", "halo", "echo", "far", "horizon"] as const;
+
+function ZenTransitionOverlay({
+  cue,
+  onContinue,
+  score,
+}: {
+  cue: ReturnType<typeof getCosmicZenTransitionCue>;
+  onContinue: () => void;
+  score: number;
+}) {
+  return (
+    <motion.div
+      className="absolute inset-0 z-[110] flex items-center justify-center overflow-hidden bg-slate-950/78 px-5 text-center backdrop-blur-md"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      aria-live="polite"
+    >
+      {ZEN_RING_KEYS.slice(0, cue.bloomRings).map((ring, index) => (
+        <motion.div
+          key={ring}
+          aria-hidden="true"
+          className="absolute rounded-full border"
+          style={{
+            borderColor: index % 2 === 0 ? cue.palette.primary : cue.palette.secondary,
+            height: 140 + index * 86,
+            width: 140 + index * 86,
+          }}
+          initial={{ opacity: 0, scale: 0.4 }}
+          animate={{ opacity: [0, 0.42 * cue.intensity, 0.08], scale: [0.4, 1.1, 1.36] }}
+          transition={{ delay: index * 0.12, duration: 2.2, repeat: Infinity, repeatDelay: 0.6 }}
+        />
+      ))}
+      <motion.div
+        className="relative max-w-xl rounded-md border border-cyan-200/25 bg-slate-950/72 px-6 py-6 shadow-2xl shadow-cyan-950/50"
+        initial={{ opacity: 0, y: 24, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.18 }}
+      >
+        <div className="text-[0.68rem] font-black uppercase tracking-[0.28em] text-cyan-200">
+          {cue.completionLabel}
+        </div>
+        <h2
+          className="mt-3 text-4xl font-black uppercase text-white md:text-6xl"
+          style={{ textShadow: `0 0 34px ${cue.palette.primary}` }}
+        >
+          {cue.title}
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm font-medium leading-relaxed text-cyan-50/75">
+          {cue.subtitle}
+        </p>
+        <div className="mt-4 text-2xl font-black text-amber-200">{score.toLocaleString()}</div>
+        <p className="mx-auto mt-2 max-w-md text-xs font-bold uppercase tracking-[0.14em] text-pink-100/70">
+          {cue.replayPromise}
+        </p>
+        <button
+          type="button"
+          className="mt-6 rounded-full border border-cyan-200/40 bg-cyan-400/16 px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-cyan-900/30"
+          onClick={(event) => {
+            event.stopPropagation();
+            onContinue();
+          }}
+        >
+          Cultivate Freely
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Game({ className }: { className?: string }) {
-  const _viewport = useResponsive();
+  const viewport = useResponsive();
+  const lowerBoardLayout = getCosmicLowerBoardLayout(viewport);
   const [gameState, setGameState] = useState<GameState>("intro");
+  const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
   const [level, setLevel] = useState(1);
   const [constellationsCompleted, setConstellationsCompleted] = useState(0);
   const [voidZones, setVoidZones] = useState<VoidZoneType[]>([]);
@@ -134,19 +264,21 @@ export default function Game({ className }: { className?: string }) {
     points: number;
     connectionCount: number;
   } | null>(null);
+  const [recoveryBloom, setRecoveryBloom] = useState<{
+    message: string;
+    points: number;
+  } | null>(null);
+  const [recoveryBloomsUsed, setRecoveryBloomsUsed] = useState(0);
   const [launchPulse, setLaunchPulse] = useState(0);
   const [drainPulse, setDrainPulse] = useState(0);
+  const [zenTransitionSeen, setZenTransitionSeen] = useState(false);
 
   const gardenRef = useRef<HTMLDivElement>(null);
 
   const handleConstellationComplete = useCallback(() => {
     setConstellationsCompleted((prev) => {
       const newCount = prev + 1;
-      if (newCount >= 5) {
-        setGameState("zenMode");
-      } else {
-        setGameState("levelComplete");
-      }
+      setGameState("levelComplete");
       return newCount;
     });
     setScore((prev) => prev + 5000 * comboMultiplier);
@@ -203,14 +335,29 @@ export default function Game({ className }: { className?: string }) {
   const handleDrain = useCallback(() => {
     setDrainPulse((prev) => prev + 1);
     setBallsRemaining((prev) => {
-      const newCount = prev - 1;
+      const recovery = resolveCosmicDrainRecovery({
+        ballsRemaining: prev,
+        completedConnections: completedConnections.size,
+        cosmicCold,
+        mode: sessionMode,
+        recoveryBloomsUsed,
+      });
+      if (recovery.saved) {
+        setRecoveryBloomsUsed(recovery.recoveryBloomsUsed);
+        setScore((score) => score + recovery.scoreBonus);
+        setRecoveryBloom({ message: recovery.message, points: recovery.scoreBonus });
+        setTimeout(() => setRecoveryBloom(null), 1400);
+        return recovery.ballsRemaining;
+      }
+
+      const newCount = recovery.ballsRemaining;
       if (newCount <= 0) {
         setGameState("gameOver");
       }
       return Math.max(0, newCount);
     });
     setComboMultiplier(1);
-  }, []);
+  }, [completedConnections.size, cosmicCold, recoveryBloomsUsed, sessionMode]);
 
   const {
     orbs,
@@ -229,6 +376,11 @@ export default function Game({ className }: { className?: string }) {
 
   const currentPattern = getConstellationForLevel(level);
   const nextPreview = getNextConstellationPreview(level);
+  const zenCue = getCosmicZenTransitionCue({
+    constellationsCompleted,
+    score,
+    totalConstellations: CONSTELLATIONS.length,
+  });
 
   const loadLevel = useCallback(
     (targetLevel: number) => {
@@ -245,9 +397,9 @@ export default function Game({ className }: { className?: string }) {
 
   useEffect(() => {
     if (gameState === "playing") {
-      setVoidZones(generateVoidZones(level));
+      setVoidZones(tuneVoidZonesForMode(generateVoidZones(level), sessionMode));
     }
-  }, [level, gameState]);
+  }, [level, gameState, sessionMode]);
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -398,7 +550,34 @@ export default function Game({ className }: { className?: string }) {
     [orbs.size, launchOrb]
   );
 
-  const startGame = () => {
+  const startGame = (mode: SessionMode = sessionMode, saveSlot?: GameSaveSlot) => {
+    const snapshot = saveSlot?.snapshot;
+    if (isCosmicSnapshot(snapshot)) {
+      setSessionMode(mode);
+      resetGame();
+      loadLevel(snapshot.level);
+      setLevel(snapshot.level);
+      setConstellationsCompleted(snapshot.constellationsCompleted);
+      setCompletedPoints(new Set(snapshot.completedPoints));
+      setCompletedConnections(new Set(snapshot.completedConnections));
+      setStarPointMatches(new Map(snapshot.starPointMatches));
+      setScore(snapshot.score);
+      setBallsRemaining(snapshot.ballsRemaining);
+      setComboMultiplier(snapshot.comboMultiplier);
+      setRecoveryBloomsUsed(snapshot.recoveryBloomsUsed ?? 0);
+      setZenTransitionSeen(snapshot.zenTransitionSeen ?? snapshot.gameState === "zenMode");
+      setGameState(
+        snapshot.gameState === "tutorial"
+          ? "tutorial"
+          : snapshot.gameState === "zenMode"
+            ? "zenMode"
+            : "playing"
+      );
+      return;
+    }
+
+    const tuning = getCosmicModeTuning(mode);
+    setSessionMode(mode);
     resetGame();
     setLevel(1);
     setConstellationsCompleted(0);
@@ -406,10 +585,33 @@ export default function Game({ className }: { className?: string }) {
     setCompletedConnections(new Set());
     setStarPointMatches(new Map());
     setScore(0);
-    setBallsRemaining(3);
+    setBallsRemaining(tuning.startingBalls);
     setComboMultiplier(1);
+    setRecoveryBloomsUsed(0);
+    setRecoveryBloom(null);
+    setZenTransitionSeen(false);
     setGameState("tutorial");
   };
+
+  useRunSnapshotAutosave({
+    active: ["tutorial", "playing", "paused", "levelComplete"].includes(gameState),
+    progressSummary: `Level ${level} · ${score} score`,
+    slug: "cosmic-gardener",
+    snapshot: {
+      ballsRemaining,
+      comboMultiplier,
+      completedConnections: Array.from(completedConnections),
+      completedPoints: Array.from(completedPoints),
+      constellationsCompleted,
+      gameState,
+      level,
+      recoveryBloomsUsed,
+      score,
+      sessionMode,
+      starPointMatches: Array.from(starPointMatches.entries()),
+      zenTransitionSeen,
+    } satisfies CosmicRunSnapshot,
+  });
 
   const startPlaying = () => {
     loadLevel(1);
@@ -417,10 +619,17 @@ export default function Game({ className }: { className?: string }) {
   };
 
   const nextLevel = () => {
+    if (isGardenCompleteLevel(level)) {
+      setZenTransitionSeen(false);
+      setGameState("zenMode");
+      return;
+    }
+
     const targetLevel = level + 1;
+    const tuning = getCosmicModeTuning(sessionMode);
     setLevel(targetLevel);
     loadLevel(targetLevel);
-    setBallsRemaining((prev) => Math.min(prev + 1, 5));
+    setBallsRemaining((prev) => Math.min(prev + 1, tuning.maxBalls));
     setGameState("playing");
   };
 
@@ -452,7 +661,26 @@ export default function Game({ className }: { className?: string }) {
     >
       <NebulaBackground />
       <CosmicDust particleCount={150} />
-      <CosmicTableDeck />
+      <CosmicTableDeck layout={lowerBoardLayout} />
+
+      {gameState === "zenMode" && (
+        <RuntimeResultRecorder
+          milestones={["first-cosmic-garden"]}
+          mode={sessionMode}
+          score={score}
+          slug="cosmic-gardener"
+          status="completed"
+          summary={`Cultivated ${constellationsCompleted} constellations`}
+        />
+      )}
+
+      {gameState === "zenMode" && !zenTransitionSeen && (
+        <ZenTransitionOverlay
+          cue={zenCue}
+          score={score}
+          onContinue={() => setZenTransitionSeen(true)}
+        />
+      )}
 
       <AnimatePresence>
         {launchPulse > 0 && (
@@ -570,6 +798,7 @@ export default function Game({ className }: { className?: string }) {
 
       {(gameState === "playing" || gameState === "zenMode") && (
         <Flippers
+          layout={lowerBoardLayout}
           leftActive={leftFlipper}
           rightActive={rightFlipper}
           onLeftDown={activateLeftFlipper}
@@ -580,7 +809,7 @@ export default function Game({ className }: { className?: string }) {
       )}
 
       {(gameState === "playing" || gameState === "zenMode") && (
-        <BallLauncher onLaunch={handleLaunch} disabled={orbs.size >= 3} />
+        <BallLauncher layout={lowerBoardLayout} onLaunch={handleLaunch} disabled={orbs.size >= 3} />
       )}
 
       {(gameState === "playing" || gameState === "paused" || gameState === "zenMode") && (
@@ -590,11 +819,12 @@ export default function Game({ className }: { className?: string }) {
             totalEnergy={totalEnergy}
             cosmicCold={cosmicCold}
             constellationsCompleted={constellationsCompleted}
-            totalConstellations={5}
+            totalConstellations={CONSTELLATIONS.length}
             isPaused={gameState === "paused"}
+            lowerBoardLayout={lowerBoardLayout}
             onPause={() => setGameState("paused")}
             onResume={() => setGameState("playing")}
-            onRestart={startGame}
+            onRestart={() => startGame()}
           />
 
           <motion.div
@@ -617,6 +847,9 @@ export default function Game({ className }: { className?: string }) {
             )}
             <div className="mt-1 text-[0.68rem] font-medium uppercase tracking-[0.18em] text-cyan-100/70">
               Links {completedConnections.size}/{currentPattern.connections.length}
+            </div>
+            <div className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-amber-200/70">
+              Recovery blooms {recoveryBloomsUsed}
             </div>
           </motion.div>
 
@@ -650,6 +883,34 @@ export default function Game({ className }: { className?: string }) {
             )}
           </AnimatePresence>
 
+          <AnimatePresence>
+            {recoveryBloom && (
+              <>
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-[16%] bottom-[8%] z-40 h-20 rounded-full border border-cyan-200/45 bg-cyan-400/8"
+                  initial={{ opacity: 0.9, scaleX: 0.42 }}
+                  animate={{ opacity: 0, scaleX: 1.18, y: -36 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.05 }}
+                  style={{ boxShadow: "0 0 52px rgba(103,232,249,0.48)" }}
+                />
+                <motion.div
+                  className="pointer-events-none absolute left-1/2 bottom-[20%] z-50 -translate-x-1/2 rounded-md border border-cyan-200/40 bg-slate-950/76 px-4 py-2 text-center shadow-2xl shadow-cyan-900/30 backdrop-blur-md"
+                  initial={{ opacity: 0, scale: 0.86, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -16 }}
+                >
+                  <div className="text-[0.62rem] font-bold uppercase tracking-[0.22em] text-cyan-200">
+                    Recovery Bloom
+                  </div>
+                  <div className="text-xl font-black text-white">+{recoveryBloom.points}</div>
+                  <div className="text-xs text-cyan-100/70">{recoveryBloom.message}</div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
           <div className="absolute top-4 right-20 flex gap-1 pointer-events-none z-50">
             {BALL_INDICATOR_KEYS.map((key, i) => (
               <div
@@ -678,6 +939,7 @@ export default function Game({ className }: { className?: string }) {
               accent="#fbbf24"
               cartridgeId="Slot 02"
               description="Plant star seeds, keep the orb alive, and bloom constellations across a living pinball sky."
+              gameSlug="cosmic-gardener"
               kicker="Pinball Garden Cartridge"
               motif="cosmic"
               onStart={startGame}
@@ -796,7 +1058,7 @@ export default function Game({ className }: { className?: string }) {
                 </div>
               )}
               <p className="text-white/40 text-sm mb-8">
-                {constellationsCompleted} of 5 constellations cultivated
+                {constellationsCompleted} of {CONSTELLATIONS.length} constellations cultivated
               </p>
               <motion.button
                 className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white font-medium hover:from-amber-400 hover:to-pink-400 transition-all"
@@ -804,7 +1066,7 @@ export default function Game({ className }: { className?: string }) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Next Constellation
+                {nextPreview ? "Next Constellation" : "Enter Zen Garden"}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -824,12 +1086,19 @@ export default function Game({ className }: { className?: string }) {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
             >
+              <RuntimeResultRecorder
+                mode={sessionMode}
+                score={score}
+                slug="cosmic-gardener"
+                status="failed"
+                summary={`Garden ended at ${score} score`}
+              />
               <h2 className="text-4xl font-light text-white mb-4">Game Over</h2>
               <p className="text-amber-400 text-3xl mb-2">{score.toLocaleString()}</p>
               <p className="text-white/60 mb-2">Final Score</p>
               <motion.button
                 className="px-8 py-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
-                onClick={startGame}
+                onClick={() => startGame()}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

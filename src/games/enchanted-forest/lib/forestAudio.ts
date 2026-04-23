@@ -7,8 +7,16 @@ const PURIFY_SCALE = ["D4", "F#4", "A4", "C#5", "D5", "F#5"];
 
 export type ToneType = "shield" | "heal" | "purify" | "ambient" | "damage" | "victory" | "defeat";
 
+export interface ForestAudioStatus {
+  available: boolean;
+  fallbackReason: string | null;
+  initialized: boolean;
+  visualFallbackActive: boolean;
+}
+
 class ForestAudioEngine {
   private initialized = false;
+  private fallbackReason: string | null = null;
   private masterVolume: Tone.Volume | null = null;
   private ambientDrone: Tone.Synth | null = null;
   private ambientFilter: Tone.Filter | null = null;
@@ -23,51 +31,74 @@ class ForestAudioEngine {
   private ambientSequence: Tone.Sequence | null = null;
   private isAmbientPlaying = false;
 
-  async initialize(): Promise<void> {
-    if (this.initialized) return;
-    await Tone.start();
-    this.masterVolume = new Tone.Volume(-6).toDestination();
-    this.mainReverb = new Tone.Reverb({ decay: 4, wet: 0.5, preDelay: 0.1 }).connect(
-      this.masterVolume
-    );
-    this.mainDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.3, wet: 0.2 }).connect(
-      this.mainReverb
-    );
-    this.chorus = new Tone.Chorus({ frequency: 0.5, delayTime: 3.5, depth: 0.7, wet: 0.3 }).connect(
-      this.mainDelay
-    );
-    this.ambientFilter = new Tone.Filter({ frequency: 800, type: "lowpass", Q: 2 }).connect(
-      this.mainReverb
-    );
-    this.ambientDrone = new Tone.Synth({
-      oscillator: { type: "sine" },
-      envelope: { attack: 2, decay: 1, sustain: 0.8, release: 4 },
-      volume: -20,
-    }).connect(this.ambientFilter);
-    this.windFilter = new Tone.AutoFilter({
-      frequency: 0.1,
-      baseFrequency: 200,
-      octaves: 4,
-      depth: 0.8,
-    }).connect(this.mainReverb);
-    this.windFilter.start();
-    this.windNoise = new Tone.Noise({ type: "pink", volume: -30 }).connect(this.windFilter);
-    this.melodySynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "triangle" },
-      envelope: { attack: 0.02, decay: 0.3, sustain: 0.2, release: 1 },
-      volume: -8,
-    }).connect(this.chorus);
-    this.padSynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "sine" },
-      envelope: { attack: 1, decay: 2, sustain: 0.6, release: 3 },
-      volume: -15,
-    }).connect(this.mainReverb);
-    this.bellSynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "sine" },
-      envelope: { attack: 0.001, decay: 1.5, sustain: 0, release: 2 },
-      volume: -10,
-    }).connect(this.mainDelay);
-    this.initialized = true;
+  async initialize(): Promise<ForestAudioStatus> {
+    if (this.initialized) return this.getStatus();
+
+    try {
+      await Tone.start();
+      this.masterVolume = new Tone.Volume(-6).toDestination();
+      this.mainReverb = new Tone.Reverb({ decay: 4, wet: 0.5, preDelay: 0.1 }).connect(
+        this.masterVolume
+      );
+      this.mainDelay = new Tone.FeedbackDelay({
+        delayTime: "8n.",
+        feedback: 0.3,
+        wet: 0.2,
+      }).connect(this.mainReverb);
+      this.chorus = new Tone.Chorus({
+        frequency: 0.5,
+        delayTime: 3.5,
+        depth: 0.7,
+        wet: 0.3,
+      }).connect(this.mainDelay);
+      this.ambientFilter = new Tone.Filter({ frequency: 800, type: "lowpass", Q: 2 }).connect(
+        this.mainReverb
+      );
+      this.ambientDrone = new Tone.Synth({
+        oscillator: { type: "sine" },
+        envelope: { attack: 2, decay: 1, sustain: 0.8, release: 4 },
+        volume: -20,
+      }).connect(this.ambientFilter);
+      this.windFilter = new Tone.AutoFilter({
+        frequency: 0.1,
+        baseFrequency: 200,
+        octaves: 4,
+        depth: 0.8,
+      }).connect(this.mainReverb);
+      this.windFilter.start();
+      this.windNoise = new Tone.Noise({ type: "pink", volume: -30 }).connect(this.windFilter);
+      this.melodySynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.02, decay: 0.3, sustain: 0.2, release: 1 },
+        volume: -8,
+      }).connect(this.chorus);
+      this.padSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "sine" },
+        envelope: { attack: 1, decay: 2, sustain: 0.6, release: 3 },
+        volume: -15,
+      }).connect(this.mainReverb);
+      this.bellSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "sine" },
+        envelope: { attack: 0.001, decay: 1.5, sustain: 0, release: 2 },
+        volume: -10,
+      }).connect(this.mainDelay);
+      this.fallbackReason = null;
+      this.initialized = true;
+    } catch (error) {
+      this.fallbackReason = error instanceof Error ? error.message : "Audio context unavailable";
+      this.dispose();
+    }
+
+    return this.getStatus();
+  }
+
+  getStatus(): ForestAudioStatus {
+    return {
+      available: this.initialized && this.fallbackReason === null,
+      fallbackReason: this.fallbackReason,
+      initialized: this.initialized,
+      visualFallbackActive: this.fallbackReason !== null,
+    };
   }
 
   startAmbient(): void {

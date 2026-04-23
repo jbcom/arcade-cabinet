@@ -1,8 +1,13 @@
 import { createArenaLayout } from "@logic/games/titan-mech/engine/titanSimulation";
-import type { ArenaBeaconData, ArenaObstacleData } from "@logic/games/titan-mech/engine/types";
+import type {
+  ArenaBeaconData,
+  ArenaObstacleData,
+  TitanEnemyBehavior,
+  TitanThreatCue,
+} from "@logic/games/titan-mech/engine/types";
 import { TitanTrait } from "@logic/games/titan-mech/store/traits";
 import { titanEntity } from "@logic/games/titan-mech/store/world";
-import { ContactShadows, Grid, Sky, Sparkles, Stars } from "@react-three/drei";
+import { ContactShadows, Grid, Line, Sparkles, Stars } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
 import { useTrait } from "koota/react";
 import { Mech } from "./Mech";
@@ -12,6 +17,7 @@ const layout = createArenaLayout();
 function ArenaFloor() {
   const state = useTrait(titanEntity, TitanTrait);
   const objectiveProgress = state.objectiveProgress;
+  const activeBeaconId = state.contractCue.nextBeaconId;
 
   return (
     <RigidBody type="fixed">
@@ -39,11 +45,40 @@ function ArenaFloor() {
           </mesh>
         ))}
         {layout.beacons.map((beacon) => (
-          <Beacon key={beacon.id} beacon={beacon} objectiveProgress={objectiveProgress} />
+          <Beacon
+            key={beacon.id}
+            beacon={beacon}
+            isActive={activeBeaconId === beacon.id}
+            objectiveProgress={objectiveProgress}
+            playerPosition={state.pose.position}
+          />
         ))}
         {layout.beacons.map((beacon) => (
-          <ExtractionRig key={`${beacon.id}-extractor`} beacon={beacon} />
+          <ExtractionRig
+            key={`${beacon.id}-extractor`}
+            beacon={beacon}
+            isActive={activeBeaconId === beacon.id}
+          />
         ))}
+        <ContractRoute />
+        {layout.obstacles
+          .filter((obstacle) => obstacle.threat > 1)
+          .map((obstacle) => (
+            <ThreatMarker
+              key={`${obstacle.id}-threat`}
+              behavior={
+                state.threatCue.sourceId === obstacle.id ? state.threatCue.behavior : undefined
+              }
+              intensity={
+                state.threatCue.sourceId === obstacle.id ? state.threatCue.behaviorIntensity : 0
+              }
+              obstacle={obstacle}
+              tracked={
+                state.threatCue.sourceId === obstacle.id && state.threatCue.level !== "clear"
+              }
+            />
+          ))}
+        <ThreatTelegraph />
       </group>
     </RigidBody>
   );
@@ -166,18 +201,33 @@ function Pylon({ obstacle }: { obstacle: ArenaObstacleData }) {
 
 function Beacon({
   beacon,
+  isActive,
   objectiveProgress,
+  playerPosition,
 }: {
   beacon: ArenaBeaconData;
+  isActive: boolean;
   objectiveProgress: number;
+  playerPosition: { x: number; z: number };
 }) {
-  const progressGlow = Math.max(0.18, objectiveProgress / 100);
+  const distance = Math.hypot(
+    playerPosition.x - beacon.position[0],
+    playerPosition.z - beacon.position[2]
+  );
+  const localProgress = Math.max(0, Math.min(1, 1 - distance / beacon.radius));
+  const progressGlow = isActive
+    ? Math.max(0.32, Math.max(objectiveProgress / 100, localProgress))
+    : 0.14;
 
   return (
     <group position={beacon.position}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]}>
         <ringGeometry args={[beacon.radius * 1.04, beacon.radius * 1.22, 64]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={progressGlow * 0.28} />
+        <meshBasicMaterial
+          color={isActive ? "#67e8f9" : "#38bdf8"}
+          transparent
+          opacity={progressGlow * 0.42}
+        />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
         <ringGeometry args={[beacon.radius * 0.72, beacon.radius, 48]} />
@@ -189,6 +239,12 @@ function Beacon({
           opacity={0.5}
         />
       </mesh>
+      {isActive ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.09, 0]}>
+          <ringGeometry args={[beacon.radius * 1.34, beacon.radius * 1.42, 72]} />
+          <meshBasicMaterial color="#e0ffff" transparent opacity={0.38} toneMapped={false} />
+        </mesh>
+      ) : null}
       <mesh position={[0, 1.4, 0]}>
         <cylinderGeometry args={[0.28, 0.28, 2.8, 10]} />
         <meshStandardMaterial
@@ -197,11 +253,20 @@ function Beacon({
           emissiveIntensity={0.7 + progressGlow}
         />
       </mesh>
+      <mesh position={[0, 8.8, 0]}>
+        <cylinderGeometry args={[isActive ? 0.34 : 0.18, isActive ? 0.34 : 0.18, 14, 12]} />
+        <meshBasicMaterial
+          color={isActive ? "#67e8f9" : "#0f766e"}
+          transparent
+          opacity={isActive ? 0.34 : 0.12}
+        />
+      </mesh>
+      {isActive ? <pointLight color="#67e8f9" intensity={4.8} distance={36} /> : null}
     </group>
   );
 }
 
-function ExtractionRig({ beacon }: { beacon: ArenaBeaconData }) {
+function ExtractionRig({ beacon, isActive }: { beacon: ArenaBeaconData; isActive: boolean }) {
   const [x, y, z] = beacon.position;
 
   return (
@@ -220,30 +285,221 @@ function ExtractionRig({ beacon }: { beacon: ArenaBeaconData }) {
       </mesh>
       <mesh position={[0, 0.28, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[2.25, 2.5, 36]} />
-        <meshBasicMaterial color="#f59e0b" transparent opacity={0.34} />
+        <meshBasicMaterial color="#f59e0b" transparent opacity={isActive ? 0.58 : 0.28} />
       </mesh>
-      <pointLight color="#f59e0b" intensity={1.1} distance={14} position={[0, 2.8, 0]} />
+      <pointLight
+        color="#f59e0b"
+        intensity={isActive ? 2.7 : 1.1}
+        distance={isActive ? 22 : 14}
+        position={[0, 2.8, 0]}
+      />
     </group>
   );
+}
+
+function ContractRoute() {
+  const state = useTrait(titanEntity, TitanTrait);
+  const beacon = layout.beacons.find((entry) => entry.id === state.contractCue.nextBeaconId);
+
+  if (!beacon) {
+    return null;
+  }
+
+  const start: [number, number, number] = [state.pose.position.x, 0.22, state.pose.position.z];
+  const end: [number, number, number] = [beacon.position[0], 0.22, beacon.position[2]];
+  const color = state.contractCue.stage === "cool" ? "#f43f5e" : "#67e8f9";
+
+  return (
+    <group>
+      <Line points={[start, end]} color={color} lineWidth={2.5} transparent opacity={0.72} />
+      {[0.34, 0.58, 0.82].map((t) => (
+        <mesh
+          key={`contract-chevron-${t}`}
+          position={[start[0] + (end[0] - start[0]) * t, 0.28, start[2] + (end[2] - start[2]) * t]}
+          rotation={[-Math.PI / 2, 0, Math.atan2(end[0] - start[0], end[2] - start[2])]}
+        >
+          <coneGeometry args={[1.1, 2.6, 3]} />
+          <meshBasicMaterial color={color} transparent opacity={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function ThreatMarker({
+  behavior,
+  intensity,
+  obstacle,
+  tracked,
+}: {
+  behavior?: TitanEnemyBehavior;
+  intensity: number;
+  obstacle: ArenaObstacleData;
+  tracked: boolean;
+}) {
+  const color = tracked ? "#fb7185" : obstacle.threat >= 3 ? "#f43f5e" : "#f59e0b";
+  const markerScale = 1 + intensity * 0.32;
+
+  return (
+    <group position={[obstacle.position[0], 0.18, obstacle.position[2]]} scale={markerScale}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[obstacle.threat * 3.3, obstacle.threat * 3.3 + 0.34, 48]} />
+        <meshBasicMaterial color={color} transparent opacity={tracked ? 0.62 : 0.32} />
+      </mesh>
+      <mesh position={[0, 6 + obstacle.threat, 0]} rotation={[0, 0, Math.PI]}>
+        <coneGeometry args={[1.4 + obstacle.threat * 0.24, 3.2, 5]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={tracked ? 1.1 : 0.72}
+        />
+      </mesh>
+      <pointLight
+        color={color}
+        intensity={obstacle.threat * (0.9 + intensity * 0.7)}
+        distance={20 + obstacle.threat * 5}
+      />
+      {tracked && behavior === "reactor-pulse" ? (
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[obstacle.threat * 6.2, obstacle.threat * 6.6, 72]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.28 + intensity * 0.3} />
+        </mesh>
+      ) : null}
+    </group>
+  );
+}
+
+function ThreatTelegraph() {
+  const state = useTrait(titanEntity, TitanTrait);
+  const cue = state.threatCue;
+
+  if (cue.level === "clear" || !cue.sourcePosition) {
+    return null;
+  }
+
+  const color =
+    cue.level === "impact" ? "#f43f5e" : cue.level === "warning" ? "#fb7185" : "#f59e0b";
+  const source: [number, number, number] = [
+    cue.sourcePosition[0],
+    cue.sourcePosition[1] + 5.5,
+    cue.sourcePosition[2],
+  ];
+  const target: [number, number, number] = [state.pose.position.x, 2.3, state.pose.position.z];
+
+  return (
+    <group>
+      <Line
+        points={[source, target]}
+        color={color}
+        lineWidth={cue.level === "impact" ? 4 : 2.8}
+        transparent
+        opacity={cue.level === "tracking" ? 0.45 : 0.78}
+      />
+      <mesh position={[target[0], 0.22, target[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[4.6, 5.15, 48]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={cue.level === "impact" ? 0.64 : 0.42}
+        />
+      </mesh>
+      <mesh position={[source[0], source[1] + 2.2, source[2]]}>
+        <sphereGeometry args={[1.2, 12, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.05} />
+      </mesh>
+      <EnemyBehaviorTelegraph cue={cue} color={color} source={source} target={target} />
+    </group>
+  );
+}
+
+function EnemyBehaviorTelegraph({
+  color,
+  cue,
+  source,
+  target,
+}: {
+  color: string;
+  cue: TitanThreatCue;
+  source: [number, number, number];
+  target: [number, number, number];
+}) {
+  if (cue.behavior === "rail-volley") {
+    const offset = Math.max(1.2, cue.behaviorIntensity * 3.2);
+
+    return (
+      <>
+        {[-1, 1].map((side) => (
+          <Line
+            key={`rail-volley-${side}`}
+            points={[
+              [source[0] + side * offset, source[1] - 1.2, source[2]],
+              [target[0] + side * offset * 0.4, target[1], target[2]],
+            ]}
+            color="#f59e0b"
+            lineWidth={1.4 + cue.behaviorIntensity * 2.2}
+            transparent
+            opacity={0.34 + cue.behaviorIntensity * 0.32}
+          />
+        ))}
+      </>
+    );
+  }
+
+  if (cue.behavior === "reactor-pulse") {
+    return (
+      <mesh position={[source[0], 0.28, source[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry
+          args={[10 + cue.behaviorIntensity * 7, 10.55 + cue.behaviorIntensity * 7, 72]}
+        />
+        <meshBasicMaterial
+          color="#f97316"
+          transparent
+          opacity={0.24 + cue.behaviorIntensity * 0.28}
+        />
+      </mesh>
+    );
+  }
+
+  if (cue.behavior === "mine-lock") {
+    return (
+      <mesh
+        position={[
+          source[0] + (target[0] - source[0]) * 0.45,
+          1.2,
+          source[2] + (target[2] - source[2]) * 0.45,
+        ]}
+        rotation={[-Math.PI / 2, 0, Math.atan2(target[0] - source[0], target[2] - source[2])]}
+      >
+        <coneGeometry args={[2.2 + cue.behaviorIntensity * 1.2, 6.2, 3]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.22 + cue.behaviorIntensity * 0.26}
+        />
+      </mesh>
+    );
+  }
+
+  return null;
 }
 
 export function World() {
   return (
     <>
+      <color attach="background" args={["#0d1720"]} />
       <fog attach="fog" args={["#141922", 42, 176]} />
-      <Sky sunPosition={[70, 22, 42]} turbidity={6.5} rayleigh={0.4} />
       <Stars radius={180} depth={38} count={900} factor={3.2} saturation={0.35} fade speed={0.25} />
-      <ambientLight intensity={0.22} />
-      <hemisphereLight args={["#94f3ff", "#312116", 0.42]} />
+      <ambientLight intensity={0.34} />
+      <hemisphereLight args={["#94f3ff", "#312116", 0.56]} />
       <directionalLight
         position={[34, 58, 28]}
         intensity={1.4}
         castShadow
         shadow-mapSize={[2048, 2048]}
       />
-      <pointLight position={[0, 13, 0]} color="#2dd4bf" intensity={2.2} distance={74} />
-      <pointLight position={[0, 10, -18]} color="#38bdf8" intensity={1.35} distance={42} />
-      <pointLight position={[-42, 11, -38]} color="#f59e0b" intensity={1.8} distance={58} />
+      <pointLight position={[0, 13, 0]} color="#2dd4bf" intensity={3.4} distance={86} />
+      <pointLight position={[0, 10, -18]} color="#38bdf8" intensity={2.2} distance={54} />
+      <pointLight position={[-42, 11, -38]} color="#f59e0b" intensity={2.6} distance={66} />
 
       <Physics gravity={[0, -9.8, 0]}>
         <ArenaFloor />

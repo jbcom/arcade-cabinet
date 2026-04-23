@@ -1,6 +1,6 @@
 {
   "name": "arcade-cabinet",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -21,6 +21,8 @@
     "typecheck": "tsc --noEmit",
     "android:sync": "pnpm build && cap sync android",
     "android:build": "pnpm android:sync && cd android && ./gradlew assembleDebug",
+    "android:bundle": "pnpm android:sync && cd android && ./gradlew bundleRelease -PversionName=$npm_package_version -PversionCode=${ANDROID_VERSION_CODE:-1}",
+    "android:release:aab": "pnpm android:bundle && cp android/app/build/outputs/bundle/release/app-release.aab arcade-cabinet-release.aab",
     "clean": "rm -rf dist coverage .vitest-attachments test-screenshots"
   },
   "dependencies": {

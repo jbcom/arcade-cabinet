@@ -1,17 +1,29 @@
----
 title: Physics Pillar
-description: Rigid body dynamics and collision handling in the monorepo.
+updated: 2026-04-23
+status: current
+domain: technical
 ---
 
-# Physics Pillar: Rapier 3D
+# Physics Pillar
 
-Arcade Cabinet standardizes entirely on **@react-three/rapier** for all physical interactions.
+This document owns spatial simulation guidance for the cabinet.
 
-## Why Rapier?
-Previous iterations of the cabinet relied on a mix of Cannon.js, Matter.js, or custom continuous collision detection. Rapier is written in Rust, runs in WASM, and provides deterministic, high-performance physics that works identically in both the browser and our Vitest JSDOM environment.
+## Core Rule
 
-## Conventions
-1. **Never use Cannon**.
-2. **Deterministic WASM**: The Rapier WASM bundle must be explicitly exported or placed in the `public/` directory of target applications to avoid asynchronous loading failures during testing.
-3. **Instancing**: For high-volume physics objects, use `<InstancedRigidBodies>` or a no-physics instanced fallback to prevent framerate collapse.
-4. **Player Control**: Use `applyImpulse` or `setLinvel` rather than directly manipulating `position` for dynamic bodies to prevent clipping through terrain.
+Use a physics stack only when the game loop actually benefits from it.
+Determinism and readability matter more than engine purity.
+
+## Current Cabinet Reality
+
+- `@react-three/rapier` is used where it materially helps.
+- Some launch cartridges are not physics-first and should stay that way.
+- WASM assets required by physics-backed routes must live in `public/` and stay
+  Android-safe.
+
+## Rules
+
+1. Do not add a physics engine just to imitate depth.
+2. If physics affects gameplay, expose the outcome through deterministic state or
+   deterministic event fields.
+3. Keep mobile performance in mind before adding more rigid bodies or particles.
+4. Never let physics hide the next player decision.

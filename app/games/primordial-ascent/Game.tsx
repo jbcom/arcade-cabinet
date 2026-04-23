@@ -1,12 +1,20 @@
 import {
   browserTestCanvasGlOptions,
   CartridgeStartScreen,
+  GameOverScreen,
   GameViewport,
+  OverlayButton,
   PhaseTrait,
+  RuntimeResultRecorder,
+  useRunSnapshotAutosave,
 } from "@app/shared";
-import { createInitialPrimordialState } from "@logic/games/primordial-ascent/engine/primordialSimulation";
+import {
+  createInitialPrimordialState,
+  getPrimordialRunSummary,
+} from "@logic/games/primordial-ascent/engine/primordialSimulation";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity, primordialWorld } from "@logic/games/primordial-ascent/store/world";
+import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { Canvas } from "@react-three/fiber";
 import { useTrait, WorldProvider } from "koota/react";
 import { World } from "./r3f/World";
@@ -15,14 +23,23 @@ import { HUD } from "./ui/HUD";
 
 function PrimordialApp() {
   const state = useTrait(primordialEntity, PrimordialTrait);
+  const summary = getPrimordialRunSummary(state);
 
-  const handleStart = () => {
+  const handleStart = (mode: SessionMode, saveSlot?: GameSaveSlot) => {
+    const next = resolvePrimordialStartState(mode, saveSlot);
     primordialEntity.set(PhaseTrait, { phase: "playing" });
-    primordialEntity.set(PrimordialTrait, createInitialPrimordialState("playing"));
+    primordialEntity.set(PrimordialTrait, next);
   };
 
+  useRunSnapshotAutosave({
+    active: state.phase === "playing",
+    progressSummary: `${Math.round(state.altitude)}m · ${Math.round(state.distToLava)}m lava gap`,
+    slug: "primordial-ascent",
+    snapshot: state,
+  });
+
   return (
-    <GameViewport background="#020608">
+    <GameViewport background="#020608" data-browser-screenshot-mode="page">
       <Canvas gl={browserTestCanvasGlOptions}>{state.phase === "playing" && <World />}</Canvas>
 
       {state.phase === "menu" && (
@@ -30,6 +47,7 @@ function PrimordialApp() {
           accent="#00ff66"
           cartridgeId="Slot 07"
           description="Grapple out of a rising lava cavern before the magma wake catches you."
+          gameSlug="primordial-ascent"
           kicker="Escape Cartridge"
           motif="primordial"
           onStart={handleStart}
@@ -59,6 +77,13 @@ function PrimordialApp() {
               "linear-gradient(180deg, rgba(20,2,2,0.74), rgba(2,6,8,0.94)), repeating-linear-gradient(0deg, rgba(255,51,51,0.22) 0 2px, transparent 2px 16px)",
           }}
         >
+          <RuntimeResultRecorder
+            mode={state.sessionMode}
+            score={summary.maxAltitude}
+            slug="primordial-ascent"
+            status="failed"
+            summary={`Consumed at ${summary.maxAltitude}m`}
+          />
           <h1
             className="text-5xl md:text-7xl font-black uppercase tracking-[5px] mb-12 text-center text-white"
             style={{ textShadow: "0 0 20px #ff3333, 2px 2px 0px #000" }}
@@ -81,7 +106,7 @@ function PrimordialApp() {
 
           <button
             type="button"
-            onClick={handleStart}
+            onClick={() => handleStart(state.sessionMode)}
             className="px-12 py-4 text-xl font-bold uppercase tracking-[3px] text-[#ff3333] bg-[#ff3333]/10 border-2 border-[#ff3333] rounded hover:bg-[#ff3333] hover:text-black transition-all duration-200"
             style={{
               boxShadow: "0 0 15px rgba(255,51,51,0.2), inset 0 0 10px rgba(255,51,51,0.1)",
@@ -91,7 +116,56 @@ function PrimordialApp() {
           </button>
         </div>
       )}
+
+      {state.phase === "complete" && (
+        <GameOverScreen
+          accent="#00ff66"
+          result={{
+            milestones: ["first-surface-breach"],
+            mode: state.sessionMode,
+            score: summary.maxAltitude + summary.finalDistanceToLava * 10,
+            slug: "primordial-ascent",
+            status: "completed",
+            summary: `Escaped at ${summary.maxAltitude}m`,
+          }}
+          title="SURFACE BREACHED"
+          subtitle={`Escaped in ${summary.elapsedSeconds}s at ${summary.maxAltitude}m. Final lava gap: ${summary.finalDistanceToLava}m.`}
+          actions={
+            <OverlayButton onClick={() => handleStart(state.sessionMode)}>
+              Climb Again
+            </OverlayButton>
+          }
+        />
+      )}
     </GameViewport>
+  );
+}
+
+function resolvePrimordialStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
+  const snapshot = saveSlot?.snapshot;
+  if (isPrimordialSnapshot(snapshot)) {
+    const restored = snapshot as ReturnType<typeof createInitialPrimordialState>;
+    return {
+      ...restored,
+      phase: "playing" as const,
+      sessionMode: mode,
+    };
+  }
+
+  return createInitialPrimordialState("playing", mode);
+}
+
+function isPrimordialSnapshot(
+  snapshot: unknown
+): snapshot is ReturnType<typeof createInitialPrimordialState> {
+  const value = snapshot as Partial<ReturnType<typeof createInitialPrimordialState>> | undefined;
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof value.altitude === "number" &&
+      typeof value.maxAltitude === "number" &&
+      typeof value.timeSurvived === "number" &&
+      typeof value.distToLava === "number"
   );
 }
 

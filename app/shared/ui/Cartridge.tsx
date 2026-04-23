@@ -1,6 +1,15 @@
+import {
+  DEFAULT_DIFFICULTY_VARIANTS,
+  DEFAULT_SESSION_MODE,
+  type DifficultyVariant,
+  type GameSaveSlot,
+  type LaunchGameSlug,
+  type SessionMode,
+} from "@logic/shared";
 import { BookOpen, FolderOpen, Play } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useCabinetRuntime } from "../hooks/useCabinetRuntime";
 
 export type CartridgeMotif =
   | "sea"
@@ -11,7 +20,10 @@ export type CartridgeMotif =
   | "otter"
   | "primordial"
   | "mech"
-  | "voxel";
+  | "voxel"
+  | "circus"
+  | "mind"
+  | "farm";
 
 const VOXEL_LABEL_BLOCKS = [
   { id: "shore", x: 18, y: 34, tone: "accent", opacity: 0.48 },
@@ -152,9 +164,12 @@ export function CartridgeLabel({
 interface CartridgeStartScreenProps
   extends Omit<CartridgeLabelProps, "compact" | "showRules" | "style" | "className"> {
   startLabel: string;
-  onStart: () => void;
+  onStart: (mode: SessionMode, saveSlot?: GameSaveSlot) => void;
+  gameSlug?: LaunchGameSlug;
+  defaultSessionMode?: SessionMode;
+  difficultyVariants?: readonly DifficultyVariant[];
   loadLabel?: string;
-  onLoad?: () => void;
+  onLoad?: (saveSlot?: GameSaveSlot) => void;
   rulesLabel?: string;
   footer?: ReactNode;
 }
@@ -162,6 +177,9 @@ interface CartridgeStartScreenProps
 export function CartridgeStartScreen({
   startLabel,
   onStart,
+  gameSlug,
+  defaultSessionMode = DEFAULT_SESSION_MODE,
+  difficultyVariants = DEFAULT_DIFFICULTY_VARIANTS,
   loadLabel = "Load",
   onLoad,
   rulesLabel = "Rules",
@@ -171,7 +189,30 @@ export function CartridgeStartScreen({
   ...labelProps
 }: CartridgeStartScreenProps) {
   const [showRules, setShowRules] = useState(false);
+  const [sessionMode, setSessionMode] = useState<SessionMode>(defaultSessionMode);
+  const { beginRun, progress, saveSlot } = useCabinetRuntime(gameSlug);
   const hasRules = rules.length > 0;
+  const hasLoad = Boolean(onLoad || saveSlot);
+
+  useEffect(() => {
+    setSessionMode(progress?.lastSelectedMode ?? defaultSessionMode);
+  }, [defaultSessionMode, progress?.lastSelectedMode]);
+
+  const handleStart = () => {
+    beginRun(sessionMode, {
+      progressSummary: `${labelProps.title} ${sessionMode}`,
+    });
+    onStart(sessionMode);
+  };
+
+  const handleLoad = () => {
+    if (onLoad) {
+      onLoad(saveSlot);
+      return;
+    }
+
+    onStart(saveSlot?.mode ?? sessionMode, saveSlot);
+  };
 
   return (
     <div
@@ -218,31 +259,39 @@ export function CartridgeStartScreen({
           </div>
         </div>
 
-        <div className="grid gap-3 border-t border-white/10 bg-black/46 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-5">
-          <div className="flex flex-wrap gap-2">
-            <CabinetActionButton
-              command="Play"
-              icon={<Play size={17} />}
-              label={startLabel}
-              onClick={onStart}
+        <div className="grid gap-3 border-t border-white/10 bg-black/46 px-4 py-3 lg:grid-cols-[1fr_auto] lg:items-center sm:px-5">
+          <div className="grid gap-3 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+            <div className="flex flex-wrap gap-2">
+              <CabinetActionButton
+                command="Play"
+                icon={<Play size={17} />}
+                label={startLabel}
+                onClick={handleStart}
+              />
+              {hasLoad ? (
+                <CabinetActionButton
+                  command="Load"
+                  icon={<FolderOpen size={17} />}
+                  label={saveSlot?.label ?? loadLabel}
+                  onClick={handleLoad}
+                />
+              ) : null}
+              {hasRules ? (
+                <CabinetActionButton
+                  active={showRules}
+                  command="Rules"
+                  icon={<BookOpen size={17} />}
+                  label={rulesLabel}
+                  onClick={() => setShowRules((current) => !current)}
+                />
+              ) : null}
+            </div>
+            <SessionModeSelector
+              accent={labelProps.accent}
+              options={difficultyVariants}
+              value={sessionMode}
+              onChange={setSessionMode}
             />
-            {onLoad ? (
-              <CabinetActionButton
-                command="Load"
-                icon={<FolderOpen size={17} />}
-                label={loadLabel}
-                onClick={onLoad}
-              />
-            ) : null}
-            {hasRules ? (
-              <CabinetActionButton
-                active={showRules}
-                command="Rules"
-                icon={<BookOpen size={17} />}
-                label={rulesLabel}
-                onClick={() => setShowRules((current) => !current)}
-              />
-            ) : null}
           </div>
           {footer ? (
             <div className="text-right font-mono text-[0.65rem] text-white/46">{footer}</div>
@@ -250,6 +299,51 @@ export function CartridgeStartScreen({
         </div>
       </section>
     </div>
+  );
+}
+
+interface SessionModeSelectorProps {
+  accent: string;
+  value: SessionMode;
+  options: readonly DifficultyVariant[];
+  onChange: (value: SessionMode) => void;
+}
+
+function SessionModeSelector({ accent, value, options, onChange }: SessionModeSelectorProps) {
+  return (
+    <fieldset
+      aria-label="Session mode"
+      className="min-w-0 rounded-md border border-white/14 bg-white/[0.04] p-2"
+    >
+      <legend className="px-1 font-mono text-[0.56rem] font-black uppercase tracking-[0.22em] text-white/48">
+        Session Mode
+      </legend>
+      <div className="grid grid-cols-3 gap-1">
+        {options.map((option) => {
+          const active = option.mode === value;
+
+          return (
+            <button
+              key={option.mode}
+              type="button"
+              aria-pressed={active}
+              title={option.description}
+              className="min-h-11 rounded-md border px-2 py-1 text-center transition hover:bg-white/12 focus:outline-none focus:ring-2"
+              style={{
+                background: active ? `${accent}28` : "rgba(255,255,255,0.04)",
+                borderColor: active ? `${accent}aa` : "rgba(255,255,255,0.14)",
+                boxShadow: active ? `0 0 18px ${accent}33` : "none",
+              }}
+              onClick={() => onChange(option.mode)}
+            >
+              <span className="block truncate font-mono text-[0.58rem] font-black uppercase tracking-[0.18em] text-white">
+                {option.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
@@ -508,6 +602,82 @@ function renderMotif(motif: CartridgeMotif, accent: string, secondaryAccent: str
           ))}
           <path d="M9 75 L91 75" stroke="#ffffff" strokeWidth="1.5" opacity="0.2" />
           <circle cx="50" cy="27" r="7" fill={secondaryAccent} opacity="0.72" />
+        </>
+      );
+    case "circus":
+      return (
+        <>
+          <path d="M8 84 L50 12 L92 84 Z" fill={accent} opacity="0.18" />
+          {[20, 35, 50, 65, 80].map((x, index) => (
+            <path
+              key={x}
+              d={`M50 12 L${x} 84`}
+              stroke={index % 2 ? secondaryAccent : accent}
+              strokeWidth="2.4"
+              opacity="0.52"
+            />
+          ))}
+          <path
+            d="M14 84 C32 70 68 70 86 84"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="2"
+            opacity="0.42"
+          />
+          <circle cx="50" cy="45" r="9" fill={secondaryAccent} opacity="0.72" />
+        </>
+      );
+    case "mind":
+      return (
+        <>
+          <circle
+            cx="50"
+            cy="50"
+            r="30"
+            fill="none"
+            stroke={accent}
+            strokeWidth="1.5"
+            opacity="0.55"
+          />
+          {[0, 1, 2, 3, 4, 5].map((index) => {
+            const angle = (Math.PI * 2 * index) / 6;
+            const x = 50 + Math.cos(angle) * 30;
+            const y = 50 + Math.sin(angle) * 30;
+
+            return (
+              <path
+                key={index}
+                d={`M50 50 L${x.toFixed(1)} ${y.toFixed(1)}`}
+                stroke={index % 2 ? secondaryAccent : accent}
+                strokeWidth="1.8"
+                opacity="0.5"
+              />
+            );
+          })}
+          <circle cx="50" cy="50" r="10" fill={secondaryAccent} opacity="0.66" />
+          <path
+            d="M20 75 C39 64 62 88 82 68"
+            fill="none"
+            stroke="#38bdf8"
+            strokeWidth="2"
+            opacity="0.44"
+          />
+        </>
+      );
+    case "farm":
+      return (
+        <>
+          <path
+            d="M0 72 C22 63 34 76 52 66 C72 55 86 66 100 58 L100 100 L0 100 Z"
+            fill="#15803d"
+            opacity="0.48"
+          />
+          <path d="M20 72 L50 35 L82 72 Z" fill={accent} opacity="0.5" />
+          <rect x="37" y="56" width="26" height="27" fill="#7c2d12" opacity="0.74" />
+          <path d="M34 56 L50 42 L66 56 Z" fill={secondaryAccent} opacity="0.82" />
+          {[24, 36, 48, 60, 72].map((x) => (
+            <circle key={x} cx={x} cy="82" r="5" fill="#fef3c7" opacity="0.62" />
+          ))}
         </>
       );
     default:

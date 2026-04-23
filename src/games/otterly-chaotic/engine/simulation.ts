@@ -1,31 +1,48 @@
-import type { OtterlyState, Vec2 } from "./types";
+import {
+  getSessionPressureScale,
+  getSessionRecoveryScale,
+  normalizeSessionMode,
+} from "@logic/shared";
+import type { GoatPoseCue, GoatState, OtterlyState, OtterPoseCue, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
+const BALL_START = { x: -1.2, y: -0.3 };
+const OTTER_START = { x: -3.8, y: -3.2 };
+export const TARGET_RESCUES = 5;
 const GOAT_DAMAGE_PER_MS = {
   billy: 0.002,
   elder: 0.003,
 } as const;
 
-export function createInitialState(): OtterlyState {
+export function createInitialState(mode: string | null | undefined = "standard"): OtterlyState {
+  const sessionMode = normalizeSessionMode(mode);
+  const speedScale = getSessionPressureScale(sessionMode, {
+    challenge: 1.25,
+    cozy: 0.72,
+    standard: 0.88,
+  });
+  const goats = createGoats(speedScale, 0);
+
   return {
-    otter: { x: -3.8, y: -3.2 },
+    sessionMode,
+    otter: { ...OTTER_START },
     otterVelocity: { x: 0, y: 0 },
-    ball: { x: -1.2, y: -0.3 },
+    ball: { ...BALL_START },
     ballVelocity: { x: 0, y: 0 },
     ballHealth: 100,
-    goats: [
-      { id: "billy", position: { x: 1.4, y: -1 }, speed: 0.00125, stunnedMs: 0 },
-      { id: "elder", position: { x: 2.4, y: 1.8 }, speed: 0.001, stunnedMs: 0 },
-    ],
+    goats,
     goalRadius: 0.9,
+    rescuesCompleted: 0,
+    targetRescues: TARGET_RESCUES,
     elapsedMs: 0,
     barkCooldownMs: 0,
     lastBarkMs: -Infinity,
     lastBarkStunned: 0,
+    lastRescueMs: -Infinity,
     rallyMs: 2500,
     rescueStreak: 0,
-    objective: "Push the Kudzu ball into Elder Bleat's crater before the goats eat it.",
+    objective: `Push ${TARGET_RESCUES} salad pieces into Elder Bleat's crater before the goats eat them.`,
   };
 }
 
@@ -55,7 +72,8 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
 
   const barkRadius = 2.4;
   if (barkTriggered && next.barkCooldownMs === 0) {
-    next.barkCooldownMs = 1500;
+    const recoveryScale = getSessionRecoveryScale(next.sessionMode);
+    next.barkCooldownMs = 1500 / recoveryScale;
     next.lastBarkMs = next.elapsedMs;
     let stunnedCount = 0;
     for (const goat of next.goats) {
@@ -67,7 +85,7 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
     next.lastBarkStunned = stunnedCount;
     if (stunnedCount > 0) {
       next.rescueStreak += stunnedCount;
-      next.ballHealth = Math.min(100, next.ballHealth + stunnedCount * 3);
+      next.ballHealth = Math.min(100, next.ballHealth + stunnedCount * 3 * recoveryScale);
       next.objective =
         stunnedCount >= 2
           ? "Double bark rally! Push hard while the goats scatter."
@@ -90,23 +108,45 @@ export function tick(state: OtterlyState, deltaMs: number, input: Vec2, barkTrig
 
     if (distance(goat.position, next.ball) < 0.95) {
       const rallyScale = next.rallyMs > 0 ? 0.45 : 1;
+      const pressureScale = getSessionPressureScale(next.sessionMode, {
+        challenge: 1.35,
+        cozy: 0.58,
+        standard: 0.78,
+      });
+      const openingGraceScale =
+        next.sessionMode === "challenge" || next.elapsedMs > 60_000 ? 1 : 0.18;
       const damageRate = goat.id === "elder" ? GOAT_DAMAGE_PER_MS.elder : GOAT_DAMAGE_PER_MS.billy;
-      next.ballHealth = Math.max(0, next.ballHealth - damageRate * deltaMs * rallyScale);
+      next.ballHealth = Math.max(
+        0,
+        next.ballHealth - damageRate * deltaMs * rallyScale * pressureScale * openingGraceScale
+      );
       next.objective = "Goats are chewing! Bark to stun them and keep pushing.";
     }
   }
 
-  if (distance(next.ball, GOAL) < next.goalRadius) {
-    next.objective = "The salad reached the crater.";
+  if (distance(next.ball, GOAL) < next.goalRadius && next.ballHealth > 20) {
+    next.rescuesCompleted = Math.min(next.targetRescues, next.rescuesCompleted + 1);
+    next.lastRescueMs = next.elapsedMs;
+    next.ballHealth = Math.min(100, next.ballHealth + 10);
+    next.rescueStreak += 1;
+    next.rallyMs = Math.max(next.rallyMs, 2200);
+    if (next.rescuesCompleted < next.targetRescues) {
+      resetRescueRound(next);
+      next.objective = `Salad ${next.rescuesCompleted}/${next.targetRescues} saved. New piece launched; bark before goats converge.`;
+    } else {
+      next.ball = { ...GOAL };
+      next.ballVelocity = { x: 0, y: 0 };
+      next.objective = "All salad pieces reached the crater.";
+    }
   } else if (next.ballHealth > 35) {
-    next.objective = "Move the otter, then bark to keep the goats away.";
+    next.objective = `Rescue ${next.rescuesCompleted + 1}/${next.targetRescues}: move the otter, then bark to keep the goats away.`;
   }
 
   return next;
 }
 
 export function didWin(state: OtterlyState) {
-  return distance(state.ball, GOAL) < state.goalRadius && state.ballHealth > 20;
+  return state.rescuesCompleted >= state.targetRescues && state.ballHealth > 20;
 }
 
 export function didLose(state: OtterlyState) {
@@ -123,6 +163,245 @@ export function getGoatIntent(state: OtterlyState, goat: OtterlyState["goats"][n
     state: stateLabel,
     targetDistance: Math.round(targetDistance * 100) / 100,
   };
+}
+
+export function getOtterlyRescueCue(state: OtterlyState) {
+  const goatIntents = state.goats.map((goat) => getGoatIntent(state, goat));
+  const closestGoat = goatIntents.reduce<(typeof goatIntents)[number] | null>(
+    (closest, intent) =>
+      !closest || intent.targetDistance < closest.targetDistance ? intent : closest,
+    null
+  );
+  const chewingGoats = goatIntents.filter((intent) => intent.state === "chewing").length;
+  const ballToGoalDistance = Math.round(distance(state.ball, GOAL) * 100) / 100;
+  const barkReady = state.barkCooldownMs <= 0;
+  const threatBand =
+    chewingGoats > 0 || state.ballHealth < 42
+      ? "danger"
+      : (closestGoat?.targetDistance ?? 99) < 2.2
+        ? "pressure"
+        : "clear";
+  const action =
+    (chewingGoats > 0 || state.ballHealth < 52) && barkReady
+      ? "bark"
+      : ballToGoalDistance < 1.8
+        ? "push"
+        : threatBand === "pressure" && !barkReady
+          ? "recover"
+          : "push";
+
+  return {
+    action,
+    ballToGoalDistance,
+    barkReady,
+    chewingGoats,
+    closestGoatDistance: closestGoat?.targetDistance ?? null,
+    closestGoatId: closestGoat?.goatId ?? null,
+    objective: describeRescueCueObjective({
+      action,
+      ballToGoalDistance,
+      barkReady,
+      chewingGoats,
+      closestGoatId: closestGoat?.goatId ?? null,
+      threatBand,
+    }),
+    progressLabel: `${state.rescuesCompleted + 1}/${state.targetRescues}`,
+    threatBand,
+  };
+}
+
+export function getOtterPoseCue(state: OtterlyState): OtterPoseCue {
+  const rescueCue = getOtterlyRescueCue(state);
+  const barkAge = state.elapsedMs - state.lastBarkMs;
+  const nearBall = distance(state.otter, state.ball) < 1.32;
+  const speed = Math.min(1, length(state.otterVelocity) / 0.01);
+
+  if (Number.isFinite(barkAge) && barkAge >= 0 && barkAge < 680) {
+    return {
+      accent: state.lastBarkStunned > 0 ? "#fde047" : "#38bdf8",
+      energy: 1,
+      label: state.lastBarkStunned > 0 ? "Bark rally" : "Bark pulse",
+      leanX: 0,
+      leanY: -0.2,
+      pose: "bark",
+      tailLift: 1,
+    };
+  }
+
+  if (state.rallyMs > 0) {
+    return {
+      accent: "#facc15",
+      energy: 0.86,
+      label: "Rally drive",
+      leanX: state.ball.x - state.otter.x,
+      leanY: state.ball.y - state.otter.y,
+      pose: "rally",
+      tailLift: 0.82,
+    };
+  }
+
+  if (nearBall || rescueCue.action === "push") {
+    return {
+      accent: "#86efac",
+      energy: 0.72,
+      label: "Shoulder push",
+      leanX: state.ball.x - state.otter.x,
+      leanY: state.ball.y - state.otter.y,
+      pose: "push",
+      tailLift: 0.62,
+    };
+  }
+
+  if (speed > 0.25) {
+    return {
+      accent: "#38bdf8",
+      energy: speed,
+      label: "Water sprint",
+      leanX: state.otterVelocity.x,
+      leanY: state.otterVelocity.y,
+      pose: "sprint",
+      tailLift: 0.72,
+    };
+  }
+
+  return {
+    accent: rescueCue.threatBand === "danger" ? "#fb7185" : "#bae6fd",
+    energy: rescueCue.threatBand === "danger" ? 0.74 : 0.38,
+    label: rescueCue.threatBand === "danger" ? "Guard salad" : "Read lane",
+    leanX: state.ball.x - state.otter.x,
+    leanY: state.ball.y - state.otter.y,
+    pose: "guard",
+    tailLift: rescueCue.threatBand === "danger" ? 0.7 : 0.35,
+  };
+}
+
+export function getGoatPoseCue(state: OtterlyState, goat: GoatState): GoatPoseCue {
+  const intent = getGoatIntent(state, goat);
+
+  if (intent.state === "stunned") {
+    return {
+      accent: "#c084fc",
+      energy: 0.72,
+      goatId: goat.id,
+      headPitch: -0.18,
+      hoofLift: 0.18,
+      label: "Stunned",
+      pose: "stunned",
+    };
+  }
+
+  if (intent.state === "chewing") {
+    return {
+      accent: "#fb7185",
+      energy: 1,
+      goatId: goat.id,
+      headPitch: 0.48,
+      hoofLift: 0.06,
+      label: "Chewing",
+      pose: "chew",
+    };
+  }
+
+  if (intent.alertLevel > 0.52) {
+    return {
+      accent: "#facc15",
+      energy: intent.alertLevel,
+      goatId: goat.id,
+      headPitch: 0.18,
+      hoofLift: 0.2,
+      label: "Alert",
+      pose: "alert",
+    };
+  }
+
+  return {
+    accent: "#e2e8f0",
+    energy: intent.alertLevel,
+    goatId: goat.id,
+    headPitch: 0,
+    hoofLift: 0,
+    label: "Chasing",
+    pose: "chase",
+  };
+}
+
+export function getOtterlyRunSummary(state: OtterlyState) {
+  return {
+    elapsedSeconds: Math.round(state.elapsedMs / 1000),
+    health: Math.round(state.ballHealth),
+    rescueProgressPercent: Math.round((state.rescuesCompleted / state.targetRescues) * 100),
+    rescuesCompleted: state.rescuesCompleted,
+    rescueStreak: state.rescueStreak,
+    targetRescues: state.targetRescues,
+  };
+}
+
+function describeRescueCueObjective({
+  action,
+  ballToGoalDistance,
+  barkReady,
+  chewingGoats,
+  closestGoatId,
+  threatBand,
+}: {
+  action: string;
+  ballToGoalDistance: number;
+  barkReady: boolean;
+  chewingGoats: number;
+  closestGoatId: string | null;
+  threatBand: string;
+}) {
+  if (action === "bark") {
+    return chewingGoats > 0
+      ? `Bark now: ${chewingGoats} goat${chewingGoats === 1 ? " is" : "s are"} chewing.`
+      : "Bark to open a rescue window before the next push.";
+  }
+  if (action === "recover") {
+    return barkReady
+      ? "Bark is ready. Cut across the goat lane."
+      : `Recover position until bark returns; ${closestGoatId ?? "a goat"} is closing.`;
+  }
+  if (ballToGoalDistance < 1.8) {
+    return "Push straight into the crater and bank this salad piece.";
+  }
+  if (threatBand === "clear") {
+    return "Clear lane. Nudge the salad toward the crater.";
+  }
+  return `Keep the otter between ${closestGoatId ?? "the goats"} and the salad.`;
+}
+
+function createGoats(speedScale: number, roundIndex: number) {
+  const roundOffset = Math.min(0.36, roundIndex * 0.08);
+
+  return [
+    {
+      id: "billy",
+      position: { x: 1.4 + roundOffset, y: -1 - roundOffset },
+      speed: 0.00125 * speedScale,
+      stunnedMs: 0,
+    },
+    {
+      id: "elder",
+      position: { x: 2.4 - roundOffset, y: 1.8 + roundOffset },
+      speed: 0.001 * speedScale,
+      stunnedMs: 0,
+    },
+  ];
+}
+
+function resetRescueRound(state: OtterlyState): void {
+  const speedScale = getSessionPressureScale(state.sessionMode, {
+    challenge: 1.25,
+    cozy: 0.72,
+    standard: 0.88,
+  });
+
+  state.ball = {
+    x: BALL_START.x - Math.min(0.45, state.rescuesCompleted * 0.08),
+    y: BALL_START.y + ((state.rescuesCompleted % 3) - 1) * 0.36,
+  };
+  state.ballVelocity = { x: 0, y: 0 };
+  state.goats = createGoats(speedScale, state.rescuesCompleted);
 }
 
 function add(a: Vec2, b: Vec2): Vec2 {

@@ -1,6 +1,18 @@
 import { browserTestCanvasGlOptions } from "@app/shared";
-import { GOAL, getGoatIntent, WATER_ZONE } from "@logic/games/otterly-chaotic/engine/simulation";
-import type { GoatState, OtterlyState } from "@logic/games/otterly-chaotic/engine/types";
+import {
+  GOAL,
+  getGoatIntent,
+  getGoatPoseCue,
+  getOtterlyRescueCue,
+  getOtterPoseCue,
+  WATER_ZONE,
+} from "@logic/games/otterly-chaotic/engine/simulation";
+import type {
+  GoatPoseCue,
+  GoatState,
+  OtterlyState,
+  OtterPoseCue,
+} from "@logic/games/otterly-chaotic/engine/types";
 import { Line } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect } from "react";
@@ -15,14 +27,31 @@ function Character({
   color,
   scale = 1,
   isGoat = false,
+  goatPose,
+  otterPose,
 }: {
   position: [number, number, number];
   color: string;
   scale?: number;
   isGoat?: boolean;
+  goatPose?: GoatPoseCue;
+  otterPose?: OtterPoseCue;
 }) {
+  const otterYaw =
+    otterPose && (Math.abs(otterPose.leanX) > 0.001 || Math.abs(otterPose.leanY) > 0.001)
+      ? Math.atan2(otterPose.leanX, otterPose.leanY)
+      : 0;
+  const otterSquash = otterPose ? 1 + otterPose.energy * 0.04 : 1;
+  const goatAccent = goatPose?.accent ?? "#333";
+  const goatHeadPitch = goatPose?.headPitch ?? 0;
+  const goatHoofLift = goatPose?.hoofLift ?? 0;
+
   return (
-    <group position={position} scale={scale}>
+    <group
+      position={position}
+      rotation={[0, isGoat ? 0 : otterYaw, isGoat ? 0 : (otterPose?.leanX ?? 0) * 0.05]}
+      scale={isGoat ? scale : scale * otterSquash}
+    >
       {isGoat ? (
         // Detailed Goat Model
         <group>
@@ -32,21 +61,41 @@ function Character({
             <meshStandardMaterial color={color} roughness={0.9} />
           </mesh>
           {/* Head */}
-          <mesh castShadow position={[0, 0.6, 0.35]}>
+          <mesh
+            castShadow
+            position={[0, 0.6 - goatHeadPitch * 0.08, 0.35 + goatHeadPitch * 0.12]}
+            rotation={[goatHeadPitch, 0, 0]}
+          >
             <boxGeometry args={[0.3, 0.3, 0.3]} />
             <meshStandardMaterial color={color} roughness={0.9} />
           </mesh>
           {/* Horns */}
           <mesh castShadow position={[-0.1, 0.8, 0.3]} rotation={[-0.2, 0, 0]}>
             <coneGeometry args={[0.05, 0.3, 8]} />
-            <meshStandardMaterial color="#333" />
+            <meshStandardMaterial
+              color={goatAccent}
+              emissive={goatAccent}
+              emissiveIntensity={0.3}
+            />
           </mesh>
           <mesh castShadow position={[0.1, 0.8, 0.3]} rotation={[-0.2, 0, 0]}>
             <coneGeometry args={[0.05, 0.3, 8]} />
-            <meshStandardMaterial color="#333" />
+            <meshStandardMaterial
+              color={goatAccent}
+              emissive={goatAccent}
+              emissiveIntensity={0.3}
+            />
+          </mesh>
+          <mesh castShadow position={[0, 0.52, 0.53]}>
+            <boxGeometry args={[0.18, 0.035, 0.045]} />
+            <meshStandardMaterial
+              color={goatAccent}
+              emissive={goatAccent}
+              emissiveIntensity={0.45}
+            />
           </mesh>
           {/* Legs */}
-          <mesh castShadow position={[-0.15, 0.2, 0.2]}>
+          <mesh castShadow position={[-0.15, 0.2 + goatHoofLift, 0.2]}>
             <cylinderGeometry args={[0.05, 0.04, 0.4, 8]} />
             <meshStandardMaterial color={color} />
           </mesh>
@@ -87,9 +136,29 @@ function Character({
             <meshStandardMaterial color="#111" />
           </mesh>
           {/* Tail */}
-          <mesh castShadow position={[0, 0.15, -0.45]} rotation={[-Math.PI / 4, 0, 0]}>
+          <mesh
+            castShadow
+            position={[0, 0.15 + (otterPose?.tailLift ?? 0) * 0.08, -0.45]}
+            rotation={[-Math.PI / 4 - (otterPose?.tailLift ?? 0) * 0.34, 0, 0]}
+          >
             <coneGeometry args={[0.08, 0.4, 16]} />
             <meshStandardMaterial color={color} roughness={0.7} />
+          </mesh>
+          <mesh castShadow position={[-0.08, 0.38, 0.58]}>
+            <sphereGeometry args={[0.025, 8, 8]} />
+            <meshStandardMaterial color="#050505" />
+          </mesh>
+          <mesh castShadow position={[0.08, 0.38, 0.58]}>
+            <sphereGeometry args={[0.025, 8, 8]} />
+            <meshStandardMaterial color="#050505" />
+          </mesh>
+          <mesh castShadow position={[-0.16, 0.44, 0.34]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color={otterPose?.accent ?? color} roughness={0.55} />
+          </mesh>
+          <mesh castShadow position={[0.16, 0.44, 0.34]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color={otterPose?.accent ?? color} roughness={0.55} />
           </mesh>
           {/* Tiny legs */}
           <mesh castShadow position={[-0.15, 0.1, 0.2]}>
@@ -115,6 +184,8 @@ function Character({
 }
 
 export function OtterScene({ state }: OtterSceneProps) {
+  const otterPose = getOtterPoseCue(state);
+
   return (
     <Canvas
       shadows
@@ -144,21 +215,42 @@ export function OtterScene({ state }: OtterSceneProps) {
         <meshStandardMaterial color="#0ea5e9" transparent opacity={0.82} roughness={0.28} />
       </mesh>
       <GoalMarker />
+      <RescueCueMarker state={state} />
       <GoalPullLine state={state} />
       <SaladBall state={state} />
-      <Character position={[state.otter.x, 0.1, state.otter.y]} color="#a8a29e" scale={1.1} />
-      {state.goats.map((goat) => (
-        <group key={goat.id}>
-          <GoatIntentLine goat={goat} state={state} />
-          <Character
-            position={[goat.position.x, 0.1, goat.position.y]}
-            color={goat.stunnedMs > 0 ? "#c084fc" : "#e2e8f0"}
-            scale={goat.id === "elder" ? 1.15 : 1}
-            isGoat={true}
-          />
-          {goat.stunnedMs > 0 ? <StunStars goat={goat} /> : null}
-        </group>
-      ))}
+      <Character
+        position={[state.otter.x, 0.1, state.otter.y]}
+        color="#a8a29e"
+        scale={1.1}
+        otterPose={otterPose}
+      />
+      <PoseSignal
+        accent={otterPose.accent}
+        energy={otterPose.energy}
+        position={[state.otter.x, 0.96, state.otter.y]}
+      />
+      {state.goats.map((goat) => {
+        const goatPose = getGoatPoseCue(state, goat);
+
+        return (
+          <group key={goat.id}>
+            <GoatIntentLine goat={goat} state={state} />
+            <Character
+              position={[goat.position.x, 0.1, goat.position.y]}
+              color={goat.stunnedMs > 0 ? "#c084fc" : "#e2e8f0"}
+              scale={goat.id === "elder" ? 1.15 : 1}
+              isGoat={true}
+              goatPose={goatPose}
+            />
+            <PoseSignal
+              accent={goatPose.accent}
+              energy={goatPose.energy}
+              position={[goat.position.x, 1.06, goat.position.y]}
+            />
+            {goat.stunnedMs > 0 ? <StunStars goat={goat} /> : null}
+          </group>
+        );
+      })}
       <BarkShockwave state={state} />
       {(
         [
@@ -179,6 +271,62 @@ export function OtterScene({ state }: OtterSceneProps) {
         </mesh>
       ))}
     </Canvas>
+  );
+}
+
+function PoseSignal({
+  accent,
+  energy,
+  position,
+}: {
+  accent: string;
+  energy: number;
+  position: [number, number, number];
+}) {
+  return (
+    <group position={position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.22 + energy * 0.16, 0.26 + energy * 0.16, 36]} />
+        <meshBasicMaterial color={accent} transparent opacity={0.24 + energy * 0.36} />
+      </mesh>
+      <pointLight color={accent} intensity={1.8 + energy * 4} distance={2.8} />
+    </group>
+  );
+}
+
+function RescueCueMarker({ state }: { state: OtterlyState }) {
+  const cue = getOtterlyRescueCue(state);
+  const color =
+    cue.threatBand === "danger" ? "#fb7185" : cue.threatBand === "pressure" ? "#facc15" : "#86efac";
+
+  return (
+    <group>
+      <mesh position={[state.ball.x, 0.055, state.ball.y]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.76, 0.92, 56]} />
+        <meshBasicMaterial color={color} transparent opacity={0.34} />
+      </mesh>
+      {cue.action === "bark" ? (
+        <mesh position={[state.otter.x, 0.06, state.otter.y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[2.18, 2.34, 72]} />
+          <meshBasicMaterial color="#fde047" transparent opacity={0.3} />
+        </mesh>
+      ) : null}
+      {cue.action === "recover" ? (
+        <Line
+          points={[
+            [state.otter.x, 0.11, state.otter.y],
+            [state.ball.x, 0.11, state.ball.y],
+          ]}
+          color="#38bdf8"
+          lineWidth={2}
+          transparent
+          opacity={0.42}
+          dashed
+          dashScale={0.8}
+          gapSize={0.13}
+        />
+      ) : null}
+    </group>
   );
 }
 

@@ -1,3 +1,5 @@
+import type { SessionMode } from "@logic/shared";
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -17,15 +19,61 @@ export interface PrimordialTelemetry {
   position: Vec3;
   velocity: Vec3;
   lavaHeight: number;
+  grappleAttempted?: boolean;
   grappleActive?: boolean;
   grappleDistance?: number | null;
   grappleTension?: number;
 }
 
 export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "missed";
+export type PrimordialGrappleFeedback = "none" | "missed" | "locked";
+export type PrimordialGrappleGuideKind =
+  | "launch-aim"
+  | "ready-grip"
+  | "tether-locked"
+  | "tension-release"
+  | "missed-grip"
+  | "shelf-reset"
+  | "lava-urgent"
+  | "route-follow"
+  | "surface-run";
+export type PrimordialGrappleGuideFocus =
+  | "reticle"
+  | "anchor"
+  | "tether"
+  | "shelf"
+  | "lava"
+  | "route"
+  | "surface";
+export type PrimordialRouteCueKind = "launch" | "anchor" | "recovery" | "danger" | "escape";
+
+export interface PrimordialRouteCue {
+  kind: PrimordialRouteCueKind;
+  label: string;
+  nextAnchorId: string | null;
+  nextAnchorPosition: [number, number, number] | null;
+  nextShelfId: string | null;
+  nextShelfPosition: [number, number, number] | null;
+  targetAltitude: number;
+  distanceToAnchor: number | null;
+  distanceToShelf: number | null;
+  bearing: Vec3;
+  recoveryWindow: boolean;
+}
+
+export interface PrimordialGrappleGuideCue {
+  kind: PrimordialGrappleGuideKind;
+  label: string;
+  inputHint: string;
+  focus: PrimordialGrappleGuideFocus;
+  urgency: "low" | "medium" | "high";
+  reticleScale: number;
+  pulse: boolean;
+}
 
 export interface PrimordialState {
-  phase: "menu" | "playing" | "gameover";
+  phase: "menu" | "playing" | "gameover" | "complete";
+  sessionMode: SessionMode;
   altitude: number;
   maxAltitude: number;
   timeSurvived: number; // in milliseconds
@@ -35,6 +83,10 @@ export interface PrimordialState {
   lavaHeight: number;
   thermalLift: number;
   grappleTargetState: GrappleTargetState;
+  grappleFeedback: PrimordialGrappleFeedback;
+  grappleFeedbackMs: number;
+  grappleGuideCue: PrimordialGrappleGuideCue;
+  routeCue: PrimordialRouteCue;
   objective: string;
   objectiveProgress: number;
 }

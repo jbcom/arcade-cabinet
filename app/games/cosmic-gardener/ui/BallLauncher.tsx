@@ -1,12 +1,14 @@
+import type { CosmicLowerBoardLayout } from "@logic/games/cosmic-gardener/engine/cosmicBoardLayout";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
 
 interface BallLauncherProps {
+  layout: CosmicLowerBoardLayout;
   onLaunch: (x: number, y: number, angle: number, power: number) => void;
   disabled?: boolean;
 }
 
-export function BallLauncher({ onLaunch, disabled }: BallLauncherProps) {
+export function BallLauncher({ layout, onLaunch, disabled }: BallLauncherProps) {
   const [isCharging, setIsCharging] = useState(false);
   const [power, setPower] = useState(0);
 
@@ -26,13 +28,22 @@ export function BallLauncher({ onLaunch, disabled }: BallLauncherProps) {
   }, [isCharging, power, onLaunch]);
 
   return (
-    <div className="absolute right-2 bottom-[18%] w-8 z-40">
+    <div
+      className="absolute z-40"
+      style={{
+        bottom: `${layout.launcherBottomPct}%`,
+        right: layout.compactPortrait ? 8 : 12,
+        width: layout.launcherButtonSizePx,
+      }}
+    >
       <div
-        className="absolute bottom-0 right-0 w-3 h-32 rounded-full overflow-hidden"
+        className="absolute bottom-0 right-0 overflow-hidden rounded-full"
         style={{
           background:
             "linear-gradient(to top, rgba(168, 85, 247, 0.3) 0%, rgba(168, 85, 247, 0.1) 100%)",
           border: "1px solid rgba(168, 85, 247, 0.3)",
+          height: layout.launcherTrackHeightPx,
+          width: Math.max(12, Math.round(layout.launcherButtonSizePx * 0.34)),
         }}
       >
         <motion.div
@@ -48,12 +59,15 @@ export function BallLauncher({ onLaunch, disabled }: BallLauncherProps) {
       </div>
 
       <motion.button
-        className="absolute bottom-0 right-0 w-8 h-8 rounded-full cursor-pointer"
+        aria-label="Launch cosmic orb"
+        className="absolute bottom-0 right-0 cursor-pointer rounded-full"
         style={{
           background: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
           boxShadow: isCharging
             ? "0 0 20px rgba(168, 85, 247, 0.8), inset 0 2px 4px rgba(255,255,255,0.3)"
             : "0 0 10px rgba(168, 85, 247, 0.4), inset 0 2px 4px rgba(255,255,255,0.2)",
+          height: layout.touchTargetPx,
+          width: layout.touchTargetPx,
         }}
         animate={{
           y: isCharging ? power * 0.3 : 0,
@@ -76,10 +90,14 @@ export function BallLauncher({ onLaunch, disabled }: BallLauncherProps) {
 
       {!disabled && (
         <motion.div
-          className="absolute -top-8 right-1 w-4 h-4 rounded-full"
+          className="absolute rounded-full"
           style={{
             background: "radial-gradient(circle at 30% 30%, #ffffff 0%, #fbbf24 50%, #f59e0b 100%)",
             boxShadow: "0 0 10px rgba(251, 191, 36, 0.6)",
+            height: layout.compactPortrait ? 18 : 16,
+            right: Math.max(4, layout.launcherButtonSizePx * 0.2),
+            top: layout.compactPortrait ? -30 : -32,
+            width: layout.compactPortrait ? 18 : 16,
           }}
           animate={{
             y: [0, -3, 0],
