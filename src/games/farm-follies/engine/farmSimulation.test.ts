@@ -5,6 +5,8 @@ import {
   dropFarmAnimal,
   FARM_BANK_TARGET,
   FARM_MIN_RUN_MS,
+  getFarmAnimalPoseCue,
+  getFarmCollapseCue,
   getFarmModeTuning,
   getFarmRunSummary,
   getFarmStackCue,
@@ -116,6 +118,34 @@ describe("Farm Follies stack and bank loop", () => {
     });
     expect(dangerCue.wobbleBand).toBe("danger");
     expect(dangerCue.recommendedAction).toContain("Danger sway");
+  });
+
+  test("describes collapse payoff and late-tier animal poses deterministically", () => {
+    const collapsed = {
+      ...createInitialFarmState("standard", "collapsed"),
+      bankedScore: FARM_BANK_TARGET * 0.8,
+      stack: [
+        { animal: "pig" as const, id: "left-pig", lane: -1 as const, tier: 2 },
+        { animal: "cow" as const, id: "right-cow", lane: 1 as const, tier: 3 },
+        { animal: "horse" as const, id: "right-horse", lane: 1 as const, tier: 4 },
+      ],
+      wobble: getFarmModeTuning("standard").wobbleLimit,
+    };
+    const collapseCue = getFarmCollapseCue(collapsed);
+    const horsePose = getFarmAnimalPoseCue("horse", 4);
+
+    expect(collapseCue).toMatchObject({
+      bankedPercent: 80,
+      severity: "auction-loss",
+      spillDirection: 1,
+    });
+    expect(collapseCue.scatterCount).toBeGreaterThan(collapsed.stack.length);
+    expect(horsePose).toMatchObject({
+      expression: "wild",
+      pose: "gallop",
+      showMotionMarks: true,
+      showRibbon: true,
+    });
   });
 
   test("banks a complete standard run only after quota and couch loop time", () => {

@@ -5,6 +5,8 @@ export type FarmAnimal = "chick" | "goat" | "pig" | "cow" | "horse";
 export type FarmAbility = "chirp" | "headbutt" | "mud-cushion" | "milk-brace" | "gallop-brace";
 export type FarmWobbleBand = "steady" | "sway" | "danger";
 export type FarmLane = -1 | 0 | 1;
+export type FarmCollapseSeverity = "tilt" | "spill" | "auction-loss";
+export type FarmAnimalPose = "peck" | "headbutt" | "snoot" | "brace" | "gallop";
 
 export interface FarmModeTuning {
   lives: number;
@@ -57,4 +59,22 @@ export interface FarmStackCue {
   mergePreviewAnimal: FarmAnimal | null;
   laneHeights: Record<FarmLane, number>;
   wobbleBand: FarmWobbleBand;
+}
+
+export interface FarmCollapseCue {
+  title: string;
+  message: string;
+  recoveryAdvice: string;
+  severity: FarmCollapseSeverity;
+  spillDirection: FarmLane;
+  scatterCount: number;
+  bankedPercent: number;
+}
+
+export interface FarmAnimalPoseCue {
+  pose: FarmAnimalPose;
+  label: string;
+  showRibbon: boolean;
+  showMotionMarks: boolean;
+  expression: "calm" | "focused" | "wild";
 }

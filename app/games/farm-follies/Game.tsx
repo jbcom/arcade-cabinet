@@ -10,6 +10,8 @@ import {
   bankFarmScore,
   createInitialFarmState,
   dropFarmAnimal,
+  getFarmAnimalPoseCue,
+  getFarmCollapseCue,
   getFarmModeTuning,
   getFarmRunSummary,
   getFarmStackCue,
@@ -17,7 +19,11 @@ import {
   getFarmWobbleRatio,
   tickFarmState,
 } from "@logic/games/farm-follies/engine/farmSimulation";
-import type { FarmAnimal, FarmState } from "@logic/games/farm-follies/engine/types";
+import type {
+  FarmAnimal,
+  FarmCollapseCue,
+  FarmState,
+} from "@logic/games/farm-follies/engine/types";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useState } from "react";
 
@@ -67,6 +73,7 @@ export default function Game() {
   };
   const summary = getFarmRunSummary(state);
   const farmCue = getFarmStackCue(state);
+  const collapseCue = getFarmCollapseCue(state);
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -200,19 +207,27 @@ export default function Game() {
       ) : null}
 
       {state.phase === "collapsed" ? (
-        <GameOverScreen
-          accent="#f59e0b"
-          result={{
-            mode: state.sessionMode,
-            score: summary.bankedScore,
-            slug: "farm-follies",
-            status: "failed",
-            summary: `Tower collapsed after ${summary.dropCount} drops`,
-          }}
-          title="Tower Down"
-          subtitle={`Banked ${summary.bankedScore}/${summary.bankTarget} points. Drop wider and bank before wobble peaks.`}
-          actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}
-        />
+        <>
+          <FarmCollapseBackdrop state={state} cue={collapseCue} />
+          <GameOverScreen
+            accent="#f59e0b"
+            result={{
+              mode: state.sessionMode,
+              score: summary.bankedScore,
+              slug: "farm-follies",
+              stats: {
+                bankedPercent: collapseCue.bankedPercent,
+                scatterCount: collapseCue.scatterCount,
+                severity: collapseCue.severity,
+              },
+              status: "failed",
+              summary: `${collapseCue.title} after ${summary.dropCount} drops`,
+            }}
+            title={collapseCue.title}
+            subtitle={`${collapseCue.message} Banked ${summary.bankedScore}/${summary.bankTarget} points. ${collapseCue.recoveryAdvice}`}
+            actions={<OverlayButton onClick={restart}>Stack Again</OverlayButton>}
+          />
+        </>
       ) : null}
 
       {state.phase === "banked" ? (
@@ -310,6 +325,7 @@ function AnimalToken({
   const tokenSize = size === "large" ? "h-20 w-24" : size === "small" ? "h-10 w-12" : "h-12 w-16";
   const eyeSize = size === "small" ? "h-1 w-1" : "h-1.5 w-1.5";
   const accent = ANIMAL_ACCENTS[animal];
+  const pose = getFarmAnimalPoseCue(animal, tier);
 
   return (
     <div
@@ -329,16 +345,40 @@ function AnimalToken({
             className="absolute right-2 top-0 h-5 w-2 rotate-12 rounded-sm bg-stone-100"
             aria-hidden="true"
           />
+          <span
+            className="absolute left-1/2 top-[48%] h-4 w-2 -translate-x-1/2 rounded-b-full bg-stone-700/80"
+            aria-hidden="true"
+          />
         </>
       ) : null}
       {animal === "cow" ? (
         <>
           <span className="absolute left-2 top-2 h-5 w-7 rounded-full bg-slate-900/82" />
           <span className="absolute bottom-2 right-3 h-4 w-6 rounded-full bg-slate-900/82" />
+          <span
+            className="absolute left-1/2 bottom-2 h-3 w-3 -translate-x-1/2 rounded-full border border-amber-950/40 bg-amber-300"
+            aria-hidden="true"
+          />
         </>
       ) : null}
       {animal === "horse" ? (
-        <span className="absolute left-0 top-0 h-full w-4 bg-orange-950/72" aria-hidden="true" />
+        <>
+          <span className="absolute left-0 top-0 h-full w-4 bg-orange-950/72" aria-hidden="true" />
+          <span
+            className="absolute right-0 top-3 h-8 w-3 rounded-l-full bg-orange-950/60"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute bottom-1 left-4 h-2 w-8 rounded-full bg-orange-950/54"
+            aria-hidden="true"
+          />
+        </>
+      ) : null}
+      {pose.showMotionMarks ? (
+        <span
+          className="absolute right-1 top-1 h-5 w-5 rounded-full border-2 border-white/72 border-l-transparent border-b-transparent"
+          aria-hidden="true"
+        />
       ) : null}
       <span
         className={`absolute left-[32%] top-[34%] ${eyeSize} rounded-full bg-slate-950`}
@@ -349,16 +389,40 @@ function AnimalToken({
         aria-hidden="true"
       />
       {animal === "pig" ? (
-        <span
-          className="absolute left-1/2 top-[52%] h-4 w-8 -translate-x-1/2 rounded-full border border-pink-950/40 bg-pink-200"
-          aria-hidden="true"
-        />
+        <>
+          <span
+            className="absolute left-1 top-1 h-4 w-4 -rotate-12 rounded-sm bg-pink-200"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute right-1 top-1 h-4 w-4 rotate-12 rounded-sm bg-pink-200"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute left-1/2 top-[52%] h-4 w-8 -translate-x-1/2 rounded-full border border-pink-950/40 bg-pink-200"
+            aria-hidden="true"
+          />
+        </>
       ) : null}
       {animal === "chick" ? (
+        <>
+          <span
+            className="absolute left-1 top-[45%] h-4 w-5 rounded-full bg-yellow-200/78"
+            aria-hidden="true"
+          />
+          <span
+            className="absolute left-1/2 top-[52%] h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-orange-500"
+            aria-hidden="true"
+          />
+        </>
+      ) : null}
+      {pose.showRibbon ? (
         <span
-          className="absolute left-1/2 top-[52%] h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-orange-500"
+          className="absolute left-1 top-1 rounded-sm bg-rose-500 px-1 font-mono text-[0.45rem] font-black uppercase text-white"
           aria-hidden="true"
-        />
+        >
+          {pose.expression}
+        </span>
       ) : null}
       <span
         className="absolute bottom-1 right-1 rounded-sm bg-black/42 px-1 font-mono text-[0.52rem] font-black text-white"
@@ -371,6 +435,57 @@ function AnimalToken({
         style={{ background: accent }}
         aria-hidden="true"
       />
+    </div>
+  );
+}
+
+function FarmCollapseBackdrop({ cue, state }: { cue: FarmCollapseCue; state: FarmState }) {
+  const animals =
+    state.stack.length > 0
+      ? state.stack.slice(-cue.scatterCount)
+      : ([
+          { animal: "chick", id: "fallback-chick", lane: -1, tier: 0 },
+          { animal: "goat", id: "fallback-goat", lane: 0, tier: 1 },
+          { animal: "pig", id: "fallback-pig", lane: 1, tier: 2 },
+        ] as const);
+  const direction = cue.spillDirection || 1;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{
+        background:
+          cue.severity === "auction-loss"
+            ? "radial-gradient(circle at 50% 30%, rgba(250,204,21,0.24), transparent 32%), linear-gradient(180deg, rgba(68,26,7,0.74), rgba(15,23,42,0.92))"
+            : "radial-gradient(circle at 50% 30%, rgba(251,113,133,0.22), transparent 32%), linear-gradient(180deg, rgba(68,26,7,0.74), rgba(15,23,42,0.92))",
+      }}
+    >
+      <div className="absolute inset-x-[12%] bottom-24 h-5 -rotate-6 rounded-full bg-red-950 shadow-[0_0_22px_rgba(0,0,0,0.4)]" />
+      <div className="absolute bottom-16 left-1/2 h-24 w-[min(70vw,34rem)] -translate-x-1/2 rounded-t-full border-t-8 border-amber-900/80 bg-amber-950/28" />
+      {animals.map((animal, index) => {
+        const x = 50 + direction * (10 + index * 5) + animal.lane * 8;
+        const y = 64 - index * 4;
+        const rotation = direction * (18 + index * 13);
+
+        return (
+          <div
+            key={`collapse-${animal.id}`}
+            className="absolute grid place-items-center"
+            style={{
+              left: `${Math.max(8, Math.min(88, x))}%`,
+              top: `${Math.max(16, Math.min(78, y))}%`,
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+              opacity: 0.9,
+            }}
+          >
+            <AnimalToken animal={animal.animal} tier={animal.tier} size="normal" />
+          </div>
+        );
+      })}
+      <div className="absolute left-1/2 top-[18%] -translate-x-1/2 rounded-md border border-amber-100/24 bg-black/36 px-4 py-2 font-mono text-[0.62rem] font-black uppercase tracking-[0.22em] text-amber-100/72">
+        {cue.severity.replace("-", " ")} · {cue.bankedPercent}% banked
+      </div>
     </div>
   );
 }

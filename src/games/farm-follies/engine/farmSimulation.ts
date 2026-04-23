@@ -2,6 +2,8 @@ import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
   FarmAbilityEvent,
   FarmAnimal,
+  FarmAnimalPoseCue,
+  FarmCollapseCue,
   FarmLane,
   FarmModeTuning,
   FarmStackAnimal,
@@ -199,11 +201,74 @@ export function getFarmStackCue(state: FarmState): FarmStackCue {
   };
 }
 
+export function getFarmCollapseCue(state: FarmState): FarmCollapseCue {
+  const ratio = getFarmWobbleRatio(state);
+  const bankedPercent = Math.min(100, Math.round((state.bankedScore / FARM_BANK_TARGET) * 100));
+  const severity =
+    bankedPercent >= 70 ? "auction-loss" : ratio >= 0.9 ? "spill" : ("tilt" as const);
+  const spillDirection = getStackLeanDirection(state.stack);
+  const scatterCount = Math.max(4, Math.min(10, state.stack.length + 2));
+
+  return {
+    bankedPercent,
+    message:
+      severity === "auction-loss"
+        ? "The tower spills just shy of a very bankable auction load."
+        : severity === "spill"
+          ? "The barn rail snaps sideways and sends the top animals sliding."
+          : "The stack tips before the crew can brace it.",
+    recoveryAdvice:
+      severity === "auction-loss"
+        ? "Bank one merge earlier when the quota meter is already high."
+        : "Widen the next tower and use banking as soon as danger sway appears.",
+    scatterCount,
+    severity,
+    spillDirection,
+    title: severity === "tilt" ? "Tower Tilted" : "Tower Down",
+  };
+}
+
+export function getFarmAnimalPoseCue(animal: FarmAnimal, tier: number): FarmAnimalPoseCue {
+  const poseByAnimal: Record<FarmAnimal, FarmAnimalPoseCue["pose"]> = {
+    chick: "peck",
+    cow: "brace",
+    goat: "headbutt",
+    horse: "gallop",
+    pig: "snoot",
+  };
+  const expression =
+    tier >= 4 ? "wild" : tier >= 2 ? "focused" : ("calm" as FarmAnimalPoseCue["expression"]);
+
+  return {
+    expression,
+    label: `${labelAnimal(animal)} tier ${tier + 1}`,
+    pose: poseByAnimal[animal],
+    showMotionMarks: tier >= 2 || animal === "horse",
+    showRibbon: tier >= 3,
+  };
+}
+
 export function getFarmWobbleBand(state: FarmState): FarmWobbleBand {
   const ratio = getFarmWobbleRatio(state);
   if (ratio >= 0.78) return "danger";
   if (ratio >= 0.52) return "sway";
   return "steady";
+}
+
+function getStackLeanDirection(stack: FarmStackAnimal[]): FarmLane {
+  const laneWeights = stack.reduce<Record<FarmLane, number>>(
+    (weights, animal, index) => {
+      weights[animal.lane] += index + 1;
+      return weights;
+    },
+    { "-1": 0, 0: 0, 1: 0 }
+  );
+  const left = laneWeights[-1];
+  const right = laneWeights[1];
+
+  if (left > right + 1) return -1;
+  if (right > left + 1) return 1;
+  return 0;
 }
 
 function getLaneHeights(stack: FarmStackAnimal[]): Record<FarmLane, number> {
