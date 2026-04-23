@@ -10,6 +10,7 @@ import {
   advanceCognitiveState,
   createInitialCognitiveState,
   getCognitiveRunSummary,
+  getCognitiveShiftCue,
 } from "@logic/games/cognitive-dissonance/engine/cognitiveSimulation";
 import type {
   CognitivePattern,
@@ -119,6 +120,7 @@ export default function Game() {
             onRelease={() => {
               heldPattern.current = null;
             }}
+            phaseLockPercent={summary.phaseLockPercent}
           />
         </>
       ) : null}
@@ -129,13 +131,13 @@ export default function Game() {
           result={{
             milestones: ["first-stable-shift"],
             mode: state.sessionMode,
-            score: summary.coherence * 100 + summary.stableMatches * 50,
+            score: summary.coherence * 100 + summary.stableMatches * 50 + summary.phaseLocks * 750,
             slug: "cognitive-dissonance",
             status: "completed",
             summary: `Stable ${summary.targetSeconds}s shift`,
           }}
           title="Shift Stable"
-          subtitle={`${summary.targetSeconds}s shift held at ${summary.coherence}% coherence with ${summary.tension}% tension.`}
+          subtitle={`${summary.targetSeconds}s shift held at ${summary.coherence}% coherence with ${summary.phaseLocks} phase locks and ${summary.tension}% tension.`}
           actions={<OverlayButton onClick={restart}>Run Another Shift</OverlayButton>}
         />
       ) : null}
@@ -145,7 +147,8 @@ export default function Game() {
           accent="#a78bfa"
           result={{
             mode: state.sessionMode,
-            score: summary.progressPercent * 10 + summary.stableMatches * 25,
+            score:
+              summary.progressPercent * 10 + summary.stableMatches * 25 + summary.phaseLocks * 250,
             slug: "cognitive-dissonance",
             status: "failed",
             summary: `Shattered at ${summary.progressPercent}% shift progress`,
@@ -166,7 +169,10 @@ function resolveCognitiveStartState(mode: SessionMode, saveSlot?: GameSaveSlot):
     return {
       ...restored,
       phase: "playing",
+      phaseLockPulseMs: restored.phaseLockPulseMs ?? 0,
+      phaseLocks: restored.phaseLocks ?? 0,
       sessionMode: mode,
+      stableHoldMs: restored.stableHoldMs ?? 0,
     };
   }
 
@@ -211,6 +217,59 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
     const key = new THREE.PointLight("#67e8f9", 15, 18);
     key.position.set(2.2, 3, 3);
     scene.add(key);
+    const fill = new THREE.PointLight("#facc15", 6, 12);
+    fill.position.set(-2.6, -2.4, 4);
+    scene.add(fill);
+
+    const cabinetMaterial = new THREE.MeshStandardMaterial({
+      color: "#0b1020",
+      emissive: "#312e81",
+      emissiveIntensity: 0.22,
+      metalness: 0.55,
+      roughness: 0.32,
+    });
+    const glassMaterial = new THREE.MeshBasicMaterial({
+      color: "#67e8f9",
+      opacity: 0.1,
+      transparent: true,
+    });
+    const frameAccentMaterial = new THREE.MeshBasicMaterial({
+      color: "#a78bfa",
+      opacity: 0.62,
+      transparent: true,
+    });
+    const backPanel = new THREE.Mesh(new THREE.BoxGeometry(6.8, 4.4, 0.18), cabinetMaterial);
+    backPanel.position.set(0, 0, -0.85);
+    scene.add(backPanel);
+
+    const glassPanel = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 3.55), glassMaterial);
+    glassPanel.position.set(0, 0.05, -0.42);
+    scene.add(glassPanel);
+
+    const frameBars = [
+      { id: "top", x: 0, y: 2.05, w: 6.2, h: 0.14 },
+      { id: "bottom", x: 0, y: -2.05, w: 6.2, h: 0.14 },
+      { id: "left", x: -3.15, y: 0, w: 0.14, h: 4.1 },
+      { id: "right", x: 3.15, y: 0, w: 0.14, h: 4.1 },
+    ].map((bar) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(bar.w, bar.h, 0.12), frameAccentMaterial);
+      mesh.name = bar.id;
+      mesh.position.set(bar.x, bar.y, -0.24);
+      scene.add(mesh);
+      return mesh;
+    });
+
+    const scanlineMaterial = new THREE.MeshBasicMaterial({
+      color: "#67e8f9",
+      opacity: 0.055,
+      transparent: true,
+    });
+    const scanlines = Array.from({ length: 14 }, (_, index) => {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(5.1, 0.012), scanlineMaterial);
+      mesh.position.set(0, -1.55 + index * 0.24, -0.18);
+      scene.add(mesh);
+      return mesh;
+    });
 
     const sphereMaterial = new THREE.MeshStandardMaterial({
       color: "#1e1b4b",
@@ -228,6 +287,60 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.025, 8, 96), ringMaterial);
     ring.rotation.x = Math.PI / 2;
     scene.add(ring);
+    const verticalRingMaterial = new THREE.MeshBasicMaterial({
+      color: "#a78bfa",
+      opacity: 0.32,
+      transparent: true,
+    });
+    const verticalRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.82, 0.018, 8, 96),
+      verticalRingMaterial
+    );
+    verticalRing.rotation.y = Math.PI / 2;
+    scene.add(verticalRing);
+    const phaseLockMaterial = new THREE.MeshBasicMaterial({
+      color: "#facc15",
+      opacity: 0,
+      transparent: true,
+    });
+    const phaseLockRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.75, 0.055, 10, 128),
+      phaseLockMaterial
+    );
+    phaseLockRing.rotation.x = Math.PI / 2;
+    scene.add(phaseLockRing);
+
+    const controlNodes = (["violet", "cyan", "gold"] as const).map((pattern, index) => {
+      const material = new THREE.MeshStandardMaterial({
+        color: PATTERN_COLORS[pattern],
+        emissive: PATTERN_COLORS[pattern],
+        emissiveIntensity: 0.55,
+        metalness: 0.25,
+        roughness: 0.18,
+      });
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 28), material);
+      mesh.rotation.x = Math.PI / 2;
+      mesh.position.set((index - 1) * 1.05, -1.72, 0.22);
+      scene.add(mesh);
+      return { material, mesh, pattern };
+    });
+
+    const rainMaterial = new THREE.LineBasicMaterial({
+      color: "#a78bfa",
+      opacity: 0.22,
+      transparent: true,
+    });
+    const rainLines = Array.from({ length: 18 }, (_, index) => {
+      const x = -2.55 + (index % 6) * 1.02;
+      const y = 1.85 - Math.floor(index / 6) * 0.42;
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x, y, -0.05),
+        new THREE.Vector3(x + 0.18, y - 0.44, -0.05),
+      ]);
+      const line = new THREE.Line(geometry, rainMaterial);
+      scene.add(line);
+      return line;
+    });
 
     const patternMeshes = Array.from({ length: 4 }, (_, index) => {
       const mesh = new THREE.Mesh(
@@ -257,14 +370,28 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
     const animate = () => {
       const current = stateRef.current;
       const time = current.elapsedMs / 1000;
+      const cue = getCognitiveShiftCue(current);
       const activeColor = PATTERN_COLORS[current.currentPattern];
+      const phaseLockStrength = cue.phaseLockActive ? 1 : cue.phaseLockPercent / 100;
       sphere.rotation.y = time * 0.18;
       sphere.rotation.x = Math.sin(time * 0.35) * 0.08;
-      sphere.scale.setScalar(1 + current.tension * 0.0018);
+      sphere.scale.setScalar(1 + current.tension * 0.0018 + phaseLockStrength * 0.035);
       sphereMaterial.emissive.set(activeColor);
       sphereMaterial.emissiveIntensity = 0.25 + current.coherence / 120;
+      cabinetMaterial.emissive.set(activeColor);
+      cabinetMaterial.emissiveIntensity = 0.08 + current.tension / 280;
+      glassMaterial.color.set(activeColor);
+      glassMaterial.opacity = 0.06 + current.coherence / 900 + phaseLockStrength * 0.04;
+      frameAccentMaterial.color.set(cue.urgency === "high" ? "#fb7185" : activeColor);
+      frameAccentMaterial.opacity = 0.35 + current.tension / 180;
       ringMaterial.color.set(activeColor);
-      ringMaterial.opacity = 0.25 + current.coherence / 160;
+      ringMaterial.opacity = 0.25 + current.coherence / 160 + phaseLockStrength * 0.16;
+      verticalRing.rotation.z = time * 0.12;
+      verticalRingMaterial.color.set(PATTERN_COLORS[cue.nextPattern]);
+      verticalRingMaterial.opacity = 0.18 + current.tension / 260;
+      phaseLockRing.rotation.z = -time * 0.28;
+      phaseLockRing.scale.setScalar(1 + Math.sin(time * 5) * 0.025 + phaseLockStrength * 0.08);
+      phaseLockMaterial.opacity = cue.phaseLockActive ? 0.62 : cue.phaseLockPercent / 240;
 
       for (let index = 0; index < patternMeshes.length; index++) {
         const pattern = current.patterns[index];
@@ -283,6 +410,24 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
         material.emissiveIntensity = 0.7 + pattern.intensity;
       }
 
+      for (const node of controlNodes) {
+        const active = node.pattern === current.currentPattern;
+        node.mesh.scale.setScalar(active ? 1.28 + phaseLockStrength * 0.18 : 0.92);
+        node.material.emissiveIntensity = active ? 1.4 + phaseLockStrength : 0.42;
+      }
+
+      rainMaterial.color.set(cue.urgency === "high" ? "#fb7185" : activeColor);
+      rainMaterial.opacity =
+        cue.stage === "calibration"
+          ? 0.08
+          : cue.stage === "drift"
+            ? 0.16
+            : 0.24 + current.tension / 360;
+      for (let index = 0; index < rainLines.length; index++) {
+        const line = rainLines[index];
+        line.position.y = -((time * (0.12 + current.tension / 600) + index * 0.19) % 0.9);
+      }
+
       renderer.render(scene, camera);
     };
 
@@ -292,10 +437,34 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
       renderer.setAnimationLoop(null);
       observer.disconnect();
       renderer.dispose();
+      backPanel.geometry.dispose();
+      cabinetMaterial.dispose();
+      glassPanel.geometry.dispose();
+      glassMaterial.dispose();
+      for (const mesh of frameBars) {
+        mesh.geometry.dispose();
+      }
+      frameAccentMaterial.dispose();
+      for (const mesh of scanlines) {
+        mesh.geometry.dispose();
+      }
+      scanlineMaterial.dispose();
       sphere.geometry.dispose();
       sphereMaterial.dispose();
       ring.geometry.dispose();
       ringMaterial.dispose();
+      verticalRing.geometry.dispose();
+      verticalRingMaterial.dispose();
+      phaseLockRing.geometry.dispose();
+      phaseLockMaterial.dispose();
+      for (const node of controlNodes) {
+        node.mesh.geometry.dispose();
+        node.material.dispose();
+      }
+      for (const line of rainLines) {
+        line.geometry.dispose();
+      }
+      rainMaterial.dispose();
       for (const mesh of patternMeshes) {
         mesh.geometry.dispose();
         (mesh.material as THREE.Material).dispose();
@@ -308,26 +477,26 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
 }
 
 function Hud({ state }: { state: CognitiveState }) {
+  const summary = getCognitiveRunSummary(state);
+  const cue = getCognitiveShiftCue(state);
+
   return (
-    <header className="absolute inset-x-0 top-0 z-10 grid gap-2 p-3 sm:grid-cols-4 sm:p-5">
+    <header className="absolute inset-x-0 top-0 z-10 grid grid-cols-2 gap-2 p-3 sm:grid-cols-5 sm:p-5">
       <Metric label="Coherence" value={`${Math.round(state.coherence)}%`} accent="#67e8f9" />
       <Metric label="Tension" value={`${Math.round(state.tension)}%`} accent="#f87171" />
-      <Metric
-        label="Shift"
-        value={`${getCognitiveRunSummary(state).progressPercent}%`}
-        accent="#facc15"
-      />
+      <Metric label="Shift" value={`${summary.progressPercent}%`} accent="#facc15" />
       <Metric
         label="Pattern"
         value={state.currentPattern}
         accent={PATTERN_COLORS[state.currentPattern]}
       />
-      <Metric label="Mode" value={state.sessionMode} accent="#c4b5fd" />
-      <div className="rounded-md border border-violet-200/16 bg-black/50 p-3 sm:col-span-4">
+      <Metric label="Phase Lock" value={`${summary.phaseLockPercent}%`} accent="#facc15" />
+      <div className="col-span-2 rounded-md border border-violet-200/16 bg-black/50 p-3 sm:col-span-5">
         <div className="font-mono text-[0.6rem] font-black uppercase tracking-[0.22em] text-violet-100/52">
-          Objective
+          {cue.stageLabel} · Next {cue.nextPattern}
         </div>
-        <div className="mt-1 text-sm font-bold text-violet-50">{state.objective}</div>
+        <div className="mt-1 text-sm font-bold text-violet-50">{cue.instruction}</div>
+        <div className="mt-1 text-xs font-semibold text-violet-100/70">{state.lastEvent}</div>
       </div>
     </header>
   );
@@ -350,10 +519,12 @@ function RimControls({
   active,
   onHold,
   onRelease,
+  phaseLockPercent,
 }: {
   active: CognitivePattern;
   onHold: (pattern: CognitivePattern) => void;
   onRelease: () => void;
+  phaseLockPercent: number;
 }) {
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 grid grid-cols-3 gap-2 p-3 sm:p-5">
@@ -368,12 +539,19 @@ function RimControls({
                 ? `linear-gradient(135deg, ${PATTERN_COLORS[pattern]}66, rgba(15,23,42,0.84))`
                 : "rgba(15,23,42,0.72)",
             borderColor: active === pattern ? PATTERN_COLORS[pattern] : "rgba(255,255,255,0.16)",
+            boxShadow:
+              active === pattern
+                ? `0 0 ${14 + phaseLockPercent / 6}px ${PATTERN_COLORS[pattern]}66`
+                : "0 12px 30px rgba(0,0,0,0.34)",
           }}
           onPointerDown={() => onHold(pattern)}
           onPointerLeave={onRelease}
           onPointerUp={onRelease}
         >
-          {pattern}
+          <span className="block text-[0.58rem] tracking-[0.2em] text-white/52">
+            {active === pattern ? "hold" : "rim"}
+          </span>
+          <span>{pattern}</span>
         </button>
       ))}
     </div>

@@ -4,6 +4,7 @@ import {
   createInitialCognitiveState,
   getCognitiveModeTuning,
   getCognitiveRunSummary,
+  getCognitiveShiftCue,
   recoverCognitiveAfterMistake,
 } from "./cognitiveSimulation";
 
@@ -55,6 +56,43 @@ describe("Cognitive Dissonance coherence loop", () => {
     expect(next.coherence).toBeGreaterThan(state.coherence);
   });
 
+  test("sustained matching triggers a phase-lock recovery event", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "playing"),
+      coherence: 72,
+      tension: 74,
+    };
+
+    const charged = advanceCognitiveState(state, 4300, "violet");
+    const cue = getCognitiveShiftCue(charged);
+
+    expect(charged.phaseLocks).toBe(1);
+    expect(charged.phaseLockPulseMs).toBeGreaterThan(0);
+    expect(charged.stableHoldMs).toBe(0);
+    expect(charged.tension).toBeLessThan(58);
+    expect(charged.coherence).toBeGreaterThan(state.coherence);
+    expect(charged.lastEvent).toContain("phase lock");
+    expect(cue.phaseLockActive).toBe(true);
+  });
+
+  test("shift cue exposes stage, next pattern, urgency, and phase lock charge", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "playing"),
+      coherence: 54,
+      elapsedMs: getCognitiveModeTuning("standard").shiftDurationMs * 0.52,
+      stableHoldMs: 3200,
+      tension: 68,
+    };
+    const cue = getCognitiveShiftCue(state);
+
+    expect(cue.stage).toBe("rain");
+    expect(cue.stageLabel).toBe("Pattern Rain");
+    expect(cue.instruction).toContain("phase lock");
+    expect(cue.nextPattern).toBe("cyan");
+    expect(cue.phaseLockPercent).toBeGreaterThan(70);
+    expect(cue.urgency).toBe("medium");
+  });
+
   test("one mismatch is recoverable in standard", () => {
     const state = createInitialCognitiveState("standard", "playing");
     const mistake = advanceCognitiveState(state, 5000, "gold");
@@ -62,6 +100,7 @@ describe("Cognitive Dissonance coherence loop", () => {
 
     expect(mistake.phase).toBe("playing");
     expect(recovered.coherence).toBeGreaterThan(mistake.coherence);
+    expect(recovered.stableHoldMs).toBeGreaterThan(mistake.stableHoldMs);
     expect(recovered.tension).toBeLessThan(mistake.tension);
   });
 });

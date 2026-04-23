@@ -17,6 +17,20 @@ export interface CognitiveEscapePattern {
   intensity: number;
 }
 
+export type CognitiveShiftStage = "calibration" | "drift" | "rain" | "storm" | "stable";
+
+export interface CognitiveShiftCue {
+  stage: CognitiveShiftStage;
+  stageLabel: string;
+  instruction: string;
+  activePattern: CognitivePattern;
+  nextPattern: CognitivePattern;
+  progressPercent: number;
+  phaseLockPercent: number;
+  phaseLockActive: boolean;
+  urgency: "low" | "medium" | "high";
+}
+
 export interface CognitiveState {
   phase: CognitivePhase;
   sessionMode: SessionMode;
@@ -25,6 +39,9 @@ export interface CognitiveState {
   tension: number;
   currentPattern: CognitivePattern;
   stableMatches: number;
+  stableHoldMs: number;
+  phaseLocks: number;
+  phaseLockPulseMs: number;
   patterns: CognitiveEscapePattern[];
   lastEvent: string;
   objective: string;

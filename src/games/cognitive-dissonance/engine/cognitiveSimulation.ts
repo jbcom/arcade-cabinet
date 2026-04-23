@@ -1,5 +1,11 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
-import type { CognitiveModeTuning, CognitivePattern, CognitiveState } from "./types";
+import type {
+  CognitiveModeTuning,
+  CognitivePattern,
+  CognitiveShiftCue,
+  CognitiveShiftStage,
+  CognitiveState,
+} from "./types";
 
 const PATTERN_SEQUENCE: readonly CognitivePattern[] = [
   "violet",
@@ -9,6 +15,8 @@ const PATTERN_SEQUENCE: readonly CognitivePattern[] = [
   "violet",
   "gold",
 ];
+const PHASE_LOCK_THRESHOLD_MS = 4_200;
+const PHASE_LOCK_PULSE_MS = 1_800;
 
 const MODE_TUNING: Record<SessionMode, CognitiveModeTuning> = {
   challenge: {
@@ -49,7 +57,10 @@ export function createInitialCognitiveState(
     objective: "Hold the matching rim control until coherence returns.",
     patterns: createPatterns(0),
     phase,
+    phaseLockPulseMs: 0,
+    phaseLocks: 0,
     sessionMode,
+    stableHoldMs: 0,
     stableMatches: 0,
     tension: 18,
   };
@@ -67,6 +78,17 @@ export function advanceCognitiveState(
   const matched = heldPattern === state.currentPattern;
   const elapsedMs = state.elapsedMs + Math.max(0, deltaMs);
   const stableMatches = matched ? state.stableMatches + 1 : 0;
+  let stableHoldMs = matched
+    ? state.stableHoldMs + Math.max(0, deltaMs)
+    : Math.max(0, state.stableHoldMs - Math.max(0, deltaMs) * 0.9);
+  let phaseLocks = state.phaseLocks;
+  let phaseLockPulseMs = Math.max(0, state.phaseLockPulseMs - Math.max(0, deltaMs));
+  const triggeredPhaseLock = matched && stableHoldMs >= PHASE_LOCK_THRESHOLD_MS;
+  if (triggeredPhaseLock) {
+    stableHoldMs = 0;
+    phaseLocks += 1;
+    phaseLockPulseMs = PHASE_LOCK_PULSE_MS;
+  }
   const tension = clamp(
     state.tension +
       (matched ? -tuning.matchRecoveryPerSecond : tuning.tensionRisePerSecond) * seconds,
@@ -80,24 +102,40 @@ export function advanceCognitiveState(
     0,
     100
   );
+  const phaseLockTension = triggeredPhaseLock ? clamp(tension - 18, 0, 100) : tension;
+  const phaseLockCoherence = triggeredPhaseLock ? clamp(coherence + 10, 0, 100) : coherence;
   const sequenceIndex = Math.floor(elapsedMs / 18_000) % PATTERN_SEQUENCE.length;
   const currentPattern = PATTERN_SEQUENCE[sequenceIndex] ?? "violet";
   const phase =
-    coherence <= 0 ? "shattered" : elapsedMs >= tuning.shiftDurationMs ? "stable" : "playing";
+    phaseLockCoherence <= 0
+      ? "shattered"
+      : elapsedMs >= tuning.shiftDurationMs
+        ? "stable"
+        : "playing";
 
   return {
     ...state,
-    coherence,
+    coherence: phaseLockCoherence,
     currentPattern,
     elapsedMs,
-    lastEvent: matched
-      ? `${labelPattern(heldPattern)} feedback stabilizes the glass.`
-      : "Unmatched rain raises cabinet tension.",
-    objective: describeObjective(coherence, tension, currentPattern),
-    patterns: createPatterns(sequenceIndex, tension),
+    lastEvent: triggeredPhaseLock
+      ? `${labelPattern(heldPattern)} phase lock vents the cabinet storm.`
+      : matched
+        ? `${labelPattern(heldPattern)} feedback stabilizes the glass.`
+        : "Unmatched rain raises cabinet tension.",
+    objective: describeObjective(
+      phaseLockCoherence,
+      phaseLockTension,
+      currentPattern,
+      stableHoldMs
+    ),
+    patterns: createPatterns(sequenceIndex, phaseLockTension, phaseLockPulseMs),
     phase,
+    phaseLockPulseMs,
+    phaseLocks,
+    stableHoldMs,
     stableMatches,
-    tension,
+    tension: phaseLockTension,
   };
 }
 
@@ -108,6 +146,8 @@ export function recoverCognitiveAfterMistake(state: CognitiveState): CognitiveSt
     ...state,
     coherence: clamp(state.coherence + tuning.matchRecoveryPerSecond, 0, 100),
     lastEvent: "The rim hums back into phase. Coherence loss is still reversible.",
+    phaseLockPulseMs: PHASE_LOCK_PULSE_MS / 2,
+    stableHoldMs: Math.min(PHASE_LOCK_THRESHOLD_MS * 0.45, state.stableHoldMs + 900),
     tension: clamp(state.tension - tuning.matchRecoveryPerSecond, 0, 100),
   };
 }
@@ -119,26 +159,108 @@ export function getCognitiveRunSummary(state: CognitiveState) {
     coherence: Math.round(state.coherence),
     elapsedSeconds: Math.round(state.elapsedMs / 1000),
     progressPercent: Math.min(100, Math.round((state.elapsedMs / tuning.shiftDurationMs) * 100)),
+    phaseLocks: state.phaseLocks,
+    phaseLockPercent: Math.min(
+      100,
+      Math.round((state.stableHoldMs / PHASE_LOCK_THRESHOLD_MS) * 100)
+    ),
     stableMatches: state.stableMatches,
     targetSeconds: Math.round(tuning.shiftDurationMs / 1000),
     tension: Math.round(state.tension),
   };
 }
 
-function createPatterns(sequenceIndex: number, tension = 18) {
+export function getCognitiveShiftCue(state: CognitiveState): CognitiveShiftCue {
+  const tuning = getCognitiveModeTuning(state.sessionMode);
+  const progressPercent = Math.min(
+    100,
+    Math.round((state.elapsedMs / tuning.shiftDurationMs) * 100)
+  );
+  const nextPattern =
+    PATTERN_SEQUENCE[(Math.floor(state.elapsedMs / 18_000) + 1) % PATTERN_SEQUENCE.length] ??
+    "violet";
+  const stage = getShiftStage(progressPercent, state.tension, state.phase);
+  const phaseLockPercent = Math.min(
+    100,
+    Math.round((state.stableHoldMs / PHASE_LOCK_THRESHOLD_MS) * 100)
+  );
+  const urgency =
+    state.coherence < 38 || state.tension > 76
+      ? "high"
+      : state.tension > 54 || state.coherence < 62
+        ? "medium"
+        : "low";
+
+  return {
+    activePattern: state.currentPattern,
+    instruction: describeCueInstruction(stage, state.currentPattern, phaseLockPercent, urgency),
+    nextPattern,
+    phaseLockActive: state.phaseLockPulseMs > 0,
+    phaseLockPercent,
+    progressPercent,
+    stage,
+    stageLabel: labelShiftStage(stage),
+    urgency,
+  };
+}
+
+function createPatterns(sequenceIndex: number, tension = 18, phaseLockPulseMs = 0) {
+  const pulseBoost = phaseLockPulseMs > 0 ? 0.18 : 0;
   return PATTERN_SEQUENCE.slice(0, 4).map((color, index) => ({
     color,
     id: `pattern-${sequenceIndex}-${index}`,
-    intensity: clamp(0.35 + tension / 140 + index * 0.07, 0.2, 1),
+    intensity: clamp(0.35 + tension / 140 + index * 0.07 + pulseBoost, 0.2, 1),
     orbit: index * 0.9 + sequenceIndex * 0.42,
   }));
 }
 
-function describeObjective(coherence: number, tension: number, currentPattern: CognitivePattern) {
+function describeObjective(
+  coherence: number,
+  tension: number,
+  currentPattern: CognitivePattern,
+  stableHoldMs: number
+) {
+  if (stableHoldMs > PHASE_LOCK_THRESHOLD_MS * 0.72)
+    return `Keep holding ${labelPattern(currentPattern)} to trigger a phase lock.`;
   if (coherence < 35)
     return "Coherence is low. Hold the correct rim control until the sphere heals.";
   if (tension > 70) return `Tension wave rising. Match ${labelPattern(currentPattern)} now.`;
   return `Match ${labelPattern(currentPattern)} and keep the cabinet coherent.`;
+}
+
+function getShiftStage(
+  progressPercent: number,
+  tension: number,
+  phase: CognitiveState["phase"]
+): CognitiveShiftStage {
+  if (phase === "stable") return "stable";
+  if (tension > 78 || progressPercent >= 76) return "storm";
+  if (tension > 54 || progressPercent >= 48) return "rain";
+  if (progressPercent >= 20) return "drift";
+  return "calibration";
+}
+
+function labelShiftStage(stage: CognitiveShiftStage) {
+  if (stage === "calibration") return "Calibration";
+  if (stage === "drift") return "Drift";
+  if (stage === "rain") return "Pattern Rain";
+  if (stage === "storm") return "Tension Storm";
+  return "Stable Shift";
+}
+
+function describeCueInstruction(
+  stage: CognitiveShiftStage,
+  currentPattern: CognitivePattern,
+  phaseLockPercent: number,
+  urgency: CognitiveShiftCue["urgency"]
+) {
+  if (phaseLockPercent >= 74) return `Hold ${labelPattern(currentPattern)} for phase lock.`;
+  if (urgency === "high") return `Match ${labelPattern(currentPattern)} now to recover.`;
+  if (stage === "calibration") return `Find ${labelPattern(currentPattern)} on the rim.`;
+  if (stage === "drift") return `Track ${labelPattern(currentPattern)} through the drift.`;
+  if (stage === "rain") return `Hold ${labelPattern(currentPattern)} through pattern rain.`;
+  if (stage === "storm") return `Stabilize ${labelPattern(currentPattern)} before shatter.`;
+  return "Shift stable.";
 }
 
 function labelPattern(pattern: CognitivePattern | null) {
