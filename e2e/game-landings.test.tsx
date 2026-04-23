@@ -3,7 +3,6 @@ import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
-import OtterlyChaotic from "@app/games/otterly-chaotic";
 import OvercastGlacier from "@app/games/overcast-glacier";
 import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
@@ -32,11 +31,6 @@ const landingCases: {
     Component: OvercastGlacier,
     slug: "overcast-glacier",
     title: "OVERCAST: GLACIER",
-  },
-  {
-    Component: OtterlyChaotic,
-    slug: "otterly-chaotic",
-    title: "Otterly Chaotic",
   },
   {
     Component: PrimordialAscent,
