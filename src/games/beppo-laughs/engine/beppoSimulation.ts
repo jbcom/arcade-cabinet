@@ -1,10 +1,13 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
   BeppoDirection,
+  BeppoEndingCue,
   BeppoItem,
   BeppoModeTuning,
   BeppoRoom,
+  BeppoRoomCue,
   BeppoRouteCue,
+  BeppoStageMotif,
   BeppoState,
 } from "./types";
 
@@ -108,6 +111,100 @@ const REQUIRED_BEPPO_ITEMS = [
   "mirror",
   "red-key",
 ] as const satisfies readonly BeppoItem[];
+const ROOM_PRESENTATION: Record<
+  string,
+  {
+    accent: string;
+    detail: string;
+    motif: BeppoStageMotif;
+    secondaryAccent: string;
+  }
+> = {
+  "calliope-tunnel": {
+    accent: "#facc15",
+    detail: "A wheezing organ repeats the path you just forgot.",
+    motif: "calliope",
+    secondaryAccent: "#f97316",
+  },
+  "center-ring": {
+    accent: "#fb923c",
+    detail: "The first spotlight waits for a clean choice.",
+    motif: "ring",
+    secondaryAccent: "#22d3ee",
+  },
+  "clown-car": {
+    accent: "#f43f5e",
+    detail: "A red key hangs from a tiny chrome ignition.",
+    motif: "key",
+    secondaryAccent: "#facc15",
+  },
+  "drum-tunnel": {
+    accent: "#f97316",
+    detail: "Canvas drums mark every step toward the exit flap.",
+    motif: "drum",
+    secondaryAccent: "#22d3ee",
+  },
+  "exit-flap": {
+    accent: "#7dd3fc",
+    detail: "Cold outside air cuts a blue line through the tent.",
+    motif: "exit",
+    secondaryAccent: "#facc15",
+  },
+  "fortune-hall": {
+    accent: "#a78bfa",
+    detail: "A locked fortune machine blinks when the mirror is raised.",
+    motif: "gate",
+    secondaryAccent: "#22d3ee",
+  },
+  "laughing-gate": {
+    accent: "#f97316",
+    detail: "The brass ticket makes the laughing gate blink open.",
+    motif: "gate",
+    secondaryAccent: "#f43f5e",
+  },
+  "mirror-midway": {
+    accent: "#22d3ee",
+    detail: "Mirrors bend the tent into three almost-true exits.",
+    motif: "mirror",
+    secondaryAccent: "#a78bfa",
+  },
+  "prize-arcade": {
+    accent: "#facc15",
+    detail: "Prize lights stutter over the path back to the prop room.",
+    motif: "arcade",
+    secondaryAccent: "#f43f5e",
+  },
+  "prop-room": {
+    accent: "#fb923c",
+    detail: "Painted props point toward the route you have not mapped.",
+    motif: "props",
+    secondaryAccent: "#22d3ee",
+  },
+  "rope-bridge": {
+    accent: "#38bdf8",
+    detail: "A rope bridge swings over the dark part of the maze.",
+    motif: "bridge",
+    secondaryAccent: "#facc15",
+  },
+  "shadow-stalls": {
+    accent: "#c084fc",
+    detail: "The stalls keep their prizes turned away from you.",
+    motif: "props",
+    secondaryAccent: "#f97316",
+  },
+  "ticket-booth": {
+    accent: "#facc15",
+    detail: "A brass ticket rattles inside the glass booth.",
+    motif: "ticket",
+    secondaryAccent: "#fb923c",
+  },
+  "wax-gallery": {
+    accent: "#e879f9",
+    detail: "Wax faces lean toward whichever curtain you avoid.",
+    motif: "wax",
+    secondaryAccent: "#22d3ee",
+  },
+};
 
 const MODE_TUNING: Record<SessionMode, BeppoModeTuning> = {
   challenge: {
@@ -282,6 +379,41 @@ export function getBeppoRouteCue(state: BeppoState): BeppoRouteCue {
   };
 }
 
+export function getBeppoRoomCue(state: BeppoState): BeppoRoomCue {
+  const room = getCurrentBeppoRoom(state);
+  const routeCue = getBeppoRouteCue(state);
+  const presentation = ROOM_PRESENTATION[room.id] ?? ROOM_PRESENTATION["center-ring"];
+  const lateMaze = state.visitedRoomIds.length >= BEPPO_ESCAPE_VISIT_TARGET - 1;
+  const mood =
+    routeCue.threatLevel === "spiral"
+      ? "spiral"
+      : room.kind === "exit"
+        ? "exit"
+        : lateMaze
+          ? "late-maze"
+          : room.kind === "gate"
+            ? "gate"
+            : room.kind === "item"
+              ? "item"
+              : "opening";
+  const spotlightCount = clamp(
+    2 + state.inventory.length + Math.floor(state.visitedRoomIds.length / 4),
+    2,
+    7
+  );
+
+  return {
+    accent: presentation.accent,
+    dangerPulse: routeCue.threatLevel === "spiral" || state.composure < 34,
+    lightingBeat: describeRoomLightingBeat(mood, room.label, routeCue.routeMemoryRemaining),
+    mood,
+    motif: presentation.motif,
+    roomDetail: presentation.detail,
+    secondaryAccent: presentation.secondaryAccent,
+    spotlightCount,
+  };
+}
+
 export function getBeppoRunSummary(state: BeppoState) {
   return {
     composure: Math.round(state.composure),
@@ -290,6 +422,44 @@ export function getBeppoRunSummary(state: BeppoState) {
     inventoryCount: state.inventory.length,
     roomsMapped: state.visitedRoomIds.length,
     routeMemoryTarget: BEPPO_ESCAPE_VISIT_TARGET,
+  };
+}
+
+export function getBeppoEndingCue(state: BeppoState): BeppoEndingCue {
+  const summary = getBeppoRunSummary(state);
+
+  if (state.phase === "escaped") {
+    const cleanRoute = state.composure >= 68 && state.despair < 18;
+
+    return {
+      accent: cleanRoute ? "#7dd3fc" : "#facc15",
+      propCount: cleanRoute ? 3 : 6,
+      ringCount: cleanRoute ? 5 : 8,
+      secondaryAccent: cleanRoute ? "#facc15" : "#fb923c",
+      statusLabel: cleanRoute ? "Clean Route" : "Panic Exit",
+      subtitle: cleanRoute
+        ? `You left through cold air after mapping ${summary.roomsMapped} rooms with ${summary.composure}% composure.`
+        : `You forced the flap open after ${summary.roomsMapped} rooms with ${summary.composure}% composure still flickering.`,
+      title: cleanRoute ? "Cold Air Applause" : "Panic Exit",
+      tone: "escape",
+      variant: cleanRoute ? "clean-route" : "panic-exit",
+    };
+  }
+
+  const loopCollapse = state.despair >= state.fear;
+
+  return {
+    accent: loopCollapse ? "#fb923c" : "#f43f5e",
+    propCount: loopCollapse ? 8 : 10,
+    ringCount: loopCollapse ? 6 : 9,
+    secondaryAccent: loopCollapse ? "#22d3ee" : "#a78bfa",
+    statusLabel: loopCollapse ? "Loop Collapse" : "Laughing Spiral",
+    subtitle: loopCollapse
+      ? `Backtracking folded the route after ${summary.roomsMapped} mapped rooms. Breathe, then commit to a cleaner curtain chain.`
+      : `Fear drowned the music after ${summary.roomsMapped} mapped rooms. Recover with item routes before forcing gates.`,
+    title: loopCollapse ? "The Route Folds" : "The Laugh Wins",
+    tone: "lost",
+    variant: loopCollapse ? "loop-collapse" : "laughing-spiral",
   };
 }
 
@@ -302,6 +472,22 @@ export function recoverBeppoAfterMistake(state: BeppoState): BeppoState {
     fear: clamp(state.fear - tuning.recoveryPerItem, 0, 100),
     lastEvent: "You count the tent poles and breathe until the laughter thins.",
   });
+}
+
+function describeRoomLightingBeat(
+  mood: BeppoRoomCue["mood"],
+  roomLabel: string,
+  routeMemoryRemaining: number
+) {
+  if (mood === "spiral") return `${roomLabel} strobes faster than your route memory.`;
+  if (mood === "exit") return "Blue light leaks through the flap; the tent finally has an edge.";
+  if (mood === "late-maze")
+    return routeMemoryRemaining > 0
+      ? `${roomLabel} holds the last map beats before the exit listens.`
+      : `${roomLabel} lights a clean route toward the exit flap.`;
+  if (mood === "gate") return `${roomLabel} throws a hard shadow over the required item.`;
+  if (mood === "item") return `${roomLabel} warms when a blockade item is close.`;
+  return `${roomLabel} keeps the center spotlight steady.`;
 }
 
 function finalizeState(state: BeppoState): BeppoState {

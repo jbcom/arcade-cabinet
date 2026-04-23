@@ -15,7 +15,10 @@ Choose a junction, reveal a room, collect blockade items, avoid too much backtra
 ## Current Feature and Polish Pass
 
 - Route cue state now reports memory remaining, missing blockade items, recommended curtains, and threat level from pure maze state.
+- Room cue state gives each maze room a deterministic motif, palette, lighting beat, and room detail so late-maze navigation reads as authored circus spaces instead of generic junctions.
+- Ending cue state branches into clean-route, panic-exit, loop-collapse, and laughing-spiral payoffs based on composure, fear, despair, and route memory.
 - The main play surface now presents a circus-stage room with north/east/south/west portal buttons, route memory pips, current room focus, lock text, and cue lighting instead of a flat debug map.
+- The stage now adds room-specific spotlight/propping patterns and ending ring/prop overlays for stronger visual closure.
 - HUD memory, objective text, and inventory badges share the same route cue language so mobile and Android players can understand the next useful decision without reading implementation notes.
 
 ## Responsive and Android Contract

@@ -17,4 +17,6 @@ test("Beppo Laughs reaches gameplay from the mode-aware cartridge start", async 
 
   expect(rootElement.textContent).toContain("Route Cue");
   expect(rootElement.textContent).toContain("Center Ring");
+  expect(rootElement.textContent).toContain("Room Beat");
+  expect(rootElement.textContent).toContain("first spotlight");
 });

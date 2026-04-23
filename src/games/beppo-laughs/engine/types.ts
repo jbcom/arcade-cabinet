@@ -23,6 +23,31 @@ export interface BeppoModeTuning {
 }
 
 export type BeppoThreatLevel = "steady" | "uneasy" | "spiral";
+export type BeppoRoomMood = "opening" | "item" | "gate" | "late-maze" | "exit" | "spiral";
+export type BeppoStageMotif =
+  | "ring"
+  | "ticket"
+  | "mirror"
+  | "key"
+  | "gate"
+  | "wax"
+  | "bridge"
+  | "props"
+  | "arcade"
+  | "drum"
+  | "calliope"
+  | "exit";
+
+export interface BeppoRoomCue {
+  mood: BeppoRoomMood;
+  motif: BeppoStageMotif;
+  accent: string;
+  secondaryAccent: string;
+  lightingBeat: string;
+  roomDetail: string;
+  spotlightCount: number;
+  dangerPulse: boolean;
+}
 
 export interface BeppoRouteCue {
   label: string;
@@ -30,6 +55,21 @@ export interface BeppoRouteCue {
   routeMemoryRemaining: number;
   requiredItemsRemaining: BeppoItem[];
   recommendedDirections: BeppoDirection[];
+}
+
+export type BeppoEndingTone = "escape" | "lost";
+export type BeppoEndingVariant = "clean-route" | "panic-exit" | "loop-collapse" | "laughing-spiral";
+
+export interface BeppoEndingCue {
+  tone: BeppoEndingTone;
+  variant: BeppoEndingVariant;
+  title: string;
+  subtitle: string;
+  statusLabel: string;
+  accent: string;
+  secondaryAccent: string;
+  ringCount: number;
+  propCount: number;
 }
 
 export interface BeppoState {

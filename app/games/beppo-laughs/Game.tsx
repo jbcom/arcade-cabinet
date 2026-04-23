@@ -12,6 +12,8 @@ import {
   BEPPO_ROOMS,
   createInitialBeppoState,
   getAvailableBeppoMoves,
+  getBeppoEndingCue,
+  getBeppoRoomCue,
   getBeppoRouteCue,
   getBeppoRunSummary,
   getCurrentBeppoRoom,
@@ -19,6 +21,8 @@ import {
 } from "@logic/games/beppo-laughs/engine/beppoSimulation";
 import type {
   BeppoDirection,
+  BeppoEndingCue,
+  BeppoRoomCue,
   BeppoRouteCue,
   BeppoState,
 } from "@logic/games/beppo-laughs/engine/types";
@@ -64,7 +68,10 @@ export default function Game() {
   const room = getCurrentBeppoRoom(state);
   const moves = useMemo(() => getAvailableBeppoMoves(state), [state]);
   const routeCue = useMemo(() => getBeppoRouteCue(state), [state]);
+  const roomCue = useMemo(() => getBeppoRoomCue(state), [state]);
   const summary = getBeppoRunSummary(state);
+  const endingCue =
+    state.phase === "escaped" || state.phase === "lost" ? getBeppoEndingCue(state) : undefined;
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -79,8 +86,7 @@ export default function Game() {
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          background:
-            "radial-gradient(circle at 50% 12%, rgba(251,146,60,0.34), transparent 28%), linear-gradient(180deg, rgba(69,10,10,0.4), rgba(7,2,2,0.96)), repeating-linear-gradient(90deg, rgba(249,115,22,0.22) 0 7vw, rgba(153,27,27,0.22) 7vw 14vw)",
+          background: `radial-gradient(circle at 50% 12%, ${roomCue.accent}55, transparent 28%), linear-gradient(180deg, rgba(69,10,10,0.4), rgba(7,2,2,0.96)), repeating-linear-gradient(90deg, ${roomCue.accent}33 0 7vw, rgba(153,27,27,0.22) 7vw 14vw)`,
         }}
       />
       <div
@@ -120,10 +126,14 @@ export default function Game() {
             <CircusStage
               moves={moves}
               onMove={(direction) => setState((current) => moveBeppo(current, direction))}
+              roomCue={roomCue}
               routeCue={routeCue}
               state={state}
             />
-            <div className="grid min-h-0 grid-rows-[auto_auto_auto] gap-3 rounded-md border border-orange-200/20 bg-black/48 p-3 shadow-2xl">
+            <div
+              className="grid min-h-0 grid-rows-[auto_auto_auto] gap-3 rounded-md border bg-black/48 p-3 shadow-2xl"
+              style={{ borderColor: `${roomCue.accent}44` }}
+            >
               <div>
                 <div className="font-mono text-[0.65rem] font-black uppercase tracking-[0.24em] text-orange-200/70">
                   Current Room
@@ -132,6 +142,16 @@ export default function Game() {
                 <p className="mt-2 text-sm font-semibold leading-snug text-orange-50/72">
                   {state.lastEvent}
                 </p>
+                <div
+                  className="mt-3 rounded-md border p-2 text-xs font-black uppercase leading-snug text-white"
+                  style={{
+                    background: `${roomCue.accent}18`,
+                    borderColor: `${roomCue.accent}55`,
+                    color: roomCue.secondaryAccent,
+                  }}
+                >
+                  Room Beat: {roomCue.lightingBeat}
+                </div>
               </div>
               <div className="min-h-0 rounded-md border border-cyan-200/12 bg-cyan-950/18 p-3">
                 <div className="font-mono text-[0.62rem] font-black uppercase tracking-[0.22em] text-cyan-100/62">
@@ -139,6 +159,9 @@ export default function Game() {
                 </div>
                 <p className="mt-2 text-sm font-bold leading-snug text-cyan-50">
                   {state.objective}
+                </p>
+                <p className="mt-2 text-xs font-semibold leading-snug text-cyan-50/72">
+                  {roomCue.roomDetail}
                 </p>
                 <div className="mt-3 rounded-md border border-orange-200/22 bg-orange-500/10 p-2 text-xs font-black uppercase leading-snug text-orange-50">
                   Route Cue: {routeCue.label}
@@ -211,10 +234,13 @@ export default function Game() {
             score: summary.roomsMapped * 100 + summary.composure,
             slug: "beppo-laughs",
             status: "completed",
-            summary: `Escaped after mapping ${summary.roomsMapped} rooms`,
+            summary: endingCue?.statusLabel ?? `Escaped after mapping ${summary.roomsMapped} rooms`,
           }}
-          title="Escaped"
-          subtitle={`You left after mapping ${summary.roomsMapped}/${summary.routeMemoryTarget} rooms with ${summary.composure}% composure.`}
+          title={endingCue?.title ?? "Escaped"}
+          subtitle={
+            endingCue?.subtitle ??
+            `You left after mapping ${summary.roomsMapped}/${summary.routeMemoryTarget} rooms with ${summary.composure}% composure.`
+          }
           actions={<OverlayButton onClick={restart}>Run Again</OverlayButton>}
         />
       ) : null}
@@ -227,13 +253,18 @@ export default function Game() {
             score: summary.roomsMapped * 50,
             slug: "beppo-laughs",
             status: "failed",
-            summary: `Lost after mapping ${summary.roomsMapped} rooms`,
+            summary: endingCue?.statusLabel ?? `Lost after mapping ${summary.roomsMapped} rooms`,
           }}
-          title="The Laugh Wins"
-          subtitle="Composure hit zero. Choose cleaner routes and breathe after a mistake."
+          title={endingCue?.title ?? "The Laugh Wins"}
+          subtitle={
+            endingCue?.subtitle ??
+            "Composure hit zero. Choose cleaner routes and breathe after a mistake."
+          }
           actions={<OverlayButton onClick={restart}>Try Again</OverlayButton>}
         />
       ) : null}
+
+      {endingCue ? <BeppoEndingBackdrop cue={endingCue} /> : null}
     </GameViewport>
   );
 }
@@ -296,11 +327,13 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
 function CircusStage({
   moves,
   onMove,
+  roomCue,
   routeCue,
   state,
 }: {
   moves: ReturnType<typeof getAvailableBeppoMoves>;
   onMove: (direction: BeppoDirection) => void;
+  roomCue: BeppoRoomCue;
   routeCue: BeppoRouteCue;
   state: BeppoState;
 }) {
@@ -324,21 +357,24 @@ function CircusStage({
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          background:
-            "radial-gradient(circle at 50% 42%, rgba(34,211,238,0.16), transparent 32%), radial-gradient(circle at 50% 62%, rgba(249,115,22,0.16), transparent 28%), repeating-linear-gradient(90deg, rgba(127,29,29,0.42) 0 8%, rgba(30,41,59,0.34) 8% 16%)",
+          background: `radial-gradient(circle at 50% 42%, ${roomCue.secondaryAccent}2b, transparent 32%), radial-gradient(circle at 50% 62%, ${roomCue.accent}2f, transparent 28%), repeating-linear-gradient(90deg, rgba(127,29,29,0.42) 0 8%, rgba(30,41,59,0.34) 8% 16%)`,
         }}
       />
+      <RoomIdentityMotif cue={roomCue} />
       <div
         aria-hidden="true"
         className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-orange-100/20"
         style={{
-          boxShadow: `inset 0 0 52px rgba(0,0,0,0.72), 0 0 36px ${threatAccent}55`,
+          boxShadow: `inset 0 0 52px rgba(0,0,0,0.72), 0 0 36px ${roomCue.dangerPulse ? "#f87171" : threatAccent}55`,
         }}
       />
-      <div className="absolute left-1/2 top-1/2 grid h-[42%] w-[min(58%,25rem)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[50%] border border-cyan-200/45 bg-cyan-950/36 p-4 text-center">
+      <div
+        className="absolute left-1/2 top-1/2 grid h-[42%] w-[min(58%,25rem)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[50%] border bg-cyan-950/36 p-4 text-center"
+        style={{ borderColor: `${roomCue.secondaryAccent}88` }}
+      >
         <div>
           <div className="font-mono text-[0.62rem] font-black uppercase tracking-[0.24em] text-cyan-100/62">
-            {room.kind} room
+            {roomCue.mood} · {room.kind} room
           </div>
           <h2 className="mt-1 text-3xl font-black uppercase text-white">{room.label}</h2>
           <p className="mx-auto mt-2 max-w-[18rem] text-xs font-bold leading-snug text-cyan-50/78">
@@ -359,6 +395,64 @@ function CircusStage({
 
       <RouteMemoryMap state={state} />
     </section>
+  );
+}
+
+function RoomIdentityMotif({ cue }: { cue: BeppoRoomCue }) {
+  const spotlights = Array.from({ length: cue.spotlightCount }, (_, index) => ({
+    id: `room-spotlight-${index + 1}`,
+    left: 14 + ((index * 17) % 72),
+    opacity: 0.18 + (index % 3) * 0.08,
+    rotate: -20 + index * 8,
+  }));
+  const props = Array.from({ length: cue.spotlightCount + 2 }, (_, index) => ({
+    id: `room-prop-${cue.motif}-${index + 1}`,
+    left: 8 + ((index * 19) % 82),
+    size: 18 + (index % 3) * 8,
+    top: 14 + ((index * 23) % 68),
+  }));
+
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
+      {spotlights.map((spotlight) => (
+        <div
+          key={spotlight.id}
+          className="absolute top-0 h-[55%] w-16 origin-top rounded-b-full"
+          style={{
+            background: `linear-gradient(180deg, ${cue.accent}66, transparent)`,
+            left: `${spotlight.left}%`,
+            opacity: spotlight.opacity,
+            transform: `rotate(${spotlight.rotate}deg)`,
+          }}
+        />
+      ))}
+      {props.map((prop) => (
+        <div
+          key={prop.id}
+          className="absolute border"
+          style={{
+            background:
+              cue.motif === "mirror"
+                ? `linear-gradient(135deg, ${cue.secondaryAccent}55, rgba(255,255,255,0.18))`
+                : `${cue.accent}30`,
+            borderColor: `${cue.secondaryAccent}66`,
+            borderRadius:
+              cue.motif === "ticket" || cue.motif === "arcade"
+                ? "4px"
+                : cue.motif === "key" || cue.motif === "drum"
+                  ? "999px"
+                  : "50%",
+            height: cue.motif === "bridge" ? 6 : prop.size,
+            left: `${prop.left}%`,
+            opacity: 0.24,
+            top: `${prop.top}%`,
+            transform:
+              cue.motif === "bridge" ? "skewX(-18deg)" : `rotate(${prop.left - prop.top}deg)`,
+            width: cue.motif === "bridge" ? prop.size * 3 : prop.size,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -418,6 +512,64 @@ function PortalButton({
         </span>
       ) : null}
     </button>
+  );
+}
+
+function BeppoEndingBackdrop({ cue }: { cue: BeppoEndingCue }) {
+  const rings = Array.from({ length: cue.ringCount }, (_, index) => ({
+    id: `beppo-ending-ring-${index + 1}`,
+    inset: 10 + index * 4,
+    opacity: Math.max(0.12, 0.38 - index * 0.032),
+  }));
+  const props = Array.from({ length: cue.propCount }, (_, index) => ({
+    id: `beppo-ending-prop-${index + 1}`,
+    left: 8 + ((index * 23) % 84),
+    rotate: -28 + index * 19,
+    top: 10 + ((index * 31) % 76),
+  }));
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      data-beppo-ending={cue.variant}
+      style={{
+        background:
+          cue.tone === "escape"
+            ? `radial-gradient(circle at 50% 36%, ${cue.accent}33, transparent 38%), radial-gradient(circle at 50% 82%, ${cue.secondaryAccent}22, transparent 30%)`
+            : `radial-gradient(circle at 50% 38%, ${cue.accent}3d, transparent 36%), repeating-linear-gradient(90deg, rgba(127,29,29,0.16) 0 5vw, transparent 5vw 10vw)`,
+      }}
+    >
+      {rings.map((ring) => (
+        <div
+          key={ring.id}
+          className="absolute rounded-full border"
+          style={{
+            borderColor: cue.accent,
+            boxShadow: `0 0 22px ${cue.accent}`,
+            inset: `${ring.inset}%`,
+            opacity: ring.opacity,
+          }}
+        />
+      ))}
+      {props.map((prop) => (
+        <div
+          key={prop.id}
+          className="absolute h-12 w-7 rounded-sm border"
+          style={{
+            background: `${cue.secondaryAccent}22`,
+            borderColor: `${cue.secondaryAccent}88`,
+            left: `${prop.left}%`,
+            opacity: 0.24,
+            top: `${prop.top}%`,
+            transform: `rotate(${prop.rotate}deg)`,
+          }}
+        />
+      ))}
+      <div className="absolute bottom-[16%] left-1/2 -translate-x-1/2 rounded-md border border-white/16 bg-black/48 px-4 py-2 text-center font-mono text-[0.62rem] font-black uppercase tracking-[0.24em] text-white/58 backdrop-blur">
+        {cue.statusLabel}
+      </div>
+    </div>
   );
 }
 

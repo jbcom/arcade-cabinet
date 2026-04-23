@@ -4,7 +4,9 @@ import {
   BEPPO_ESCAPE_VISIT_TARGET,
   createInitialBeppoState,
   getAvailableBeppoMoves,
+  getBeppoEndingCue,
   getBeppoModeTuning,
+  getBeppoRoomCue,
   getBeppoRouteCue,
   getBeppoRunSummary,
   moveBeppo,
@@ -104,5 +106,67 @@ describe("Beppo Laughs couch-friendly maze logic", () => {
     const mappedCue = getBeppoRouteCue(mapped);
     expect(mappedCue.requiredItemsRemaining).toEqual(["red-key"]);
     expect(mappedCue.label).toContain("red clown-car key");
+  });
+
+  test("exposes distinct room lighting and late-maze identity cues", () => {
+    const start = createInitialBeppoState("standard", "playing");
+    const startRoomCue = getBeppoRoomCue(start);
+
+    expect(startRoomCue).toMatchObject({
+      mood: "opening",
+      motif: "ring",
+      roomDetail: "The first spotlight waits for a clean choice.",
+    });
+
+    let state = moveBeppo(start, "north");
+    state = moveBeppo(state, "south");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "north");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "north");
+    state = moveBeppo(state, "east");
+    state = moveBeppo(state, "south");
+    state = moveBeppo(state, "east");
+
+    const lateCue = getBeppoRoomCue(state);
+    expect(lateCue.mood).toBe("late-maze");
+    expect(lateCue.spotlightCount).toBeGreaterThan(startRoomCue.spotlightCount);
+    expect(lateCue.lightingBeat).toContain("last map beats");
+  });
+
+  test("exposes deterministic ending variants for clean exits, panic exits, and losses", () => {
+    const cleanEscape = {
+      ...createInitialBeppoState("standard", "escaped"),
+      composure: 82,
+      despair: 8,
+      fear: 10,
+      visitedRoomIds: Array.from(
+        { length: BEPPO_ESCAPE_VISIT_TARGET },
+        (_, index) => `room-${index}`
+      ),
+    };
+    const panicEscape = {
+      ...cleanEscape,
+      composure: 38,
+      despair: 26,
+      fear: 36,
+    };
+    const loopLost = {
+      ...createInitialBeppoState("standard", "lost"),
+      composure: 0,
+      despair: 64,
+      fear: 36,
+      visitedRoomIds: ["center-ring", "ticket-booth", "mirror-midway"],
+    };
+    const spiralLost = {
+      ...loopLost,
+      despair: 24,
+      fear: 76,
+    };
+
+    expect(getBeppoEndingCue(cleanEscape).variant).toBe("clean-route");
+    expect(getBeppoEndingCue(panicEscape).variant).toBe("panic-exit");
+    expect(getBeppoEndingCue(loopLost).variant).toBe("loop-collapse");
+    expect(getBeppoEndingCue(spiralLost).variant).toBe("laughing-spiral");
   });
 });
