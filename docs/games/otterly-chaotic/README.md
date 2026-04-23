@@ -21,6 +21,9 @@ The game is a small, readable chase arena. Bright pasture, blue water, a warm cr
 
 ## Current Feature and Polish Pass
 
+- Rescue cue telemetry now condenses bark readiness, goat chewing state, nearest goat pressure, salad health, ball-to-goal distance, and round progress into one deterministic next action.
+- The HUD now presents the next action and round cue on desktop and mobile, with mobile objective text clamped to readable lines instead of truncating the play instruction.
+- The arena renders rescue cue rings for the salad, bark radius, and recovery lane so the player can read the next move without scanning every goat label.
 - Goat intent is now exposed from pure logic and rendered as chase, chewing, and stunned feedback.
 - Bark events drive a visible shockwave, stun stars, rally timing, and rescue feedback.
 - The opening chew balance now keeps desktop and mobile screenshot captures in active play instead of falling into game-over during inspection.

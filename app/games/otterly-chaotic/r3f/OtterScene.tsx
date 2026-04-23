@@ -1,5 +1,10 @@
 import { browserTestCanvasGlOptions } from "@app/shared";
-import { GOAL, getGoatIntent, WATER_ZONE } from "@logic/games/otterly-chaotic/engine/simulation";
+import {
+  GOAL,
+  getGoatIntent,
+  getOtterlyRescueCue,
+  WATER_ZONE,
+} from "@logic/games/otterly-chaotic/engine/simulation";
 import type { GoatState, OtterlyState } from "@logic/games/otterly-chaotic/engine/types";
 import { Line } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
@@ -144,6 +149,7 @@ export function OtterScene({ state }: OtterSceneProps) {
         <meshStandardMaterial color="#0ea5e9" transparent opacity={0.82} roughness={0.28} />
       </mesh>
       <GoalMarker />
+      <RescueCueMarker state={state} />
       <GoalPullLine state={state} />
       <SaladBall state={state} />
       <Character position={[state.otter.x, 0.1, state.otter.y]} color="#a8a29e" scale={1.1} />
@@ -179,6 +185,42 @@ export function OtterScene({ state }: OtterSceneProps) {
         </mesh>
       ))}
     </Canvas>
+  );
+}
+
+function RescueCueMarker({ state }: { state: OtterlyState }) {
+  const cue = getOtterlyRescueCue(state);
+  const color =
+    cue.threatBand === "danger" ? "#fb7185" : cue.threatBand === "pressure" ? "#facc15" : "#86efac";
+
+  return (
+    <group>
+      <mesh position={[state.ball.x, 0.055, state.ball.y]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.76, 0.92, 56]} />
+        <meshBasicMaterial color={color} transparent opacity={0.34} />
+      </mesh>
+      {cue.action === "bark" ? (
+        <mesh position={[state.otter.x, 0.06, state.otter.y]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[2.18, 2.34, 72]} />
+          <meshBasicMaterial color="#fde047" transparent opacity={0.3} />
+        </mesh>
+      ) : null}
+      {cue.action === "recover" ? (
+        <Line
+          points={[
+            [state.otter.x, 0.11, state.otter.y],
+            [state.ball.x, 0.11, state.ball.y],
+          ]}
+          color="#38bdf8"
+          lineWidth={2}
+          transparent
+          opacity={0.42}
+          dashed
+          dashScale={0.8}
+          gapSize={0.13}
+        />
+      ) : null}
+    </group>
   );
 }
 

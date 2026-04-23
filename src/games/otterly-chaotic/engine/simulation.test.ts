@@ -5,6 +5,7 @@ import {
   didWin,
   GOAL,
   getGoatIntent,
+  getOtterlyRescueCue,
   getOtterlyRunSummary,
   TARGET_RESCUES,
   tick,
@@ -71,6 +72,38 @@ describe("otterly simulation", () => {
     expect(chewIntent.state).toBe("chewing");
     expect(stunIntent.state).toBe("stunned");
     expect(chaseIntent.alertLevel).toBeGreaterThanOrEqual(0);
+  });
+
+  test("summarizes rescue cue decisions from goat threat and bark readiness", () => {
+    const clear = createInitialState();
+    clear.goats = clear.goats.map((goat) => ({ ...goat, position: { x: 4, y: -4 } }));
+    const clearCue = getOtterlyRescueCue(clear);
+
+    const chewing = createInitialState();
+    chewing.goats[0].position = { ...chewing.ball };
+    const chewingCue = getOtterlyRescueCue(chewing);
+
+    const recovering = createInitialState();
+    recovering.barkCooldownMs = 900;
+    recovering.goats[0].position = { x: recovering.ball.x + 1.2, y: recovering.ball.y };
+    const recoverCue = getOtterlyRescueCue(recovering);
+
+    expect(clearCue).toMatchObject({
+      action: "push",
+      progressLabel: "1/5",
+      threatBand: "clear",
+    });
+    expect(chewingCue).toMatchObject({
+      action: "bark",
+      chewingGoats: 1,
+      threatBand: "danger",
+    });
+    expect(recoverCue).toMatchObject({
+      action: "recover",
+      barkReady: false,
+      closestGoatId: "billy",
+      threatBand: "pressure",
+    });
   });
 
   test("double bark rallies restore salad health and damp goat damage", () => {

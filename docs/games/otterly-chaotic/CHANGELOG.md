@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added deterministic rescue cue telemetry for next action, threat band, bark readiness, nearest goat, chewing count, and round progress.
+- Added HUD cue text plus arena cue rings for salad focus, bark radius, and recovery lane.
 - Added goat intent telemetry, bark rally feedback, and a longer playable opening window.
 - Added goat target lines, bark shockwave, stun stars, salad/goal feedback, and shared cartridge landing identity.
 

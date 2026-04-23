@@ -165,6 +165,51 @@ export function getGoatIntent(state: OtterlyState, goat: OtterlyState["goats"][n
   };
 }
 
+export function getOtterlyRescueCue(state: OtterlyState) {
+  const goatIntents = state.goats.map((goat) => getGoatIntent(state, goat));
+  const closestGoat = goatIntents.reduce<(typeof goatIntents)[number] | null>(
+    (closest, intent) =>
+      !closest || intent.targetDistance < closest.targetDistance ? intent : closest,
+    null
+  );
+  const chewingGoats = goatIntents.filter((intent) => intent.state === "chewing").length;
+  const ballToGoalDistance = Math.round(distance(state.ball, GOAL) * 100) / 100;
+  const barkReady = state.barkCooldownMs <= 0;
+  const threatBand =
+    chewingGoats > 0 || state.ballHealth < 42
+      ? "danger"
+      : (closestGoat?.targetDistance ?? 99) < 2.2
+        ? "pressure"
+        : "clear";
+  const action =
+    (chewingGoats > 0 || state.ballHealth < 52) && barkReady
+      ? "bark"
+      : ballToGoalDistance < 1.8
+        ? "push"
+        : threatBand === "pressure" && !barkReady
+          ? "recover"
+          : "push";
+
+  return {
+    action,
+    ballToGoalDistance,
+    barkReady,
+    chewingGoats,
+    closestGoatDistance: closestGoat?.targetDistance ?? null,
+    closestGoatId: closestGoat?.goatId ?? null,
+    objective: describeRescueCueObjective({
+      action,
+      ballToGoalDistance,
+      barkReady,
+      chewingGoats,
+      closestGoatId: closestGoat?.goatId ?? null,
+      threatBand,
+    }),
+    progressLabel: `${state.rescuesCompleted + 1}/${state.targetRescues}`,
+    threatBand,
+  };
+}
+
 export function getOtterlyRunSummary(state: OtterlyState) {
   return {
     elapsedSeconds: Math.round(state.elapsedMs / 1000),
@@ -174,6 +219,40 @@ export function getOtterlyRunSummary(state: OtterlyState) {
     rescueStreak: state.rescueStreak,
     targetRescues: state.targetRescues,
   };
+}
+
+function describeRescueCueObjective({
+  action,
+  ballToGoalDistance,
+  barkReady,
+  chewingGoats,
+  closestGoatId,
+  threatBand,
+}: {
+  action: string;
+  ballToGoalDistance: number;
+  barkReady: boolean;
+  chewingGoats: number;
+  closestGoatId: string | null;
+  threatBand: string;
+}) {
+  if (action === "bark") {
+    return chewingGoats > 0
+      ? `Bark now: ${chewingGoats} goat${chewingGoats === 1 ? " is" : "s are"} chewing.`
+      : "Bark to open a rescue window before the next push.";
+  }
+  if (action === "recover") {
+    return barkReady
+      ? "Bark is ready. Cut across the goat lane."
+      : `Recover position until bark returns; ${closestGoatId ?? "a goat"} is closing.`;
+  }
+  if (ballToGoalDistance < 1.8) {
+    return "Push straight into the crater and bank this salad piece.";
+  }
+  if (threatBand === "clear") {
+    return "Clear lane. Nudge the salad toward the crater.";
+  }
+  return `Keep the otter between ${closestGoatId ?? "the goats"} and the salad.`;
 }
 
 function createGoats(speedScale: number, roundIndex: number) {
