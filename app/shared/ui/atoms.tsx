@@ -257,7 +257,13 @@ export function StartScreen({ primaryAction, secondaryAction, ...props }: StartS
 }
 
 export function GameOverScreen(props: ScreenProps) {
-  return <ScreenShell {...props} testId={props.testId ?? "game-over-screen"} accent="#fb7185" />;
+  return (
+    <ScreenShell
+      {...props}
+      testId={props.testId ?? "game-over-screen"}
+      accent={props.accent ?? "#fb7185"}
+    />
+  );
 }
 
 export function OverlayButton({

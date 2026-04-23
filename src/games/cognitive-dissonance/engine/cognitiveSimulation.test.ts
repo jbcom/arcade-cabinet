@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   advanceCognitiveState,
   createInitialCognitiveState,
+  getCognitiveEndingCue,
   getCognitiveModeTuning,
   getCognitiveRunSummary,
   getCognitiveShiftCue,
@@ -102,5 +103,46 @@ describe("Cognitive Dissonance coherence loop", () => {
     expect(recovered.coherence).toBeGreaterThan(mistake.coherence);
     expect(recovered.stableHoldMs).toBeGreaterThan(mistake.stableHoldMs);
     expect(recovered.tension).toBeLessThan(mistake.tension);
+  });
+
+  test("stable ending cue exposes deterministic glass lock payoff", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "stable"),
+      coherence: 92,
+      elapsedMs: getCognitiveModeTuning("standard").shiftDurationMs,
+      phaseLocks: 4,
+      tension: 24,
+    };
+    const cue = getCognitiveEndingCue(state);
+
+    expect(cue).toMatchObject({
+      accentPattern: "violet",
+      statusLabel: "Clear Glass Lock",
+      title: "Shift Stable",
+      tone: "stable",
+    });
+    expect(cue.ringCount).toBe(7);
+    expect(cue.shardCount).toBe(0);
+    expect(cue.message).toContain("720s held");
+  });
+
+  test("shattered ending cue exposes deterministic fracture payoff", () => {
+    const state = {
+      ...createInitialCognitiveState("standard", "shattered"),
+      coherence: 0,
+      elapsedMs: getCognitiveModeTuning("standard").shiftDurationMs * 0.46,
+      currentPattern: "cyan" as const,
+      tension: 94,
+    };
+    const cue = getCognitiveEndingCue(state);
+
+    expect(cue).toMatchObject({
+      accentPattern: "cyan",
+      statusLabel: "Shatter Trace",
+      title: "Glass Shattered",
+      tone: "shattered",
+    });
+    expect(cue.shardCount).toBeGreaterThan(10);
+    expect(cue.message).toContain("phase-lock");
   });
 });

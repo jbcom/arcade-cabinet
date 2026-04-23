@@ -1,5 +1,6 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
 import type {
+  CognitiveEndingCue,
   CognitiveModeTuning,
   CognitivePattern,
   CognitiveShiftCue,
@@ -201,6 +202,50 @@ export function getCognitiveShiftCue(state: CognitiveState): CognitiveShiftCue {
     stage,
     stageLabel: labelShiftStage(stage),
     urgency,
+  };
+}
+
+export function getCognitiveEndingCue(state: CognitiveState): CognitiveEndingCue {
+  const summary = getCognitiveRunSummary(state);
+
+  if (state.phase === "shattered") {
+    const shardCount = Math.round(
+      clamp(8 + state.tension / 8 + (100 - summary.progressPercent) / 22, 8, 22)
+    );
+    const intensity = clamp(0.66 + state.tension / 120 + (100 - state.coherence) / 180, 0.74, 1.62);
+
+    return {
+      accentPattern: state.currentPattern,
+      intensity,
+      message: `The glass fractured at ${summary.progressPercent}% shift progress. Rebuild earlier by holding ${labelPattern(state.currentPattern)} long enough to phase-lock before tension peaks.`,
+      nextAction: "Reboot with earlier phase locks.",
+      ringCount: 2,
+      shardCount,
+      statusLabel: "Shatter Trace",
+      title: "Glass Shattered",
+      tone: "shattered",
+    };
+  }
+
+  const ringCount = Math.round(clamp(3 + state.phaseLocks, 3, 9));
+  const intensity = clamp(0.58 + state.coherence / 130 + state.phaseLocks * 0.06, 0.72, 1.45);
+  const statusLabel =
+    summary.coherence >= 88
+      ? "Clear Glass Lock"
+      : summary.tension <= 38
+        ? "Soft Glass Lock"
+        : "Rough Glass Lock";
+
+  return {
+    accentPattern: state.currentPattern,
+    intensity,
+    message: `${statusLabel}: ${summary.targetSeconds}s held at ${summary.coherence}% coherence with ${summary.phaseLocks} phase locks and ${summary.tension}% residual tension.`,
+    nextAction: "Replay for a cleaner lock.",
+    ringCount,
+    shardCount: 0,
+    statusLabel,
+    title: "Shift Stable",
+    tone: "stable",
   };
 }
 

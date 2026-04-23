@@ -31,6 +31,20 @@ export interface CognitiveShiftCue {
   urgency: "low" | "medium" | "high";
 }
 
+export type CognitiveEndingTone = "stable" | "shattered";
+
+export interface CognitiveEndingCue {
+  tone: CognitiveEndingTone;
+  title: string;
+  message: string;
+  statusLabel: string;
+  nextAction: string;
+  accentPattern: CognitivePattern;
+  ringCount: number;
+  shardCount: number;
+  intensity: number;
+}
+
 export interface CognitiveState {
   phase: CognitivePhase;
   sessionMode: SessionMode;

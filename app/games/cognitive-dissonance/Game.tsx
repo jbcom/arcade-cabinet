@@ -9,10 +9,12 @@ import {
 import {
   advanceCognitiveState,
   createInitialCognitiveState,
+  getCognitiveEndingCue,
   getCognitiveRunSummary,
   getCognitiveShiftCue,
 } from "@logic/games/cognitive-dissonance/engine/cognitiveSimulation";
 import type {
+  CognitiveEndingCue,
   CognitivePattern,
   CognitiveState,
 } from "@logic/games/cognitive-dissonance/engine/types";
@@ -77,6 +79,10 @@ export default function Game() {
     setState(createInitialCognitiveState(state.sessionMode, "menu"));
   };
   const summary = getCognitiveRunSummary(state);
+  const endingCue =
+    state.phase === "stable" || state.phase === "shattered"
+      ? getCognitiveEndingCue(state)
+      : undefined;
 
   useRunSnapshotAutosave({
     active: state.phase === "playing",
@@ -134,10 +140,10 @@ export default function Game() {
             score: summary.coherence * 100 + summary.stableMatches * 50 + summary.phaseLocks * 750,
             slug: "cognitive-dissonance",
             status: "completed",
-            summary: `Stable ${summary.targetSeconds}s shift`,
+            summary: endingCue?.statusLabel ?? `Stable ${summary.targetSeconds}s shift`,
           }}
-          title="Shift Stable"
-          subtitle={`${summary.targetSeconds}s shift held at ${summary.coherence}% coherence with ${summary.phaseLocks} phase locks and ${summary.tension}% tension.`}
+          title={endingCue?.title ?? "Shift Stable"}
+          subtitle={endingCue?.message ?? "The shift stabilized."}
           actions={<OverlayButton onClick={restart}>Run Another Shift</OverlayButton>}
         />
       ) : null}
@@ -151,13 +157,16 @@ export default function Game() {
               summary.progressPercent * 10 + summary.stableMatches * 25 + summary.phaseLocks * 250,
             slug: "cognitive-dissonance",
             status: "failed",
-            summary: `Shattered at ${summary.progressPercent}% shift progress`,
+            summary:
+              endingCue?.statusLabel ?? `Shattered at ${summary.progressPercent}% shift progress`,
           }}
-          title="Glass Shattered"
-          subtitle={`Coherence dropped to zero after ${summary.elapsedSeconds}s (${summary.progressPercent}% of the shift). Match earlier and use rim controls as recovery.`}
+          title={endingCue?.title ?? "Glass Shattered"}
+          subtitle={endingCue?.message ?? "Coherence dropped to zero."}
           actions={<OverlayButton onClick={restart}>Reboot</OverlayButton>}
         />
       ) : null}
+
+      {endingCue ? <CognitiveEndingBackdrop cue={endingCue} /> : null}
     </GameViewport>
   );
 }
@@ -309,6 +318,39 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
     );
     phaseLockRing.rotation.x = Math.PI / 2;
     scene.add(phaseLockRing);
+    const stableEndingMaterial = new THREE.MeshBasicMaterial({
+      color: "#67e8f9",
+      opacity: 0,
+      transparent: true,
+    });
+    const stableEndingRings = Array.from({ length: 9 }, (_, index) => {
+      const mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(2.95 + index * 0.16, 0.013, 8, 128),
+        stableEndingMaterial
+      );
+      mesh.rotation.x = Math.PI / 2;
+      mesh.visible = false;
+      scene.add(mesh);
+      return mesh;
+    });
+    const shardGeometry = new THREE.BufferGeometry();
+    shardGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array([0, 0, 0, 0.32, 0.08, 0, 0.06, 0.38, 0]), 3)
+    );
+    shardGeometry.computeVertexNormals();
+    const shatterMaterial = new THREE.MeshBasicMaterial({
+      color: "#fb7185",
+      opacity: 0,
+      side: THREE.DoubleSide,
+      transparent: true,
+    });
+    const shatterShards = Array.from({ length: 22 }, () => {
+      const mesh = new THREE.Mesh(shardGeometry, shatterMaterial);
+      mesh.visible = false;
+      scene.add(mesh);
+      return mesh;
+    });
 
     const controlNodes = (["violet", "cyan", "gold"] as const).map((pattern, index) => {
       const material = new THREE.MeshStandardMaterial({
@@ -371,27 +413,72 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
       const current = stateRef.current;
       const time = current.elapsedMs / 1000;
       const cue = getCognitiveShiftCue(current);
+      const endingCue =
+        current.phase === "stable" || current.phase === "shattered"
+          ? getCognitiveEndingCue(current)
+          : undefined;
       const activeColor = PATTERN_COLORS[current.currentPattern];
       const phaseLockStrength = cue.phaseLockActive ? 1 : cue.phaseLockPercent / 100;
+      const stableEndingStrength = endingCue?.tone === "stable" ? endingCue.intensity : 0;
+      const shatterStrength = endingCue?.tone === "shattered" ? endingCue.intensity : 0;
       sphere.rotation.y = time * 0.18;
       sphere.rotation.x = Math.sin(time * 0.35) * 0.08;
-      sphere.scale.setScalar(1 + current.tension * 0.0018 + phaseLockStrength * 0.035);
+      sphere.scale.setScalar(
+        1 + current.tension * 0.0018 + phaseLockStrength * 0.035 + stableEndingStrength * 0.08
+      );
       sphereMaterial.emissive.set(activeColor);
-      sphereMaterial.emissiveIntensity = 0.25 + current.coherence / 120;
+      sphereMaterial.emissiveIntensity =
+        0.25 + current.coherence / 120 + stableEndingStrength * 0.42;
       cabinetMaterial.emissive.set(activeColor);
-      cabinetMaterial.emissiveIntensity = 0.08 + current.tension / 280;
+      cabinetMaterial.emissiveIntensity =
+        0.08 + current.tension / 280 + stableEndingStrength * 0.18 + shatterStrength * 0.24;
       glassMaterial.color.set(activeColor);
-      glassMaterial.opacity = 0.06 + current.coherence / 900 + phaseLockStrength * 0.04;
+      glassMaterial.opacity =
+        0.06 + current.coherence / 900 + phaseLockStrength * 0.04 + stableEndingStrength * 0.045;
       frameAccentMaterial.color.set(cue.urgency === "high" ? "#fb7185" : activeColor);
-      frameAccentMaterial.opacity = 0.35 + current.tension / 180;
+      frameAccentMaterial.opacity = 0.35 + current.tension / 180 + shatterStrength * 0.1;
       ringMaterial.color.set(activeColor);
-      ringMaterial.opacity = 0.25 + current.coherence / 160 + phaseLockStrength * 0.16;
+      ringMaterial.opacity =
+        0.25 + current.coherence / 160 + phaseLockStrength * 0.16 + stableEndingStrength * 0.16;
       verticalRing.rotation.z = time * 0.12;
       verticalRingMaterial.color.set(PATTERN_COLORS[cue.nextPattern]);
       verticalRingMaterial.opacity = 0.18 + current.tension / 260;
       phaseLockRing.rotation.z = -time * 0.28;
       phaseLockRing.scale.setScalar(1 + Math.sin(time * 5) * 0.025 + phaseLockStrength * 0.08);
       phaseLockMaterial.opacity = cue.phaseLockActive ? 0.62 : cue.phaseLockPercent / 240;
+
+      stableEndingMaterial.color.set(activeColor);
+      stableEndingMaterial.opacity =
+        stableEndingStrength > 0 ? 0.18 + stableEndingStrength * 0.08 : 0;
+      for (let index = 0; index < stableEndingRings.length; index++) {
+        const mesh = stableEndingRings[index];
+        const visible = endingCue?.tone === "stable" && index < endingCue.ringCount;
+        if (!mesh) continue;
+        mesh.visible = visible;
+        if (!visible) continue;
+        mesh.rotation.z = time * (0.08 + index * 0.012);
+        mesh.scale.setScalar(1 + Math.sin(time * 0.85 + index) * 0.025 + index * 0.01);
+        mesh.position.z = -0.1 + index * 0.006;
+      }
+
+      shatterMaterial.color.set("#fb7185");
+      shatterMaterial.opacity = shatterStrength > 0 ? 0.24 + shatterStrength * 0.18 : 0;
+      for (let index = 0; index < shatterShards.length; index++) {
+        const mesh = shatterShards[index];
+        const visible = endingCue?.tone === "shattered" && index < endingCue.shardCount;
+        if (!mesh) continue;
+        mesh.visible = visible;
+        if (!visible) continue;
+        const angle = index * 1.91 + time * 0.18;
+        const radius = 1.05 + (index % 6) * 0.34 + shatterStrength * 0.26;
+        mesh.position.set(
+          Math.cos(angle) * radius,
+          Math.sin(angle * 0.84) * (0.92 + (index % 4) * 0.18),
+          0.2 + Math.sin(angle) * 0.38
+        );
+        mesh.rotation.set(time * 0.24 + index, angle, -time * 0.18 + index * 0.31);
+        mesh.scale.setScalar(0.86 + (index % 5) * 0.16 + shatterStrength * 0.18);
+      }
 
       for (let index = 0; index < patternMeshes.length; index++) {
         const pattern = current.patterns[index];
@@ -457,6 +544,12 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
       verticalRingMaterial.dispose();
       phaseLockRing.geometry.dispose();
       phaseLockMaterial.dispose();
+      for (const mesh of stableEndingRings) {
+        mesh.geometry.dispose();
+      }
+      stableEndingMaterial.dispose();
+      shardGeometry.dispose();
+      shatterMaterial.dispose();
       for (const node of controlNodes) {
         node.mesh.geometry.dispose();
         node.material.dispose();
@@ -474,6 +567,67 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
   }, []);
 
   return <div ref={hostRef} className="absolute inset-0" />;
+}
+
+function CognitiveEndingBackdrop({ cue }: { cue: CognitiveEndingCue }) {
+  const accent = PATTERN_COLORS[cue.accentPattern];
+  const rings = Array.from({ length: cue.ringCount }, (_, index) => ({
+    id: `stable-ending-ring-${index + 1}`,
+    inset: 14 + index * 4,
+    opacity: Math.max(0.18, 0.42 - index * 0.026),
+  }));
+  const shards = Array.from({ length: cue.shardCount }, (_, index) => ({
+    id: `shatter-ending-shard-${index + 1}`,
+    left: 8 + ((index * 17) % 84),
+    opacity: 0.22 + (index % 4) * 0.08,
+    rotate: index * 27,
+    top: 10 + ((index * 29) % 78),
+  }));
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      data-cognitive-ending={cue.tone}
+      style={{
+        background:
+          cue.tone === "stable"
+            ? `radial-gradient(circle at 50% 42%, ${accent}44, transparent 42%), radial-gradient(circle at 50% 78%, #67e8f922, transparent 34%)`
+            : "radial-gradient(circle at 50% 42%, rgba(251,113,133,0.34), transparent 38%), radial-gradient(circle at 22% 18%, rgba(167,139,250,0.24), transparent 26%)",
+      }}
+    >
+      {cue.tone === "stable"
+        ? rings.map((ring) => (
+            <div
+              key={ring.id}
+              className="absolute rounded-full border"
+              style={{
+                borderColor: accent,
+                boxShadow: `0 0 24px ${accent}`,
+                inset: `${ring.inset}%`,
+                opacity: ring.opacity,
+              }}
+            />
+          ))
+        : shards.map((shard) => (
+            <div
+              key={shard.id}
+              className="absolute h-16 w-5 border-l border-t"
+              style={{
+                borderColor: "#fb7185",
+                boxShadow: "0 0 20px rgba(251,113,133,0.72)",
+                left: `${shard.left}%`,
+                opacity: shard.opacity,
+                top: `${shard.top}%`,
+                transform: `rotate(${shard.rotate}deg) skewY(-18deg)`,
+              }}
+            />
+          ))}
+      <div className="absolute bottom-[18%] left-1/2 -translate-x-1/2 rounded-md border border-white/16 bg-black/48 px-4 py-2 text-center font-mono text-[0.62rem] font-black uppercase tracking-[0.24em] text-white/58 backdrop-blur">
+        {cue.statusLabel} · {cue.nextAction}
+      </div>
+    </div>
+  );
 }
 
 function Hud({ state }: { state: CognitiveState }) {

@@ -17,7 +17,9 @@ Watch the glass mind, match the active pattern, charge phase lock, vent tension,
 
 - Sustained correct matching now charges a deterministic phase-lock recovery event.
 - The pure engine exposes a shift cue with stage, active/next pattern, urgency, phase-lock charge, and instruction text.
+- Stable and shattered runs now expose deterministic ending cues for glass-lock rings, fracture shards, status copy, and replay guidance.
 - The raw Three scene now presents the playfield as a cabinet glass assembly with frame rails, scanlines, pattern rain, rim nodes, and phase-lock halo feedback.
+- The stable ending blooms with concentric glass-lock rings; the shattered ending breaks into readable fracture shards and a shatter trace.
 - The mobile HUD uses a compact two-column layout so the glass mind and rim controls stay visible in portrait screenshots.
 
 ## Responsive and Android Contract
