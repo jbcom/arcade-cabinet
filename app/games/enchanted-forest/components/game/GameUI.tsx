@@ -1,8 +1,10 @@
 import { CartridgeStartScreen } from "@app/shared";
 import type {
   ForestRitualCue,
+  ForestSpellCadenceCue,
   RuneType,
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
+import type { ForestAudioStatus } from "@logic/games/enchanted-forest/lib/forestAudio";
 import { RUNE_PATTERNS } from "@logic/games/enchanted-forest/lib/runePatterns";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { AnimatePresence, motion } from "framer-motion";
@@ -46,6 +48,8 @@ interface GameUIProps {
   harmonyLevel: number;
   harmonySurgeActive: boolean;
   ritualCue: ForestRitualCue;
+  spellCadenceCue: ForestSpellCadenceCue;
+  audioStatus: ForestAudioStatus;
   runSummary: {
     elapsedSeconds: number;
     healthyTrees: number;
@@ -182,6 +186,7 @@ function RuneActivation({
         transition={{ duration: 0.3 }}
       />
       <SpeedLines direction="horizontal" />
+      <RuneActivationMotif color={rune.color} motif={getRuneMotif(rune.type)} />
       <div className="relative">
         <motion.div
           className="absolute inset-0 -m-20 rounded-full blur-3xl"
@@ -217,6 +222,130 @@ function RuneActivation({
   );
 }
 
+function RuneActivationMotif({
+  color,
+  motif,
+}: {
+  color: string;
+  motif: ForestSpellCadenceCue["motif"];
+}) {
+  if (motif === "ring") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        {[0, 1, 2].map((index) => (
+          <motion.div
+            key={`shield-ring-${index}`}
+            className="absolute rounded-full border-2"
+            style={{ borderColor: color, width: 130 + index * 76, height: 130 + index * 76 }}
+            initial={{ opacity: 0.8, scale: 0.35 }}
+            animate={{ opacity: 0, scale: 1.25 }}
+            transition={{ delay: index * 0.12, duration: 0.72 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (motif === "ascending") {
+    return (
+      <div className="absolute inset-0 flex items-end justify-center gap-4 pb-[18vh]">
+        {[0, 1, 2, 3].map((index) => (
+          <motion.div
+            key={`heal-column-${index}`}
+            className="h-32 w-3 rounded-full"
+            style={{ background: color, boxShadow: `0 0 24px ${color}` }}
+            initial={{ opacity: 0, y: 140, scaleY: 0.3 }}
+            animate={{ opacity: [0, 1, 0], y: -110 - index * 18, scaleY: 1.8 }}
+            transition={{ delay: index * 0.1, duration: 0.88 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (motif === "zigzag") {
+    return (
+      <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+        {[0, 1, 2].map((index) => (
+          <motion.polyline
+            key={`purify-zig-${index}`}
+            points="18,58 36,38 54,58 72,38 90,58"
+            fill="none"
+            stroke={color}
+            strokeWidth="1.8"
+            vectorEffect="non-scaling-stroke"
+            initial={{ opacity: 0, pathLength: 0 }}
+            animate={{ opacity: [0, 1, 0], pathLength: 1 }}
+            transition={{ delay: index * 0.12, duration: 0.7 }}
+            style={{
+              filter: `drop-shadow(0 0 14px ${color})`,
+              transform: `translate(${8 + index * 8}%, ${24 + index * 12}%) scale(0.82)`,
+              transformOrigin: "center",
+            }}
+          />
+        ))}
+      </svg>
+    );
+  }
+
+  return null;
+}
+
+function getRuneMotif(type: RuneType): ForestSpellCadenceCue["motif"] {
+  if (type === "shield") return "ring";
+  if (type === "heal") return "ascending";
+  return "zigzag";
+}
+
+function CadenceMeter({
+  audioStatus,
+  cue,
+}: {
+  audioStatus: ForestAudioStatus;
+  cue: ForestSpellCadenceCue;
+}) {
+  return (
+    <div className="mt-2 rounded border border-white/10 bg-white/5 px-2 py-1.5">
+      <div className="flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest">
+        <span style={{ color: cue.color }}>{cue.label}</span>
+        <span
+          className={audioStatus.visualFallbackActive ? "text-amber-200" : "text-emerald-100/60"}
+        >
+          {audioStatus.visualFallbackActive ? "Visual chorus" : "Audio live"}
+        </span>
+      </div>
+      <div className="mt-1 grid grid-cols-3 gap-1">
+        {cue.beatPattern.map((beat, index) => (
+          <motion.div
+            key={`${cue.label}-${beat}`}
+            className="rounded-sm border px-1 py-0.5 text-center text-[9px] font-black uppercase"
+            style={{
+              borderColor: cue.color,
+              color: cue.color,
+              opacity: 0.48 + cue.intensity * 0.42,
+            }}
+            animate={{
+              boxShadow: [
+                `0 0 0 ${cue.color}00`,
+                `0 0 ${10 + cue.intensity * 18}px ${cue.color}66`,
+                `0 0 0 ${cue.color}00`,
+              ],
+            }}
+            transition={{ delay: index * 0.12, duration: 0.9, repeat: Infinity }}
+          >
+            {beat}
+          </motion.div>
+        ))}
+      </div>
+      {audioStatus.visualFallbackActive ? (
+        <div className="mt-1 text-[9px] font-bold uppercase text-amber-100/70">
+          {cue.fallbackText}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function GameUI({
   wave,
   totalWaves,
@@ -231,6 +360,8 @@ export function GameUI({
   harmonyLevel,
   harmonySurgeActive,
   ritualCue,
+  spellCadenceCue,
+  audioStatus,
   runSummary,
 }: GameUIProps) {
   const [showRuneEffect, setShowRuneEffect] = useState<(typeof RUNE_PATTERNS)[0] | null>(null);
@@ -321,6 +452,7 @@ export function GameUI({
                 <div className="mt-1 truncate text-[10px] font-bold uppercase text-emerald-100/60">
                   {ritualCue.harmonyText}
                 </div>
+                <CadenceMeter audioStatus={audioStatus} cue={spellCadenceCue} />
                 <div className="mt-1 grid grid-cols-3 gap-1">
                   {[1, 2, 3].map((step) => (
                     <div
@@ -386,6 +518,12 @@ export function GameUI({
             <div className="mt-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-white/70">
               <span className="truncate">{cueTarget}</span>
               <span>{ritualCue.threatBand}</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest">
+              <span style={{ color: spellCadenceCue.color }}>{spellCadenceCue.label}</span>
+              <span className="truncate text-white/40">
+                {spellCadenceCue.beatPattern.join(" / ")}
+              </span>
             </div>
           </div>
         </motion.div>

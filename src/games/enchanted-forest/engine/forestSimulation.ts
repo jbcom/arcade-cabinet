@@ -64,6 +64,17 @@ export interface ForestRitualCue {
   objective: string;
 }
 
+export interface ForestSpellCadenceCue {
+  spellType: RuneType | null;
+  label: string;
+  motif: "ascending" | "ring" | "zigzag" | "listening";
+  color: string;
+  beatPattern: string[];
+  intensity: number;
+  harmonyBonusActive: boolean;
+  fallbackText: string;
+}
+
 export interface ForestState {
   phase: ForestPhase;
   sessionMode: SessionMode;
@@ -75,6 +86,7 @@ export interface ForestState {
   shadows: CorruptionShadow[];
   lastRune: string | null;
   lastRuneType: RuneType | null;
+  lastSpellCastMs: number;
   harmonyLevel: number;
   harmonySurgeActive: boolean;
   purifyZone: PurifyZone | null;
@@ -152,6 +164,7 @@ export function createInitialForestState(
     shadows: [],
     lastRune: null,
     lastRuneType: null,
+    lastSpellCastMs: 0,
     harmonyLevel: 0,
     harmonySurgeActive: false,
     purifyZone: null,
@@ -252,6 +265,7 @@ export function applySpellCast(state: ForestState, spell: RunePattern): ForestSt
     ...state,
     harmonyLevel,
     harmonySurgeActive,
+    lastSpellCastMs: state.elapsedMs,
     lastRuneType: spell.type,
     mana,
     lastRune: spell.name,
@@ -430,6 +444,61 @@ export function getForestRitualCue(state: ForestState): ForestRitualCue {
     recommendedTreeIndex: targetTreeIndex,
     threatBand,
     waveLabel: `Wave ${state.wave}/${MAX_WAVES}`,
+  };
+}
+
+export function getForestSpellCadenceCue(state: ForestState): ForestSpellCadenceCue {
+  if (!state.lastRuneType) {
+    return {
+      beatPattern: ["listen", "draw", "answer"],
+      color: "#a7f3d0",
+      fallbackText: "Visual cadence ready.",
+      harmonyBonusActive: false,
+      intensity: 0.32,
+      label: "Listening Grove",
+      motif: "listening",
+      spellType: null,
+    };
+  }
+
+  const recent = state.lastRune !== null;
+  const intensity = state.harmonySurgeActive ? 1 : recent ? 0.82 : 0.52;
+
+  if (state.lastRuneType === "shield") {
+    return {
+      beatPattern: ["root", "ward", "hold"],
+      color: "#4ade80",
+      fallbackText: "Shield pulses as visible ward rings.",
+      harmonyBonusActive: state.harmonySurgeActive,
+      intensity,
+      label: "Shield Chorus",
+      motif: "ring",
+      spellType: "shield",
+    };
+  }
+
+  if (state.lastRuneType === "heal") {
+    return {
+      beatPattern: ["rise", "mend", "bloom"],
+      color: "#a78bfa",
+      fallbackText: "Heal climbs as visible root light.",
+      harmonyBonusActive: state.harmonySurgeActive,
+      intensity,
+      label: "Healing Motif",
+      motif: "ascending",
+      spellType: "heal",
+    };
+  }
+
+  return {
+    beatPattern: ["mark", "flash", "clear"],
+    color: "#fbbf24",
+    fallbackText: "Purify flashes as a visible ward break.",
+    harmonyBonusActive: state.harmonySurgeActive,
+    intensity,
+    label: "Purify Rhythm",
+    motif: "zigzag",
+    spellType: "purify",
   };
 }
 

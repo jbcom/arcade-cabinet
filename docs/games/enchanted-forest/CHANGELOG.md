@@ -7,6 +7,7 @@
 - Added standard/cozy opening damage grace so early shadow hits remain recoverable while challenge mode keeps full pressure.
 - Added rune harmony surge state and deterministic shadow intent path metadata.
 - Added shadow path telegraphs, larger mobile rune affordances, distinct spell feedback, and shared cartridge landing identity.
+- Added deterministic spell cadence cues, per-spell activation motifs, and an audio-status fallback path for silent browser/WebView starts.
 
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/enchanted-forest-v0.1.0...enchanted-forest-v0.2.0) (2026-04-22)
 

@@ -18,6 +18,7 @@ import {
   getForestModeTuning,
   getForestRitualCue,
   getForestRunSummary,
+  getForestSpellCadenceCue,
   getForestTransition,
   getShadowIntentPath,
   MAX_WAVES,
@@ -26,6 +27,7 @@ import {
   spawnCorruptionWave,
   TREE_POSITIONS,
 } from "@logic/games/enchanted-forest/engine/forestSimulation";
+import type { ForestAudioStatus } from "@logic/games/enchanted-forest/lib/forestAudio";
 import { forestAudio } from "@logic/games/enchanted-forest/lib/forestAudio";
 import type { RunePattern } from "@logic/games/enchanted-forest/lib/runePatterns";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
@@ -41,6 +43,7 @@ import { ToneDrawer } from "./ToneDrawer";
 
 export function ForestGame() {
   const [forestState, setForestState] = useState(createInitialForestState);
+  const [audioStatus, setAudioStatus] = useState<ForestAudioStatus>(forestAudio.getStatus());
   const [isDrawing, setIsDrawing] = useState(false);
   const [spiritPos, setSpiritPos] = useState({ x: 0, y: 0 });
   const shadowIdRef = useRef(0);
@@ -62,7 +65,8 @@ export function ForestGame() {
   );
 
   const startGame = async (mode: SessionMode, saveSlot?: GameSaveSlot) => {
-    await forestAudio.initialize();
+    const status = await forestAudio.initialize();
+    setAudioStatus(status);
     forestAudio.startAmbient();
     const restored = resolveForestStartState(mode, saveSlot);
     if (restored) {
@@ -154,6 +158,7 @@ export function ForestGame() {
 
   const runSummary = getForestRunSummary(forestState);
   const ritualCue = getForestRitualCue(forestState);
+  const spellCadenceCue = getForestSpellCadenceCue(forestState);
 
   useRunSnapshotAutosave({
     active: forestState.phase === "playing",
@@ -238,6 +243,8 @@ export function ForestGame() {
         harmonyLevel={forestState.harmonyLevel}
         harmonySurgeActive={forestState.harmonySurgeActive}
         ritualCue={ritualCue}
+        spellCadenceCue={spellCadenceCue}
+        audioStatus={audioStatus}
         runSummary={runSummary}
       />
     </GameViewport>
@@ -251,6 +258,7 @@ function resolveForestStartState(mode: SessionMode, saveSlot?: GameSaveSlot): Fo
   const restored = snapshot as ForestState;
   return {
     ...restored,
+    lastSpellCastMs: restored.lastSpellCastMs ?? 0,
     phase: "playing",
     sessionMode: mode,
   };

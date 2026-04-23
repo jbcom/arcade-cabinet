@@ -11,6 +11,7 @@ import {
   getForestRitualCue,
   getForestRunSummary,
   getForestSessionTargetMinutes,
+  getForestSpellCadenceCue,
   getForestTransition,
   getShadowHitDamage,
   getShadowIntentPath,
@@ -171,6 +172,25 @@ describe("forest simulation", () => {
     expect(surged.harmonySurgeActive).toBe(true);
     expect(surged.purifyZone?.radius).toBe(42);
     expect(surged.mana).toBe(37);
+    expect(getForestSpellCadenceCue(shielded)).toMatchObject({
+      beatPattern: ["root", "ward", "hold"],
+      label: "Shield Chorus",
+      motif: "ring",
+      spellType: "shield",
+    });
+    expect(getForestSpellCadenceCue(healed)).toMatchObject({
+      beatPattern: ["rise", "mend", "bloom"],
+      label: "Healing Motif",
+      motif: "ascending",
+      spellType: "heal",
+    });
+    expect(getForestSpellCadenceCue(surged)).toMatchObject({
+      beatPattern: ["mark", "flash", "clear"],
+      harmonyBonusActive: true,
+      label: "Purify Rhythm",
+      motif: "zigzag",
+      spellType: "purify",
+    });
   });
 
   test("handles shadow movement, tree hits, purification, and wave transitions", () => {

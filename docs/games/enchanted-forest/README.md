@@ -20,6 +20,8 @@ The grove should feel theatrical and hand-authored. Trees form a readable stage 
 - Grove and tree lighting now follow the ritual cue with target rings, draw-path guidance, and focus labels.
 - Standard and cozy mode now soften opening shadow hits so the first minute stays recoverable while the player learns the spell cadence; challenge mode keeps full damage pressure.
 - Rune cadence now builds harmony surge state through alternating spell types.
+- Spell cadence cues now expose shield, heal, purify, and listening motifs from pure state so the HUD and full-screen rune activation have distinct beat language even when audio is unavailable.
+- Tone.js initialization now reports an audio status and falls back to visual cadence instead of blocking the game if the browser or Android WebView refuses audio startup.
 - Shadow intent paths are generated from pure logic and rendered as visible telegraphs toward targeted trees.
 - Mobile rune affordances are larger and easier to read while shield, heal, and purify remain distinct.
 - The cabinet landing uses the shared cartridge frame with a grove label, play control, and rules drawer.
