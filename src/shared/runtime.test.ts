@@ -93,14 +93,14 @@ describe("1.0 cabinet runtime models", () => {
         mode: "standard",
         now: new Date("2026-04-22T12:00:00.000Z"),
         progressSummary: "Landmark 1",
-        slug: "bioluminescent-sea",
+        slug: "mega-track",
         snapshot: { glow: 18 },
       })
     ).toEqual({
       label: "Resume Standard Run",
       mode: "standard",
       progressSummary: "Landmark 1",
-      slug: "bioluminescent-sea",
+      slug: "mega-track",
       snapshot: { glow: 18 },
       startedAt: "2026-04-22T12:00:00.000Z",
       status: "active",

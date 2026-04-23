@@ -1,5 +1,4 @@
 import BeppoLaughs from "@app/games/beppo-laughs";
-import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
@@ -19,15 +18,6 @@ const gameCases: (BrowserGameStartFlow & {
   slug: string;
   expectsJoystick?: boolean;
 })[] = [
-  {
-    name: "Bioluminescent Sea",
-    slug: "bioluminescent-sea",
-    Component: BioluminescentSea,
-    title: "COLLECTOR",
-    startFlow: ["Start Descent"],
-    ready: "Time",
-    expectsCanvas: true,
-  },
   {
     name: "Mega Track",
     slug: "mega-track",

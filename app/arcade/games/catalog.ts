@@ -2,31 +2,6 @@ import { DEFAULT_DIFFICULTY_VARIANTS } from "@logic/shared";
 
 export const games = [
   {
-    slug: "bioluminescent-sea",
-    title: "BIOLUMINESCENT SEA",
-    description: "Descend into the deep ocean as a glowing collector of light.",
-    tags: ["canvas", "framer-motion", "exploration"],
-    color: "#4ecdc4",
-    motif: "sea",
-    secondaryAccent: "#a78bfa",
-    gradient: "linear-gradient(135deg, #4ecdc4, #051018)",
-    pillars: ["Quiet navigation", "Light as currency", "Threats read as silhouettes"],
-    presentation:
-      "The player should feel small inside a layered ocean volume: bright collectible life sits close to the camera while predators read as darker, slower shapes at the edge of vision.",
-    sceneDirection:
-      "Use deep vertical gradients, sparse particulate motion, and soft cyan/magenta glow to create depth without losing touch clarity on phones.",
-    responsiveDirection:
-      "Canvas simulation sizes from its parent island, not the browser window, so it can run fullscreen, embedded in the cabinet, or inside an Android WebView.",
-    coreMessage: "Light turns an unknowable trench into a route you can trust.",
-    coreLoop:
-      "Follow beacon chains, collect glow, read predator silhouettes, reach trench landmarks, then replay for cleaner routes.",
-    sessionTarget: "8-15 minute route mastery run",
-    pressureType: "Slow oxygen and predator pressure with visible recovery pickups",
-    defaultControls: "Touch-anywhere joystick or pointer drag toward the intended swim heading",
-    winReplayPromise: "Reach deeper landmarks with a stronger route chain and higher glow score.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "mega-track",
     title: "MEGA TRACK",
     description: "Thread a high-speed machine through a deterministic hazard ribbon.",
