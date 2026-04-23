@@ -24,7 +24,7 @@ import type {
   FarmCollapseCue,
   FarmState,
 } from "@logic/games/farm-follies/engine/types";
-import type { GameSaveSlot, SessionMode } from "@logic/shared";
+import { DEFAULT_SESSION_MODE, type GameSaveSlot, type SessionMode } from "@logic/shared";
 import { useEffect, useState } from "react";
 
 const ANIMAL_COLORS: Record<FarmAnimal, string> = {
@@ -44,7 +44,9 @@ const ANIMAL_ACCENTS: Record<FarmAnimal, string> = {
 };
 
 export default function Game() {
-  const [state, setState] = useState<FarmState>(() => createInitialFarmState("standard", "menu"));
+  const [state, setState] = useState<FarmState>(() =>
+    createInitialFarmState(DEFAULT_SESSION_MODE, "menu")
+  );
 
   useEffect(() => {
     if (state.phase !== "playing") return undefined;

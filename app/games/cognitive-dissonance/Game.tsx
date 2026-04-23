@@ -21,7 +21,7 @@ import type {
   CognitivePattern,
   CognitiveState,
 } from "@logic/games/cognitive-dissonance/engine/types";
-import type { GameSaveSlot, SessionMode } from "@logic/shared";
+import { DEFAULT_SESSION_MODE, type GameSaveSlot, type SessionMode } from "@logic/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -34,7 +34,7 @@ const PATTERN_COLORS: Record<CognitivePattern, string> = {
 export default function Game() {
   const { settings } = useCabinetRuntime("cognitive-dissonance");
   const [state, setState] = useState<CognitiveState>(() =>
-    createInitialCognitiveState("standard", "menu")
+    createInitialCognitiveState(DEFAULT_SESSION_MODE, "menu")
   );
   const [feedbackStatus, setFeedbackStatus] = useState<{
     audio: "live" | "visual";
@@ -340,7 +340,7 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
     scene.background = new THREE.Color("#060712");
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
     camera.position.set(0, 0.5, 7);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
+    const renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     host.appendChild(renderer.domElement);
 
@@ -524,7 +524,7 @@ function CognitiveThreeAdapter({ state }: { state: CognitiveState }) {
       const rect = host.getBoundingClientRect();
       const width = Math.max(1, Math.round(rect.width));
       const height = Math.max(1, Math.round(rect.height));
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };

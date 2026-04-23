@@ -26,7 +26,7 @@ import type {
   BeppoRouteCue,
   BeppoState,
 } from "@logic/games/beppo-laughs/engine/types";
-import type { GameSaveSlot, SessionMode } from "@logic/shared";
+import { DEFAULT_SESSION_MODE, type GameSaveSlot, type SessionMode } from "@logic/shared";
 import { useEffect, useMemo, useState } from "react";
 
 const DIRECTION_LABELS: Record<BeppoDirection, string> = {
@@ -37,7 +37,9 @@ const DIRECTION_LABELS: Record<BeppoDirection, string> = {
 };
 
 export default function Game() {
-  const [state, setState] = useState<BeppoState>(() => createInitialBeppoState("standard", "menu"));
+  const [state, setState] = useState<BeppoState>(() =>
+    createInitialBeppoState(DEFAULT_SESSION_MODE, "menu")
+  );
 
   useEffect(() => {
     if (state.phase !== "playing") return undefined;
