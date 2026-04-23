@@ -39,7 +39,7 @@ function PrimordialApp() {
   });
 
   return (
-    <GameViewport background="#020608">
+    <GameViewport background="#020608" data-browser-screenshot-mode="page">
       <Canvas gl={browserTestCanvasGlOptions}>{state.phase === "playing" && <World />}</Canvas>
 
       {state.phase === "menu" && (

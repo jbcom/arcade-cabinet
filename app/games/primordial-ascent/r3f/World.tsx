@@ -13,9 +13,9 @@ export function World() {
 
   return (
     <>
-      <color attach="background" args={["#020608"]} />
-      <ambientLight intensity={0.22} />
-      <directionalLight position={[10, 38, 12]} intensity={1.05} castShadow color="#dffbff" />
+      <color attach="background" args={["#06131a"]} />
+      <ambientLight intensity={0.42} color="#b9f7ff" />
+      <directionalLight position={[10, 38, 12]} intensity={1.35} castShadow color="#dffbff" />
       <pointLight position={[0, -24, -18]} intensity={38} distance={92} color="#ff3b1f" />
       <spotLight
         position={[-18, 28, 10]}
@@ -33,7 +33,15 @@ export function World() {
         distance={130}
         color="#36fbd1"
       />
-      <fogExp2 attach="fog" args={["#020608", 0.008]} />
+      <spotLight
+        position={[0, 116, -124]}
+        angle={0.74}
+        penumbra={0.84}
+        intensity={38}
+        distance={190}
+        color="#9af8ff"
+      />
+      <fogExp2 attach="fog" args={["#06131a", 0.0058]} />
 
       <Physics gravity={[0, -22, 0]}>
         <CavernGuide />
@@ -46,9 +54,34 @@ export function World() {
       {state.thermalLift > 0 ? (
         <ThermalDraft lift={state.thermalLift} y={state.lavaHeight + 8} />
       ) : null}
+      <AscentAxis progress={state.objectiveProgress} />
 
       {state.phase === "playing" && <PointerLockControls />}
     </>
+  );
+}
+
+function AscentAxis({ progress }: { progress: number }) {
+  const opacity = Math.max(0.1, 0.34 - progress / 420);
+
+  return (
+    <group position={[0, 86, -104]}>
+      {[0, 1, 2, 3].map((index) => (
+        <mesh
+          key={`ascent-axis-${index}`}
+          position={[index % 2 === 0 ? -8 : 8, index * 22 - 38, index * -18 + 42]}
+          rotation={[0.18, 0, index % 2 === 0 ? 0.08 : -0.08]}
+        >
+          <planeGeometry args={[2.2, 58]} />
+          <meshBasicMaterial
+            color={index % 2 === 0 ? "#2dd4bf" : "#93f8ff"}
+            transparent
+            opacity={opacity - index * 0.035}
+            side={2}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

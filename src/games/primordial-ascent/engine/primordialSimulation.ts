@@ -2,6 +2,7 @@ import { getSessionPressureScale, normalizeSessionMode } from "@logic/shared";
 import type {
   CavernLayout,
   PrimordialControls,
+  PrimordialRouteCue,
   PrimordialState,
   PrimordialTelemetry,
   Vec3,
@@ -26,6 +27,8 @@ export function createInitialPrimordialState(
   const sessionMode = normalizeSessionMode(mode);
   const altitude = calculateAltitude(CONFIG.playerStartPosition.y);
   const lavaHeight = CONFIG.lavaStartHeight;
+  const distToLava = calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight);
+  const routeCue = calculatePrimordialRouteCue(CONFIG.playerStartPosition, distToLava);
 
   return {
     phase,
@@ -34,13 +37,12 @@ export function createInitialPrimordialState(
     maxAltitude: altitude,
     timeSurvived: 0,
     velocity: 0,
-    distToLava: calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight),
+    distToLava,
     isInGrappleRange: false,
     lavaHeight,
-    thermalLift: calculateThermalLift(
-      calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight)
-    ),
+    thermalLift: calculateThermalLift(distToLava),
     grappleTargetState: "none",
+    routeCue,
     objective: DEFAULT_OBJECTIVE,
     objectiveProgress: calculateObjectiveProgress(altitude),
   };
@@ -118,6 +120,7 @@ export function advancePrimordialState(
   const distToLava = calculateDistanceToLava(telemetry.position.y, telemetry.lavaHeight);
   const objectiveProgress = calculateObjectiveProgress(altitude);
   const thermalLift = calculateThermalLift(distToLava);
+  const routeCue = calculatePrimordialRouteCue(telemetry.position, distToLava);
   const nextPhase =
     telemetry.position.y <= telemetry.lavaHeight + CONFIG.lavaContactMargin
       ? "gameover"
@@ -141,7 +144,8 @@ export function advancePrimordialState(
       telemetry.grappleActive,
       telemetry.grappleTension
     ),
-    objective: describeObjective(objectiveProgress, distToLava),
+    routeCue,
+    objective: describeObjective(objectiveProgress, distToLava, routeCue),
     objectiveProgress,
   };
 }
@@ -187,6 +191,61 @@ export function calculatePlayerSpeed(velocity: Vec3): number {
 
 export function calculateObjectiveProgress(altitude: number): number {
   return clamp(Math.round((altitude / CONFIG.escapeAltitude) * 100), 0, 100);
+}
+
+export function calculatePrimordialRouteCue(
+  position: Vec3,
+  distToLava: number
+): PrimordialRouteCue {
+  const layout = createCavernLayout();
+  const nextAnchor = layout.anchors.find((anchor) => anchor.position[1] > position.y + 3) ?? null;
+  const nextShelf =
+    layout.platforms.find((platform) => platform.position[1] > position.y + 1) ?? null;
+  const targetPosition = nextAnchor?.position ?? ([0, CONFIG.escapeAltitude, -178] as const);
+  const distanceToAnchor = nextAnchor ? distanceTo(position, nextAnchor.position) : null;
+  const distanceToShelf = nextShelf ? distanceTo(position, nextShelf.position) : null;
+  const recoveryWindow =
+    Boolean(nextShelf) &&
+    distToLava < CONFIG.dangerDistance * 0.9 &&
+    (distanceToShelf ?? Number.POSITIVE_INFINITY) <= 34;
+  const bearing = normalize3({
+    x: targetPosition[0] - position.x,
+    y: targetPosition[1] - position.y,
+    z: targetPosition[2] - position.z,
+  });
+
+  let kind: PrimordialRouteCue["kind"] = "anchor";
+  let label = nextAnchor
+    ? `Next anchor ${nextAnchor.id.replace("anchor-", "")}: climb ${Math.max(0, Math.round(nextAnchor.position[1] - position.y))}m.`
+    : "Surface air ahead. Hold height through the last vents.";
+
+  if (!nextAnchor || position.y >= CONFIG.escapeAltitude - 8) {
+    kind = "escape";
+    label = "Surface air ahead. Hold height through the last vents.";
+  } else if (distToLava < CONFIG.dangerDistance * 0.42) {
+    kind = "danger";
+    label = `Lava wake close. Grip ${nextAnchor.id.replace("anchor-", "anchor ")} now.`;
+  } else if (position.y < 24) {
+    kind = "launch";
+    label = "Jump, grip the first cyan ring, then drift toward green moss.";
+  } else if (recoveryWindow && nextShelf) {
+    kind = "recovery";
+    label = `Moss shelf ${nextShelf.id.replace("moss-shelf-", "")} can reset your swing.`;
+  }
+
+  return {
+    kind,
+    label,
+    nextAnchorId: nextAnchor?.id ?? null,
+    nextAnchorPosition: nextAnchor?.position ?? null,
+    nextShelfId: nextShelf?.id ?? null,
+    nextShelfPosition: nextShelf?.position ?? null,
+    targetAltitude: nextAnchor?.position[1] ?? CONFIG.escapeAltitude,
+    distanceToAnchor: distanceToAnchor === null ? null : round(distanceToAnchor, 1),
+    distanceToShelf: distanceToShelf === null ? null : round(distanceToShelf, 1),
+    bearing,
+    recoveryWindow,
+  };
 }
 
 export function calculateThermalLift(distToLava: number): number {
@@ -289,9 +348,17 @@ export function calculateTetherImpulse(
   };
 }
 
-function describeObjective(progress: number, distToLava: number): string {
+function describeObjective(
+  progress: number,
+  distToLava: number,
+  routeCue?: PrimordialRouteCue
+): string {
   if (distToLava < CONFIG.dangerDistance * 0.45) {
     return "Lava wake is closing. Burn momentum upward now.";
+  }
+
+  if (routeCue?.kind === "recovery") {
+    return routeCue.label;
   }
 
   if (progress >= 100) {
@@ -307,6 +374,24 @@ function describeObjective(progress: number, distToLava: number): string {
   }
 
   return DEFAULT_OBJECTIVE;
+}
+
+function distanceTo(origin: Vec3, target: readonly [number, number, number]): number {
+  return Math.hypot(target[0] - origin.x, target[1] - origin.y, target[2] - origin.z);
+}
+
+function normalize3(vector: Vec3): Vec3 {
+  const length = Math.hypot(vector.x, vector.y, vector.z);
+
+  if (length <= Number.EPSILON) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  return {
+    x: round(vector.x / length, 3),
+    y: round(vector.y / length, 3),
+    z: round(vector.z / length, 3),
+  };
 }
 
 function normalizeFlat(vector: Vec3): Vec3 {

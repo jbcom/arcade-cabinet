@@ -25,6 +25,21 @@ export interface PrimordialTelemetry {
 }
 
 export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "missed";
+export type PrimordialRouteCueKind = "launch" | "anchor" | "recovery" | "danger" | "escape";
+
+export interface PrimordialRouteCue {
+  kind: PrimordialRouteCueKind;
+  label: string;
+  nextAnchorId: string | null;
+  nextAnchorPosition: [number, number, number] | null;
+  nextShelfId: string | null;
+  nextShelfPosition: [number, number, number] | null;
+  targetAltitude: number;
+  distanceToAnchor: number | null;
+  distanceToShelf: number | null;
+  bearing: Vec3;
+  recoveryWindow: boolean;
+}
 
 export interface PrimordialState {
   phase: "menu" | "playing" | "gameover" | "complete";
@@ -38,6 +53,7 @@ export interface PrimordialState {
   lavaHeight: number;
   thermalLift: number;
   grappleTargetState: GrappleTargetState;
+  routeCue: PrimordialRouteCue;
   objective: string;
   objectiveProgress: number;
 }

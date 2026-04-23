@@ -73,7 +73,7 @@ export function HUD() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, max-content))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(7.1rem, 42vw), max-content))",
             gap: "0.65rem",
             alignItems: "start",
             justifyContent: "space-between",
@@ -121,6 +121,31 @@ export function HUD() {
             </div>
             <div
               style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.45rem",
+                marginTop: 8,
+              }}
+            >
+              <StatusPill
+                label="Route Cue"
+                value={state.routeCue.label}
+                accent={
+                  state.routeCue.kind === "danger"
+                    ? "#ff7448"
+                    : state.routeCue.kind === "recovery"
+                      ? "#a3ff76"
+                      : "#36fbd1"
+                }
+              />
+              <StatusPill
+                label="Target"
+                value={`${state.routeCue.targetAltitude}M`}
+                accent="#00e5ff"
+              />
+            </div>
+            <div
+              style={{
                 color: grappleColor,
                 fontSize: 12,
                 fontWeight: 900,
@@ -156,6 +181,30 @@ export function HUD() {
         </div>
       </div>
     </>
+  );
+}
+
+function StatusPill({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        maxWidth: "100%",
+        alignItems: "center",
+        gap: "0.38rem",
+        border: `1px solid ${accent}66`,
+        background: `${accent}18`,
+        borderRadius: 999,
+        color: "#dffbff",
+        fontSize: 11,
+        fontWeight: 800,
+        lineHeight: 1.2,
+        padding: "0.3rem 0.48rem",
+      }}
+    >
+      <span style={{ color: accent, textTransform: "uppercase" }}>{label}</span>
+      <span>{value}</span>
+    </span>
   );
 }
 
