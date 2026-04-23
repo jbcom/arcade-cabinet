@@ -189,7 +189,7 @@ async function verifyFloatingJoystick(rootElement: Element) {
   const originX = rect.left + Math.min(180, rect.width * 0.42);
   const originY = rect.top + Math.min(360, rect.height * 0.58);
 
-  window.dispatchEvent(
+  rootElement.dispatchEvent(
     new PointerEvent("pointerdown", {
       bubbles: true,
       clientX: originX,

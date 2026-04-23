@@ -1,10 +1,17 @@
 import { createCavernLayout } from "@logic/games/primordial-ascent/engine/primordialSimulation";
+import type { PrimordialGrappleGuideCue } from "@logic/games/primordial-ascent/engine/types";
 import { PrimordialTrait } from "@logic/games/primordial-ascent/store/traits";
 import { primordialEntity } from "@logic/games/primordial-ascent/store/world";
 import { RigidBody } from "@react-three/rapier";
 import { useTrait } from "koota/react";
 import { useMemo } from "react";
 import * as THREE from "three";
+
+const GUIDE_MARKERS = [
+  { id: "guide-marker-near", radius: 1, y: -5.8 },
+  { id: "guide-marker-mid", radius: 0.72, y: -8.4 },
+  { id: "guide-marker-far", radius: 0.48, y: -10.8 },
+] as const;
 
 export function CavernGuide() {
   const layout = useMemo(() => createCavernLayout(), []);
@@ -102,6 +109,13 @@ export function CavernGuide() {
         </group>
       ))}
 
+      {state.routeCue.nextAnchorPosition ? (
+        <GrappleGuideMarkers
+          cue={state.grappleGuideCue}
+          position={state.routeCue.nextAnchorPosition}
+        />
+      ) : null}
+
       <RouteBeaconTrail />
 
       <group position={[0, 24, -32]}>
@@ -157,6 +171,47 @@ export function CavernGuide() {
         ))}
         <pointLight color="#84f8ff" intensity={20} distance={64} decay={2} />
       </group>
+    </group>
+  );
+}
+
+function GrappleGuideMarkers({
+  cue,
+  position,
+}: {
+  cue: PrimordialGrappleGuideCue;
+  position: [number, number, number];
+}) {
+  if (!["anchor", "reticle", "lava", "tether"].includes(cue.focus)) return null;
+
+  const color =
+    cue.kind === "missed-grip" ? "#ffb86b" : cue.urgency === "high" ? "#ff7448" : "#eaffff";
+  const ringOpacity = cue.pulse ? 0.58 : 0.32;
+
+  return (
+    <group position={position}>
+      {[0, 1, 2].map((index) => (
+        <mesh
+          key={`grapple-guide-ring-${index}`}
+          position={[0, 0, index * -0.18]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <torusGeometry args={[8.6 + index * 1.1, 0.06, 8, 64]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={Math.max(0.16, ringOpacity - index * 0.12)}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+      {GUIDE_MARKERS.map((marker) => (
+        <mesh key={marker.id} position={[0, marker.y, 0]}>
+          <sphereGeometry args={[marker.radius, 12, 8]} />
+          <meshBasicMaterial color={color} transparent opacity={0.72} toneMapped={false} />
+        </mesh>
+      ))}
+      <pointLight color={color} intensity={cue.pulse ? 18 : 9} distance={34} decay={2.1} />
     </group>
   );
 }

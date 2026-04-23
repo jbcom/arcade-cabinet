@@ -17,6 +17,7 @@ export function HUD() {
 
   const isDanger = state.distToLava < 60;
   const intensity = Math.max(0, 1.0 - state.distToLava / 60);
+  const guide = state.grappleGuideCue;
   const grappleColor =
     state.grappleTargetState === "taut"
       ? "#00ff66"
@@ -121,6 +122,32 @@ export function HUD() {
             </div>
             <div
               style={{
+                border: `1px solid ${guide.urgency === "high" ? "#ff7448" : grappleColor}66`,
+                background:
+                  guide.urgency === "high" ? "rgba(127, 29, 29, 0.32)" : "rgba(6, 182, 212, 0.14)",
+                borderRadius: 8,
+                color: "#f8fafc",
+                fontSize: 13,
+                fontWeight: 900,
+                lineHeight: 1.25,
+                marginTop: 8,
+                padding: "0.5rem 0.58rem",
+              }}
+            >
+              <span
+                style={{
+                  color: guide.urgency === "high" ? "#ff7448" : grappleColor,
+                  display: "block",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                }}
+              >
+                Grip Guide · {guide.inputHint}
+              </span>
+              {guide.label}
+            </div>
+            <div
+              style={{
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "0.45rem",
@@ -143,6 +170,7 @@ export function HUD() {
                 value={`${state.routeCue.targetAltitude}M`}
                 accent="#00e5ff"
               />
+              <StatusPill label="Cue" value={guide.kind.replace("-", " ")} accent={grappleColor} />
             </div>
             <div
               style={{

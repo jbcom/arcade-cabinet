@@ -1,7 +1,10 @@
 import { getSessionPressureScale, normalizeSessionMode } from "@logic/shared";
 import type {
   CavernLayout,
+  GrappleTargetState,
   PrimordialControls,
+  PrimordialGrappleFeedback,
+  PrimordialGrappleGuideCue,
   PrimordialRouteCue,
   PrimordialState,
   PrimordialTelemetry,
@@ -10,6 +13,7 @@ import type {
 import { CONFIG } from "./types";
 
 const DEFAULT_OBJECTIVE = "Chain cyan anchors upward before the magma closes the shaft.";
+const GRAPPLE_FEEDBACK_MS = 1_800;
 
 const DEFAULT_CONTROLS: PrimordialControls = {
   forward: false,
@@ -29,8 +33,7 @@ export function createInitialPrimordialState(
   const lavaHeight = CONFIG.lavaStartHeight;
   const distToLava = calculateDistanceToLava(CONFIG.playerStartPosition.y, lavaHeight);
   const routeCue = calculatePrimordialRouteCue(CONFIG.playerStartPosition, distToLava);
-
-  return {
+  const baseState = {
     phase,
     sessionMode,
     altitude,
@@ -41,10 +44,17 @@ export function createInitialPrimordialState(
     isInGrappleRange: false,
     lavaHeight,
     thermalLift: calculateThermalLift(distToLava),
-    grappleTargetState: "none",
+    grappleTargetState: "none" as const,
+    grappleFeedback: "none" as const,
+    grappleFeedbackMs: 0,
     routeCue,
     objective: DEFAULT_OBJECTIVE,
     objectiveProgress: calculateObjectiveProgress(altitude),
+  };
+
+  return {
+    ...baseState,
+    grappleGuideCue: calculatePrimordialGrappleGuideCue(baseState),
   };
 }
 
@@ -121,14 +131,19 @@ export function advancePrimordialState(
   const objectiveProgress = calculateObjectiveProgress(altitude);
   const thermalLift = calculateThermalLift(distToLava);
   const routeCue = calculatePrimordialRouteCue(telemetry.position, distToLava);
-  const nextPhase =
+  const grappleTargetState = calculateGrappleTargetState(
+    telemetry.grappleDistance,
+    telemetry.grappleActive,
+    telemetry.grappleTension
+  );
+  const grappleFeedback = calculateGrappleFeedback(state, elapsedDelta, telemetry);
+  const nextPhase: PrimordialState["phase"] =
     telemetry.position.y <= telemetry.lavaHeight + CONFIG.lavaContactMargin
       ? "gameover"
       : objectiveProgress >= 100
         ? "complete"
         : state.phase;
-
-  return {
+  const nextState: PrimordialState = {
     ...state,
     phase: nextPhase,
     altitude,
@@ -139,14 +154,18 @@ export function advancePrimordialState(
     lavaHeight: telemetry.lavaHeight,
     thermalLift,
     isInGrappleRange: canGrapple(telemetry.grappleDistance),
-    grappleTargetState: calculateGrappleTargetState(
-      telemetry.grappleDistance,
-      telemetry.grappleActive,
-      telemetry.grappleTension
-    ),
+    grappleTargetState,
+    grappleFeedback: grappleFeedback.kind,
+    grappleFeedbackMs: grappleFeedback.remainingMs,
     routeCue,
     objective: describeObjective(objectiveProgress, distToLava, routeCue),
     objectiveProgress,
+    grappleGuideCue: state.grappleGuideCue,
+  };
+
+  return {
+    ...nextState,
+    grappleGuideCue: calculatePrimordialGrappleGuideCue(nextState),
   };
 }
 
@@ -267,12 +286,131 @@ export function calculateGrappleTargetState(
   distance: number | null | undefined,
   grappleActive = false,
   tension = 0
-) {
+): GrappleTargetState {
   if (distance === null || distance === undefined) return "none";
   if (!canGrapple(distance)) return "missed";
   if (grappleActive && tension > 0.65) return "taut";
   if (grappleActive) return "locked";
   return "in-range";
+}
+
+export function calculatePrimordialGrappleGuideCue(
+  state: Pick<
+    PrimordialState,
+    | "distToLava"
+    | "grappleFeedback"
+    | "grappleFeedbackMs"
+    | "grappleTargetState"
+    | "objectiveProgress"
+    | "routeCue"
+    | "timeSurvived"
+  >
+): PrimordialGrappleGuideCue {
+  if (state.grappleFeedback === "missed" && state.grappleFeedbackMs > 0) {
+    return {
+      focus: "reticle",
+      inputHint: "Aim center, then Grip",
+      kind: "missed-grip",
+      label: "Grip missed. Center a cyan ring before holding.",
+      pulse: true,
+      reticleScale: 1.28,
+      urgency: "medium",
+    };
+  }
+
+  if (state.grappleTargetState === "taut") {
+    return {
+      focus: "tether",
+      inputHint: "Release toward beacon",
+      kind: "tension-release",
+      label: "Tether taut. Release into the next cyan beacon.",
+      pulse: true,
+      reticleScale: 1.08,
+      urgency: "medium",
+    };
+  }
+
+  if (state.grappleTargetState === "locked" || state.grappleFeedback === "locked") {
+    return {
+      focus: "tether",
+      inputHint: "Hold Grip",
+      kind: "tether-locked",
+      label: "Tether locked. Hold until the swing climbs.",
+      pulse: true,
+      reticleScale: 1.16,
+      urgency: "low",
+    };
+  }
+
+  if (state.grappleTargetState === "in-range") {
+    return {
+      focus: "anchor",
+      inputHint: "Hold Grip",
+      kind: "ready-grip",
+      label: "Cyan anchor is in range. Hold Grip now.",
+      pulse: true,
+      reticleScale: 1.22,
+      urgency: "low",
+    };
+  }
+
+  if (state.routeCue.kind === "danger" || state.distToLava < CONFIG.dangerDistance * 0.45) {
+    return {
+      focus: "lava",
+      inputHint: "Jump, then Grip",
+      kind: "lava-urgent",
+      label: "Lava wake close. Jump and grip the next cyan ring.",
+      pulse: true,
+      reticleScale: 1.2,
+      urgency: "high",
+    };
+  }
+
+  if (state.routeCue.kind === "recovery") {
+    return {
+      focus: "shelf",
+      inputHint: "Land on green moss",
+      kind: "shelf-reset",
+      label: "Green moss shelf can reset the next swing.",
+      pulse: false,
+      reticleScale: 1,
+      urgency: "low",
+    };
+  }
+
+  if (state.routeCue.kind === "escape" || state.objectiveProgress >= 94) {
+    return {
+      focus: "surface",
+      inputHint: "Hold height",
+      kind: "surface-run",
+      label: "Surface air ahead. Keep height through the vents.",
+      pulse: true,
+      reticleScale: 1.08,
+      urgency: "medium",
+    };
+  }
+
+  if (state.timeSurvived < 28_000 || state.routeCue.kind === "launch") {
+    return {
+      focus: "reticle",
+      inputHint: "Look at cyan, hold Grip",
+      kind: "launch-aim",
+      label: "First contact: center the cyan ring before holding Grip.",
+      pulse: true,
+      reticleScale: 1.18,
+      urgency: "low",
+    };
+  }
+
+  return {
+    focus: "route",
+    inputHint: "Follow cyan beacons",
+    kind: "route-follow",
+    label: "Follow cyan beacons upward and rest on green moss.",
+    pulse: false,
+    reticleScale: 1,
+    urgency: "low",
+  };
 }
 
 export function calculateAirControlImpulse(
@@ -345,6 +483,26 @@ export function calculateTetherImpulse(
     },
     distance,
     tension,
+  };
+}
+
+function calculateGrappleFeedback(
+  state: PrimordialState,
+  deltaMs: number,
+  telemetry: PrimordialTelemetry
+): { kind: PrimordialGrappleFeedback; remainingMs: number } {
+  if (telemetry.grappleAttempted) {
+    return {
+      kind: canGrapple(telemetry.grappleDistance) ? "locked" : "missed",
+      remainingMs: GRAPPLE_FEEDBACK_MS,
+    };
+  }
+
+  const remainingMs = Math.max(0, state.grappleFeedbackMs - Math.max(0, deltaMs));
+
+  return {
+    kind: remainingMs > 0 ? state.grappleFeedback : "none",
+    remainingMs,
   };
 }
 

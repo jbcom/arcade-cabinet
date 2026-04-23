@@ -24,6 +24,7 @@ export function Player() {
 
   const [isGrappling, setIsGrappling] = useState(false);
   const [grapplePoint, setGrapplePoint] = useState<THREE.Vector3 | null>(null);
+  const grappleAttempted = useRef(false);
   const movement = useRef<PrimordialControls>({
     forward: false,
     back: false,
@@ -72,6 +73,7 @@ export function Player() {
       const state = primordialEntity.get(PrimordialTrait);
       if (state?.phase !== "playing") return;
 
+      grappleAttempted.current = true;
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
       const hit = intersects.find(
@@ -204,6 +206,8 @@ export function Player() {
 
     const currentTrans = rbRef.current.translation();
     const currentVel = rbRef.current.linvel();
+    const attemptedGrapple = grappleAttempted.current;
+    grappleAttempted.current = false;
     position.current.set(currentTrans.x, currentTrans.y, currentTrans.z);
 
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
@@ -261,6 +265,7 @@ export function Player() {
         position: currentTrans,
         velocity: currentVel,
         lavaHeight: pState.lavaHeight,
+        grappleAttempted: attemptedGrapple,
         grappleActive: isGrappling,
         grappleDistance: hit?.distance ?? null,
         grappleTension,

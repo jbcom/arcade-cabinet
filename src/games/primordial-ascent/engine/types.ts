@@ -19,12 +19,32 @@ export interface PrimordialTelemetry {
   position: Vec3;
   velocity: Vec3;
   lavaHeight: number;
+  grappleAttempted?: boolean;
   grappleActive?: boolean;
   grappleDistance?: number | null;
   grappleTension?: number;
 }
 
 export type GrappleTargetState = "none" | "in-range" | "locked" | "taut" | "missed";
+export type PrimordialGrappleFeedback = "none" | "missed" | "locked";
+export type PrimordialGrappleGuideKind =
+  | "launch-aim"
+  | "ready-grip"
+  | "tether-locked"
+  | "tension-release"
+  | "missed-grip"
+  | "shelf-reset"
+  | "lava-urgent"
+  | "route-follow"
+  | "surface-run";
+export type PrimordialGrappleGuideFocus =
+  | "reticle"
+  | "anchor"
+  | "tether"
+  | "shelf"
+  | "lava"
+  | "route"
+  | "surface";
 export type PrimordialRouteCueKind = "launch" | "anchor" | "recovery" | "danger" | "escape";
 
 export interface PrimordialRouteCue {
@@ -41,6 +61,16 @@ export interface PrimordialRouteCue {
   recoveryWindow: boolean;
 }
 
+export interface PrimordialGrappleGuideCue {
+  kind: PrimordialGrappleGuideKind;
+  label: string;
+  inputHint: string;
+  focus: PrimordialGrappleGuideFocus;
+  urgency: "low" | "medium" | "high";
+  reticleScale: number;
+  pulse: boolean;
+}
+
 export interface PrimordialState {
   phase: "menu" | "playing" | "gameover" | "complete";
   sessionMode: SessionMode;
@@ -53,6 +83,9 @@ export interface PrimordialState {
   lavaHeight: number;
   thermalLift: number;
   grappleTargetState: GrappleTargetState;
+  grappleFeedback: PrimordialGrappleFeedback;
+  grappleFeedbackMs: number;
+  grappleGuideCue: PrimordialGrappleGuideCue;
   routeCue: PrimordialRouteCue;
   objective: string;
   objectiveProgress: number;

@@ -18,4 +18,6 @@ test("Primordial Ascent reaches gameplay from the start screen", async () => {
 
   expect(container.textContent).toContain("Route Cue");
   expect(container.textContent).toContain("Target");
+  expect(container.textContent).toContain("Grip Guide");
+  expect(container.textContent).toContain("Look at cyan, hold Grip");
 });

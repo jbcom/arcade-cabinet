@@ -7,6 +7,7 @@ import {
   calculateGrappleTargetState,
   calculateJumpImpulse,
   calculateObjectiveProgress,
+  calculatePrimordialGrappleGuideCue,
   calculatePrimordialRouteCue,
   calculateTetherImpulse,
   calculateThermalLift,
@@ -29,6 +30,11 @@ describe("primordial simulation", () => {
     expect(state.distToLava).toBe(50);
     expect(state.thermalLift).toBeGreaterThan(0);
     expect(state.grappleTargetState).toBe("none");
+    expect(state.grappleGuideCue).toMatchObject({
+      inputHint: "Look at cyan, hold Grip",
+      kind: "launch-aim",
+      label: "First contact: center the cyan ring before holding Grip.",
+    });
     expect(state.routeCue.kind).toBe("launch");
     expect(state.routeCue.nextAnchorId).toBe("anchor-1");
     expect(state.objective).toContain("cyan anchors");
@@ -90,6 +96,7 @@ describe("primordial simulation", () => {
       position: { x: 0, y: 72.4, z: -80 },
       velocity: { x: 4, y: 10, z: 2 },
       lavaHeight: -10,
+      grappleAttempted: true,
       grappleActive: true,
       grappleDistance: 34,
       grappleTension: 0.8,
@@ -103,6 +110,8 @@ describe("primordial simulation", () => {
     expect(next.distToLava).toBe(82);
     expect(next.isInGrappleRange).toBe(true);
     expect(next.grappleTargetState).toBe("taut");
+    expect(next.grappleFeedback).toBe("locked");
+    expect(next.grappleGuideCue.kind).toBe("tension-release");
     expect(next.objectiveProgress).toBe(calculateObjectiveProgress(72));
     expect(state.maxAltitude).toBe(CONFIG.playerStartPosition.y);
 
@@ -151,6 +160,52 @@ describe("primordial simulation", () => {
     expect(calculateGrappleTargetState(24, false)).toBe("in-range");
     expect(calculateGrappleTargetState(24, true, 0.2)).toBe("locked");
     expect(calculateGrappleTargetState(24, true, 0.9)).toBe("taut");
+  });
+
+  test("grapple guide teaches first missed grips and recovery cues", () => {
+    const state = createInitialPrimordialState("playing");
+    const missed = advancePrimordialState(state, 120, {
+      position: { x: 0, y: 11, z: 0 },
+      velocity: { x: 0, y: 0, z: 0 },
+      lavaHeight: -40,
+      grappleAttempted: true,
+      grappleDistance: null,
+    });
+
+    expect(missed.grappleFeedback).toBe("missed");
+    expect(missed.grappleFeedbackMs).toBeGreaterThan(0);
+    expect(missed.grappleGuideCue).toMatchObject({
+      focus: "reticle",
+      inputHint: "Aim center, then Grip",
+      kind: "missed-grip",
+      urgency: "medium",
+    });
+
+    const faded = advancePrimordialState(missed, 2_000, {
+      position: { x: 0, y: 11, z: 0 },
+      velocity: { x: 0, y: 0, z: 0 },
+      lavaHeight: -40,
+      grappleDistance: null,
+    });
+
+    expect(faded.grappleFeedback).toBe("none");
+    expect(faded.grappleGuideCue.kind).toBe("launch-aim");
+
+    const recoveryCue = calculatePrimordialGrappleGuideCue({
+      distToLava: 42,
+      grappleFeedback: "none",
+      grappleFeedbackMs: 0,
+      grappleTargetState: "none",
+      objectiveProgress: 30,
+      routeCue: calculatePrimordialRouteCue({ x: -12, y: 42, z: -50 }, 42),
+      timeSurvived: 60_000,
+    });
+
+    expect(recoveryCue).toMatchObject({
+      focus: "shelf",
+      inputHint: "Land on green moss",
+      kind: "shelf-reset",
+    });
   });
 
   test("calculates jump and tether impulses toward the grapple target", () => {
