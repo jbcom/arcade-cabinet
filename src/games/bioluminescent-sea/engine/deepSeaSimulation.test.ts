@@ -12,6 +12,7 @@ import {
   findNearestThreatDistance,
   GAME_DURATION,
   getDeterministicWrapX,
+  getDiveCompletionCelebration,
   getDiveDurationSeconds,
   getDiveModeTuning,
   getDiveRouteLandmark,
@@ -224,7 +225,7 @@ describe("deep sea simulation", () => {
     expect(telemetry.depthMeters).toBeGreaterThan(2_800);
     expect(telemetry.nearestBeaconDistance).toBeGreaterThan(0);
     expect(telemetry.beaconBearingRadians).not.toBeNull();
-    expect(telemetry.routeLandmarkLabel).toBe("Trench Choir");
+    expect(telemetry.routeLandmarkLabel).toBe("Abyss Orchard");
     expect(telemetry.routeLandmarkDistance).toBeGreaterThan(0);
     expect(telemetry.oxygenRatio).toBeCloseTo(1 / 60);
     expect(cozyTelemetry.oxygenRatio).toBeLessThan(telemetry.oxygenRatio);
@@ -243,26 +244,35 @@ describe("deep sea simulation", () => {
 
   test("advances route landmark telemetry with the beacon chain", () => {
     const early = getDiveRouteLandmark(0.1, { bearingRadians: 0.4, distance: 160 });
+    const mid = getDiveRouteLandmark(0.46, { bearingRadians: 0.1, distance: 120 });
     const late = getDiveRouteLandmark(0.94, { bearingRadians: -0.2, distance: 42 });
 
     expect(early.label).toBe("Kelp Gate");
     expect(early.bearingRadians).toBeCloseTo(0.4);
+    expect(mid.label).toBe("Whale-Fall Windows");
     expect(late.label).toBe("Living Map");
     expect(late.distance).toBeLessThan(early.distance);
   });
 
   test("reports dive completion and run summary when all beacons are recovered", () => {
     const scene = { ...createInitialScene(desktop), creatures: [] };
-    const summary = getDiveRunSummary(scene, 12_500, 80);
+    const summary = getDiveRunSummary(scene, 12_500, 240);
+    const celebration = getDiveCompletionCelebration(summary);
 
     expect(isDiveComplete(scene)).toBe(true);
     expect(summary).toMatchObject({
       beaconsRemaining: 0,
       completionPercent: 100,
+      durationSeconds: GAME_DURATION,
       score: 12_500,
-      timeLeft: 80,
+      timeLeft: 240,
       totalBeacons: TOTAL_BEACONS,
     });
+    expect(celebration).toMatchObject({
+      rating: "Radiant Route",
+      title: "Living Map Complete",
+    });
+    expect(celebration.landmarkSequence).toContain("Abyss Orchard");
   });
 });
 

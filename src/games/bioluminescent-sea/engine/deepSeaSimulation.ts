@@ -99,6 +99,25 @@ export interface DiveTelemetry {
   routeLandmarkLabel: string;
 }
 
+export interface DiveRunSummary {
+  beaconsRemaining: number;
+  completionPercent: number;
+  depthMeters: number;
+  durationSeconds: number;
+  elapsedSeconds: number;
+  score: number;
+  timeLeft: number;
+  totalBeacons: number;
+}
+
+export interface DiveCompletionCelebration {
+  landmarkSequence: string[];
+  message: string;
+  rating: string;
+  replayPrompt: string;
+  title: string;
+}
+
 export interface SceneAdvanceResult {
   collection: CreatureCollectionResult;
   collidedWithPredator: boolean;
@@ -210,9 +229,11 @@ export const TOTAL_BEACONS = CREATURE_ANCHORS.length;
 
 const ROUTE_LANDMARKS = [
   { label: "Kelp Gate", threshold: 0, distanceOffset: 120 },
-  { label: "Lantern Shelf", threshold: 0.34, distanceOffset: 92 },
-  { label: "Trench Choir", threshold: 0.67, distanceOffset: 64 },
-  { label: "Living Map", threshold: 0.92, distanceOffset: 28 },
+  { label: "Lantern Shelf", threshold: 0.24, distanceOffset: 98 },
+  { label: "Whale-Fall Windows", threshold: 0.43, distanceOffset: 82 },
+  { label: "Trench Choir", threshold: 0.61, distanceOffset: 64 },
+  { label: "Abyss Orchard", threshold: 0.78, distanceOffset: 46 },
+  { label: "Living Map", threshold: 0.94, distanceOffset: 24 },
 ] as const;
 
 export function createInitialScene(dimensions: ViewportDimensions): SceneState {
@@ -688,15 +709,45 @@ export function getDiveRunSummary(
   score: number,
   timeLeft: number,
   durationSeconds = GAME_DURATION
-) {
+): DiveRunSummary {
   return {
     beaconsRemaining: scene.creatures.length,
     completionPercent: Math.round(((TOTAL_BEACONS - scene.creatures.length) / TOTAL_BEACONS) * 100),
     depthMeters: getDiveTelemetry(scene, timeLeft, durationSeconds).depthMeters,
+    durationSeconds,
     elapsedSeconds: durationSeconds - timeLeft,
     score,
     timeLeft,
     totalBeacons: TOTAL_BEACONS,
+  };
+}
+
+export function getDiveCompletionCelebration(summary: DiveRunSummary): DiveCompletionCelebration {
+  const oxygenRatio = summary.durationSeconds > 0 ? summary.timeLeft / summary.durationSeconds : 0;
+  const rating =
+    summary.completionPercent >= 100 && oxygenRatio >= 0.34
+      ? "Radiant Route"
+      : summary.completionPercent >= 100 && oxygenRatio >= 0.18
+        ? "Clean Living Map"
+        : summary.completionPercent >= 100
+          ? "Narrow Ascent"
+          : "Partial Chart";
+  const title = summary.completionPercent >= 100 ? "Living Map Complete" : "Dive Logged";
+  const message =
+    summary.completionPercent >= 100
+      ? `${summary.totalBeacons} beacons recovered through ${ROUTE_LANDMARKS.at(-1)?.label}.`
+      : `${summary.completionPercent}% of the route charted before ascent.`;
+  const replayPrompt =
+    oxygenRatio >= 0.34
+      ? "Replay for faster chains and a calmer return."
+      : "Replay to bank more oxygen before the final landmark.";
+
+  return {
+    landmarkSequence: ROUTE_LANDMARKS.map((landmark) => landmark.label),
+    message,
+    rating,
+    replayPrompt,
+    title,
   };
 }
 

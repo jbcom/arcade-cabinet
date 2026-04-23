@@ -12,7 +12,10 @@ import {
   advanceScene,
   type Creature,
   createInitialScene,
+  type DiveCompletionCelebration,
+  type DiveRunSummary,
   type DiveTelemetry,
+  getDiveCompletionCelebration,
   getDiveDurationSeconds,
   getDiveRunSummary,
   getDiveTelemetry,
@@ -621,8 +624,8 @@ function DeepSeaGame({
 }: {
   initialSnapshot?: DeepSeaRunSnapshot | null;
   mode: SessionMode;
-  onComplete: (score: number) => void;
-  onGameOver: (score: number) => void;
+  onComplete: (score: number, summary: DiveRunSummary) => void;
+  onGameOver: (score: number, summary: DiveRunSummary) => void;
 }) {
   const durationSeconds = getDiveDurationSeconds(mode);
   const { updateRun } = useCabinetRuntime("bioluminescent-sea");
@@ -773,11 +776,24 @@ function DeepSeaGame({
           )
         );
       let newTimeLeft = getAdjustedTimeLeft();
+      const getCurrentSummary = (timeLeftForSummary = newTimeLeft) =>
+        getDiveRunSummary(
+          {
+            creatures: creaturesRef.current,
+            particles: particlesRef.current,
+            pirates: piratesRef.current,
+            player: playerRef.current,
+            predators: predatorsRef.current,
+          },
+          scoreRef.current,
+          timeLeftForSummary,
+          durationSeconds
+        );
       if (newTimeLeft !== timeLeft) {
         setTimeLeft(newTimeLeft);
         if (newTimeLeft === 0) {
           setIsGameOver(true);
-          onGameOver(scoreRef.current);
+          onGameOver(scoreRef.current, getCurrentSummary(0));
           return;
         }
       }
@@ -843,7 +859,10 @@ function DeepSeaGame({
 
       if (isDiveComplete(result.scene)) {
         setIsGameOver(true);
-        onComplete(scoreRef.current);
+        onComplete(
+          scoreRef.current,
+          getDiveRunSummary(result.scene, scoreRef.current, newTimeLeft, durationSeconds)
+        );
         return;
       }
 
@@ -872,7 +891,7 @@ function DeepSeaGame({
           showImpactPulse(impact.oxygenPenaltySeconds, effectiveTotalTime);
         } else if (impact.type === "dive-failed") {
           setIsGameOver(true);
-          onGameOver(scoreRef.current);
+          onGameOver(scoreRef.current, getCurrentSummary(0));
           return;
         }
       }
@@ -1041,6 +1060,45 @@ function DeepSeaGame({
   );
 }
 
+function DiveCompletionBackdrop({
+  celebration,
+  summary,
+}: {
+  celebration: DiveCompletionCelebration;
+  summary: DiveRunSummary;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden bg-[radial-gradient(circle_at_50%_42%,rgba(45,212,191,0.2),transparent_42%),linear-gradient(180deg,#051923,#020611)]"
+    >
+      <div className="absolute inset-x-[8%] top-[16%] h-[52%] rounded-[50%] border border-cyan-200/20 shadow-[0_0_80px_rgba(45,212,191,0.22)]" />
+      {celebration.landmarkSequence.map((landmark, index) => {
+        const progress =
+          celebration.landmarkSequence.length <= 1
+            ? 0
+            : index / (celebration.landmarkSequence.length - 1);
+        return (
+          <div
+            key={landmark}
+            className="absolute grid h-14 w-14 place-items-center rounded-full border border-cyan-100/30 bg-cyan-900/35 text-[0.48rem] font-black uppercase tracking-[0.14em] text-cyan-50 shadow-[0_0_28px_rgba(103,232,249,0.4)]"
+            style={{
+              left: `${12 + progress * 76}%`,
+              top: `${62 - Math.sin(progress * Math.PI) * 34}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {index + 1}
+          </div>
+        );
+      })}
+      <div className="absolute bottom-[18%] left-1/2 -translate-x-1/2 rounded-md border border-amber-200/25 bg-slate-950/56 px-4 py-2 text-center font-mono text-[0.64rem] font-black uppercase tracking-[0.2em] text-amber-100">
+        {summary.timeLeft}s oxygen banked / {summary.depthMeters}m charted
+      </div>
+    </div>
+  );
+}
+
 function resolveDeepSeaSnapshot(saveSlot?: GameSaveSlot): DeepSeaRunSnapshot | null {
   const snapshot = saveSlot?.snapshot;
   if (!isDeepSeaSnapshot(snapshot)) return null;
@@ -1094,11 +1152,15 @@ export default function Game() {
   const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
   const [initialSnapshot, setInitialSnapshot] = useState<DeepSeaRunSnapshot | null>(null);
   const [finalScore, setFinalScore] = useState(0);
-  const finalSummary = getDiveRunSummary(
-    createInitialScene({ height: 600, width: 800 }),
+  const [finalSummary, setFinalSummary] = useState<DiveRunSummary | null>(null);
+  const fallbackSummary = getDiveRunSummary(
+    { ...createInitialScene({ height: 600, width: 800 }), creatures: [] },
     finalScore,
-    0
+    getDiveDurationSeconds(sessionMode),
+    getDiveDurationSeconds(sessionMode)
   );
+  const displaySummary = finalSummary ?? fallbackSummary;
+  const completionCelebration = getDiveCompletionCelebration(displaySummary);
 
   return (
     <GameViewport background="#050d15" data-browser-screenshot-mode="page">
@@ -1138,14 +1200,16 @@ export default function Game() {
             <DeepSeaGame
               initialSnapshot={initialSnapshot}
               mode={sessionMode}
-              onComplete={(s) => {
+              onComplete={(s, summary) => {
                 setInitialSnapshot(null);
                 setFinalScore(s);
+                setFinalSummary(summary);
                 setGameState("complete");
               }}
-              onGameOver={(s) => {
+              onGameOver={(s, summary) => {
                 setInitialSnapshot(null);
                 setFinalScore(s);
+                setFinalSummary(summary);
                 setGameState("gameover");
               }}
             />
@@ -1179,6 +1243,7 @@ export default function Game() {
         )}
         {gameState === "complete" && (
           <motion.div key="complete" className="absolute inset-0" exit={{ opacity: 0 }}>
+            <DiveCompletionBackdrop celebration={completionCelebration} summary={displaySummary} />
             <GameOverScreen
               accent="#4ecdc4"
               result={{
@@ -1187,10 +1252,16 @@ export default function Game() {
                 score: finalScore,
                 slug: "bioluminescent-sea",
                 status: "completed",
-                summary: `Recovered ${finalSummary.totalBeacons} beacons`,
+                stats: {
+                  beacons: displaySummary.totalBeacons,
+                  depthMeters: displaySummary.depthMeters,
+                  oxygenBanked: displaySummary.timeLeft,
+                  rating: completionCelebration.rating,
+                },
+                summary: `${completionCelebration.rating}: recovered ${displaySummary.totalBeacons} beacons`,
               }}
-              title="Living Map Complete"
-              subtitle={`All ${finalSummary.totalBeacons} beacons recovered. Score ${finalScore}. Replay for cleaner chains and deeper landmark mastery.`}
+              title={completionCelebration.title}
+              subtitle={`${completionCelebration.message} ${displaySummary.timeLeft}s oxygen banked. ${completionCelebration.replayPrompt}`}
               actions={
                 <OverlayButton
                   onClick={() => {
