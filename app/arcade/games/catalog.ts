@@ -27,31 +27,6 @@ export const games = [
     difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
   },
   {
-    slug: "enchanted-forest",
-    title: "ENCHANTED FOREST",
-    description: "Protect sacred trees using musical runes and spirit magic.",
-    tags: ["react", "tone.js", "manga"],
-    color: "#10b981",
-    motif: "forest",
-    secondaryAccent: "#fbbf24",
-    gradient: "linear-gradient(135deg, #10b981, #7c3aed)",
-    pillars: ["Gesture spellcasting", "Sacred grove protection", "Music reinforces intent"],
-    presentation:
-      "The grove should feel theatrical and hand-authored: trees form a readable stage line, corruption travels as visible waves, and rune drawing owns the foreground.",
-    sceneDirection:
-      "Emerald, violet, and warm firefly accents separate safe life, magic, and corruption while keeping touch trails high contrast.",
-    responsiveDirection:
-      "Tree positions and drawing coordinates remain percentage-based, preserving the same tactical composition on portrait phones and desktop cabinets.",
-    coreMessage: "Deliberate spell grammar keeps a threatened grove in harmony.",
-    coreLoop:
-      "Read the shadow path, draw shield/heal/purify runes, alternate spell types, build harmony, seal the wave.",
-    sessionTarget: "8-15 minute grove defense set",
-    pressureType: "Cadence-based wave pressure with legible corruption paths",
-    defaultControls: "Pointer or touch rune drawing across the grove stage",
-    winReplayPromise: "Survive longer wave sets by maintaining cleaner spell cadence.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "entropy-edge",
     title: "ENTROPY EDGE",
     description: "Hold a collapsing resonance field together at the edge of failure.",

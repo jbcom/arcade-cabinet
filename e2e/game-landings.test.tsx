@@ -1,7 +1,6 @@
 import BeppoLaughs from "@app/games/beppo-laughs";
 import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
-import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
@@ -24,11 +23,6 @@ const landingCases: {
     Component: BioluminescentSea,
     slug: "bioluminescent-sea",
     title: "COLLECTOR",
-  },
-  {
-    Component: EnchantedForest,
-    slug: "enchanted-forest",
-    title: "START",
   },
   {
     Component: EntropyEdge,
