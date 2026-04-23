@@ -12,6 +12,6 @@ test("Enchanted Forest reaches gameplay from the start screen", async () => {
     Component: Game,
     title: "START",
     startFlow: ["START"],
-    ready: /WAVE/,
+    ready: /GROVE CHORUS/,
   });
 });

@@ -15,6 +15,10 @@ The grove should feel theatrical and hand-authored. Trees form a readable stage 
 
 ## Current Feature and Polish Pass
 
+- Ritual cue telemetry now recommends the next shield/heal/purify decision from pure state, including target tree, mana readiness, threat band, nearest shadow distance, and harmony hint.
+- The HUD surfaces the recommended rune on desktop and mobile so the first minute reads as deliberate spell grammar instead of hidden trial-and-error.
+- Grove and tree lighting now follow the ritual cue with target rings, draw-path guidance, and focus labels.
+- Standard and cozy mode now soften opening shadow hits so the first minute stays recoverable while the player learns the spell cadence; challenge mode keeps full damage pressure.
 - Rune cadence now builds harmony surge state through alternating spell types.
 - Shadow intent paths are generated from pure logic and rendered as visible telegraphs toward targeted trees.
 - Mobile rune affordances are larger and easier to read while shield, heal, and purify remain distinct.

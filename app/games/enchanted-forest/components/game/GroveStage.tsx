@@ -1,9 +1,24 @@
-import { createGroveLayout } from "@logic/games/enchanted-forest/engine/forestSimulation";
+import {
+  createGroveLayout,
+  type ForestRitualCue,
+  type RuneType,
+} from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { motion } from "framer-motion";
 
 const layout = createGroveLayout();
+const RITUAL_COLORS: Record<RuneType, string> = {
+  heal: "#a78bfa",
+  purify: "#fbbf24",
+  shield: "#4ade80",
+};
 
-export function GroveStage({ threatLevel }: { threatLevel: number }) {
+export function GroveStage({
+  ritualCue,
+  threatLevel,
+}: {
+  ritualCue: ForestRitualCue;
+  threatLevel: number;
+}) {
   const threatOpacity = Math.min(0.38, threatLevel / 220);
 
   return (
@@ -41,6 +56,8 @@ export function GroveStage({ threatLevel }: { threatLevel: number }) {
           transition={{ duration: ring.id === "outer-ward" ? 4 : 2.8, repeat: Infinity }}
         />
       ))}
+
+      <RitualFocus cue={ritualCue} />
 
       {layout.roots.map((root) => (
         <div
@@ -97,5 +114,69 @@ export function GroveStage({ threatLevel }: { threatLevel: number }) {
         transition={{ duration: 1.8, repeat: Infinity }}
       />
     </div>
+  );
+}
+
+function RitualFocus({ cue }: { cue: ForestRitualCue }) {
+  const color = RITUAL_COLORS[cue.recommendedRune];
+  const width = cue.recommendedRune === "purify" ? cue.focusRadius * 1.55 : cue.focusRadius * 1.8;
+  const height = cue.recommendedRune === "purify" ? cue.focusRadius * 0.86 : cue.focusRadius * 0.72;
+  const drawPath =
+    cue.recommendedTreeIndex === null
+      ? "M 35 56 C 43 45, 58 45, 66 56"
+      : `M 50 52 C 50 44, ${cue.focusX} 44, ${cue.focusX} ${cue.focusY}`;
+
+  return (
+    <>
+      <svg
+        aria-hidden="true"
+        className="absolute inset-0 z-10 h-full w-full pointer-events-none"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
+        <motion.path
+          d={drawPath}
+          fill="none"
+          stroke={color}
+          strokeLinecap="round"
+          strokeWidth="0.42"
+          strokeDasharray="1.6 1.1"
+          initial={{ opacity: 0.2, pathLength: 0 }}
+          animate={{ opacity: [0.26, 0.78, 0.26], pathLength: 1 }}
+          transition={{ duration: 1.2, repeat: Infinity }}
+        />
+      </svg>
+      <motion.div
+        className="absolute z-[11] rounded-full border-2"
+        style={{
+          borderColor: color,
+          boxShadow: `0 0 34px ${color}88, inset 0 0 24px ${color}33`,
+          height: `${height}%`,
+          left: `${cue.focusX}%`,
+          top: `${cue.focusY}%`,
+          transform: "translate(-50%, -50%) perspective(520px) rotateX(62deg)",
+          width: `${width}%`,
+        }}
+        animate={{
+          opacity: cue.manaReady ? [0.35, 0.88, 0.35] : [0.2, 0.42, 0.2],
+          scale: cue.threatBand === "critical" ? [1, 1.06, 1] : [0.99, 1.02, 0.99],
+        }}
+        transition={{ duration: cue.threatBand === "critical" ? 0.9 : 1.7, repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute z-[12] rounded border border-white/15 bg-black/72 px-2 py-1 text-[10px] font-black uppercase text-white shadow-lg backdrop-blur"
+        style={{
+          boxShadow: `0 0 18px ${color}55`,
+          color,
+          left: `${cue.focusX}%`,
+          top: `${Math.max(18, cue.focusY - 17)}%`,
+          transform: "translate(-50%, -50%)",
+        }}
+        animate={{ opacity: [0.7, 1, 0.7], y: [0, -2, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity }}
+      >
+        Draw {cue.recommendedRune}
+      </motion.div>
+    </>
   );
 }

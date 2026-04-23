@@ -44,6 +44,26 @@ export interface ShadowIntentPath {
   targetY: number;
 }
 
+export type ForestThreatBand = "calm" | "pressing" | "critical";
+
+export interface ForestRitualCue {
+  waveLabel: string;
+  recommendedRune: RuneType;
+  recommendedTreeIndex: number | null;
+  recommendedTreeId: string | null;
+  focusX: number;
+  focusY: number;
+  focusRadius: number;
+  threatBand: ForestThreatBand;
+  highestShadowAlert: number;
+  nearestShadowDistance: number | null;
+  manaReady: boolean;
+  manaNeeded: number;
+  nextHarmonyRune: RuneType | null;
+  harmonyText: string;
+  objective: string;
+}
+
 export interface ForestState {
   phase: ForestPhase;
   sessionMode: SessionMode;
@@ -70,24 +90,41 @@ export interface SpawnWaveResult {
 
 export interface ForestModeTuning {
   manaRegenPerSecond: number;
+  openingDamageScale: number;
+  openingGraceMs: number;
+  shadowHitDamage: number;
   shadowSpeedScale: number;
   targetMinutes: number;
 }
 
 export const MAX_WAVES = 8;
+const RUNE_BASE_COSTS: Record<RuneType, number> = {
+  heal: 30,
+  purify: 25,
+  shield: 20,
+};
 const FOREST_MODE_TUNING: Record<SessionMode, ForestModeTuning> = {
   challenge: {
     manaRegenPerSecond: 0.72,
+    openingDamageScale: 1,
+    openingGraceMs: 0,
+    shadowHitDamage: 10,
     shadowSpeedScale: 1.26,
     targetMinutes: 8,
   },
   cozy: {
     manaRegenPerSecond: 1.55,
+    openingDamageScale: 0.2,
+    openingGraceMs: 75_000,
+    shadowHitDamage: 8,
     shadowSpeedScale: 0.78,
     targetMinutes: 12,
   },
   standard: {
     manaRegenPerSecond: 1,
+    openingDamageScale: 0.3,
+    openingGraceMs: 60_000,
+    shadowHitDamage: 10,
     shadowSpeedScale: 1,
     targetMinutes: 10,
   },
@@ -274,12 +311,13 @@ export function applyShadowHit(
   shadowId: number,
   treeIndex: number
 ): ForestState {
+  const damage = getShadowHitDamage(state);
   const nextTrees = state.trees.map((tree, index) => {
     if (index !== treeIndex || tree.isShielded) return tree;
 
     return {
       ...tree,
-      health: Math.max(0, tree.health - 10),
+      health: Math.max(0, tree.health - damage),
     };
   });
 
@@ -332,6 +370,69 @@ export function getShadowIntentPath(shadow: CorruptionShadow): ShadowIntentPath 
   };
 }
 
+export function getForestRitualCue(state: ForestState): ForestRitualCue {
+  const intents = state.shadows.map((shadow) => ({
+    ...getShadowIntentPath(shadow),
+    distance: getShadowTargetDistance(shadow),
+    targetTreeIndex: shadow.targetTreeIndex,
+  }));
+  const mostAlertIntent = intents.reduce<
+    (ShadowIntentPath & { distance: number; targetTreeIndex: number }) | null
+  >((mostAlert, intent) => {
+    if (!mostAlert) return intent;
+    return intent.alertLevel > mostAlert.alertLevel ? intent : mostAlert;
+  }, null);
+  const highestShadowAlert = round(mostAlertIntent?.alertLevel ?? 0, 2);
+  const nearestShadowDistance =
+    intents.length > 0 ? round(Math.min(...intents.map((intent) => intent.distance)), 1) : null;
+  const weakestTreeIndex = findWeakestTreeIndex(state.trees);
+  const weakestTree = state.trees[weakestTreeIndex] ?? state.trees[0];
+  const weakestTreeRatio = weakestTree ? weakestTree.health / weakestTree.maxHealth : 1;
+  const threatenedTreeIndex =
+    mostAlertIntent?.targetTreeIndex ?? selectMostThreatenedTreeIndex(state.shadows);
+  const threatBand = getForestThreatBand(state, highestShadowAlert, weakestTreeRatio);
+  const nextHarmonyRune = getNextHarmonyRune(state);
+  const recommendedRune = selectRecommendedRune({
+    nextHarmonyRune,
+    state,
+    threatenedTreeIndex,
+    threatBand,
+    weakestTreeIndex,
+    weakestTreeRatio,
+  });
+  const targetTreeIndex =
+    recommendedRune === "purify"
+      ? null
+      : recommendedRune === "heal"
+        ? weakestTreeIndex
+        : threatenedTreeIndex;
+  const targetTree = targetTreeIndex === null ? null : TREE_POSITIONS[targetTreeIndex];
+  const manaNeeded = getRuneManaCostForType(state, recommendedRune);
+
+  return {
+    focusRadius: recommendedRune === "purify" ? 32 : 11,
+    focusX: targetTree?.x ?? 50,
+    focusY: targetTree?.y ?? 52,
+    harmonyText: describeHarmonyCue(state, nextHarmonyRune),
+    highestShadowAlert,
+    manaNeeded,
+    manaReady: state.mana >= manaNeeded,
+    nearestShadowDistance,
+    nextHarmonyRune,
+    objective: describeRitualCueObjective({
+      recommendedRune,
+      state,
+      targetTree,
+      threatBand,
+    }),
+    recommendedRune,
+    recommendedTreeId: targetTree?.id ?? null,
+    recommendedTreeIndex: targetTreeIndex,
+    threatBand,
+    waveLabel: `Wave ${state.wave}/${MAX_WAVES}`,
+  };
+}
+
 export function getForestTransition(
   state: ForestState,
   maxWaves = MAX_WAVES
@@ -359,6 +460,13 @@ export function getForestSessionTargetMinutes(mode: string | null | undefined = 
 
 export function getForestModeTuning(mode: string | null | undefined): ForestModeTuning {
   return FOREST_MODE_TUNING[normalizeSessionMode(mode)];
+}
+
+export function getShadowHitDamage(state: ForestState): number {
+  const tuning = getForestModeTuning(state.sessionMode);
+  const openingScale = state.elapsedMs < tuning.openingGraceMs ? tuning.openingDamageScale : 1;
+
+  return Math.max(1, Math.round(tuning.shadowHitDamage * openingScale));
 }
 
 export function getForestRunSummary(state: ForestState) {
@@ -466,6 +574,132 @@ function findWeakestTreeIndex(trees: GroveTreeState[]): number {
     const weakest = trees[weakestIndex];
     return tree.health / tree.maxHealth < weakest.health / weakest.maxHealth ? index : weakestIndex;
   }, 0);
+}
+
+function selectMostThreatenedTreeIndex(shadows: CorruptionShadow[]): number {
+  if (shadows.length === 0) return 1;
+
+  const threatByTree = shadows.reduce(
+    (totals, shadow) => {
+      const distance = getShadowTargetDistance(shadow);
+      const targetIndex = Math.round(clamp(shadow.targetTreeIndex, 0, TREE_POSITIONS.length - 1));
+      totals[targetIndex] = (totals[targetIndex] ?? 0) + 1 + Math.max(0, 1 - distance / 92);
+      return totals;
+    },
+    [0, 0, 0]
+  );
+
+  return threatByTree.reduce(
+    (highestIndex, threat, index) =>
+      threat > (threatByTree[highestIndex] ?? 0) ? index : highestIndex,
+    0
+  );
+}
+
+function getForestThreatBand(
+  state: ForestState,
+  highestShadowAlert: number,
+  weakestTreeRatio: number
+): ForestThreatBand {
+  if (state.threatLevel >= 58 || highestShadowAlert >= 0.72 || weakestTreeRatio <= 0.32) {
+    return "critical";
+  }
+  if (state.threatLevel >= 28 || highestShadowAlert >= 0.42 || weakestTreeRatio <= 0.68) {
+    return "pressing";
+  }
+  return "calm";
+}
+
+function getNextHarmonyRune(state: ForestState): RuneType | null {
+  if (state.lastRuneType === null || state.harmonyLevel <= 0) return null;
+  const rotation: RuneType[] = ["shield", "heal", "purify"];
+  return rotation.find((rune) => rune !== state.lastRuneType) ?? null;
+}
+
+function selectRecommendedRune({
+  nextHarmonyRune,
+  state,
+  threatenedTreeIndex,
+  threatBand,
+  weakestTreeIndex,
+  weakestTreeRatio,
+}: {
+  nextHarmonyRune: RuneType | null;
+  state: ForestState;
+  threatenedTreeIndex: number;
+  threatBand: ForestThreatBand;
+  weakestTreeIndex: number;
+  weakestTreeRatio: number;
+}): RuneType {
+  if (weakestTreeRatio <= 0.58) return "heal";
+
+  const threatenedTree = state.trees[threatenedTreeIndex];
+  if (
+    state.shadows.length > 0 &&
+    threatBand !== "calm" &&
+    threatenedTree &&
+    !threatenedTree.isShielded
+  ) {
+    return "shield";
+  }
+
+  if (state.shadows.length > 0) return "purify";
+
+  const weakestTree = state.trees[weakestTreeIndex];
+  if (weakestTree && weakestTree.health < weakestTree.maxHealth) {
+    return "heal";
+  }
+
+  return nextHarmonyRune ?? "shield";
+}
+
+function getRuneManaCostForType(state: ForestState, runeType: RuneType): number {
+  const baseCost = RUNE_BASE_COSTS[runeType];
+  const alternating = state.lastRuneType !== null && state.lastRuneType !== runeType;
+  const harmonyDiscount = alternating && state.harmonyLevel >= 2 ? 0.75 : 1;
+
+  return Math.ceil(baseCost * harmonyDiscount);
+}
+
+function getShadowTargetDistance(shadow: CorruptionShadow): number {
+  const target = TREE_POSITIONS[shadow.targetTreeIndex] ?? TREE_POSITIONS[0];
+  return Math.hypot(target.x - shadow.x, target.y - shadow.y);
+}
+
+function describeHarmonyCue(state: ForestState, nextHarmonyRune: RuneType | null): string {
+  if (state.harmonySurgeActive) return "Surge echo is active";
+  if (state.harmonyLevel >= 2 && nextHarmonyRune) {
+    return `Draw ${nextHarmonyRune} next to trigger a surge`;
+  }
+  if (state.harmonyLevel === 1 && nextHarmonyRune) {
+    return `Alternate into ${nextHarmonyRune} to build harmony`;
+  }
+  return "Alternate rune types to build harmony";
+}
+
+function describeRitualCueObjective({
+  recommendedRune,
+  state,
+  targetTree,
+  threatBand,
+}: {
+  recommendedRune: RuneType;
+  state: ForestState;
+  targetTree: TreePosition | null;
+  threatBand: ForestThreatBand;
+}): string {
+  if (recommendedRune === "heal" && targetTree) {
+    return `Heal ${targetTree.id.replace("-", " ")} before the next shadow hit.`;
+  }
+  if (recommendedRune === "shield" && targetTree) {
+    return `Shield ${targetTree.id.replace("-", " ")} while the path is readable.`;
+  }
+  if (recommendedRune === "purify" && state.shadows.length > 0) {
+    return threatBand === "critical"
+      ? "Draw purify through the center to break the critical wave."
+      : "Draw purify across the center while shadows are in the ward.";
+  }
+  return "Open with a shield rune and alternate spells for harmony.";
 }
 
 function describeObjective(

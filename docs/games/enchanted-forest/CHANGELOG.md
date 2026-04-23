@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added deterministic ritual cue telemetry for recommended rune, target tree, mana readiness, threat band, nearest shadow distance, and harmony hint.
+- Added desktop/mobile rune cue HUD, stage focus rings, draw-path guidance, and target-tree ritual lighting.
+- Added standard/cozy opening damage grace so early shadow hits remain recoverable while challenge mode keeps full pressure.
 - Added rune harmony surge state and deterministic shadow intent path metadata.
 - Added shadow path telegraphs, larger mobile rune affordances, distinct spell feedback, and shared cartridge landing identity.
 

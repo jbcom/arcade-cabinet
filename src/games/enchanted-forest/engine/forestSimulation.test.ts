@@ -8,9 +8,11 @@ import {
   createGroveLayout,
   createInitialForestState,
   getForestModeTuning,
+  getForestRitualCue,
   getForestRunSummary,
   getForestSessionTargetMinutes,
   getForestTransition,
+  getShadowHitDamage,
   getShadowIntentPath,
   MAX_WAVES,
   regenerateMana,
@@ -77,6 +79,58 @@ describe("forest simulation", () => {
     expect(intent.alertLevel).toBeLessThanOrEqual(1);
   });
 
+  test("exposes ritual cues for shield, heal, and harmony decisions", () => {
+    const threatenedTree = TREE_POSITIONS[1];
+    const shadow = {
+      id: 7,
+      health: 24,
+      maxHealth: 24,
+      size: 34,
+      speed: 0.7,
+      targetTreeIndex: 1,
+      x: threatenedTree.x,
+      y: threatenedTree.y - 4,
+    };
+    const shieldCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      shadows: [shadow],
+      threatLevel: 44,
+    });
+    const healCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      mana: 20,
+      trees: [
+        { health: 35, isShielded: false, maxHealth: 100 },
+        { health: 90, isShielded: false, maxHealth: 100 },
+        { health: 100, isShielded: false, maxHealth: 100 },
+      ],
+    });
+    const harmonyCue = getForestRitualCue({
+      ...createInitialForestState("playing"),
+      harmonyLevel: 2,
+      lastRuneType: "shield",
+    });
+
+    expect(shieldCue).toMatchObject({
+      highestShadowAlert: 0.96,
+      recommendedRune: "shield",
+      recommendedTreeId: "heart-tree",
+      threatBand: "critical",
+    });
+    expect(healCue).toMatchObject({
+      manaNeeded: 30,
+      manaReady: false,
+      recommendedRune: "heal",
+      recommendedTreeId: "left-grove",
+    });
+    expect(harmonyCue).toMatchObject({
+      manaNeeded: 23,
+      nextHarmonyRune: "heal",
+      recommendedRune: "heal",
+    });
+    expect(harmonyCue.harmonyText).toContain("surge");
+  });
+
   test("applies spells, mana costs, shield, heal, and purify zones", () => {
     const shield = RUNE_PATTERNS.find((rune) => rune.type === "shield");
     const heal = RUNE_PATTERNS.find((rune) => rune.type === "heal");
@@ -134,7 +188,7 @@ describe("forest simulation", () => {
 
     expect(moved.y).toBeGreaterThan(firstShadow.y);
     expect(hit.shadows).toHaveLength(2);
-    expect(hit.trees[firstShadow.targetTreeIndex]?.health).toBe(90);
+    expect(hit.trees[firstShadow.targetTreeIndex]?.health).toBe(97);
     expect(purified.shadows).toHaveLength(2);
     expect(getForestTransition({ ...state, shadows: [] }, MAX_WAVES)).toEqual({
       type: "next-wave",
@@ -143,6 +197,48 @@ describe("forest simulation", () => {
     expect(getForestTransition({ ...state, wave: MAX_WAVES, shadows: [] }, MAX_WAVES)).toEqual({
       type: "victory",
     });
+  });
+
+  test("keeps standard opening hits recoverable while challenge keeps full pressure", () => {
+    const openingState = {
+      ...createInitialForestState("playing", "standard"),
+      elapsedMs: 30_000,
+      shadows: Array.from({ length: 24 }, (_, index) => {
+        const targetTreeIndex = index % TREE_POSITIONS.length;
+        const target = TREE_POSITIONS[targetTreeIndex] ?? {
+          canopyScale: 1,
+          id: "fallback",
+          x: 50,
+          y: 77,
+        };
+
+        return {
+          id: index,
+          health: 20,
+          maxHealth: 20,
+          size: 30,
+          speed: 0.5,
+          targetTreeIndex,
+          x: target.x,
+          y: target.y,
+        };
+      }),
+    };
+    const hitState = openingState.shadows.reduce(
+      (state, shadow) => applyShadowHit(state, shadow.id, shadow.targetTreeIndex),
+      openingState
+    );
+    const challengeState = createInitialForestState("playing", "challenge");
+    const lateState = {
+      ...createInitialForestState("playing", "standard"),
+      elapsedMs: 61_000,
+    };
+
+    expect(getShadowHitDamage(openingState)).toBe(3);
+    expect(getShadowHitDamage(lateState)).toBe(10);
+    expect(getShadowHitDamage(challengeState)).toBe(10);
+    expect(hitState.trees.every((tree) => tree.health > 0)).toBe(true);
+    expect(hitState.trees.every((tree) => tree.health >= 76)).toBe(true);
   });
 
   test("targets a longer couch ritual with summary telemetry", () => {

@@ -1,4 +1,8 @@
 import { CartridgeStartScreen } from "@app/shared";
+import type {
+  ForestRitualCue,
+  RuneType,
+} from "@logic/games/enchanted-forest/engine/forestSimulation";
 import { RUNE_PATTERNS } from "@logic/games/enchanted-forest/lib/runePatterns";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { AnimatePresence, motion } from "framer-motion";
@@ -16,6 +20,16 @@ const HORIZONTAL_SPEED_LINES = Array.from({ length: 20 }, (_, index) => ({
   left: `${(index * 23) % 50}%`,
   delay: index * 0.03,
 }));
+const RUNE_CUE_COLORS: Record<RuneType, string> = {
+  heal: "#a78bfa",
+  purify: "#fbbf24",
+  shield: "#4ade80",
+};
+const RUNE_CUE_LABELS: Record<RuneType, string> = {
+  heal: "Heal",
+  purify: "Purify",
+  shield: "Shield",
+};
 
 interface GameUIProps {
   wave: number;
@@ -31,6 +45,7 @@ interface GameUIProps {
   threatLevel: number;
   harmonyLevel: number;
   harmonySurgeActive: boolean;
+  ritualCue: ForestRitualCue;
   runSummary: {
     elapsedSeconds: number;
     healthyTrees: number;
@@ -215,6 +230,7 @@ export function GameUI({
   threatLevel,
   harmonyLevel,
   harmonySurgeActive,
+  ritualCue,
   runSummary,
 }: GameUIProps) {
   const [showRuneEffect, setShowRuneEffect] = useState<(typeof RUNE_PATTERNS)[0] | null>(null);
@@ -225,6 +241,13 @@ export function GameUI({
       if (rune) setShowRuneEffect(rune);
     }
   }, [lastRune]);
+
+  const cueColor = RUNE_CUE_COLORS[ritualCue.recommendedRune];
+  const cueLabel = RUNE_CUE_LABELS[ritualCue.recommendedRune];
+  const cueTarget = formatCueTarget(ritualCue);
+  const cueObjective = ritualCue.manaReady
+    ? ritualCue.objective
+    : `Build mana for ${cueLabel} (${Math.floor(mana)}/${ritualCue.manaNeeded}).`;
 
   return (
     <>
@@ -268,8 +291,20 @@ export function GameUI({
                 <div className="text-emerald-200/70 text-[10px] font-bold tracking-widest">
                   GROVE CHORUS
                 </div>
-                <div className="text-white font-black text-sm md:text-base leading-tight truncate">
-                  {objective}
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-white/15 bg-white/10 px-2 py-1 text-[10px] font-black uppercase text-emerald-100">
+                    Rune Cue
+                  </span>
+                  <span
+                    className="text-sm font-black uppercase md:text-base"
+                    style={{ color: cueColor, textShadow: `0 0 16px ${cueColor}88` }}
+                  >
+                    Draw {cueLabel}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase text-white/60">{cueTarget}</span>
+                </div>
+                <div className="mt-1 text-white font-black text-sm md:text-base leading-tight truncate">
+                  {cueObjective || objective}
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-purple-950/80">
                   <motion.div
@@ -282,6 +317,9 @@ export function GameUI({
                   <span style={{ color: harmonySurgeActive ? "#fbbf24" : "#a7f3d0" }}>
                     {harmonySurgeActive ? "Surge" : `${harmonyLevel}/3`}
                   </span>
+                </div>
+                <div className="mt-1 truncate text-[10px] font-bold uppercase text-emerald-100/60">
+                  {ritualCue.harmonyText}
                 </div>
                 <div className="mt-1 grid grid-cols-3 gap-1">
                   {[1, 2, 3].map((step) => (
@@ -325,6 +363,32 @@ export function GameUI({
             </motion.div>
           </div>
         </div>
+      )}
+
+      {(gameState === "playing" || gameState === "tutorial") && (
+        <motion.div
+          className="fixed inset-x-3 top-24 z-40 pointer-events-none sm:hidden"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="rounded border border-emerald-300/25 bg-black/78 px-3 py-2 shadow-lg backdrop-blur">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-100/65">
+                Rune Cue
+              </span>
+              <span
+                className="text-sm font-black uppercase"
+                style={{ color: cueColor, textShadow: `0 0 14px ${cueColor}99` }}
+              >
+                Draw {cueLabel}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase text-white/70">
+              <span className="truncate">{cueTarget}</span>
+              <span>{ritualCue.threatBand}</span>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {gameState === "intro" && (
@@ -377,4 +441,14 @@ export function GameUI({
       )}
     </>
   );
+}
+
+function formatCueTarget(cue: ForestRitualCue): string {
+  if (cue.recommendedTreeId) {
+    return cue.recommendedTreeId.replace("-", " ");
+  }
+  if (cue.nearestShadowDistance !== null) {
+    return `${Math.round(cue.nearestShadowDistance)}m to roots`;
+  }
+  return cue.waveLabel;
 }

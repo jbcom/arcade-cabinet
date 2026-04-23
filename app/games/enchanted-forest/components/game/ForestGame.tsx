@@ -16,6 +16,7 @@ import {
   createInitialForestState,
   type ForestState,
   getForestModeTuning,
+  getForestRitualCue,
   getForestRunSummary,
   getForestTransition,
   getShadowIntentPath,
@@ -152,6 +153,7 @@ export function ForestGame() {
   }, [forestState, spawnWave]);
 
   const runSummary = getForestRunSummary(forestState);
+  const ritualCue = getForestRitualCue(forestState);
 
   useRunSnapshotAutosave({
     active: forestState.phase === "playing",
@@ -186,7 +188,7 @@ export function ForestGame() {
           summary={`Defeated at wave ${runSummary.wave}`}
         />
       ) : null}
-      <GroveStage threatLevel={forestState.threatLevel} />
+      <GroveStage ritualCue={ritualCue} threatLevel={forestState.threatLevel} />
       <NoiseBackground />
       <FireflyParticles count={40} />
 
@@ -197,6 +199,8 @@ export function ForestGame() {
           {...tree}
           position={TREE_POSITIONS[index]}
           isHealing={forestState.healingTreeIndex === index}
+          isRitualTarget={ritualCue.recommendedTreeIndex === index}
+          ritualRune={ritualCue.recommendedTreeIndex === index ? ritualCue.recommendedRune : null}
           isTargeted={isTreeTargeted(index, forestState.shadows)}
         />
       ))}
@@ -233,6 +237,7 @@ export function ForestGame() {
         threatLevel={forestState.threatLevel}
         harmonyLevel={forestState.harmonyLevel}
         harmonySurgeActive={forestState.harmonySurgeActive}
+        ritualCue={ritualCue}
         runSummary={runSummary}
       />
     </GameViewport>
