@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added deterministic narrow-portrait lower-board layout rules with compact gauges, lifted flippers, and a larger launcher touch target.
 - Added deterministic recovery bloom ball-save rules for standard and cozy sessions.
 - Added recovery bloom pulse feedback and HUD save count.
 - Added constellation completion rewards with resonance bloom score bonus and next-pattern preview.

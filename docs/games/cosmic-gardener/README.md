@@ -22,12 +22,14 @@ Browser screenshots use page capture instead of selecting the largest canvas bec
 - Active constellation edges pulse by completion state, while completed links gain stronger glow.
 - Launch and drain pulses make lower-table feedback more visible before the next ball action.
 - Recovery bloom pulses and the HUD save counter make the ball-save valve visible without changing challenge mode.
+- Very narrow portrait screens now use a deterministic compact lower-board layout: energy/cold gauges move into an upper strip, flippers sit higher in the apron, and the launcher becomes a larger touch target so the mobile board reads as a pinball table rather than a stack of controls.
 - The cabinet landing uses the shared cartridge frame with a cosmic label, play control, and rules drawer before the tutorial step.
 
 ## Gameplay Systems
 
 - `src/engine/cosmicGardenSimulation.ts` owns deterministic starter gardens, star growth stages, energy transfer, void-zone placement, pinball orb creation, flipper stepping, drain detection, and bumper collision response.
 - `src/engine/cosmicSession.ts` owns session-mode tuning, void-zone scaling, and last-ball recovery bloom rules.
+- `src/engine/cosmicBoardLayout.ts` owns deterministic lower-board presentation contracts for narrow portrait, mobile portrait, and desktop/tablet play.
 - `useEnergyRouting` and `usePinballPhysics` orchestrate React state around those pure systems instead of generating gameplay IDs and layouts with runtime randomness.
 - Starter stars are mapped directly to constellation points, while completion still requires routing the authored pattern connections.
 

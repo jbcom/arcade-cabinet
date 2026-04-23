@@ -20,6 +20,10 @@ import {
   type VoidZone as VoidZoneType,
 } from "@logic/games/cosmic-gardener/engine/constellations";
 import {
+  type CosmicLowerBoardLayout,
+  getCosmicLowerBoardLayout,
+} from "@logic/games/cosmic-gardener/engine/cosmicBoardLayout";
+import {
   calculateComboMultiplier,
   calculateResonanceBloomBonus,
   calculateStarHitScore,
@@ -86,10 +90,17 @@ function isCosmicSnapshot(snapshot: unknown): snapshot is CosmicRunSnapshot {
   );
 }
 
-function CosmicTableDeck() {
+function CosmicTableDeck({ layout }: { layout: CosmicLowerBoardLayout }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-[1]">
-      <div className="absolute inset-x-[5%] top-[10%] bottom-[6%] rounded-[2rem] border border-cyan-200/15 bg-[radial-gradient(circle_at_50%_22%,rgba(20,184,166,0.13),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.22),rgba(2,6,23,0.5))] shadow-[inset_0_0_70px_rgba(20,184,166,0.12),0_30px_80px_rgba(0,0,0,0.35)]" />
+      <div
+        className="absolute top-[10%] rounded-[2rem] border border-cyan-200/15 bg-[radial-gradient(circle_at_50%_22%,rgba(20,184,166,0.13),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.22),rgba(2,6,23,0.5))] shadow-[inset_0_0_70px_rgba(20,184,166,0.12),0_30px_80px_rgba(0,0,0,0.35)]"
+        style={{
+          bottom: `${layout.tableBottomInsetPct}%`,
+          left: `${layout.railInsetXPercent}%`,
+          right: `${layout.railInsetXPercent}%`,
+        }}
+      />
       <svg aria-hidden="true" className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
         <defs>
           <linearGradient id="cosmic-rail" x1="0" x2="1" y1="0" y2="1">
@@ -152,7 +163,8 @@ function CosmicTableDeck() {
 }
 
 export default function Game({ className }: { className?: string }) {
-  const _viewport = useResponsive();
+  const viewport = useResponsive();
+  const lowerBoardLayout = getCosmicLowerBoardLayout(viewport);
   const [gameState, setGameState] = useState<GameState>("intro");
   const [sessionMode, setSessionMode] = useState<SessionMode>("standard");
   const [level, setLevel] = useState(1);
@@ -559,7 +571,7 @@ export default function Game({ className }: { className?: string }) {
     >
       <NebulaBackground />
       <CosmicDust particleCount={150} />
-      <CosmicTableDeck />
+      <CosmicTableDeck layout={lowerBoardLayout} />
 
       {gameState === "zenMode" && (
         <RuntimeResultRecorder
@@ -688,6 +700,7 @@ export default function Game({ className }: { className?: string }) {
 
       {(gameState === "playing" || gameState === "zenMode") && (
         <Flippers
+          layout={lowerBoardLayout}
           leftActive={leftFlipper}
           rightActive={rightFlipper}
           onLeftDown={activateLeftFlipper}
@@ -698,7 +711,7 @@ export default function Game({ className }: { className?: string }) {
       )}
 
       {(gameState === "playing" || gameState === "zenMode") && (
-        <BallLauncher onLaunch={handleLaunch} disabled={orbs.size >= 3} />
+        <BallLauncher layout={lowerBoardLayout} onLaunch={handleLaunch} disabled={orbs.size >= 3} />
       )}
 
       {(gameState === "playing" || gameState === "paused" || gameState === "zenMode") && (
@@ -710,6 +723,7 @@ export default function Game({ className }: { className?: string }) {
             constellationsCompleted={constellationsCompleted}
             totalConstellations={5}
             isPaused={gameState === "paused"}
+            lowerBoardLayout={lowerBoardLayout}
             onPause={() => setGameState("paused")}
             onResume={() => setGameState("playing")}
             onRestart={() => startGame()}
