@@ -1,5 +1,4 @@
 import BeppoLaughs from "@app/games/beppo-laughs";
-import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
@@ -16,11 +15,6 @@ const landingCases: {
   slug: string;
   title: TextMatcher;
 }[] = [
-  {
-    Component: BioluminescentSea,
-    slug: "bioluminescent-sea",
-    title: "COLLECTOR",
-  },
   {
     Component: MegaTrack,
     slug: "mega-track",

@@ -3,7 +3,6 @@ import { gameIslandSlugs } from "../components/GameIsland";
 import { games } from "./catalog";
 
 const expectedSlugs = [
-  "bioluminescent-sea",
   "mega-track",
   "overcast-glacier",
   "titan-mech",

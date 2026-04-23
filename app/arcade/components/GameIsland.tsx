@@ -5,7 +5,6 @@ type GameComponent = LazyExoticComponent<ComponentType>;
 
 const gameComponents = {
   "beppo-laughs": lazy(() => import("@app/games/beppo-laughs")),
-  "bioluminescent-sea": lazy(() => import("@app/games/bioluminescent-sea")),
   "cognitive-dissonance": lazy(() => import("@app/games/cognitive-dissonance")),
   "farm-follies": lazy(() => import("@app/games/farm-follies")),
   "mega-track": lazy(() => import("@app/games/mega-track")),
