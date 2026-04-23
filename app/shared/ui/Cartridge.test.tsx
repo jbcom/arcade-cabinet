@@ -15,7 +15,7 @@ describe("CartridgeStartScreen runtime integration", () => {
     const props = {
       accent: "#38bdf8",
       description: "Test cartridge",
-      gameSlug: "entropy-edge" as const,
+      gameSlug: "mega-track" as const,
       onStart,
       startLabel: "Start Test",
       title: "TEST CARTRIDGE",
@@ -27,7 +27,7 @@ describe("CartridgeStartScreen runtime integration", () => {
     await userEvent.click(page.getByText("Start Test"));
 
     expect(onStart).toHaveBeenCalledWith("challenge");
-    expect(localStorage.getItem("arcade-cabinet:v1:progress:entropy-edge")).toContain(
+    expect(localStorage.getItem("arcade-cabinet:v1:progress:mega-track")).toContain(
       '"lastSelectedMode":"challenge"'
     );
 

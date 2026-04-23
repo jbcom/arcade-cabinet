@@ -1,7 +1,6 @@
 import BeppoLaughs from "@app/games/beppo-laughs";
 import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
-import EntropyEdge from "@app/games/entropy-edge";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
 import OtterlyChaotic from "@app/games/otterly-chaotic";
@@ -30,16 +29,6 @@ const gameCases: (BrowserGameStartFlow & {
     startFlow: ["Start Descent"],
     ready: "Time",
     expectsCanvas: true,
-  },
-  {
-    name: "Entropy Edge",
-    slug: "entropy-edge",
-    Component: EntropyEdge,
-    title: "Entropy's Edge",
-    startFlow: ["Initialize Link"],
-    ready: /RESONANCE/,
-    expectsCanvas: true,
-    expectsJoystick: true,
   },
   {
     name: "Mega Track",
