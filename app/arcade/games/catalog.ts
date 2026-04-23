@@ -79,31 +79,6 @@ export const games = [
     difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
   },
   {
-    slug: "otterly-chaotic",
-    title: "OTTERLY CHAOTIC",
-    description: "Navigate a chaotic otter through a series of wild challenges.",
-    tags: ["r3f", "physics", "action"],
-    color: "#0ea5e9",
-    motif: "otter",
-    secondaryAccent: "#84cc16",
-    gradient: "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
-    pillars: ["Protect the salad", "Readable chase triangle", "Comedic physicality"],
-    presentation:
-      "The scene is a small chase arena where otter, goats, salad, water, and goal are always visible enough to plan a rescue route.",
-    sceneDirection:
-      "Bright pasture, blue water, warm crater marker, fence rails, reeds, composite salad leaves, and soft animal materials keep the tone playful while preserving collision readability.",
-    responsiveDirection:
-      "The fixed arena camera widens for portrait, and page-mode touch controls keep mobile and Android play equivalent to keyboard input.",
-    coreMessage: "A rescue is readable when the chase triangle is honest.",
-    coreLoop:
-      "Read goat intent, place the otter, bark to rally, protect salad pieces, push them to safety.",
-    sessionTarget: "8-15 minute rescue arena set",
-    pressureType: "Telegraphed goat pressure with bark recovery windows",
-    defaultControls: "Touch-anywhere joystick plus a bark button",
-    winReplayPromise: "Save the salad faster by timing bark rallies and cleaner pushes.",
-    difficultyVariants: DEFAULT_DIFFICULTY_VARIANTS,
-  },
-  {
     slug: "primordial-ascent",
     title: "PRIMORDIAL ASCENT",
     description: "Grapple your way out of a rising lava cavern using procedural physics.",

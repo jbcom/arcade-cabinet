@@ -3,7 +3,6 @@ import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
 import FarmFollies from "@app/games/farm-follies";
 import MegaTrack from "@app/games/mega-track";
-import OtterlyChaotic from "@app/games/otterly-chaotic";
 import OvercastGlacier from "@app/games/overcast-glacier";
 import PrimordialAscent from "@app/games/primordial-ascent";
 import TitanMech from "@app/games/titan-mech";
@@ -47,16 +46,6 @@ const gameCases: (BrowserGameStartFlow & {
     title: "OVERCAST: GLACIER",
     startFlow: ["Drop In"],
     ready: "Warmth",
-    expectsJoystick: true,
-  },
-  {
-    name: "Otterly Chaotic",
-    slug: "otterly-chaotic",
-    Component: OtterlyChaotic,
-    title: "Otterly Chaotic",
-    startFlow: ["Start Sprint"],
-    ready: "Bark Pulse",
-    expectsCanvas: true,
     expectsJoystick: true,
   },
   {

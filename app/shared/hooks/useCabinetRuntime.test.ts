@@ -37,25 +37,25 @@ describe("cabinet browser runtime storage", () => {
   });
 
   test("starts and clears one active run per game", () => {
-    beginGameRun("otterly-chaotic", "challenge", {
+    beginGameRun("mega-track", "challenge", {
       progressSummary: "Round 2 rescue",
       snapshot: { saladHealth: 72 },
     });
 
-    expect(readGameProgress("otterly-chaotic")).toMatchObject({
+    expect(readGameProgress("mega-track")).toMatchObject({
       lastSelectedMode: "challenge",
       sessionsStarted: 1,
     });
-    expect(readGameSaveSlot("otterly-chaotic")).toMatchObject({
+    expect(readGameSaveSlot("mega-track")).toMatchObject({
       mode: "challenge",
       progressSummary: "Round 2 rescue",
       snapshot: { saladHealth: 72 },
       status: "active",
     });
 
-    clearGameSaveSlot("otterly-chaotic");
+    clearGameSaveSlot("mega-track");
 
-    expect(readGameSaveSlot("otterly-chaotic")).toBeUndefined();
+    expect(readGameSaveSlot("mega-track")).toBeUndefined();
   });
 
   test("finishes a run, records progress, and clears stale resume state", () => {

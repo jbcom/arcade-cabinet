@@ -81,7 +81,6 @@ export const DEFAULT_SESSION_TUNING: Record<SessionMode, SessionTuning> = {
 export const LAUNCH_GAME_SLUGS = [
   "bioluminescent-sea",
   "mega-track",
-  "otterly-chaotic",
   "overcast-glacier",
   "primordial-ascent",
   "titan-mech",
