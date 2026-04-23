@@ -3,7 +3,7 @@ import {
   getSessionRecoveryScale,
   normalizeSessionMode,
 } from "@logic/shared";
-import type { OtterlyState, Vec2 } from "./types";
+import type { GoatPoseCue, GoatState, OtterlyState, OtterPoseCue, Vec2 } from "./types";
 
 export const WATER_ZONE = { x: -2.5, y: -1.6, width: 2.8, height: 2.4 };
 export const GOAL = { x: 3.6, y: 2.8 };
@@ -207,6 +207,121 @@ export function getOtterlyRescueCue(state: OtterlyState) {
     }),
     progressLabel: `${state.rescuesCompleted + 1}/${state.targetRescues}`,
     threatBand,
+  };
+}
+
+export function getOtterPoseCue(state: OtterlyState): OtterPoseCue {
+  const rescueCue = getOtterlyRescueCue(state);
+  const barkAge = state.elapsedMs - state.lastBarkMs;
+  const nearBall = distance(state.otter, state.ball) < 1.32;
+  const speed = Math.min(1, length(state.otterVelocity) / 0.01);
+
+  if (Number.isFinite(barkAge) && barkAge >= 0 && barkAge < 680) {
+    return {
+      accent: state.lastBarkStunned > 0 ? "#fde047" : "#38bdf8",
+      energy: 1,
+      label: state.lastBarkStunned > 0 ? "Bark rally" : "Bark pulse",
+      leanX: 0,
+      leanY: -0.2,
+      pose: "bark",
+      tailLift: 1,
+    };
+  }
+
+  if (state.rallyMs > 0) {
+    return {
+      accent: "#facc15",
+      energy: 0.86,
+      label: "Rally drive",
+      leanX: state.ball.x - state.otter.x,
+      leanY: state.ball.y - state.otter.y,
+      pose: "rally",
+      tailLift: 0.82,
+    };
+  }
+
+  if (nearBall || rescueCue.action === "push") {
+    return {
+      accent: "#86efac",
+      energy: 0.72,
+      label: "Shoulder push",
+      leanX: state.ball.x - state.otter.x,
+      leanY: state.ball.y - state.otter.y,
+      pose: "push",
+      tailLift: 0.62,
+    };
+  }
+
+  if (speed > 0.25) {
+    return {
+      accent: "#38bdf8",
+      energy: speed,
+      label: "Water sprint",
+      leanX: state.otterVelocity.x,
+      leanY: state.otterVelocity.y,
+      pose: "sprint",
+      tailLift: 0.72,
+    };
+  }
+
+  return {
+    accent: rescueCue.threatBand === "danger" ? "#fb7185" : "#bae6fd",
+    energy: rescueCue.threatBand === "danger" ? 0.74 : 0.38,
+    label: rescueCue.threatBand === "danger" ? "Guard salad" : "Read lane",
+    leanX: state.ball.x - state.otter.x,
+    leanY: state.ball.y - state.otter.y,
+    pose: "guard",
+    tailLift: rescueCue.threatBand === "danger" ? 0.7 : 0.35,
+  };
+}
+
+export function getGoatPoseCue(state: OtterlyState, goat: GoatState): GoatPoseCue {
+  const intent = getGoatIntent(state, goat);
+
+  if (intent.state === "stunned") {
+    return {
+      accent: "#c084fc",
+      energy: 0.72,
+      goatId: goat.id,
+      headPitch: -0.18,
+      hoofLift: 0.18,
+      label: "Stunned",
+      pose: "stunned",
+    };
+  }
+
+  if (intent.state === "chewing") {
+    return {
+      accent: "#fb7185",
+      energy: 1,
+      goatId: goat.id,
+      headPitch: 0.48,
+      hoofLift: 0.06,
+      label: "Chewing",
+      pose: "chew",
+    };
+  }
+
+  if (intent.alertLevel > 0.52) {
+    return {
+      accent: "#facc15",
+      energy: intent.alertLevel,
+      goatId: goat.id,
+      headPitch: 0.18,
+      hoofLift: 0.2,
+      label: "Alert",
+      pose: "alert",
+    };
+  }
+
+  return {
+    accent: "#e2e8f0",
+    energy: intent.alertLevel,
+    goatId: goat.id,
+    headPitch: 0,
+    hoofLift: 0,
+    label: "Chasing",
+    pose: "chase",
   };
 }
 

@@ -1,5 +1,10 @@
 import { FloatingJoystick, OverlayButton, useResponsive } from "@app/shared";
-import { getGoatIntent, getOtterlyRescueCue } from "@logic/games/otterly-chaotic/engine/simulation";
+import {
+  getGoatIntent,
+  getGoatPoseCue,
+  getOtterlyRescueCue,
+  getOtterPoseCue,
+} from "@logic/games/otterly-chaotic/engine/simulation";
 import type { OtterlyState, Vec2 } from "@logic/games/otterly-chaotic/engine/types";
 
 interface HUDProps {
@@ -11,6 +16,8 @@ interface HUDProps {
 export function HUD({ state, onBark, onMove }: HUDProps) {
   const { isMobile } = useResponsive();
   const goatIntents = state.goats.map((goat) => getGoatIntent(state, goat));
+  const goatPoseCues = state.goats.map((goat) => getGoatPoseCue(state, goat));
+  const otterPoseCue = getOtterPoseCue(state);
   const rescueCue = getOtterlyRescueCue(state);
   const cueColor =
     rescueCue.threatBand === "danger"
@@ -135,6 +142,9 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
           <div style={{ color: cueColor, fontWeight: 900 }}>
             Cue: {rescueCue.action} · {rescueCue.threatBand}
           </div>
+          <div style={{ color: otterPoseCue.accent, fontWeight: 900 }}>
+            Otter: {otterPoseCue.label}
+          </div>
           <div
             style={{
               display: "flex",
@@ -162,6 +172,22 @@ export function HUD({ state, onBark, onMove }: HUDProps) {
                 }}
               >
                 {intent.goatId}: {intent.state}
+              </span>
+            ))}
+            {goatPoseCues.map((cue) => (
+              <span
+                key={`${cue.goatId}-${cue.pose}`}
+                style={{
+                  border: `1px solid ${cue.accent}55`,
+                  borderRadius: 6,
+                  color: cue.accent,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: "0.12rem 0.35rem",
+                  textTransform: "uppercase",
+                }}
+              >
+                {cue.goatId}: {cue.label}
               </span>
             ))}
           </div>

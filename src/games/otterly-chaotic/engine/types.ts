@@ -12,6 +12,29 @@ export interface GoatState {
   stunnedMs: number;
 }
 
+export type OtterPose = "guard" | "sprint" | "push" | "bark" | "rally";
+export type GoatPose = "chase" | "alert" | "chew" | "stunned";
+
+export interface OtterPoseCue {
+  pose: OtterPose;
+  label: string;
+  leanX: number;
+  leanY: number;
+  tailLift: number;
+  energy: number;
+  accent: string;
+}
+
+export interface GoatPoseCue {
+  goatId: string;
+  pose: GoatPose;
+  label: string;
+  headPitch: number;
+  hoofLift: number;
+  energy: number;
+  accent: string;
+}
+
 export interface OtterlyState {
   sessionMode: SessionMode;
   otter: Vec2;

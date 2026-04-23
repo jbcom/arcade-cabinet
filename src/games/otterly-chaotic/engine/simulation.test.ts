@@ -5,8 +5,10 @@ import {
   didWin,
   GOAL,
   getGoatIntent,
+  getGoatPoseCue,
   getOtterlyRescueCue,
   getOtterlyRunSummary,
+  getOtterPoseCue,
   TARGET_RESCUES,
   tick,
 } from "./simulation";
@@ -72,6 +74,49 @@ describe("otterly simulation", () => {
     expect(chewIntent.state).toBe("chewing");
     expect(stunIntent.state).toBe("stunned");
     expect(chaseIntent.alertLevel).toBeGreaterThanOrEqual(0);
+  });
+
+  test("exposes expressive otter and goat pose cues from deterministic state", () => {
+    const pushing = createInitialState();
+    pushing.otter = { x: pushing.ball.x - 0.4, y: pushing.ball.y };
+    pushing.rallyMs = 0;
+    const pushPose = getOtterPoseCue(pushing);
+
+    expect(pushPose).toMatchObject({
+      label: "Shoulder push",
+      pose: "push",
+    });
+    expect(pushPose.tailLift).toBeGreaterThan(0.5);
+
+    const barked = tick(
+      {
+        ...createInitialState(),
+        goats: createInitialState().goats.map((goat) => ({
+          ...goat,
+          position: { x: -3.8, y: -3.2 },
+        })),
+      },
+      16,
+      { x: 0, y: 0 },
+      true
+    );
+    expect(getOtterPoseCue(barked).pose).toBe("bark");
+
+    const chewing = createInitialState();
+    chewing.goats[0].position = { ...chewing.ball };
+    expect(getGoatPoseCue(chewing, chewing.goats[0])).toMatchObject({
+      label: "Chewing",
+      pose: "chew",
+    });
+
+    const nearOtter = createInitialState();
+    nearOtter.goats[0].position = { ...nearOtter.otter };
+    const stunned = tick(nearOtter, 16, { x: 0, y: 0 }, true);
+    stunned.goats[0].position = { ...stunned.otter };
+    expect(getGoatPoseCue(stunned, stunned.goats[0])).toMatchObject({
+      label: "Stunned",
+      pose: "stunned",
+    });
   });
 
   test("summarizes rescue cue decisions from goat threat and bark readiness", () => {
