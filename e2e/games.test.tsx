@@ -1,7 +1,6 @@
 import BeppoLaughs from "@app/games/beppo-laughs";
 import BioluminescentSea from "@app/games/bioluminescent-sea";
 import CognitiveDissonance from "@app/games/cognitive-dissonance";
-import CosmicGardener from "@app/games/cosmic-gardener";
 import EnchantedForest from "@app/games/enchanted-forest";
 import EntropyEdge from "@app/games/entropy-edge";
 import FarmFollies from "@app/games/farm-follies";
@@ -32,14 +31,6 @@ const gameCases: (BrowserGameStartFlow & {
     startFlow: ["Start Descent"],
     ready: "Time",
     expectsCanvas: true,
-  },
-  {
-    name: "Cosmic Gardener",
-    slug: "cosmic-gardener",
-    Component: CosmicGardener,
-    title: "Cosmic Gardener",
-    startFlow: ["Begin the Journey", "Play Ball"],
-    ready: "Cosmic Energy",
   },
   {
     name: "Enchanted Forest",
