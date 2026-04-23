@@ -178,7 +178,10 @@ function resolveMegaTrackStartState(mode: SessionMode, saveSlot?: GameSaveSlot):
     const restored = snapshot as MegaTrackState;
     return {
       ...restored,
+      checkpointRepairs: restored.checkpointRepairs ?? 0,
       isPlaying: true,
+      lastCheckpointLeg: restored.lastCheckpointLeg ?? 1,
+      lastCheckpointMs: restored.lastCheckpointMs ?? Number.NEGATIVE_INFINITY,
       sessionMode: mode,
     };
   }

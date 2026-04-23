@@ -12,7 +12,7 @@ test("Mega Track reaches gameplay from the start screen", async () => {
     Component: Game,
     title: "Mega Track",
     startFlow: ["Start Race"],
-    ready: /Speed:/,
+    ready: /Leg 1\/3/,
     expectsCanvas: true,
   });
 });

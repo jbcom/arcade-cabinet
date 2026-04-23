@@ -4,6 +4,7 @@ import {
   createObstacle,
   didFinishCup,
   getCupLegProgress,
+  getMegaTrackRaceCue,
   getMegaTrackRunSummary,
   tick,
 } from "./simulation";
@@ -119,9 +120,58 @@ describe("mega track simulation", () => {
     expect(next.boostCharge).toBe(0);
   });
 
+  test("repairs integrity and boost at cup leg checkpoints", () => {
+    const legLength = CONFIG.GOAL_DISTANCE / 3;
+    const state = {
+      ...createInitialState("standard"),
+      boostCharge: 10,
+      distance: legLength - 5,
+      integrity: 52,
+      isPlaying: true,
+      speed: 4,
+    };
+
+    const next = tick(state, 1000, { laneChange: 0 });
+
+    expect(getCupLegProgress(next).leg).toBe(2);
+    expect(next.checkpointRepairs).toBe(1);
+    expect(next.lastCheckpointLeg).toBe(2);
+    expect(next.lastCheckpointMs).toBe(next.elapsedMs);
+    expect(next.integrity).toBeGreaterThan(state.integrity);
+    expect(next.boostCharge).toBeGreaterThan(state.boostCharge);
+  });
+
+  test("builds a deterministic race cue for hazard and lane readability", () => {
+    const obstacle = { ...createObstacle(0), lane: 0 as const, x: 0, z: 1770 };
+    const state = {
+      ...createInitialState("standard"),
+      currentLane: 0,
+      distance: 1500,
+      elapsedMs: 2_000,
+      isPlaying: true,
+      lastCheckpointMs: 1_000,
+      obstacles: [obstacle],
+    };
+
+    const cue = getMegaTrackRaceCue(state);
+
+    expect(cue).toMatchObject({
+      checkpointRepairActive: true,
+      legLabel: "Leg 1/3",
+      nextHazardDistance: 27,
+      nextHazardLane: 0,
+      nextHazardType: obstacle.type,
+      pressure: "danger",
+      recommendedLane: -1,
+      recommendedLaneLabel: "left lane",
+    });
+    expect(cue.checkpointProgressPercent).toBeGreaterThan(0);
+  });
+
   test("reports cup legs and run summary deterministically", () => {
     const state = {
       ...createInitialState(),
+      checkpointRepairs: 1,
       distance: CONFIG.GOAL_DISTANCE * 0.52,
       elapsedMs: 560_000,
       impactCount: 2,
@@ -136,6 +186,7 @@ describe("mega track simulation", () => {
       impactCount: 2,
       integrity: 76,
       progressPercent: 52,
+      checkpointRepairs: 1,
     });
     expect(didFinishCup({ ...state, distance: CONFIG.GOAL_DISTANCE })).toBe(true);
   });

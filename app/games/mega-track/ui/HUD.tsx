@@ -1,4 +1,5 @@
 import { FloatingJoystick, useResponsive } from "@app/shared";
+import { getMegaTrackRaceCue } from "@logic/games/mega-track/engine/simulation";
 import type { MegaTrackState } from "@logic/games/mega-track/engine/types";
 
 interface HUDProps {
@@ -8,6 +9,7 @@ interface HUDProps {
 
 export function HUD({ state, onLaneControl }: HUDProps) {
   const { isMobile } = useResponsive();
+  const cue = getMegaTrackRaceCue(state);
   const speed = Math.round(state.speed * 100);
   const distance = Math.floor(state.distance / 10);
   const overdriveSeconds = (state.overdriveMs / 1000).toFixed(1);
@@ -69,9 +71,12 @@ export function HUD({ state, onLaneControl }: HUDProps) {
           >
             Mega Track
           </div>
-          <h2 style={{ margin: "0.35rem 0", fontSize: isMobile ? 20 : 28 }}>Hazard Ribbon</h2>
+          <h2 style={{ margin: "0.35rem 0", fontSize: isMobile ? 20 : 28 }}>{cue.legLabel}</h2>
           <div style={{ color: "#cbd5e1", fontSize: 12 }}>
             Integrity <span style={{ color: integrityColor }}>{state.integrity}%</span>
+          </div>
+          <div style={{ color: "#fde68a", fontSize: 12 }}>
+            Checkpoint {cue.checkpointProgressPercent}%
           </div>
         </div>
         <div style={{ ...panelStyle, textAlign: isMobile ? "left" : "right" }}>
@@ -80,10 +85,20 @@ export function HUD({ state, onLaneControl }: HUDProps) {
           <div style={{ color: "#cbd5e1", fontSize: 12 }}>
             Hazards {state.obstacles.length} | Boost {Math.round(state.boostCharge)}%
           </div>
+          <div style={{ color: cue.pressure === "danger" ? "#fb7185" : "#fde68a", fontSize: 12 }}>
+            Next {cue.nextHazardType ?? "clear"}{" "}
+            {cue.nextHazardDistance !== null ? `${cue.nextHazardDistance}m` : ""} | Hold{" "}
+            {cue.recommendedLaneLabel}
+          </div>
           <div style={{ color: state.overdriveMs > 0 ? "#facc15" : "#94a3b8", fontSize: 12 }}>
             Clean pass x{state.cleanPassStreak}{" "}
             {state.overdriveMs > 0 ? `| Overdrive ${overdriveSeconds}s` : ""}
           </div>
+          {cue.checkpointRepairActive ? (
+            <div style={{ color: "#86efac", fontSize: 12, fontWeight: 800 }}>
+              Checkpoint repair + boost
+            </div>
+          ) : null}
           {hasRecentImpact ? (
             <div style={{ color: "#fb7185", fontSize: 12, fontWeight: 800 }}>
               Impact: {state.lastImpactType ?? "hazard"}
@@ -112,7 +127,7 @@ export function HUD({ state, onLaneControl }: HUDProps) {
             textTransform: "uppercase",
           }}
         >
-          Touch the track and drag left or right to change lanes.
+          Touch anywhere and drag left or right. Next safe read: {cue.recommendedLaneLabel}.
         </div>
       </div>
     </div>

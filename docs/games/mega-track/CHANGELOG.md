@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added three-leg checkpoint repair and boost recovery.
+- Added deterministic race cue state for current leg, next hazard, safe lane, checkpoint progress, and repair feedback.
+- Added checkpoint repair pulses, next-hazard guides, safe-lane overlays, and lane-following portrait camera framing.
 - Added overdrive, impact, and clean-pass telemetry in deterministic race state.
 - Added lane effects, speed markings, collision sparks, hazard differentiation, HUD feedback, and shared cartridge landing identity.
 

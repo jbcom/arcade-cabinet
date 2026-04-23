@@ -1,4 +1,5 @@
 import { browserTestCanvasGlOptions } from "@app/shared";
+import { getMegaTrackRaceCue } from "@logic/games/mega-track/engine/simulation";
 import type { MegaTrackState, Obstacle } from "@logic/games/mega-track/engine/types";
 import { CONFIG } from "@logic/games/mega-track/engine/types";
 import { PerspectiveCamera } from "@react-three/drei";
@@ -159,9 +160,13 @@ function RaceEffects({ state }: { state: MegaTrackState }) {
   const hasRecentImpact = Number.isFinite(impactAge) && impactAge >= 0 && impactAge < 640;
   const cleanAge = state.elapsedMs - state.lastCleanPassMs;
   const hasRecentCleanPass = Number.isFinite(cleanAge) && cleanAge >= 0 && cleanAge < 720;
+  const checkpointAge = state.elapsedMs - state.lastCheckpointMs;
+  const hasRecentCheckpoint =
+    Number.isFinite(checkpointAge) && checkpointAge >= 0 && checkpointAge < 1500;
   const carX = state.currentLane * CONFIG.LANE_WIDTH;
   const impactOpacity = hasRecentImpact ? 1 - impactAge / 640 : 0;
   const cleanOpacity = hasRecentCleanPass ? 1 - cleanAge / 720 : 0;
+  const checkpointOpacity = hasRecentCheckpoint ? 1 - checkpointAge / 1500 : 0;
 
   return (
     <group>
@@ -193,6 +198,17 @@ function RaceEffects({ state }: { state: MegaTrackState }) {
         </mesh>
       ) : null}
 
+      {hasRecentCheckpoint ? (
+        <group position={[carX, 0.2, 6]} rotation={[-Math.PI / 2, 0, 0]}>
+          {[0, 1, 2].map((index) => (
+            <mesh key={`checkpoint-repair-${index}`} scale={1 + index * 0.42}>
+              <ringGeometry args={[10.5 + index * 3.6, 11.6 + index * 3.6, 64]} />
+              <meshBasicMaterial color="#86efac" transparent opacity={checkpointOpacity * 0.34} />
+            </mesh>
+          ))}
+        </group>
+      ) : null}
+
       {hasRecentImpact ? (
         <group position={[carX, 2.4, -4]}>
           {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
@@ -214,6 +230,67 @@ function RaceEffects({ state }: { state: MegaTrackState }) {
           })}
         </group>
       ) : null}
+    </group>
+  );
+}
+
+function NextHazardGuide({ state }: { state: MegaTrackState }) {
+  const cue = getMegaTrackRaceCue(state);
+  const nextHazard = state.obstacles
+    .filter((obstacle) => obstacle.z > state.distance)
+    .sort((a, b) => a.z - b.z)[0];
+  if (!nextHazard) return null;
+
+  const z = -(nextHazard.z - state.distance);
+  if (z < -720 || z > 90) return null;
+
+  const safeX = cue.recommendedLane * CONFIG.LANE_WIDTH;
+  const hazardColor = cue.pressure === "danger" ? "#fb7185" : "#facc15";
+
+  return (
+    <group>
+      <mesh position={[nextHazard.x, 0.22, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[10.5, 13.4, 52]} />
+        <meshBasicMaterial
+          color={hazardColor}
+          transparent
+          opacity={cue.pressure === "danger" ? 0.44 : 0.28}
+        />
+      </mesh>
+      <mesh position={[safeX, 0.18, z + 38]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[14, 84]} />
+        <meshBasicMaterial color="#86efac" transparent opacity={0.16} />
+      </mesh>
+      <mesh position={[safeX, 1.2, z + 18]} rotation={[0, 0, Math.PI / 4]}>
+        <coneGeometry args={[2.6, 7.2, 4]} />
+        <meshBasicMaterial color="#86efac" transparent opacity={0.72} />
+      </mesh>
+    </group>
+  );
+}
+
+function CupProgressMarkers({ state }: { state: MegaTrackState }) {
+  const cue = getMegaTrackRaceCue(state);
+  const legDistance = CONFIG.GOAL_DISTANCE / 3;
+  const nextCheckpointDistance = legDistance * state.lastCheckpointLeg - state.distance;
+  const z = -Math.max(120, Math.min(980, nextCheckpointDistance * 0.04));
+
+  return (
+    <group>
+      <mesh position={[0, 0.2, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[47, 50, 72]} />
+        <meshBasicMaterial color="#86efac" transparent opacity={0.16} />
+      </mesh>
+      <mesh position={[0, 13, z]}>
+        <boxGeometry args={[92, 2.2, 3.4]} />
+        <meshStandardMaterial
+          color="#14532d"
+          emissive={cue.checkpointRepairActive ? "#86efac" : "#22c55e"}
+          emissiveIntensity={cue.checkpointRepairActive ? 0.75 : 0.22}
+          roughness={0.32}
+          metalness={0.18}
+        />
+      </mesh>
     </group>
   );
 }
@@ -417,22 +494,29 @@ function CheckpointGate({ z, index }: { z: number; index: number }) {
   );
 }
 
-function CameraRig() {
+function CameraRig({ lane }: { lane: number }) {
   const { camera, size } = useThree();
   const isPortrait = size.height > size.width;
 
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
     if (isPortrait) {
-      camera.position.set(0, 46, 94);
-      camera.fov = 58;
+      camera.position.set(0, 52, 112);
+      camera.fov = 66;
     } else {
       camera.position.set(0, 34, 76);
       camera.fov = 52;
     }
-    camera.lookAt(0, 3, -250);
+    camera.lookAt(0, 3, isPortrait ? -270 : -250);
     camera.updateProjectionMatrix();
   }, [camera, isPortrait]);
+
+  useFrame((_state, delta) => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const targetX = lane * (isPortrait ? 13 : 8);
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, delta * 2.8);
+    camera.lookAt(targetX * 0.35, 3, isPortrait ? -270 : -250);
+  });
 
   return null;
 }
@@ -442,7 +526,7 @@ export function TrackScene({ state }: TrackSceneProps) {
     <Canvas shadows gl={browserTestCanvasGlOptions} dpr={[1, 1.5]}>
       <color attach="background" args={["#a7ddeb"]} />
       <PerspectiveCamera makeDefault position={[0, 34, 76]} fov={52} />
-      <CameraRig />
+      <CameraRig lane={state.currentLane} />
 
       <ambientLight intensity={0.76} />
       <hemisphereLight args={["#dff7ff", "#172033", 0.78]} />
@@ -450,8 +534,10 @@ export function TrackScene({ state }: TrackSceneProps) {
 
       <Track distance={state.distance} />
       <TrackDressing distance={state.distance} />
+      <CupProgressMarkers state={state} />
       <Car lane={state.currentLane} overdrive={state.overdriveMs > 0} />
       <Obstacles obstacles={state.obstacles} distance={state.distance} />
+      <NextHazardGuide state={state} />
       <RaceEffects state={state} />
 
       <fog attach="fog" args={["#a7ddeb", 360, 1320]} />

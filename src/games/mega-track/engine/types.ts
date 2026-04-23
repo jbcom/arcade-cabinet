@@ -32,6 +32,22 @@ export interface MegaTrackState {
   boostCharge: number;
   cleanPassStreak: number;
   overdriveMs: number;
+  checkpointRepairs: number;
+  lastCheckpointMs: number;
+  lastCheckpointLeg: number;
+}
+
+export interface MegaTrackRaceCue {
+  legLabel: string;
+  nextHazardType: Obstacle["type"] | null;
+  nextHazardLane: Obstacle["lane"] | null;
+  nextHazardDistance: number | null;
+  recommendedLane: Obstacle["lane"];
+  recommendedLaneLabel: string;
+  checkpointProgressPercent: number;
+  checkpointDistance: number;
+  checkpointRepairActive: boolean;
+  pressure: "clear" | "closing" | "danger";
 }
 
 export const CONFIG = {
