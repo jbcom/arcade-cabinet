@@ -29,6 +29,8 @@ export interface TitanSystems {
 export type WeaponFeedbackState = "idle" | "firing" | "dry" | "overheated" | "cooling";
 export type ExtractionFeedbackState = "idle" | "grinding" | "ejecting" | "blocked";
 export type TitanContractStage = "survey" | "align" | "extract" | "eject" | "cool" | "complete";
+export type TitanThreatLevel = "clear" | "tracking" | "warning" | "impact";
+export type TitanDeliveryState = "idle" | "grinding" | "ejecting" | "banked" | "complete";
 
 export interface TitanContractCue {
   stage: TitanContractStage;
@@ -42,12 +44,31 @@ export interface TitanContractCue {
   bearing: Vec3;
 }
 
+export interface TitanThreatCue {
+  level: TitanThreatLevel;
+  label: string;
+  sourceId: string | null;
+  sourceKind: ArenaObstacleKind | null;
+  sourcePosition: [number, number, number] | null;
+  distance: number | null;
+  bearing: Vec3;
+  warningRadius: number;
+}
+
+export interface TitanDeliveryCue {
+  state: TitanDeliveryState;
+  label: string;
+  progress: number;
+  lastEventMs: number;
+}
+
 export interface TitanExtractionState {
   hopperLoad: number;
   hopperCapacity: number;
   credits: number;
   rareIsotopes: number;
   lastExtractionEventMs: number;
+  lastPayoutMs: number;
   feedback: ExtractionFeedbackState;
 }
 
@@ -72,6 +93,8 @@ export interface TitanState {
   systems: TitanSystems;
   weaponFeedback: WeaponFeedbackState;
   contractCue: TitanContractCue;
+  deliveryCue: TitanDeliveryCue;
+  threatCue: TitanThreatCue;
   extraction: TitanExtractionState;
 }
 

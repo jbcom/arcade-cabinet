@@ -9,6 +9,8 @@ import {
 } from "@app/shared";
 import {
   calculateTitanContractCue,
+  calculateTitanDeliveryCue,
+  calculateTitanThreatCue,
   createInitialTitanState,
   getTitanRunSummary,
 } from "@logic/games/titan-mech/engine/titanSimulation";
@@ -95,7 +97,7 @@ function TitanApp() {
             summary: `Extracted ${summary.credits} credits`,
           }}
           title="CONTRACT EXTRACTED"
-          subtitle={`${summary.credits} credits banked, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Coolant cycles held at ${summary.hp} HP.`}
+          subtitle={`Target banked: ${summary.credits}/${summary.contractCreditsTarget} credits, ${summary.scrap} scrap, ${summary.rareIsotopes} rare isotopes. Coolant cycles held at ${summary.hp} HP.`}
           actions={
             <OverlayButton onClick={() => handleStart(state.sessionMode)}>
               Accept Next Contract
@@ -111,18 +113,30 @@ function resolveTitanStartState(mode: SessionMode, saveSlot?: GameSaveSlot) {
   const snapshot = saveSlot?.snapshot;
   if (isTitanSnapshot(snapshot)) {
     const restored = snapshot as ReturnType<typeof createInitialTitanState>;
+    const extraction = {
+      ...restored.extraction,
+      lastPayoutMs: restored.extraction.lastPayoutMs ?? 0,
+    };
     return {
       ...restored,
+      extraction,
       phase: "playing" as const,
       sessionMode: mode,
       contractCue:
         restored.contractCue ??
         calculateTitanContractCue({
-          extraction: restored.extraction,
+          extraction,
           heat: restored.heat,
           objectiveProgress: restored.objectiveProgress,
           position: restored.pose.position,
         }),
+      deliveryCue:
+        restored.deliveryCue ??
+        calculateTitanDeliveryCue({
+          extraction,
+          phase: "playing",
+        }),
+      threatCue: restored.threatCue ?? calculateTitanThreatCue(restored.pose.position),
     };
   }
 

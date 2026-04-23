@@ -19,9 +19,11 @@ Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat ove
 - Weapon feedback now exposes firing, cooling, dry, and overheated states from pure simulation.
 - Overheat extraction state now exposes hopper load, credits, rare isotope finds, extractor feedback, and ore-to-scrap conversion.
 - Contract cue state now exposes the next pylon, distance, bearing, extraction readiness, and heat-priority stage so the HUD and arena route agree.
+- Threat cue state now exposes nearest hostile structures, attack-lane warning level, distance, and bearing so world telegraphs and HUD language agree before the player is in danger.
+- Delivery cue state keeps ore cube payout visible after the instant hopper-eject frame and turns contract completion into an explicit banked target.
 - Firing consumes energy and heat budget while the scene renders muzzle flash, reticle, and overheat feedback.
 - Extracting inside pylon rings consumes energy, raises heat, fills the hopper, and ejects a credit/scrap payout when full.
-- Objective rings, active route chevrons, pylon beams, damage vignette, and brighter threat markers improve the mobile combat read.
+- Objective rings, active route chevrons, pylon beams, damage vignette, threat targeting beams, and brighter attack-lane markers improve the mobile combat read.
 - The cabinet landing uses the shared cartridge frame with an Overheat label, play control, and rules drawer.
 
 ## Responsive and Android Contract
@@ -29,7 +31,7 @@ Lighting uses cool cyan telemetry, amber hazard accents, and red weapon heat ove
 - The root fills its parent with `GameViewport`.
 - Camera follow keeps the mech centered across viewport sizes.
 - Desktop keyboard/mouse and mobile touch controls both update the same `TitanControls` state.
-- The pure engine owns boot state, drive force calculation, objective progress, extraction economy, system heat, and deterministic arena layout.
+- The pure engine owns boot state, drive force calculation, objective progress, extraction economy, system heat, delivery/threat cue state, and deterministic arena layout.
 - Android packaging uses the standalone Capacitor app shell.
 
 ## Stack

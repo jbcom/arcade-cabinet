@@ -4,6 +4,8 @@ import {
   calculateDriveForces,
   calculateObjectiveProgress,
   calculateTitanContractCue,
+  calculateTitanDeliveryCue,
+  calculateTitanThreatCue,
   createArenaLayout,
   createInitialTitanState,
   getTitanRunSummary,
@@ -35,8 +37,12 @@ describe("titan simulation", () => {
     expect(state.contractCue.stage).toBe("survey");
     expect(state.contractCue.nextBeaconId).toBe("pylon-beta");
     expect(state.contractCue.distanceToBeacon).toBeGreaterThan(0);
+    expect(state.deliveryCue.state).toBe("idle");
+    expect(state.threatCue.sourceId).toBeTruthy();
+    expect(state.threatCue.level).toBe("tracking");
     expect(state.extraction.hopperLoad).toBe(0);
     expect(state.extraction.hopperCapacity).toBeGreaterThan(0);
+    expect(state.extraction.lastPayoutMs).toBe(0);
     expect(state.extraction.feedback).toBe("idle");
   });
 
@@ -151,6 +157,18 @@ describe("titan simulation", () => {
     expect(hot.stage).toBe("cool");
     expect(hot.heatWarning).toBe(true);
     expect(complete.stage).toBe("complete");
+  });
+
+  test("describes nearby threat attack lanes before impact range", () => {
+    const clear = calculateTitanThreatCue({ x: 110, y: 5, z: 110 });
+    const warning = calculateTitanThreatCue({ x: 20, y: 5, z: 55 });
+    const impact = calculateTitanThreatCue({ x: 0, y: 5, z: 72 });
+
+    expect(clear.level).toBe("clear");
+    expect(warning.level).toBe("warning");
+    expect(warning.label).toContain("attack lane");
+    expect(impact.level).toBe("impact");
+    expect(impact.bearing.z).toBeGreaterThan(0);
   });
 
   test("vents a coolant burst from a defensive brace at high heat", () => {
@@ -288,7 +306,20 @@ describe("titan simulation", () => {
     expect(sold.extraction.feedback).toBe("ejecting");
     expect(sold.extraction.hopperLoad).toBe(0);
     expect(sold.extraction.credits).toBeGreaterThan(grinding.extraction.credits);
+    expect(sold.extraction.lastPayoutMs).toBeGreaterThan(0);
+    expect(sold.deliveryCue.state).toBe("ejecting");
     expect(sold.scrap).toBeGreaterThan(grinding.scrap);
+
+    const bankedCue = calculateTitanDeliveryCue({
+      extraction: {
+        ...sold.extraction,
+        feedback: "idle",
+        lastPayoutMs: 2400,
+      },
+      phase: "playing",
+    });
+    expect(bankedCue.state).toBe("banked");
+    expect(bankedCue.label).toContain("Cube banked");
   });
 
   test("overheat damage is recoverable but can destroy the chassis if ignored", () => {
@@ -324,6 +355,7 @@ describe("titan simulation", () => {
     );
 
     expect(completed.phase).toBe("upgrade");
+    expect(completed.deliveryCue.state).toBe("complete");
     expect(completed.extraction.credits).toBe(CONFIG.CONTRACT_CREDITS_TARGET);
     expect(getTitanRunSummary(completed)).toMatchObject({
       contractCreditsTarget: CONFIG.CONTRACT_CREDITS_TARGET,

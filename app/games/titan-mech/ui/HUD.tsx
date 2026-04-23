@@ -45,6 +45,21 @@ export function HUD() {
           <div style={{ color: extractorColor, fontSize: 12, marginTop: 3 }}>
             EXTRACTOR {state.extraction.feedback.toUpperCase()}
           </div>
+          <div
+            style={{
+              color:
+                state.threatCue.level === "clear"
+                  ? "#94a3b8"
+                  : state.threatCue.level === "tracking"
+                    ? warning
+                    : danger,
+              fontSize: 12,
+              marginTop: 3,
+            }}
+          >
+            THREAT {state.threatCue.level.toUpperCase()}
+            {state.threatCue.distance !== null ? ` · ${Math.round(state.threatCue.distance)}M` : ""}
+          </div>
           <div style={{ color: "#e2e8f0", fontSize: 12, marginTop: 8, maxWidth: 300 }}>
             CONTRACT {state.contractCue.stage.toUpperCase()}
             {state.contractCue.nextBeaconLabel ? ` · ${state.contractCue.nextBeaconLabel}` : ""}
@@ -71,6 +86,12 @@ export function HUD() {
             value={state.extraction.hopperLoad}
             max={state.extraction.hopperCapacity}
             color="#f59e0b"
+          />
+          <Gauge
+            label="CONTRACT BANK"
+            value={state.extraction.credits}
+            max={1800}
+            color={state.deliveryCue.state === "complete" ? "#a3e635" : "#f59e0b"}
           />
           <Gauge
             label="HEAT"
@@ -103,6 +124,34 @@ export function HUD() {
           >
             {state.contractCue.label}
           </div>
+          <div
+            style={{
+              border: `1px solid ${state.deliveryCue.state === "ejecting" || state.deliveryCue.state === "banked" ? warning : "rgba(148,163,184,0.36)"}`,
+              color: state.deliveryCue.state === "complete" ? "#ecfccb" : "#fde68a",
+              fontSize: 12,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              marginTop: 6,
+              padding: "0.4rem 0.5rem",
+            }}
+          >
+            DELIVERY {state.deliveryCue.state.toUpperCase()} · {state.deliveryCue.label}
+          </div>
+          {state.threatCue.level === "warning" || state.threatCue.level === "impact" ? (
+            <div
+              style={{
+                border: `1px solid ${danger}`,
+                color: "#ffe4e6",
+                fontSize: 12,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                marginTop: 6,
+                padding: "0.4rem 0.5rem",
+              }}
+            >
+              {state.threatCue.label}
+            </div>
+          ) : null}
           {state.coolantBurstMs > 0 ? (
             <div style={{ color: "#67e8f9", fontSize: 12, marginTop: 6 }}>
               COOLANT BURST {(state.coolantBurstMs / 1000).toFixed(1)}s

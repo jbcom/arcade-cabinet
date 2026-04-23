@@ -59,8 +59,15 @@ function ArenaFloor() {
         {layout.obstacles
           .filter((obstacle) => obstacle.threat > 1)
           .map((obstacle) => (
-            <ThreatMarker key={`${obstacle.id}-threat`} obstacle={obstacle} />
+            <ThreatMarker
+              key={`${obstacle.id}-threat`}
+              obstacle={obstacle}
+              tracked={
+                state.threatCue.sourceId === obstacle.id && state.threatCue.level !== "clear"
+              }
+            />
           ))}
+        <ThreatTelegraph />
       </group>
     </RigidBody>
   );
@@ -308,24 +315,70 @@ function ContractRoute() {
   );
 }
 
-function ThreatMarker({ obstacle }: { obstacle: ArenaObstacleData }) {
-  const color = obstacle.threat >= 3 ? "#f43f5e" : "#f59e0b";
+function ThreatMarker({ obstacle, tracked }: { obstacle: ArenaObstacleData; tracked: boolean }) {
+  const color = tracked ? "#fb7185" : obstacle.threat >= 3 ? "#f43f5e" : "#f59e0b";
 
   return (
     <group position={[obstacle.position[0], 0.18, obstacle.position[2]]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[obstacle.threat * 3.3, obstacle.threat * 3.3 + 0.28, 48]} />
-        <meshBasicMaterial color={color} transparent opacity={0.32} />
+        <ringGeometry args={[obstacle.threat * 3.3, obstacle.threat * 3.3 + 0.34, 48]} />
+        <meshBasicMaterial color={color} transparent opacity={tracked ? 0.62 : 0.32} />
       </mesh>
       <mesh position={[0, 6 + obstacle.threat, 0]} rotation={[0, 0, Math.PI]}>
         <coneGeometry args={[1.4 + obstacle.threat * 0.24, 3.2, 5]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.72} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={tracked ? 1.1 : 0.72}
+        />
       </mesh>
       <pointLight
         color={color}
         intensity={obstacle.threat * 0.9}
         distance={20 + obstacle.threat * 5}
       />
+    </group>
+  );
+}
+
+function ThreatTelegraph() {
+  const state = useTrait(titanEntity, TitanTrait);
+  const cue = state.threatCue;
+
+  if (cue.level === "clear" || !cue.sourcePosition) {
+    return null;
+  }
+
+  const color =
+    cue.level === "impact" ? "#f43f5e" : cue.level === "warning" ? "#fb7185" : "#f59e0b";
+  const source: [number, number, number] = [
+    cue.sourcePosition[0],
+    cue.sourcePosition[1] + 5.5,
+    cue.sourcePosition[2],
+  ];
+  const target: [number, number, number] = [state.pose.position.x, 2.3, state.pose.position.z];
+
+  return (
+    <group>
+      <Line
+        points={[source, target]}
+        color={color}
+        lineWidth={cue.level === "impact" ? 4 : 2.8}
+        transparent
+        opacity={cue.level === "tracking" ? 0.45 : 0.78}
+      />
+      <mesh position={[target[0], 0.22, target[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[4.6, 5.15, 48]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={cue.level === "impact" ? 0.64 : 0.42}
+        />
+      </mesh>
+      <mesh position={[source[0], source[1] + 2.2, source[2]]}>
+        <sphereGeometry args={[1.2, 12, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.05} />
+      </mesh>
     </group>
   );
 }

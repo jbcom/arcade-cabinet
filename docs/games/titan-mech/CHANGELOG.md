@@ -6,6 +6,7 @@
 - Updated the cartridge label and HUD language from pure combat OS to Titan Mech: Overheat extraction.
 - Added weapon fire gating, heat/coolant feedback, and target reticle state.
 - Added muzzle flash, overheat feedback, objective rings, damage vignette, and shared cartridge landing identity.
+- Added deterministic threat and ore-delivery cue state with attack-lane beams, sustained payout cube feedback, contract bank gauge, and clearer completion copy.
 
 ## [0.2.0](https://github.com/jbcom/arcade-cabinet/compare/titan-mech-v0.1.0...titan-mech-v0.2.0) (2026-04-22)
 

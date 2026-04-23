@@ -10,9 +10,11 @@ import type {
   ExtractionFeedbackState,
   TitanContractCue,
   TitanControls,
+  TitanDeliveryCue,
   TitanExtractionState,
   TitanPose,
   TitanState,
+  TitanThreatCue,
   Vec3,
 } from "./types";
 import { CONFIG } from "./types";
@@ -40,8 +42,15 @@ export function createInitialTitanState(
     credits: 0,
     rareIsotopes: 0,
     lastExtractionEventMs: 0,
+    lastPayoutMs: 0,
     feedback: "idle",
   };
+  const contractCue = calculateTitanContractCue({
+    extraction,
+    heat: 0,
+    objectiveProgress: 0,
+    position: pose.position,
+  });
 
   return {
     phase,
@@ -67,12 +76,12 @@ export function createInitialTitanState(
       targeting: 100,
     },
     weaponFeedback: "idle",
-    contractCue: calculateTitanContractCue({
+    contractCue,
+    deliveryCue: calculateTitanDeliveryCue({
       extraction,
-      heat: 0,
-      objectiveProgress: 0,
-      position: pose.position,
+      phase,
     }),
+    threatCue: calculateTitanThreatCue(pose.position),
     extraction,
   };
 }
@@ -203,6 +212,11 @@ export function advanceTitanSystems(
     objectiveProgress,
     position,
   });
+  const threatCue = calculateTitanThreatCue(position);
+  const deliveryCue = calculateTitanDeliveryCue({
+    extraction: extraction.next,
+    phase,
+  });
 
   return {
     ...state,
@@ -245,6 +259,8 @@ export function advanceTitanSystems(
     },
     weaponFeedback: finalWeaponFeedback,
     contractCue,
+    deliveryCue,
+    threatCue,
     extraction: extraction.next,
   };
 }
@@ -315,8 +331,131 @@ export function advanceExtractionState({
       rareIsotopes: previous.rareIsotopes + rareGain,
       lastExtractionEventMs:
         canExtract || hopperFull ? previous.lastExtractionEventMs + deltaMs : 0,
+      lastPayoutMs: hopperFull
+        ? Math.max(1, deltaMs)
+        : previous.lastPayoutMs > 0
+          ? Math.min(previous.lastPayoutMs + deltaMs, 5000)
+          : 0,
       feedback,
     },
+  };
+}
+
+export function calculateTitanDeliveryCue({
+  extraction,
+  phase,
+}: {
+  extraction: TitanExtractionState;
+  phase: TitanState["phase"];
+}): TitanDeliveryCue {
+  const hopperProgress = Math.round((extraction.hopperLoad / extraction.hopperCapacity) * 100);
+  const creditProgress = Math.round(
+    (Math.min(extraction.credits, CONFIG.CONTRACT_CREDITS_TARGET) /
+      CONFIG.CONTRACT_CREDITS_TARGET) *
+      100
+  );
+  const payoutIsVisible = extraction.lastPayoutMs > 0 && extraction.lastPayoutMs <= 1800;
+
+  if (phase === "upgrade" || extraction.credits >= CONFIG.CONTRACT_CREDITS_TARGET) {
+    return {
+      state: "complete",
+      label: "Contract target banked. Extraction complete.",
+      progress: 100,
+      lastEventMs: extraction.lastPayoutMs,
+    };
+  }
+
+  if (extraction.feedback === "ejecting" || payoutIsVisible) {
+    return {
+      state: "ejecting",
+      label: "Ore cube ejecting to contract bank.",
+      progress: creditProgress,
+      lastEventMs: extraction.lastPayoutMs,
+    };
+  }
+
+  if (extraction.feedback === "grinding") {
+    return {
+      state: "grinding",
+      label: `Grinding ore. Hopper ${hopperProgress}%.`,
+      progress: hopperProgress,
+      lastEventMs: extraction.lastPayoutMs,
+    };
+  }
+
+  if (extraction.lastPayoutMs > 1800 && extraction.lastPayoutMs <= 3200) {
+    return {
+      state: "banked",
+      label: `Cube banked. Credits ${extraction.credits}/${CONFIG.CONTRACT_CREDITS_TARGET}.`,
+      progress: creditProgress,
+      lastEventMs: extraction.lastPayoutMs,
+    };
+  }
+
+  return {
+    state: "idle",
+    label: `Hopper ${hopperProgress}%. Contract ${creditProgress}%.`,
+    progress: Math.max(hopperProgress, creditProgress),
+    lastEventMs: extraction.lastPayoutMs,
+  };
+}
+
+export function calculateTitanThreatCue(position: Vec3): TitanThreatCue {
+  const nearest = createArenaLayout()
+    .obstacles.filter((obstacle) => obstacle.threat > 1)
+    .map((obstacle) => ({
+      obstacle,
+      distance: Math.hypot(position.x - obstacle.position[0], position.z - obstacle.position[2]),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  if (!nearest) {
+    return {
+      level: "clear",
+      label: "Threat grid clear.",
+      sourceId: null,
+      sourceKind: null,
+      sourcePosition: null,
+      distance: null,
+      bearing: { x: 0, y: 0, z: 0 },
+      warningRadius: 0,
+    };
+  }
+
+  const warningRadius = 18 + nearest.obstacle.threat * 5.5;
+  const impactRadius = 6 + nearest.obstacle.threat * 3.5;
+  const trackingRadius = warningRadius * 1.7;
+  const bearing = normalize2({
+    x: nearest.obstacle.position[0] - position.x,
+    y: 0,
+    z: nearest.obstacle.position[2] - position.z,
+  });
+  const level: TitanThreatCue["level"] =
+    nearest.distance <= impactRadius
+      ? "impact"
+      : nearest.distance <= warningRadius
+        ? "warning"
+        : nearest.distance <= trackingRadius
+          ? "tracking"
+          : "clear";
+  const label =
+    level === "clear"
+      ? `Nearest threat ${Math.round(nearest.distance)}m.`
+      : level === "tracking"
+        ? `${nearest.obstacle.kind} tracking at ${Math.round(nearest.distance)}m.`
+        : level === "warning"
+          ? `${nearest.obstacle.kind} attack lane armed. Brace or break line.`
+          : `${nearest.obstacle.kind} impact zone. Move now.`;
+
+  return {
+    level,
+    label,
+    sourceId: nearest.obstacle.id,
+    sourceKind: nearest.obstacle.kind,
+    sourcePosition: nearest.obstacle.position,
+    distance: round(nearest.distance),
+    bearing,
+    warningRadius,
   };
 }
 
