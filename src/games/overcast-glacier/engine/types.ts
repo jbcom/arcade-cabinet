@@ -3,6 +3,7 @@ import type { SessionMode } from "@logic/shared";
 export type OvercastPhase = "menu" | "playing" | "gameover" | "finished";
 export type OvercastEntityKind = "snowman" | "cocoa" | "glitch";
 export type OvercastEvent = "idle" | "kick" | "photo" | "cocoa" | "hit" | "glitch";
+export type OvercastWeather = "clear" | "flurry" | "blizzard" | "glitchfall";
 
 export interface OvercastControls {
   steer: number;
@@ -15,6 +16,16 @@ export interface OvercastEntity {
   kind: OvercastEntityKind;
   lane: -1 | 0 | 1;
   distance: number;
+}
+
+export interface OvercastSegmentCue {
+  label: string;
+  weather: OvercastWeather;
+  progressLabel: string;
+  nearestKind: OvercastEntityKind | null;
+  nearestLane: -1 | 0 | 1 | null;
+  nearestDistance: number | null;
+  warmthWarning: boolean;
 }
 
 export interface OvercastState {
@@ -33,6 +44,7 @@ export interface OvercastState {
   photoCharges: number;
   speed: number;
   entities: OvercastEntity[];
+  segmentCue: OvercastSegmentCue;
   lastEvent: OvercastEvent;
   lastEventMs: number;
   objective: string;

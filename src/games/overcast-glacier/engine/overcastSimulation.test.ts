@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   advanceOvercastState,
   createInitialOvercastState,
+  createOvercastSegmentCue,
   getOvercastRunSummary,
   normalizeOvercastControls,
 } from "./overcastSimulation";
@@ -15,7 +16,33 @@ describe("overcast glacier simulation", () => {
     expect(state.sessionMode).toBe("standard");
     expect(state.warmth).toBe(state.maxWarmth);
     expect(state.entities.map((entity) => entity.kind)).toEqual(["cocoa", "snowman", "glitch"]);
+    expect(state.segmentCue.label).toBe("Hazard Ribbon");
+    expect(state.segmentCue.nearestKind).toBe("cocoa");
     expect(state.objective).toContain("warm");
+  });
+
+  test("describes segment identity, weather, and lane warnings", () => {
+    const cue = createOvercastSegmentCue({
+      entities: [{ id: "snow", kind: "snowman", lane: 0, distance: 20 }],
+      playerLane: 0,
+      segmentIndex: 4,
+      segmentProgress: 0.64,
+      warmth: 74,
+    });
+    const coldCue = createOvercastSegmentCue({
+      entities: [],
+      playerLane: -1,
+      segmentIndex: 5,
+      segmentProgress: 0.12,
+      warmth: 20,
+    });
+
+    expect(cue.label).toBe("Blizzard Arcade");
+    expect(cue.weather).toBe("blizzard");
+    expect(cue.progressLabel).toContain("64%");
+    expect(cue.nearestKind).toBe("snowman");
+    expect(cue.warmthWarning).toBe(true);
+    expect(coldCue.warmthWarning).toBe(true);
   });
 
   test("standard mode keeps passive warmth loss couch-friendly for the first minute", () => {

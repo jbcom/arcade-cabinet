@@ -3,7 +3,13 @@ import {
   getSessionRecoveryScale,
   normalizeSessionMode,
 } from "@logic/shared";
-import type { OvercastControls, OvercastEntity, OvercastState } from "./types";
+import type {
+  OvercastControls,
+  OvercastEntity,
+  OvercastSegmentCue,
+  OvercastState,
+  OvercastWeather,
+} from "./types";
 import { OVERCAST_CONFIG } from "./types";
 
 const DEFAULT_CONTROLS: OvercastControls = {
@@ -12,11 +18,30 @@ const DEFAULT_CONTROLS: OvercastControls = {
   photo: false,
 };
 
+const SEGMENT_LABELS = [
+  "Hazard Ribbon",
+  "Cocoa Switchback",
+  "Snowman Parade",
+  "Glitch Lens",
+  "Blizzard Arcade",
+  "Aurora Runout",
+] as const;
+
+const SEGMENT_WEATHER: readonly OvercastWeather[] = [
+  "clear",
+  "flurry",
+  "flurry",
+  "glitchfall",
+  "blizzard",
+  "clear",
+];
+
 export function createInitialOvercastState(
   phase: OvercastState["phase"] = "menu",
   mode: string | null | undefined = "standard"
 ): OvercastState {
   const sessionMode = normalizeSessionMode(mode);
+  const entities = createOpeningEntities();
 
   return {
     phase,
@@ -33,7 +58,14 @@ export function createInitialOvercastState(
     segmentsCleared: 0,
     photoCharges: 1,
     speed: OVERCAST_CONFIG.BASE_SPEED,
-    entities: createOpeningEntities(),
+    entities,
+    segmentCue: createOvercastSegmentCue({
+      entities,
+      playerLane: 0,
+      segmentIndex: 0,
+      segmentProgress: 0,
+      warmth: 100,
+    }),
     lastEvent: "idle",
     lastEventMs: 0,
     objective: "Stay warm, kick snowmen, and photograph glitches.",
@@ -104,6 +136,13 @@ export function advanceOvercastState(
       : (nextTime % OVERCAST_CONFIG.SEGMENT_DURATION_MS) / OVERCAST_CONFIG.SEGMENT_DURATION_MS;
   const phase =
     nextTime >= OVERCAST_CONFIG.RUN_TARGET_MS ? "finished" : warmth <= 0 ? "gameover" : "playing";
+  const segmentCue = createOvercastSegmentCue({
+    entities: spawned,
+    playerLane,
+    segmentIndex,
+    segmentProgress,
+    warmth,
+  });
 
   return {
     ...state,
@@ -120,6 +159,7 @@ export function advanceOvercastState(
     photoCharges: resolved.photoCharges,
     speed,
     entities: spawned,
+    segmentCue,
     lastEvent: resolved.lastEvent,
     lastEventMs: resolved.lastEvent === "idle" ? state.lastEventMs : nextTime,
     objective: describeObjective(warmth, spawned, playerLane),
@@ -135,6 +175,38 @@ export function getOvercastRunSummary(state: OvercastState) {
     segmentsCleared: state.segmentsCleared,
     targetSegments: OVERCAST_CONFIG.TARGET_SEGMENTS,
     warmth: Math.round(state.warmth),
+  };
+}
+
+export function createOvercastSegmentCue({
+  entities,
+  playerLane,
+  segmentIndex,
+  segmentProgress,
+  warmth,
+}: {
+  entities: OvercastEntity[];
+  playerLane: -1 | 0 | 1;
+  segmentIndex: number;
+  segmentProgress: number;
+  warmth: number;
+}): OvercastSegmentCue {
+  const nearest =
+    entities
+      .filter((entity) => entity.distance > -4)
+      .sort((a, b) => Math.abs(a.distance) - Math.abs(b.distance))[0] ?? null;
+  const segment = Math.min(segmentIndex, OVERCAST_CONFIG.TARGET_SEGMENTS - 1);
+  const progressPercent = clamp(Math.round(segmentProgress * 100), 0, 100);
+
+  return {
+    label: SEGMENT_LABELS[segment] ?? "Glacier Run",
+    weather: SEGMENT_WEATHER[segment] ?? "clear",
+    progressLabel: `Segment ${segment + 1}/${OVERCAST_CONFIG.TARGET_SEGMENTS} ${progressPercent}%`,
+    nearestKind: nearest?.kind ?? null,
+    nearestLane: nearest?.lane ?? null,
+    nearestDistance: nearest ? Math.round(nearest.distance) : null,
+    warmthWarning:
+      warmth < 32 || Boolean(nearest && nearest.lane === playerLane && nearest.distance < 36),
   };
 }
 

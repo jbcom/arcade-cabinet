@@ -17,7 +17,8 @@ The player should understand the run from the cartridge label and first frame: K
 ## Current Cabinet Pass
 
 - Added a deterministic pure simulation for warmth drain, lane steering, cocoa collection, snowman kick/hit resolution, glitch photos, scoring, combo, and spawning.
-- Added a React presentation with shared cartridge landing, touch-anywhere joystick, action buttons, three-lane slope, snow, entities, and warmth HUD.
+- Added deterministic segment cue state for named glacier segments, weather, nearest hazards, lane warning, and warmth pressure.
+- Added a React presentation with shared cartridge landing, touch-anywhere joystick, action buttons, three-lane slope, weather bands, lane warnings, richer cocoa/snowman/glitch tokens, kitten silhouette, segment gate, and warmth HUD.
 - Added unit and browser start-flow coverage.
 
 ## Responsive and Android Contract
