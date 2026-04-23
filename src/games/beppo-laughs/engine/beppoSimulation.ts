@@ -1,5 +1,12 @@
 import { normalizeSessionMode, type SessionMode } from "@logic/shared";
-import type { BeppoDirection, BeppoItem, BeppoModeTuning, BeppoRoom, BeppoState } from "./types";
+import type {
+  BeppoDirection,
+  BeppoItem,
+  BeppoModeTuning,
+  BeppoRoom,
+  BeppoRouteCue,
+  BeppoState,
+} from "./types";
 
 export const BEPPO_ROOMS: readonly BeppoRoom[] = [
   {
@@ -96,6 +103,11 @@ export const BEPPO_ROOMS: readonly BeppoRoom[] = [
 ] as const;
 
 export const BEPPO_ESCAPE_VISIT_TARGET = 10;
+const REQUIRED_BEPPO_ITEMS = [
+  "ticket",
+  "mirror",
+  "red-key",
+] as const satisfies readonly BeppoItem[];
 
 const MODE_TUNING: Record<SessionMode, BeppoModeTuning> = {
   challenge: {
@@ -232,6 +244,44 @@ export function moveBeppo(state: BeppoState, direction: BeppoDirection): BeppoSt
   });
 }
 
+export function getBeppoRouteCue(state: BeppoState): BeppoRouteCue {
+  const moves = getAvailableBeppoMoves(state);
+  const accessibleMoves = moves.filter((move) => !move.lockedBy && !move.lockedByRouteMemory);
+  const unvisitedMoves = accessibleMoves.filter(
+    (move) => !state.visitedRoomIds.includes(move.room.id)
+  );
+  const recommendedDirections = (unvisitedMoves.length > 0 ? unvisitedMoves : accessibleMoves).map(
+    (move) => move.direction
+  );
+  const routeMemoryRemaining = Math.max(0, BEPPO_ESCAPE_VISIT_TARGET - state.visitedRoomIds.length);
+  const requiredItemsRemaining = getRequiredItemsRemaining(state.inventory);
+  const threatLevel =
+    state.composure < 36
+      ? "spiral"
+      : state.composure < 68 || state.despair > 22
+        ? "uneasy"
+        : "steady";
+
+  let label = "Follow an unvisited lit curtain and keep the route clean.";
+  if (state.currentRoomId === "exit-flap") {
+    label = "Exit flap found. Leave before the laugh catches up.";
+  } else if (requiredItemsRemaining.length > 0 && state.visitedRoomIds.length > 5) {
+    label = `Still need ${requiredItemsRemaining.map(formatItem).join(", ")}.`;
+  } else if (routeMemoryRemaining > 0) {
+    label = `Map ${routeMemoryRemaining} more room${routeMemoryRemaining === 1 ? "" : "s"} before the exit holds.`;
+  } else if (recommendedDirections.length === 0) {
+    label = "Every curtain loops back. Breathe, then choose the least familiar door.";
+  }
+
+  return {
+    label,
+    threatLevel,
+    routeMemoryRemaining,
+    requiredItemsRemaining,
+    recommendedDirections,
+  };
+}
+
 export function getBeppoRunSummary(state: BeppoState) {
   return {
     composure: Math.round(state.composure),
@@ -280,6 +330,10 @@ function getRouteMemoryLock(roomId: string | undefined, visitedCount: number): n
   if (!roomId) return 0;
   const requiredVisitedCount = findRoom(roomId).requiredVisitedCount ?? 0;
   return Math.max(0, requiredVisitedCount - visitedCount);
+}
+
+function getRequiredItemsRemaining(inventory: BeppoItem[]): BeppoItem[] {
+  return REQUIRED_BEPPO_ITEMS.filter((item) => !inventory.includes(item));
 }
 
 function describeRoomArrival(room: BeppoRoom, item: BeppoItem | undefined) {

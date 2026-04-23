@@ -22,6 +22,16 @@ export interface BeppoModeTuning {
   passiveFearPerMinute: number;
 }
 
+export type BeppoThreatLevel = "steady" | "uneasy" | "spiral";
+
+export interface BeppoRouteCue {
+  label: string;
+  threatLevel: BeppoThreatLevel;
+  routeMemoryRemaining: number;
+  requiredItemsRemaining: BeppoItem[];
+  recommendedDirections: BeppoDirection[];
+}
+
 export interface BeppoState {
   phase: BeppoPhase;
   sessionMode: SessionMode;

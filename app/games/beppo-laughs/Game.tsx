@@ -8,14 +8,20 @@ import {
 } from "@app/shared";
 import {
   advanceBeppoTime,
+  BEPPO_ESCAPE_VISIT_TARGET,
   BEPPO_ROOMS,
   createInitialBeppoState,
   getAvailableBeppoMoves,
+  getBeppoRouteCue,
   getBeppoRunSummary,
   getCurrentBeppoRoom,
   moveBeppo,
 } from "@logic/games/beppo-laughs/engine/beppoSimulation";
-import type { BeppoDirection, BeppoState } from "@logic/games/beppo-laughs/engine/types";
+import type {
+  BeppoDirection,
+  BeppoRouteCue,
+  BeppoState,
+} from "@logic/games/beppo-laughs/engine/types";
 import type { GameSaveSlot, SessionMode } from "@logic/shared";
 import { useEffect, useMemo, useState } from "react";
 
@@ -57,6 +63,7 @@ export default function Game() {
 
   const room = getCurrentBeppoRoom(state);
   const moves = useMemo(() => getAvailableBeppoMoves(state), [state]);
+  const routeCue = useMemo(() => getBeppoRouteCue(state), [state]);
   const summary = getBeppoRunSummary(state);
 
   useRunSnapshotAutosave({
@@ -108,10 +115,15 @@ export default function Game() {
 
       {state.phase === "playing" ? (
         <main className="relative z-10 grid h-full grid-rows-[auto_minmax(0,1fr)_auto] gap-3 p-3 sm:p-5">
-          <Hud state={state} />
+          <Hud state={state} routeCue={routeCue} />
           <section className="grid min-h-0 gap-3 md:grid-cols-[1fr_minmax(250px,0.54fr)]">
-            <MazeMap state={state} />
-            <div className="grid min-h-0 grid-rows-[auto_1fr_auto] gap-3 rounded-md border border-orange-200/20 bg-black/48 p-3 shadow-2xl">
+            <CircusStage
+              moves={moves}
+              onMove={(direction) => setState((current) => moveBeppo(current, direction))}
+              routeCue={routeCue}
+              state={state}
+            />
+            <div className="grid min-h-0 grid-rows-[auto_auto_auto] gap-3 rounded-md border border-orange-200/20 bg-black/48 p-3 shadow-2xl">
               <div>
                 <div className="font-mono text-[0.65rem] font-black uppercase tracking-[0.24em] text-orange-200/70">
                   Current Room
@@ -128,6 +140,9 @@ export default function Game() {
                 <p className="mt-2 text-sm font-bold leading-snug text-cyan-50">
                   {state.objective}
                 </p>
+                <div className="mt-3 rounded-md border border-orange-200/22 bg-orange-500/10 p-2 text-xs font-black uppercase leading-snug text-orange-50">
+                  Route Cue: {routeCue.label}
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {state.inventory.length === 0 ? (
                     <span className="rounded-md border border-white/12 bg-white/6 px-2 py-1 text-xs font-bold uppercase text-white/58">
@@ -145,7 +160,7 @@ export default function Game() {
                   )}
                 </div>
               </div>
-              <nav className="grid grid-cols-2 gap-2">
+              <nav className="hidden grid-cols-2 gap-2 md:grid">
                 {moves.map((move) => (
                   <button
                     key={`${move.direction}-${move.room.id}`}
@@ -250,13 +265,17 @@ function isBeppoSnapshot(snapshot: unknown): snapshot is BeppoState {
   );
 }
 
-function Hud({ state }: { state: BeppoState }) {
+function Hud({ state, routeCue }: { state: BeppoState; routeCue: BeppoRouteCue }) {
   return (
-    <header className="grid gap-2 rounded-md border border-orange-200/18 bg-black/48 p-3 shadow-2xl sm:grid-cols-4">
+    <header className="grid grid-cols-2 gap-2 rounded-md border border-orange-200/18 bg-black/48 p-3 shadow-2xl sm:grid-cols-4">
       <Metric label="Composure" value={`${Math.round(state.composure)}%`} accent="#22d3ee" />
       <Metric label="Fear" value={`${Math.round(state.fear)}%`} accent="#fb923c" />
       <Metric label="Despair" value={`${Math.round(state.despair)}%`} accent="#f87171" />
-      <Metric label="Mode" value={state.sessionMode} accent="#facc15" />
+      <Metric
+        label="Memory"
+        value={`${BEPPO_ESCAPE_VISIT_TARGET - routeCue.routeMemoryRemaining}/${BEPPO_ESCAPE_VISIT_TARGET}`}
+        accent="#facc15"
+      />
     </header>
   );
 }
@@ -274,21 +293,150 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
   );
 }
 
-function MazeMap({ state }: { state: BeppoState }) {
+function CircusStage({
+  moves,
+  onMove,
+  routeCue,
+  state,
+}: {
+  moves: ReturnType<typeof getAvailableBeppoMoves>;
+  onMove: (direction: BeppoDirection) => void;
+  routeCue: BeppoRouteCue;
+  state: BeppoState;
+}) {
+  const room = getCurrentBeppoRoom(state);
+  const moveByDirection = Object.fromEntries(
+    moves.map((move) => [move.direction, move])
+  ) as Partial<Record<BeppoDirection, (typeof moves)[number]>>;
+  const threatAccent =
+    routeCue.threatLevel === "spiral"
+      ? "#f87171"
+      : routeCue.threatLevel === "uneasy"
+        ? "#fb923c"
+        : "#22d3ee";
+
   return (
-    <div className="relative min-h-[270px] overflow-hidden rounded-md border border-orange-200/20 bg-black/46 p-4 shadow-2xl">
+    <section
+      className="relative min-h-[350px] overflow-hidden rounded-md border border-orange-200/20 bg-black/54 shadow-2xl"
+      aria-label="Beppo circus maze stage"
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 42%, rgba(34,211,238,0.16), transparent 32%), radial-gradient(circle at 50% 62%, rgba(249,115,22,0.16), transparent 28%), repeating-linear-gradient(90deg, rgba(127,29,29,0.42) 0 8%, rgba(30,41,59,0.34) 8% 16%)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-orange-100/20"
+        style={{
+          boxShadow: `inset 0 0 52px rgba(0,0,0,0.72), 0 0 36px ${threatAccent}55`,
+        }}
+      />
+      <div className="absolute left-1/2 top-1/2 grid h-[42%] w-[min(58%,25rem)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[50%] border border-cyan-200/45 bg-cyan-950/36 p-4 text-center">
+        <div>
+          <div className="font-mono text-[0.62rem] font-black uppercase tracking-[0.24em] text-cyan-100/62">
+            {room.kind} room
+          </div>
+          <h2 className="mt-1 text-3xl font-black uppercase text-white">{room.label}</h2>
+          <p className="mx-auto mt-2 max-w-[18rem] text-xs font-bold leading-snug text-cyan-50/78">
+            {routeCue.label}
+          </p>
+        </div>
+      </div>
+
+      {(["north", "east", "south", "west"] as const).map((direction) => (
+        <PortalButton
+          direction={direction}
+          key={direction}
+          move={moveByDirection[direction]}
+          onMove={onMove}
+          recommended={routeCue.recommendedDirections.includes(direction)}
+        />
+      ))}
+
+      <RouteMemoryMap state={state} />
+    </section>
+  );
+}
+
+function PortalButton({
+  direction,
+  move,
+  onMove,
+  recommended,
+}: {
+  direction: BeppoDirection;
+  move: ReturnType<typeof getAvailableBeppoMoves>[number] | undefined;
+  onMove: (direction: BeppoDirection) => void;
+  recommended: boolean;
+}) {
+  const locked = Boolean(move?.lockedBy || move?.lockedByRouteMemory);
+  const positionClass: Record<BeppoDirection, string> = {
+    east: "right-3 top-1/2 -translate-y-1/2",
+    north: "left-1/2 top-3 -translate-x-1/2",
+    south: "bottom-3 left-1/2 -translate-x-1/2",
+    west: "left-3 top-1/2 -translate-y-1/2",
+  };
+
+  return (
+    <button
+      aria-label={`${DIRECTION_LABELS[direction]} curtain`}
+      className={`absolute ${positionClass[direction]} min-w-[7.2rem] rounded-md border px-3 py-2 text-left shadow-2xl transition hover:-translate-y-0.5 focus:outline-none focus:ring-2`}
+      onClick={() => onMove(direction)}
+      type="button"
+      style={{
+        background: locked
+          ? "rgba(127,29,29,0.7)"
+          : recommended
+            ? "linear-gradient(135deg, rgba(34,211,238,0.34), rgba(249,115,22,0.28))"
+            : "rgba(15,23,42,0.72)",
+        borderColor: locked
+          ? "rgba(252,165,165,0.55)"
+          : recommended
+            ? "rgba(103,232,249,0.78)"
+            : "rgba(251,146,60,0.35)",
+        boxShadow: recommended ? "0 0 26px rgba(34,211,238,0.26)" : undefined,
+      }}
+    >
+      <span className="block font-mono text-[0.58rem] font-black uppercase tracking-[0.2em] text-white/54">
+        {DIRECTION_LABELS[direction]}
+      </span>
+      <span className="mt-1 block text-sm font-black uppercase text-white">
+        {move ? move.room.label : "Canvas Wall"}
+      </span>
+      {move?.lockedBy ? (
+        <span className="mt-1 block text-[0.62rem] font-bold uppercase text-red-100">
+          Needs {move.lockedBy.replace("-", " ")}
+        </span>
+      ) : null}
+      {move?.lockedByRouteMemory ? (
+        <span className="mt-1 block text-[0.62rem] font-bold uppercase text-cyan-100">
+          Map {move.lockedByRouteMemory} more
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function RouteMemoryMap({ state }: { state: BeppoState }) {
+  return (
+    <div className="absolute bottom-3 left-3 right-3 overflow-hidden rounded-md border border-orange-200/18 bg-black/54 p-2">
       <div className="absolute inset-0 opacity-40">
         <div className="h-full w-full bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.06)_0_1px,transparent_1px_18px),repeating-linear-gradient(90deg,rgba(255,255,255,0.06)_0_1px,transparent_1px_18px)]" />
       </div>
-      <div className="relative grid h-full min-h-[250px] grid-cols-3 auto-rows-fr gap-2 sm:grid-cols-4">
-        {BEPPO_ROOMS.map((room, index) => {
+      <div className="relative grid grid-cols-7 gap-1">
+        {BEPPO_ROOMS.map((room) => {
           const visited = state.visitedRoomIds.includes(room.id);
           const current = room.id === state.currentRoomId;
 
           return (
             <div
               key={room.id}
-              className="grid place-items-center rounded-md border p-2 text-center"
+              className="h-4 rounded-sm border"
+              title={room.label}
               style={{
                 background: current
                   ? "rgba(34,211,238,0.22)"
@@ -296,14 +444,9 @@ function MazeMap({ state }: { state: BeppoState }) {
                     ? "rgba(249,115,22,0.16)"
                     : "rgba(15,23,42,0.55)",
                 borderColor: current ? "rgba(103,232,249,0.86)" : "rgba(251,146,60,0.2)",
-                gridColumn: (index % 3) + 1,
-                gridRow: Math.floor(index / 3) + 1,
+                opacity: visited || current ? 1 : 0.52,
               }}
-            >
-              <span className="text-xs font-black uppercase leading-tight text-white">
-                {visited || current ? room.label : "Canvas Wall"}
-              </span>
-            </div>
+            />
           );
         })}
       </div>

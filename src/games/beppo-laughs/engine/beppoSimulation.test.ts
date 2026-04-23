@@ -5,6 +5,7 @@ import {
   createInitialBeppoState,
   getAvailableBeppoMoves,
   getBeppoModeTuning,
+  getBeppoRouteCue,
   getBeppoRunSummary,
   moveBeppo,
   recoverBeppoAfterMistake,
@@ -82,5 +83,26 @@ describe("Beppo Laughs couch-friendly maze logic", () => {
         .map((move) => move.direction)
         .sort()
     ).toEqual(["east", "north", "west"]);
+  });
+
+  test("describes route memory, item gates, and recommended curtains", () => {
+    const start = createInitialBeppoState("standard", "playing");
+    const startCue = getBeppoRouteCue(start);
+
+    expect(startCue.threatLevel).toBe("steady");
+    expect(startCue.routeMemoryRemaining).toBe(BEPPO_ESCAPE_VISIT_TARGET - 1);
+    expect(startCue.recommendedDirections.sort()).toEqual(["east", "north", "west"]);
+    expect(startCue.requiredItemsRemaining).toEqual(["ticket", "mirror", "red-key"]);
+
+    let mapped = moveBeppo(start, "north");
+    mapped = moveBeppo(mapped, "south");
+    mapped = moveBeppo(mapped, "east");
+    mapped = moveBeppo(mapped, "north");
+    mapped = moveBeppo(mapped, "east");
+    mapped = moveBeppo(mapped, "north");
+
+    const mappedCue = getBeppoRouteCue(mapped);
+    expect(mappedCue.requiredItemsRemaining).toEqual(["red-key"]);
+    expect(mappedCue.label).toContain("red clown-car key");
   });
 });
